@@ -4,7 +4,27 @@ Unvergessliche Kinderfeiern und Familien-Events — digital präsentiert, persö
 
 ## Projektstatus
 
-🟡 **In Planung** — Dokumentation und Projektstruktur angelegt, Entwicklung noch nicht gestartet.
+🟢 **Sprint 1 abgeschlossen** — MVP Landing Page implementiert, Vercel-ready.
+
+## Entwicklung
+
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm run build    # Production Build
+npm run lint     # ESLint
+```
+
+## Projektstruktur
+
+```
+/
+├── src/app/           # Next.js App Router (Seiten, Layout)
+├── components/        # UI-Komponenten und Sektionen
+├── lib/               # Daten, Config, Validierung
+├── public/            # Statische Assets (Logo, Illustrationen)
+└── docs/              # Projektdokumentation
+```
 
 ## Dokumentation
 

@@ -19,14 +19,14 @@ export function Logo({ variant = "default", className = "", size = "default" }: 
   return (
     <a
       href="#startseite"
-      className={`flex items-center ${className}`}
+      className={`flex items-center ${className} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
       aria-label="Panda-Bande Kinderevents — Startseite"
     >
       {!imgError ? (
         <div className={`relative w-auto shrink-0 ${heightClass}`}>
           <Image
             src={siteConfig.assets.logo}
-            alt={siteConfig.assets.logoAlt}
+            alt=""
             width={200}
             height={72}
             className={`${heightClass} w-auto object-contain`}

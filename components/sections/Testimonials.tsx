@@ -49,7 +49,7 @@ function ReviewCard({ review }: { review: PublicReview }) {
             <p className="text-sm text-text-muted">{review.event_type}</p>
           </div>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
           <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
           Verifizierte Buchung
         </span>
@@ -131,7 +131,8 @@ export function Testimonials() {
         </ScrollReveal>
 
         {loading ? (
-          <div className="mx-auto max-w-md space-y-4">
+          <div className="mx-auto max-w-md space-y-4" aria-live="polite" aria-busy="true">
+            <p className="sr-only">Bewertungen werden geladen</p>
             <div className="skeleton mx-auto h-8 w-32 rounded-full" />
             <div className="skeleton h-48 rounded-[var(--radius-card)]" />
           </div>
@@ -159,7 +160,11 @@ export function Testimonials() {
               <>
                 {/* Mobile swipe */}
                 <div className="lg:hidden">
-                  <div className="swipe-track -mx-5 px-5">
+                  <div
+                    className="swipe-track -mx-5 px-5"
+                    role="region"
+                    aria-label="Bewertungen — horizontal scrollen"
+                  >
                     {reviews.map((review) => (
                       <div key={review.id} className="swipe-item w-[min(90vw,24rem)]">
                         <ReviewCard review={review} />

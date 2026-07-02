@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { Calendar, Menu, X } from "lucide-react";
 import { navigation } from "@/lib/navigation";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
+import { focusRing } from "@/lib/a11y";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 
@@ -11,6 +12,9 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const activeId = useActiveSection();
+  const menuId = useId();
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 16);
@@ -25,7 +29,27 @@ export function Header() {
     };
   }, [isMenuOpen]);
 
-  const closeMenu = () => setIsMenuOpen(false);
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    menuButtonRef.current?.focus();
+  };
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    closeButtonRef.current?.focus();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeMenu();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isMenuOpen]);
+
+  const navLinkClass = (isActive: boolean) =>
+    `rounded-full px-4 py-2.5 text-base font-medium transition-all duration-200 min-h-11 inline-flex items-center ${focusRing} ${
+      isActive
+        ? "bg-primary/10 text-primary"
+        : "text-text-secondary hover:bg-bg-secondary hover:text-primary"
+    }`;
 
   return (
     <>
@@ -44,15 +68,7 @@ export function Header() {
               const id = item.href.replace("#", "");
               const isActive = activeId === id;
               return (
-                <a
-                  key={item.href}
-                  href={item.href}
-                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all duration-200 ${
-                    isActive
-                      ? "bg-primary/10 text-primary"
-                      : "text-text-secondary hover:bg-bg-secondary hover:text-primary"
-                  }`}
-                >
+                <a key={item.href} href={item.href} className={navLinkClass(isActive)}>
                   {item.label}
                 </a>
               );
@@ -64,40 +80,54 @@ export function Header() {
               href="#kontakt"
               size="default"
               className="hidden sm:inline-flex"
-              icon={<Calendar className="h-4 w-4" />}
+              icon={<Calendar className="h-4 w-4" aria-hidden />}
             >
               Jetzt anfragen
             </Button>
             <button
+              ref={menuButtonRef}
               type="button"
-              className="inline-flex h-12 w-12 items-center justify-center rounded-full border border-border/80 bg-bg-card/80 text-text-primary backdrop-blur-sm transition-colors hover:bg-bg-secondary lg:hidden"
+              className={`inline-flex h-12 w-12 items-center justify-center rounded-full border border-border/80 bg-bg-card/80 text-text-primary backdrop-blur-sm transition-colors hover:bg-bg-secondary lg:hidden ${focusRing}`}
               onClick={() => setIsMenuOpen(true)}
               aria-label="Menü öffnen"
               aria-expanded={isMenuOpen}
+              aria-controls={menuId}
             >
-              <Menu className="h-5 w-5" />
+              <Menu className="h-5 w-5" aria-hidden />
             </button>
           </div>
         </div>
       </header>
 
       {isMenuOpen && (
-        <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true">
+        <div
+          className="fixed inset-0 z-[60] lg:hidden"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby={`${menuId}-title`}
+        >
           <div
             className="absolute inset-0 bg-text-primary/50 backdrop-blur-sm transition-opacity"
             onClick={closeMenu}
             aria-hidden
           />
-          <div className="absolute inset-y-0 right-0 flex w-full max-w-[min(100%,22rem)] animate-fade-in-up flex-col bg-bg-primary shadow-2xl">
+          <div
+            id={menuId}
+            className="absolute inset-y-0 right-0 flex w-full max-w-[min(100%,22rem)] animate-fade-in-up flex-col bg-bg-primary shadow-2xl"
+          >
             <div className="flex items-center justify-between border-b border-border px-5 py-5">
+              <h2 id={`${menuId}-title`} className="sr-only">
+                Navigation
+              </h2>
               <Logo />
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={closeMenu}
-                className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-bg-card"
+                className={`flex h-12 w-12 items-center justify-center rounded-full border border-border bg-bg-card ${focusRing}`}
                 aria-label="Menü schließen"
               >
-                <X className="h-5 w-5" />
+                <X className="h-5 w-5" aria-hidden />
               </button>
             </div>
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4" aria-label="Mobile Navigation">
@@ -109,7 +139,7 @@ export function Header() {
                     key={item.href}
                     href={item.href}
                     onClick={closeMenu}
-                    className={`rounded-2xl px-5 py-4 text-base font-medium transition-colors ${
+                    className={`rounded-2xl px-5 py-4 text-base font-medium transition-colors min-h-12 flex items-center ${focusRing} ${
                       isActive
                         ? "bg-primary/10 text-primary"
                         : "text-text-primary hover:bg-bg-secondary"
@@ -125,7 +155,7 @@ export function Header() {
                 href="#kontakt"
                 className="w-full"
                 size="lg"
-                icon={<Calendar className="h-4 w-4" />}
+                icon={<Calendar className="h-4 w-4" aria-hidden />}
                 onClick={closeMenu}
               >
                 Jetzt anfragen

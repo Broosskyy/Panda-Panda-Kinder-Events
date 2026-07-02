@@ -1,6 +1,7 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
+import { SkipLink } from "@/components/ui/SkipLink";
 import { Hero } from "@/components/sections/Hero";
 import { Usps } from "@/components/sections/Usps";
 import { Services } from "@/components/sections/Services";
@@ -48,8 +49,9 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
       />
+      <SkipLink />
       <Header />
-      <main>
+      <main id="main-content">
         <Hero />
         <Usps />
         <Services />

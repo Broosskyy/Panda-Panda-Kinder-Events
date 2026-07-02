@@ -10,16 +10,16 @@ export function Footer() {
         <div className="grid gap-10 md:grid-cols-3 md:gap-8">
           <div className="flex flex-col items-center md:items-start">
             <Logo variant="inverse" />
-            <p className="font-accent mt-4 text-lg text-white/80">
+            <p className="font-accent mt-4 text-lg text-white/90">
               Mit Herz für kleine Abenteurer. ♡
             </p>
           </div>
 
           <div className="text-center md:text-left">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/80">
               Kontakt
             </p>
-            <ul className="space-y-3 text-sm">
+            <ul className="space-y-3 text-base">
               <li>
                 <a
                   href={`https://wa.me/${siteConfig.contact.whatsapp}`}
@@ -51,7 +51,7 @@ export function Footer() {
                   {siteConfig.contact.email}
                 </a>
               </li>
-              <li className="inline-flex items-center gap-2 text-white/80">
+              <li className="inline-flex items-center gap-2 text-white/90">
                 <MapPin className="h-4 w-4" />
                 {siteConfig.contact.location}
               </li>
@@ -59,10 +59,10 @@ export function Footer() {
           </div>
 
           <div className="text-center md:text-right">
-            <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/60">
+            <p className="mb-4 text-sm font-semibold uppercase tracking-wider text-white/80">
               Rechtliches
             </p>
-            <nav className="flex flex-col gap-3 text-sm" aria-label="Rechtliches">
+            <nav className="flex flex-col gap-3 text-base" aria-label="Rechtliches">
               <a href="/impressum" className="transition-opacity hover:opacity-80">
                 Impressum
               </a>
@@ -96,7 +96,7 @@ export function Footer() {
           </div>
         </div>
 
-        <p className="mt-10 border-t border-white/10 pt-8 text-center text-sm text-white/60">
+        <p className="mt-10 border-t border-white/15 pt-8 text-center text-base text-white/80">
           © {new Date().getFullYear()} {siteConfig.name}. Alle Rechte vorbehalten.
         </p>
       </Container>

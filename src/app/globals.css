@@ -8,10 +8,11 @@
   --color-bg-secondary: #f4f1ea;
   --color-bg-card: #ffffff;
   --color-text-primary: #2c2c2c;
-  --color-text-secondary: #4a4a4a;
-  --color-text-muted: #7a7a7a;
+  --color-text-secondary: #3d3d3d;
+  --color-text-muted: #575757;
+  --color-text-placeholder: #6b6b6b;
   --color-text-inverse: #ffffff;
-  --color-accent-gold: #d4a843;
+  --color-accent-gold: #b8922e;
   --color-accent-heart: #c45c5c;
   --color-border: #e5e2db;
   --color-divider: #edeae4;
@@ -35,12 +36,53 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .reveal {
+    opacity: 1;
+    transform: none;
+  }
+
+  .card-premium:hover {
+    transform: none;
+  }
+
+  .skeleton {
+    animation: none;
+  }
+}
+
 body {
   background-color: var(--color-bg-primary);
   color: var(--color-text-secondary);
   font-family: var(--font-body);
+  font-size: 1rem;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Visible keyboard focus */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .font-heading {
@@ -96,6 +138,19 @@ body {
 .swipe-item {
   scroll-snap-align: start;
   flex-shrink: 0;
+}
+
+/* Screen reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
 }
 
 /* Scroll reveal */
@@ -195,4 +250,25 @@ body {
 
 .safe-right {
   right: max(1.25rem, env(safe-area-inset-right, 0px));
+}
+
+/* Skip link */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: 1rem;
+  z-index: 100;
+  transform: translateY(-200%);
+  transition: transform 0.2s ease;
+  border-radius: 0.75rem;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  padding: 0.75rem 1.25rem;
+  font-size: 1rem;
+  font-weight: 500;
+  box-shadow: var(--shadow-lg);
+}
+
+.skip-link:focus {
+  transform: translateY(0);
 }

@@ -1,14 +1,28 @@
 # Roadmap — Panda-Bande Kinderevents
 
-## Übersicht
+> Konsolidiert aus Projekt-Report und finalem Mockup.  
+> Stand: Juli 2026
 
-Diese Roadmap beschreibt die geplanten Entwicklungsphasen für die Panda-Bande Kinderevents Plattform — von der ersten Website bis zur vollständigen Event-Management-Lösung.
-
-Jede Phase baut auf der vorherigen auf und liefert einen nutzbaren Meilenstein.
+**Verwandte Dokumente:**
+- [Feature-Liste Final](../03_FEATURES/Feature-Liste-Final.md)
+- [V1 To-do-Liste](V1-Todo-Liste.md)
+- [Report-Mockup-Abgleich](../03_FEATURES/Report-Mockup-Abgleich.md)
 
 ---
 
-## Phase 0 — Projektgrundlage ✅
+## Übersicht
+
+| Version | Name | Ziel | Status |
+|---------|------|------|--------|
+| **V0** | Projektgrundlage | Dokumentation, Design-System, Planung | ✅ Abgeschlossen |
+| **V1** | Launch Website | Single-Page Landing Page live, Anfragen per Formular | ⬜ Nächster Schritt |
+| **V2** | Interaktion & Backend | Buchung, Kalender, Blog, Newsletter | ⬜ Geplant |
+| **V3** | Wachstum | Kundenbereich, Zahlungen, Admin, CMS | ⬜ Geplant |
+| **V4** | Skalierung | Optimierung, PWA, Expansion | ⬜ Optional |
+
+---
+
+## V0 — Projektgrundlage ✅
 
 **Ziel:** Fundament legen, bevor Code geschrieben wird.
 
@@ -16,152 +30,180 @@ Jede Phase baut auf der vorherigen auf und liefert einen nutzbaren Meilenstein.
 |---------|--------|
 | Projektstruktur anlegen | ✅ |
 | Vision dokumentieren | ✅ |
-| Branding definieren | ✅ |
+| Branding & Design-System (aus Mockup) | ✅ |
 | Features spezifizieren | ✅ |
 | Techstack festlegen | ✅ |
-| Roadmap erstellen | ✅ |
-| Domain und Hosting vorbereiten | ⬜ |
-| Logo und Maskottchen beauftragen / erstellen | ⬜ |
-| Event-Fotos und Texte sammeln | ⬜ |
+| Report ↔ Mockup abgleichen | ✅ |
+| Finale Feature-Liste | ✅ |
+| V1 To-do-Liste | ✅ |
+| Roadmap konsolidieren | ✅ |
+| Logo, Fotos, Rechtstexte bereitstellen | ⬜ |
+| Domain registrieren | ⬜ |
 
-**Ergebnis:** Vollständige Projektdokumentation als Basis für die Entwicklung.
+**Ergebnis:** Vollständige Projektdokumentation als Basis für V1.
 
 ---
 
-## Phase 1 — MVP Website
+## V1 — Launch Website
 
-**Ziel:** Eine professionelle Online-Präsenz, die Vertrauen schafft und Anfragen generiert.
+**Ziel:** Professionelle Online-Präsenz als Single-Page Landing Page — pixelnah zum Mockup, funktionsfähiges Anfrageformular, bereit für erste Kundenanfragen.
 
-### Meilensteine
+> Detaillierte Aufgaben: [V1-Todo-Liste](V1-Todo-Liste.md)
 
-#### 1.1 Projekt-Setup
-- Next.js-Projekt initialisieren (TypeScript, Tailwind CSS, ESLint)
-- Design-Tokens aus Branding in Tailwind-Config übernehmen
-- Basis-Layout (Header, Footer, Navigation) erstellen
-- Responsive Grid und Typografie-System
+### Umfang
 
-#### 1.2 Seiten
-- **Startseite** — Hero, Event-Highlights, Vertrauenselemente, CTA
-- **Events** — Katalog mit Filter, Detailseiten aus MDX
-- **Über uns** — Team, Werte, Maskottchen
-- **FAQ** — Accordion mit häufigen Fragen
-- **Kontakt** — Formular mit Validierung und E-Mail-Versand
-- **Impressum & Datenschutz** — rechtlich erforderliche Seiten
-
-#### 1.3 Komponenten
-- Button, Card, Badge, Accordion, Form-Felder
-- Event-Card und Event-Detail-Layout
-- Hero-Section mit Panda-Maskottchen-Platzhalter
+**Enthalten:**
+- Single-Page Landing Page mit 10 Sektionen (Hero → Footer)
+- Sticky Header mit Smooth-Scroll-Navigation (7 Nav-Punkte)
+- 8 Leistungs-Karten, statischer 5-Schritte-Ablauf
+- Galerie (5 Fotos) + Instagram-CTA
 - Testimonial-Slider (statische Daten)
+- FAQ Accordion (8 Fragen)
+- Vollständiges Anfrageformular (10 Felder + DSGVO)
+- E-Mail-Benachrichtigung bei neuer Anfrage
+- WhatsApp FAB
+- Impressum, Datenschutz, AGB
+- Responsive Design (Mobile-first)
+- SEO, JSON-LD, Analytics
+- Deployment auf Vercel mit Custom Domain
 
-#### 1.4 Inhalte
-- Mindestens 5 Event-Pakete als MDX anlegen
-- Platzhalter-Bilder durch echte Fotos ersetzen (sobald verfügbar)
-- SEO-Meta-Tags für alle Seiten
-
-#### 1.5 Deployment
-- Vercel-Deployment einrichten
-- Custom Domain verbinden
-- Lighthouse-Score > 90 anstreben
-
-**Ergebnis:** Live-Website unter eigener Domain, bereit für erste Kundenanfragen.
-
----
-
-## Phase 2 — Buchung & Interaktion
-
-**Ziel:** Digitale Buchungsanfragen vereinfachen und Kundenbindung aufbauen.
+**Nicht enthalten (bewusst zurückgestellt):**
+- Separate Event-Detailseiten
+- Interaktiver Buchungs-Wizard
+- Verfügbarkeitskalender
+- Datenbank / Admin
+- Blog, Newsletter, Gutscheine
+- Kundenlogin, Online-Zahlung
 
 ### Meilensteine
 
-#### 2.1 Buchungssystem
-- Mehrstufiges Buchungsformular (Event → Datum → Details → Bestätigung)
-- Verfügbarkeitskalender (einfache Version)
-- E-Mail-Bestätigung an Kunden und internes Team
-- Buchungsstatus: „Anfrage“, „Bestätigt“, „Abgeschlossen“
+| # | Meilenstein | Ergebnis |
+|---|-------------|----------|
+| V1.1 | Projekt-Setup + Design-Tokens | Next.js läuft lokal, Tailwind mit Markenfarben |
+| V1.2 | UI-Komponenten | Button, Card, Accordion, Form, Header, Footer |
+| V1.3 | Landing Page Sektionen | Alle 10 Sektionen implementiert |
+| V1.4 | Formular + E-Mail | Anfragen werden zuverlässig zugestellt |
+| V1.5 | Rechtliches + SEO | Impressum, Datenschutz, AGB, Meta-Tags, Sitemap |
+| V1.6 | QA + Launch | Lighthouse > 90, Cross-Browser, Go-Live |
 
-#### 2.2 Datenbank & Backend
-- Supabase einrichten (PostgreSQL, Auth)
-- API-Routes für Buchungen und Kontaktanfragen
-- Admin-Ansicht (geschützt) für eingehende Anfragen
+### Erfolgskriterien V1
 
-#### 2.3 Gutscheine
-- Gutschein-Kaufformular
-- PDF-Generierung und E-Mail-Versand
-- Einlösung bei Buchung
-
-#### 2.4 Content-Erweiterung
-- Blog / Ratgeber mit mindestens 5 Artikeln
-- Newsletter-Anmeldung (Double-Opt-In)
-- Saisonale Landingpages (z. B. „Sommerfest“, „Weihnachts-Event“)
-
-#### 2.5 SEO & Marketing
-- Google Search Console einrichten
-- Strukturierte Daten (JSON-LD) für Events
-- Social-Media Open-Graph-Tags
-
-**Ergebnis:** Kunden können Events online anfragen und buchen; Betreiber verwalten Anfragen digital.
+- Website live unter eigener Domain mit HTTPS
+- Lighthouse Score > 90 (alle Kategorien)
+- Formular sendet E-Mails zuverlässig
+- Mobile Navigation funktioniert einwandfrei
+- Erste Kontaktanfragen über die Website
 
 ---
 
-## Phase 3 — Wachstum & Automatisierung
+## V2 — Interaktion & Backend
 
-**Ziel:** Skalierung, Wiederkehrende Kunden und operative Effizienz.
+**Ziel:** Digitale Buchungsanfragen vereinfachen, Inhalte erweitern, Kundenbindung aufbauen.
+
+### Umfang
+
+| Feature | Beschreibung |
+|---------|--------------|
+| **Interaktiver Buchungs-Wizard** | Mehrstufiges Formular (Event → Datum → Details → Bestätigung) statt statischer Ablauf-Anzeige |
+| **Verfügbarkeitskalender** | Freie/belegte Termine, Sperrzeiten für Feiertage |
+| **Datenbank (Supabase)** | Anfragen und Buchungen persistent speichern |
+| **Admin-Ansicht (einfach)** | Geschützter Bereich für eingehende Anfragen |
+| **Buchungsstatus** | Anfrage → Bestätigt → Abgeschlossen |
+| **E-Mail-Bestätigung an Kunden** | Automatische Antwort nach Anfrage |
+| **Gutschein-System** | Digitale Gutscheine kaufen, PDF per E-Mail, Einlösen bei Buchung |
+| **Blog / Ratgeber** | SEO-Inhalte: Checklisten, Tipps, saisonale Ideen |
+| **Newsletter** | Anmeldung mit Double-Opt-In |
+| **Galerie Lightbox** | Vollbild-Ansicht beim Klick |
+| **Saisonale Landingpages** | z. B. „Sommerfest", „Weihnachts-Event" |
+| **Google Search Console** | Sitemap einreichen, Indexierung überwachen |
 
 ### Meilensteine
 
-#### 3.1 Kundenbereich
-- Registrierung und Login
-- Buchungshistorie und Rechnungsdownload
-- Profilverwaltung
+| # | Meilenstein | Ergebnis |
+|---|-------------|----------|
+| V2.1 | Supabase Setup + Datenmodelle | Buchungen, Anfragen in DB |
+| V2.2 | Buchungs-Wizard + Kalender | Kunden wählen Termin interaktiv |
+| V2.3 | Admin-Ansicht | Panda-Bande sieht und verwaltet Anfragen |
+| V2.4 | Gutscheine | Kaufen und verschenken möglich |
+| V2.5 | Blog + Newsletter | Content-Marketing startet |
+| V2.6 | SEO-Ausbau | Strukturierte Event-Daten, saisonale Pages |
 
-#### 3.2 Bewertungen
-- Post-Event-Bewertungsanfrage per E-Mail
-- Moderation und Anzeige auf der Website
-- Durchschnittsbewertung pro Event
+### Erfolgskriterien V2
 
-#### 3.3 Zahlungsintegration
-- Stripe-Anbindung für Online-Zahlung und Anzahlungen
-- Automatische Rechnungserstellung
-
-#### 3.4 Admin-Dashboard
-- Vollständige Verwaltung von Events, Buchungen, Kunden
-- Kalender mit Kapazitätsplanung
-- Statistiken und Exporte
-- E-Mail-Vorlagen verwalten
-
-#### 3.5 Erweiterungen
-- Partner- / Gruppenanfrage-Formular
-- Mehrsprachigkeit (EN)
-- Headless CMS (Sanity) für Content-Pflege ohne Entwickler
-
-**Ergebnis:** Vollständige Event-Management-Plattform mit Kundenbindung und Automatisierung.
+- 10+ Buchungsanfragen pro Monat über die Website
+- Buchungsstatus wird digital getrackt
+- Newsletter-Abonnenten vorhanden
+- Blog mit mindestens 5 Artikeln online
 
 ---
 
-## Phase 4 — Optimierung & Skalierung (optional)
+## V3 — Wachstum & Automatisierung
+
+**Ziel:** Skalierung, wiederkehrende Kunden, operative Effizienz.
+
+### Umfang
+
+| Feature | Beschreibung |
+|---------|--------------|
+| **Kundenbereich** | Registrierung, Login, Buchungshistorie, Rechnungsdownload |
+| **Bewertungssystem** | Eltern reichen Bewertungen ein, Moderation, Anzeige auf Website |
+| **Stripe-Integration** | Online-Zahlung, Anzahlungen |
+| **Automatische Rechnungen** | PDF nach Zahlung |
+| **Admin-Dashboard (vollständig)** | Events, Buchungen, Kunden, Kalender, Statistiken |
+| **Headless CMS (Sanity)** | Content-Pflege ohne Entwickler |
+| **Partner-/Gruppenanfragen** | Separates Formular für Kitas, Schulen, Firmen |
+| **Mehrsprachigkeit (EN)** | Englische Version für internationale Familien |
+| **E-Mail-Vorlagen** | Verwaltung und Automatisierung im Admin |
+
+### Meilensteine
+
+| # | Meilenstein | Ergebnis |
+|---|-------------|----------|
+| V3.1 | Kundenbereich + Auth | Login, Profil, Historie |
+| V3.2 | Bewertungen | Einreichung, Moderation, Anzeige |
+| V3.3 | Stripe + Rechnungen | Online-Zahlung funktioniert |
+| V3.4 | Admin-Dashboard | Vollständige Verwaltung |
+| V3.5 | CMS + Mehrsprachigkeit | Content ohne Code pflegen, EN verfügbar |
+
+### Erfolgskriterien V3
+
+- 30 % Wiederbuchungsrate
+- Durchschnittlich 4,5+ Sterne Bewertung
+- Online-Zahlungen werden genutzt
+- Content wird eigenständig gepflegt (CMS)
+
+---
+
+## V4 — Skalierung & Optimierung (optional)
 
 **Ziel:** Kontinuierliche Verbesserung auf Basis echter Nutzungsdaten.
 
-- A/B-Tests für Conversion-Optimierung
-- Performance-Tuning (Bilder, Caching, Edge Functions)
-- Mobile App evaluieren (PWA als Zwischenschritt)
-- Expansion in weitere Regionen
-- Franchise- oder Partner-Modell digital unterstützen
+| Feature | Beschreibung |
+|---------|--------------|
+| A/B-Tests | Conversion-Optimierung (CTAs, Formular, Hero) |
+| Performance-Tuning | Edge Functions, Caching, Bild-CDN |
+| PWA | Installierbar auf Smartphone, Offline-Grundfunktionen |
+| Regionale Expansion | Landingpages für weitere Bundesländer |
+| Franchise-/Partner-Modell | Digitale Unterstützung für Partner |
+| Erweiterte Analytics | Conversion-Funnels, Heatmaps |
+
+### Erfolgskriterien V4
+
+- Top-3 bei lokaler Google-Suche für „Kinderbetreuung Events [Region]"
+- Conversion-Rate Anfrageformular > 5 %
+- PWA installiert von wiederkehrenden Nutzern
 
 ---
 
-## Zeitliche Einordnung (grobe Richtung)
+## Versions-Timeline
 
 ```
-Phase 0  ████░░░░░░░░░░░░░░░░  Projektgrundlage
-Phase 1  ░░░░████████░░░░░░░░  MVP Website
-Phase 2  ░░░░░░░░░░░░████████  Buchung & Interaktion
-Phase 3  ░░░░░░░░░░░░░░░░████  Wachstum & Automatisierung
-Phase 4  ░░░░░░░░░░░░░░░░░░██  Optimierung (laufend)
+V0  ████░░░░░░░░░░░░░░░░  Projektgrundlage ✅
+V1  ░░░░████████░░░░░░░░  Launch Website
+V2  ░░░░░░░░░░░░████████  Interaktion & Backend
+V3  ░░░░░░░░░░░░░░░░████  Wachstum & Automatisierung
+V4  ░░░░░░░░░░░░░░░░░░██  Skalierung (optional)
 ```
-
-> Die konkrete Dauer hängt von verfügbarer Zeit, Content-Bereitschaft und Prioritäten ab. Jede Phase liefert einen eigenständigen, nutzbaren Meilenstein.
 
 ---
 
@@ -169,29 +211,18 @@ Phase 4  ░░░░░░░░░░░░░░░░░░██  Optimieru
 
 | Risiko | Auswirkung | Gegenmaßnahme |
 |--------|------------|---------------|
-| Fehlende Event-Fotos | Website wirkt unprofessionell | Platzhalter-Illustrationen im Panda-Stil; Fotoshooting früh planen |
-| Rechtliche Anforderungen (DSGVO, Impressum) | Abmahnrisiko | Vor Go-Live rechtlich prüfen lassen |
-| Scope Creep | Verzögerung | Strikte MVP-Definition; Features erst nach Phase-Freigabe |
-| Keine Buchungen trotz Website | ROI unklar | SEO, lokales Marketing, Google Business parallel aufbauen |
-| Technische Schulden | Wartungsaufwand steigt | TypeScript, Tests und Code-Reviews von Anfang an |
-
----
-
-## Erfolgsmetriken pro Phase
-
-| Phase | KPI |
-|-------|-----|
-| Phase 1 | Website live, Lighthouse > 90, erste Kontaktanfragen |
-| Phase 2 | 10+ Buchungsanfragen/Monat, Newsletter-Abonnenten |
-| Phase 3 | 30 % Wiederbuchungsrate, durchschnittlich 4,5+ Sterne |
-| Phase 4 | Top-3 bei lokaler Google-Suche für „Kinder Events [Region]“ |
+| Fehlende Assets (Logo, Fotos) | V1 verzögert sich | Platzhalter im Panda-Stil; parallele Asset-Beschaffung |
+| Rechtstexte nicht rechtzeitig | Go-Live blockiert | Anwalt früh beauftragen; Platzhalter-Seiten |
+| Scope Creep in V1 | Verzögerung, Überarbeitung | Strikte V1-Definition (siehe Feature-Liste); Mockup als Referenz |
+| Formular-Spam | E-Mail-Flut | Honeypot + Rate Limiting in V1 |
+| Keine Anfragen trotz Website | ROI unklar | SEO, Google Business, Social Media parallel zu V1 |
+| Technische Schulden | Wartungsaufwand | TypeScript, Komponenten-Bibliothek, Tests ab V1 |
 
 ---
 
 ## Nächste Schritte
 
-1. Logo und Maskottchen finalisieren
-2. Event-Texte und Preise von Panda-Bande erhalten
-3. Domain registrieren
-4. Phase 1.1 starten: Next.js-Projekt initialisieren
-5. Erste Event-Fotos organisieren oder Illustrationen beauftragen
+1. **Assets von Panda-Bande einholen** (Logo, Fotos, Texte, Kontaktdaten, Rechtstexte)
+2. **Domain registrieren**
+3. **V1.1 starten:** Next.js-Projekt initialisieren
+4. **V1-To-do-Liste abarbeiten:** [V1-Todo-Liste](V1-Todo-Liste.md)

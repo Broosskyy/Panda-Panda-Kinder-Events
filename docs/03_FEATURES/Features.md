@@ -1,8 +1,13 @@
 # Features — Panda-Bande Kinderevents
 
+> **Hinweis:** Dieses Dokument ist die ursprüngliche Feature-Spezifikation.  
+> Die **finale, konsolidierte Version** (Report + Mockup) findet sich in:
+> - [Feature-Liste Final](Feature-Liste-Final.md)
+> - [Report-Mockup-Abgleich](Report-Mockup-Abgleich.md)
+
 ## Übersicht
 
-Dieses Dokument beschreibt die geplanten Funktionen der Panda-Bande Kinderevents Plattform. Die Features sind nach Priorität und Entwicklungsphase gruppiert.
+Dieses Dokument beschreibt die ursprünglich geplanten Funktionen der Panda-Bande Kinderevents Plattform. Die Features sind nach Priorität und Entwicklungsphase gruppiert.
 
 ---
 

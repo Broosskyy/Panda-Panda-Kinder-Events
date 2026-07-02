@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Instagram } from "lucide-react";
 import { galleryImages } from "@/lib/gallery";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";

@@ -8,7 +8,7 @@ import { inquirySchema, type InquiryFormData } from "@/lib/validation";
 import { Button } from "@/components/ui/Button";
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-bg-card px-4 py-3 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-lg border border-border bg-bg-card px-4 py-3.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[48px]";
 
 const labelClass = "mb-2 block text-sm font-medium text-text-primary";
 
@@ -16,11 +16,13 @@ export function InquiryForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof InquiryFormData, string>>>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsSubmitting(true);
     setErrors({});
+    setSubmitError("");
 
     const formData = new FormData(e.currentTarget);
     const data = {
@@ -50,24 +52,42 @@ export function InquiryForm() {
       return;
     }
 
-    setTimeout(() => {
+    try {
+      const res = await fetch("/api/inquiry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(result.data),
+      });
+
+      const responseData = await res.json();
+
+      if (!res.ok) {
+        setSubmitError(responseData.error ?? "Anfrage konnte nicht gesendet werden.");
+        setIsSubmitting(false);
+        return;
+      }
+
       setIsSuccess(true);
-      setIsSubmitting(false);
       e.currentTarget.reset();
-    }, 600);
+    } catch {
+      setSubmitError("Netzwerkfehler. Bitte prüft eure Verbindung und versucht es erneut.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   if (isSuccess) {
     return (
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-8 text-center">
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center sm:p-8">
         <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-text-inverse">
           <Send className="h-6 w-6" />
         </div>
         <h3 className="font-heading text-xl font-bold text-text-primary">Vielen Dank für eure Anfrage!</h3>
         <p className="mt-2 text-text-secondary">
-          Wir haben eure Nachricht erhalten und melden uns in Kürze bei euch. Bis bald — eure Panda-Bande!
+          Wir haben eure Nachricht erhalten und melden uns in Kürze bei euch. Bis bald — eure
+          Panda-Bande!
         </p>
-        <Button className="mt-6" onClick={() => setIsSuccess(false)}>
+        <Button className="mt-6 w-full sm:w-auto" onClick={() => setIsSuccess(false)}>
           Neue Anfrage senden
         </Button>
       </div>
@@ -76,6 +96,11 @@ export function InquiryForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+      {submitError && (
+        <div className="rounded-lg border border-accent-heart/30 bg-accent-heart/5 p-4 text-sm text-accent-heart">
+          {submitError}
+        </div>
+      )}
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="name" className={labelClass}>
@@ -126,7 +151,9 @@ export function InquiryForm() {
             className={inputClass}
             placeholder="z. B. 12"
           />
-          {errors.childrenCount && <p className="mt-1 text-sm text-accent-heart">{errors.childrenCount}</p>}
+          {errors.childrenCount && (
+            <p className="mt-1 text-sm text-accent-heart">{errors.childrenCount}</p>
+          )}
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -178,9 +205,9 @@ export function InquiryForm() {
           name="privacy"
           type="checkbox"
           defaultChecked
-          className="mt-1 h-[18px] w-[18px] accent-primary"
+          className="mt-1 h-5 w-5 accent-primary"
         />
-        <label htmlFor="privacy" className="text-sm text-text-secondary">
+        <label htmlFor="privacy" className="text-sm leading-relaxed text-text-secondary">
           Ich stimme der{" "}
           <Link href="/datenschutz" className="text-primary underline hover:no-underline">
             Datenschutzerklärung
@@ -189,7 +216,7 @@ export function InquiryForm() {
         </label>
       </div>
       {errors.privacy && <p className="text-sm text-accent-heart">{errors.privacy}</p>}
-      <Button type="submit" disabled={isSubmitting} icon={<Send className="h-4 w-4" />}>
+      <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto" icon={<Send className="h-4 w-4" />}>
         {isSubmitting ? "Wird gesendet..." : "Anfrage senden"}
       </Button>
     </form>

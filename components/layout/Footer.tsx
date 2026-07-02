@@ -1,5 +1,5 @@
 import { Instagram, MessageCircle } from "lucide-react";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 import { Logo } from "@/components/ui/Logo";
 import { Container } from "@/components/ui/Container";
 

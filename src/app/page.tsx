@@ -10,7 +10,7 @@ import { Testimonials } from "@/components/sections/Testimonials";
 import { About } from "@/components/sections/About";
 import { Faq } from "@/components/sections/Faq";
 import { Contact } from "@/components/sections/Contact";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 import { faqs } from "@/lib/faqs";
 
 const jsonLd = {

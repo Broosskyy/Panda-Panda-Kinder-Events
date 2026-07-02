@@ -2,39 +2,61 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.2.0] — 2026-07-02
+
+### Sprint 1 Polish + Sprint 2 Start
+
+#### Sprint 1 Polish
+- **Zentrale Config** unter `src/config/site.ts` mit klar markierten Platzhaltern
+- **Originales Logo** aus `public/assets/logo.png` (kein nachgebautes SVG mehr)
+- **Instagram-Link** korrigiert auf offizielles Profil
+- **Mobile Optimierung:** größere Buttons (min. 48px), bessere Abstände, volle Breite CTAs auf Smartphone
+- Platzhalterseiten Impressum, Datenschutz, AGB bestätigt
+
+#### Formular (echte Anfragen)
+- API Route `POST /api/inquiry` mit Zod-Validierung
+- Speicherung in Supabase (`booking_requests`)
+- E-Mail-Benachrichtigung via Resend an `manuel.bauch0705@gmail.com`
+- Success- und Fehler-Feedback im UI
+- `.env.example` mit allen benötigten Variablen
+
+#### Sprint 2 — Bewertungen
+- **Fake-Bewertungen entfernt** aus öffentlicher Anzeige
+- Demo-Daten nur in Config (`showDemoReviews: false`)
+- **Bewertungsformular:** Name, Event-Art, Sterne 1–5, Text
+- Neue Bewertungen mit `approved=false` in Supabase
+- Öffentliche Sektion zeigt nur freigegebene Bewertungen
+- Leerer Zustand: „Noch keine öffentlichen Bewertungen vorhanden."
+
+#### Admin (`/admin`)
+- Geschützt via `ADMIN_PASSWORD` (Cookie-Session)
+- Buchungsanfragen anzeigen und Status ändern
+- Bewertungen anzeigen, freigeben oder ablehnen
+
+#### Supabase
+- Schema in `supabase/schema.sql`
+- Tabellen: `booking_requests`, `reviews`
+- Client in `lib/supabase/admin.ts`
+
+#### Bekannte offene Punkte
+- `public/assets/logo.png` muss mit dem originalen Logo befüllt werden
+- Supabase-Schema muss im SQL Editor ausgeführt werden
+- `.env.local` / Vercel ENV-Variablen müssen gesetzt werden
+- Resend: Absender-Domain für Production verifizieren
+
+---
+
 ## [0.1.0] — 2026-07-02
 
 ### Sprint 1 — MVP Landing Page
 
 #### Hinzugefügt
 - **Next.js 15** App Router mit TypeScript und Tailwind CSS 4
-- **Single-Page Landing Page** mit allen Mockup-Sektionen:
-  - Sticky Header mit Navigation und Mobile Burger-Menü
-  - Hero mit Blob-Bild, Lisa-Profilkarte und Trust Badges
-  - USP / Vorteile-Sektion (4 Spalten)
-  - Leistungen-Grid (8 Karten)
-  - Buchungsablauf in 5 Schritten mit Panda-Illustration
-  - Galerie mit Instagram-CTA
-  - Bewertungen (Slider mobil, 3 Karten Desktop)
-  - Über uns
-  - FAQ Accordion (8 Fragen)
-  - Kontaktbereich mit Anfrageformular und Kontaktdaten
-  - Footer mit Impressum, Datenschutz, AGB
-  - Floating WhatsApp Button
-- **Anfrageformular** mit Zod-Validierung und lokaler Success-Meldung
+- **Single-Page Landing Page** mit allen Mockup-Sektionen
+- **Anfrageformular** mit Zod-Validierung (lokal)
 - **Platzhalterseiten:** `/impressum`, `/datenschutz`, `/agb`
-- **404-Seite** im Markendesign
-- **SEO:** Meta-Tags, Open Graph, JSON-LD (LocalBusiness, FAQPage)
-- **Design-System:** Farben, Typografie und Komponenten aus `docs/02_BRANDING/Design-System.md`
-- **Logo & Panda-Illustration** als SVG
-- **Daten-Dateien** in `lib/` für Services, FAQs, Testimonials etc.
+- **SEO:** Meta-Tags, Open Graph, JSON-LD
+- **Design-System** aus Dokumentation
 
-#### Technik
-- Mobile-first, responsive für Smartphone, Tablet und Desktop
-- Vercel-ready (statischer Export-fähiger Build)
-- Keine Datenbank, kein Login, kein Backend
-
-#### Bewusst nicht enthalten (spätere Sprints)
-- E-Mail-Versand (Formular zeigt lokale Erfolgsmeldung)
-- Supabase / Admin / Blog / Event-Katalog
-- Galerie Lightbox
+#### Bewusst nicht enthalten
+- E-Mail-Versand, Datenbank, Admin (→ Sprint 2)

@@ -48,7 +48,7 @@ export function Header() {
           </nav>
 
           <div className="flex items-center gap-3">
-            <Button href="#kontakt" className="hidden sm:inline-flex text-sm px-5 py-2.5">
+            <Button href="#kontakt" className="hidden text-sm sm:inline-flex">
               Jetzt anfragen
             </Button>
             <button

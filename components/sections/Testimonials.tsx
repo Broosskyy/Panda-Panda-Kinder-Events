@@ -8,6 +8,7 @@ import { ReviewForm } from "@/components/ui/ReviewForm";
 import { StarRating } from "@/components/ui/StarRating";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { PandaMascot } from "@/components/ui/PandaMascot";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -39,29 +40,28 @@ function getInitials(name: string) {
 function ReviewCard({ review }: { review: PublicReview }) {
   return (
     <Card className="flex h-full flex-col" padding="lg" hover={false}>
-      <div className="mb-5 flex items-start justify-between gap-4">
+      <StarRating rating={review.rating} size="xl" className="mb-6" />
+
+      <blockquote className="flex-1 font-heading text-lg leading-relaxed text-text-primary md:text-xl md:leading-9">
+        &ldquo;{review.text}&rdquo;
+      </blockquote>
+
+      <div className="mt-8 flex items-center justify-between gap-4 border-t border-border/50 pt-6">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-primary">
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-base font-semibold text-primary shadow-sm">
             {getInitials(review.name)}
           </div>
           <div>
             <p className="font-semibold text-text-primary">{review.name}</p>
             <p className="text-sm text-text-muted">{review.event_type}</p>
+            <p className="mt-1 text-sm text-text-muted">{formatReviewDate(review.created_at)}</p>
           </div>
         </div>
-        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
-          <BadgeCheck className="h-3.5 w-3.5" aria-hidden />
+        <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-2 text-xs font-semibold text-primary sm:inline-flex">
+          <BadgeCheck className="h-4 w-4" aria-hidden />
           Verifizierte Buchung
         </span>
       </div>
-
-      <StarRating rating={review.rating} size="lg" className="mb-4" />
-
-      <blockquote className="flex-1 text-base leading-relaxed text-text-secondary">
-        &ldquo;{review.text}&rdquo;
-      </blockquote>
-
-      <p className="mt-5 text-sm text-text-muted">{formatReviewDate(review.created_at)}</p>
     </Card>
   );
 }
@@ -74,15 +74,15 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
   const displayAverage = average.toFixed(1).replace(".", ",");
 
   return (
-    <div className="mb-10 flex flex-col items-center gap-3 text-center md:mb-14">
-      <StarRating rating={5} size="lg" />
+    <div className="mb-12 flex flex-col items-center gap-4 text-center md:mb-16">
+      <StarRating rating={5} size="xl" />
       <div className="flex items-baseline gap-2">
-        <span className="font-heading text-4xl font-bold text-text-primary md:text-5xl">
+        <span className="font-heading text-5xl font-bold text-text-primary md:text-6xl">
           {displayAverage}
         </span>
-        <span className="text-lg text-text-muted">/ 5</span>
+        <span className="text-xl text-text-muted">/ 5</span>
       </div>
-      <p className="text-sm text-text-muted md:text-base">
+      <p className="text-base text-text-muted md:text-lg">
         {count} {count === 1 ? "Bewertung" : "Bewertungen"}
       </p>
     </div>
@@ -121,7 +121,7 @@ export function Testimonials() {
   };
 
   return (
-    <section id="bewertungen" className="scroll-mt-24 section-padding bg-bg-secondary/30">
+    <section id="bewertungen" className="scroll-mt-24 section-padding bg-bg-warm/50">
       <Container>
         <ScrollReveal>
           <SectionHeading
@@ -133,8 +133,8 @@ export function Testimonials() {
         {loading ? (
           <div className="mx-auto max-w-md space-y-4" aria-live="polite" aria-busy="true">
             <p className="sr-only">Bewertungen werden geladen</p>
-            <div className="skeleton mx-auto h-8 w-32 rounded-full" />
-            <div className="skeleton h-48 rounded-[var(--radius-card)]" />
+            <div className="skeleton mx-auto h-10 w-36 rounded-full" />
+            <div className="skeleton h-56 rounded-[var(--radius-card)]" />
           </div>
         ) : (
           <>
@@ -142,41 +142,38 @@ export function Testimonials() {
 
             {total === 0 ? (
               <ScrollReveal>
-                <div className="mx-auto max-w-xl text-center">
-                  <Card padding="lg" hover={false}>
-                    <p className="text-lg text-text-secondary">
-                      Noch keine öffentlichen Bewertungen vorhanden.
-                    </p>
-                    <p className="mt-3 text-sm leading-relaxed text-text-muted md:text-base">
-                      Seid die Ersten — teilt eure Erfahrung mit der Panda-Bande!
-                    </p>
-                    <Button className="mt-8 w-full sm:w-auto" size="lg" onClick={scrollToForm}>
-                      Jetzt erste Bewertung abgeben
-                    </Button>
-                  </Card>
-                </div>
+                <Card padding="lg" hover={false} className="mx-auto max-w-xl text-center">
+                  <PandaMascot size={110} className="mx-auto mb-6" />
+                  <p className="font-heading text-2xl font-bold text-text-primary">
+                    Noch keine öffentlichen Bewertungen
+                  </p>
+                  <p className="mx-auto mt-4 max-w-sm text-lg leading-relaxed text-text-secondary">
+                    Seid die Ersten — teilt eure Erfahrung mit der Panda-Bande!
+                  </p>
+                  <Button className="mt-10 w-full shadow-lg sm:w-auto" size="lg" onClick={scrollToForm}>
+                    Jetzt erste Bewertung schreiben
+                  </Button>
+                </Card>
               </ScrollReveal>
             ) : (
               <>
-                {/* Mobile swipe */}
                 <div className="lg:hidden">
                   <div
-                    className="swipe-track -mx-5 px-5"
+                    className="swipe-track -mx-5 gap-5 px-5"
                     role="region"
                     aria-label="Bewertungen — horizontal scrollen"
                   >
                     {reviews.map((review) => (
-                      <div key={review.id} className="swipe-item w-[min(90vw,24rem)]">
+                      <div key={review.id} className="swipe-item w-[min(92vw,26rem)]">
                         <ReviewCard review={review} />
                       </div>
                     ))}
                   </div>
                 </div>
 
-                {/* Desktop: 3 cards */}
-                <div className="hidden gap-6 lg:grid lg:grid-cols-3">
+                <div className="hidden gap-8 lg:grid lg:grid-cols-3">
                   {reviews.slice(0, 3).map((review, i) => (
-                    <ScrollReveal key={review.id} delay={i * 100}>
+                    <ScrollReveal key={review.id} delay={i * 120}>
                       <ReviewCard review={review} />
                     </ScrollReveal>
                   ))}
@@ -186,7 +183,7 @@ export function Testimonials() {
           </>
         )}
 
-        <div ref={formRef} id="bewertung-form" className="mx-auto mt-14 max-w-xl scroll-mt-28">
+        <div ref={formRef} id="bewertung-form" className="mx-auto mt-16 max-w-xl scroll-mt-28">
           <ScrollReveal>
             <ReviewForm />
           </ScrollReveal>

@@ -2,6 +2,46 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.5.0] — 2026-07-02
+
+### Final Premium Design Sprint V3 (Pixel Perfect)
+
+Visuelles Feintuning auf Boutique-Agentur-Niveau — ausschließlich Design/UI/UX. Keine neuen Features, keine Änderungen an Supabase, Resend, Admin oder Formularlogik.
+
+#### Hero (Schwerpunkt)
+- Größeres emotionales Bild mit Overflow-Effekt und Hero-Schatten
+- „Hallo, ich bin Lisa!"-Badge schwebt über dem Bild
+- Blumenornamente, mehr Weißraum, kürzerer Text
+- Stärkere CTAs mit Premium-Schatten
+
+#### Design System V3
+- Erweiterte Schatten (`shadow-hero`, `shadow-float`)
+- Card-Radius 24px, beige Service-Karten
+- Warme Hintergrundtöne (`bg-warm`)
+- Floating Labels im Kontaktformular (visuell)
+- Footer mit Olive-Gradient
+
+#### Sektionen
+- **Header:** Höher, größeres Logo, elegantere Navigation
+- **Leistungen:** Beige Premium-Karten, größere Icons
+- **Warum Panda-Bande:** Größere Icons, emotionalere Karten
+- **Über uns:** Boutique-Layout mit Panda-Akzent
+- **Buchungsablauf:** Elegantere Timeline-Verbindungen
+- **Galerie:** Instagram-Feeling, langsamer Hover-Zoom
+- **Bewertungen:** Airbnb-Niveau, größere Sterne, Panda Empty State
+- **FAQ:** Premium Accordion mit animiertem Icon
+- **Kontakt:** Luxuriöses Formular mit Floating Labels
+- **Footer:** Gradient, Panda-Illustration, größeres Logo
+
+#### Panda-Elemente
+- `PandaMascot` in Empty State, Success-Meldungen, Footer, About
+- `FlowerOrnament` in Hero, About, Kontakt
+
+#### Dokumentation
+- `docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md`
+
+---
+
 ## [0.4.0] — 2026-07-02
 
 ### Accessibility / Barrierefreiheit Sprint

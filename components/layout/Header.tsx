@@ -45,10 +45,10 @@ export function Header() {
   }, [isMenuOpen]);
 
   const navLinkClass = (isActive: boolean) =>
-    `rounded-full px-4 py-2.5 text-base font-medium transition-all duration-200 min-h-11 inline-flex items-center ${focusRing} ${
+    `rounded-full px-5 py-2.5 text-[0.95rem] font-medium tracking-wide transition-all duration-300 min-h-11 inline-flex items-center ${focusRing} ${
       isActive
-        ? "bg-primary/10 text-primary"
-        : "text-text-secondary hover:bg-bg-secondary hover:text-primary"
+        ? "bg-primary/12 text-primary"
+        : "text-text-secondary hover:bg-bg-secondary/80 hover:text-primary"
     }`;
 
   return (
@@ -60,10 +60,10 @@ export function Header() {
             : "bg-bg-primary/60 backdrop-blur-sm"
         }`}
       >
-        <div className="mx-auto flex h-[4.5rem] max-w-[1200px] items-center justify-between px-5 md:h-20 md:px-10">
-          <Logo size="large" />
+        <div className="mx-auto flex h-20 max-w-[1240px] items-center justify-between px-5 md:h-[5.5rem] md:px-12">
+          <Logo size="xl" />
 
-          <nav className="hidden items-center gap-1 lg:flex" aria-label="Hauptnavigation">
+          <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
             {navigation.map((item) => {
               const id = item.href.replace("#", "");
               const isActive = activeId === id;
@@ -79,7 +79,7 @@ export function Header() {
             <Button
               href="#kontakt"
               size="default"
-              className="hidden sm:inline-flex"
+              className="hidden shadow-lg sm:inline-flex"
               icon={<Calendar className="h-4 w-4" aria-hidden />}
             >
               Jetzt anfragen

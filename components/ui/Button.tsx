@@ -13,15 +13,16 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-text-inverse hover:bg-primary-hover shadow-md hover:shadow-lg active:scale-[0.98]",
+    "bg-primary text-text-inverse hover:bg-primary-hover shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
   secondary:
-    "bg-bg-card text-text-primary border border-primary/40 hover:border-primary hover:bg-bg-secondary shadow-sm",
-  ghost: "bg-transparent text-text-primary border border-border hover:bg-bg-secondary",
+    "bg-bg-card text-text-primary border-2 border-primary/25 hover:border-primary/60 hover:bg-bg-secondary shadow-sm hover:shadow-md",
+  ghost:
+    "bg-transparent text-text-primary border border-border hover:bg-bg-secondary hover:border-primary/30",
 };
 
 const sizes = {
-  default: "min-h-12 min-w-12 px-7 py-3.5 text-base",
-  lg: "min-h-14 min-w-14 px-8 py-4 text-base",
+  default: "min-h-12 min-w-12 px-8 py-3.5 text-base tracking-wide",
+  lg: "min-h-[3.75rem] min-w-[3.75rem] px-10 py-4 text-base font-semibold tracking-wide",
 };
 
 export function Button({

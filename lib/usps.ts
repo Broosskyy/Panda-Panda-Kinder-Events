@@ -10,26 +10,26 @@ export interface Usp {
 export const usps: Usp[] = [
   {
     icon: Heart,
-    title: "Liebevolle Betreuung",
+    title: "Mit Herz",
     description:
-      "Unser Team kümmert sich mit Geduld und Herz um jedes Kind — damit ihr euren Tag in vollen Zügen genießen könnt.",
+      "Liebevolle Betreuung mit Geduld und Einfühlungsvermögen — jedes Kind fühlt sich gesehen.",
   },
   {
     icon: Palette,
-    title: "Kreative Programme",
+    title: "Kreativ",
     description:
-      "Von Kinderschminken über Basteln bis zu Bewegungsspielen — altersgerecht und voller Ideen.",
-  },
-  {
-    icon: PartyPopper,
-    title: "Entspannte Eltern",
-    description:
-      "Wir übernehmen die Kinderbetreuung, damit ihr als Gastgeber oder Gast entspannt feiern könnt.",
+      "Altersgerechte Programme voller Ideen — von Schminken bis zu Bewegungsspielen.",
   },
   {
     icon: Sparkles,
-    title: "Zuverlässig & professionell",
+    title: "Professionell",
     description:
-      "Pünktlich, vorbereitet und mit klaren Absprachen — damit euer Event reibungslos verläuft.",
+      "Geschultes Team, klare Absprachen und zuverlässige Umsetzung auf höchstem Niveau.",
+  },
+  {
+    icon: PartyPopper,
+    title: "Zuverlässig",
+    description:
+      "Pünktlich, vorbereitet und flexibel — damit euer Event reibungslos verläuft.",
   },
 ];

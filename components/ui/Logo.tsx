@@ -7,42 +7,43 @@ import { siteConfig } from "@/config/site";
 interface LogoProps {
   variant?: "default" | "inverse";
   className?: string;
-  showText?: boolean;
+  size?: "default" | "large";
 }
 
-export function Logo({ variant = "default", className = "", showText = true }: LogoProps) {
+export function Logo({ variant = "default", className = "", size = "default" }: LogoProps) {
   const [imgError, setImgError] = useState(false);
   const textColor = variant === "inverse" ? "text-text-inverse" : "text-text-primary";
   const subColor = variant === "inverse" ? "text-white/80" : "text-text-muted";
+  const heightClass = size === "large" ? "h-14 md:h-[4.5rem]" : "h-12 md:h-14";
 
   return (
     <a
       href="#startseite"
-      className={`flex items-center gap-3 ${className}`}
+      className={`flex items-center ${className}`}
       aria-label="Panda-Bande Kinderevents — Startseite"
     >
       {!imgError ? (
-        <div className="relative h-12 w-auto shrink-0 md:h-14">
+        <div className={`relative w-auto shrink-0 ${heightClass}`}>
           <Image
             src={siteConfig.assets.logo}
             alt={siteConfig.assets.logoAlt}
-            width={160}
-            height={56}
-            className="h-12 w-auto object-contain md:h-14"
+            width={200}
+            height={72}
+            className={`${heightClass} w-auto object-contain`}
             priority
             onError={() => setImgError(true)}
           />
         </div>
-      ) : showText ? (
+      ) : (
         <div className="leading-tight">
-          <span className={`block text-xs font-bold tracking-[0.15em] md:text-sm ${textColor}`}>
+          <span className={`block text-sm font-bold tracking-[0.15em] ${textColor}`}>
             PANDA-BANDE
           </span>
-          <span className={`block font-heading text-[10px] tracking-widest md:text-xs ${subColor}`}>
+          <span className={`block font-heading text-xs tracking-widest ${subColor}`}>
             KINDEREVENTS
           </span>
         </div>
-      ) : null}
+      )}
     </a>
   );
 }

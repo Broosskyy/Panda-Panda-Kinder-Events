@@ -4,7 +4,7 @@ Unvergessliche Kinderfeiern und Familien-Events — digital präsentiert, persö
 
 ## Projektstatus
 
-🟢 **Sprint 1 abgeschlossen** — MVP Landing Page implementiert, Vercel-ready.
+🟢 **Sprint 2 gestartet** — Formular, Bewertungen, Admin; Vercel-ready nach ENV-Setup.
 
 ## Entwicklung
 

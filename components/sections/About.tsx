@@ -1,52 +1,89 @@
 import Image from "next/image";
-import { siteConfig } from "@/config/site";
+import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 export function About() {
   return (
-    <section id="ueber-uns" className="scroll-mt-24 py-16 md:py-20">
+    <section id="ueber-uns" className="scroll-mt-24 section-padding">
       <Container>
-        <SectionHeading title="Über uns" subtitle="Die Panda-Bande — mit Herz für kleine Abenteurer." />
-        <div className="grid items-center gap-10 lg:grid-cols-2">
-          <div>
-            <p className="text-base leading-relaxed text-text-secondary md:text-lg">
-              {siteConfig.name} wurde aus der Überzeugung geboren, dass Kinder auf Feiern
-              nicht nur geduldet, sondern begeistert werden sollten. Unser Team aus erfahrenen
-              Betreuern sorgt dafür, dass eure kleinen Gäste sich wohlfühlen, Spaß haben und
-              voller schöner Erinnerungen nach Hause gehen.
+        <ScrollReveal>
+          <SectionHeading
+            title="Über uns"
+            subtitle="Die Panda-Bande — mit Herz für kleine Abenteurer."
+          />
+        </ScrollReveal>
+
+        <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
+          <ScrollReveal>
+            <div className="relative">
+              <div
+                className="relative aspect-[4/5] overflow-hidden shadow-lg"
+                style={{ borderRadius: "1.5rem 4rem 1.5rem 1.5rem" }}
+              >
+                <Image
+                  src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=800&h=1000&fit=crop&q=80"
+                  alt="Lisa — Gründerin der Panda-Bande Kinderevents"
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  loading="lazy"
+                />
+              </div>
+              <p className="font-accent mt-5 text-center text-2xl text-primary lg:text-left">
+                Mit Herz für kleine Abenteurer.{" "}
+                <span className="text-accent-heart" aria-hidden>
+                  ♡
+                </span>
+              </p>
+            </div>
+          </ScrollReveal>
+
+          <ScrollReveal delay={150}>
+            <p className="font-accent text-xl text-primary md:text-2xl">
+              Hallo, ich bin Lisa — die Gründerin der Panda-Bande.
             </p>
-            <p className="mt-4 text-base leading-relaxed text-text-secondary md:text-lg">
-              Ob Hochzeit, Geburtstag oder Firmenevent — wir gestalten altersgerechte Programme
-              mit Kreativität, Geduld und echter Freude. Damit ihr als Eltern oder Gastgeber
-              entspannt feiern könnt.
+            <p className="mt-6 text-base leading-relaxed text-text-secondary md:text-lg md:leading-8">
+              Panda-Bande entstand aus einer einfachen Überzeugung: Kinder gehören auf Feiern
+              nicht an den Rand, sondern ins Herz des Moments. Als Mutter und leidenschaftliche
+              Kinderbetreuerin wollte ich einen Ort schaffen, an dem kleine Gäste sich wirklich
+              gesehen und verstanden fühlen.
             </p>
-            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+            <p className="mt-5 text-base leading-relaxed text-text-secondary md:text-lg md:leading-8">
+              Was als Herzensprojekt begann, ist heute ein erfahrenes Team aus Betreuern, die
+              mit Kreativität, Geduld und echter Freude arbeiten. Ob Hochzeit, Geburtstag oder
+              Firmenevent — wir sorgen dafür, dass eure kleinen Gäste strahlen und ihr als
+              Eltern oder Gastgeber entspannt feiern könnt.
+            </p>
+
+            <div className="mt-10 grid gap-4 sm:grid-cols-2">
               {[
-                { label: "Mission", text: "Magische Momente für Kinder — sorgenfreie Erlebnisse für Familien." },
-                { label: "Werte", text: "Spaß, Sicherheit, Inklusion, Vertrauen und Qualität." },
+                {
+                  label: "Unsere Mission",
+                  text: "Magische Momente für Kinder — sorgenfreie Erlebnisse für Familien.",
+                },
+                {
+                  label: "Unsere Werte",
+                  text: "Herzlichkeit, Sicherheit, Kreativität und Verlässlichkeit.",
+                },
               ].map((item) => (
-                <div key={item.label} className="rounded-xl border border-border bg-bg-card p-5">
+                <div
+                  key={item.label}
+                  className="rounded-[var(--radius-card)] border border-border bg-bg-card p-6 shadow-sm"
+                >
                   <p className="text-sm font-semibold text-primary">{item.label}</p>
-                  <p className="mt-1 text-sm text-text-secondary">{item.text}</p>
+                  <p className="mt-2 text-sm leading-relaxed text-text-secondary md:text-base">
+                    {item.text}
+                  </p>
                 </div>
               ))}
             </div>
-          </div>
-          <div className="relative">
-            <div className="relative aspect-[4/3] overflow-hidden rounded-2xl">
-              <Image
-                src="https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&h=600&fit=crop"
-                alt="Panda-Bande Team bei der Arbeit"
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-            </div>
-            <div className="absolute -bottom-4 -right-4 hidden h-24 w-24 md:block">
-              <Image src="/panda-illustration.svg" alt="" width={96} height={96} />
-            </div>
-          </div>
+
+            <Button href="#kontakt" size="lg" className="mt-10 w-full sm:w-auto">
+              Lernt uns kennen
+            </Button>
+          </ScrollReveal>
         </div>
       </Container>
     </section>

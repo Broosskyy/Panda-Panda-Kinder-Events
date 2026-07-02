@@ -1,16 +1,17 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Send } from "lucide-react";
+import { Check, Send } from "lucide-react";
 import Link from "next/link";
 import { eventTypes } from "@/lib/faqs";
 import { inquirySchema, type InquiryFormData } from "@/lib/validation";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-bg-card px-4 py-3.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 min-h-[48px]";
+  "w-full rounded-xl border border-border bg-bg-card px-4 py-4 text-base text-text-primary placeholder:text-text-muted transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 min-h-[52px]";
 
-const labelClass = "mb-2 block text-sm font-medium text-text-primary";
+const labelClass = "mb-2.5 block text-sm font-medium text-text-primary";
 
 export function InquiryForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof InquiryFormData, string>>>({});
@@ -78,26 +79,28 @@ export function InquiryForm() {
 
   if (isSuccess) {
     return (
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center sm:p-8">
-        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-text-inverse">
-          <Send className="h-6 w-6" />
+      <Card padding="lg" hover={false} className="text-center">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-text-inverse shadow-md">
+          <Check className="h-8 w-8" />
         </div>
-        <h3 className="font-heading text-xl font-bold text-text-primary">Vielen Dank für eure Anfrage!</h3>
-        <p className="mt-2 text-text-secondary">
+        <h3 className="font-heading text-2xl font-bold text-text-primary">
+          Vielen Dank für eure Anfrage!
+        </h3>
+        <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-text-secondary">
           Wir haben eure Nachricht erhalten und melden uns in Kürze bei euch. Bis bald — eure
           Panda-Bande!
         </p>
-        <Button className="mt-6 w-full sm:w-auto" onClick={() => setIsSuccess(false)}>
+        <Button className="mt-8 w-full sm:w-auto" size="lg" onClick={() => setIsSuccess(false)}>
           Neue Anfrage senden
         </Button>
-      </div>
+      </Card>
     );
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5" noValidate>
       {submitError && (
-        <div className="rounded-lg border border-accent-heart/30 bg-accent-heart/5 p-4 text-sm text-accent-heart">
+        <div className="rounded-xl border border-accent-heart/30 bg-accent-heart/5 p-4 text-sm text-accent-heart">
           {submitError}
         </div>
       )}
@@ -107,14 +110,14 @@ export function InquiryForm() {
             Name *
           </label>
           <input id="name" name="name" type="text" required className={inputClass} placeholder="Euer Name" />
-          {errors.name && <p className="mt-1 text-sm text-accent-heart">{errors.name}</p>}
+          {errors.name && <p className="mt-1.5 text-sm text-accent-heart">{errors.name}</p>}
         </div>
         <div>
           <label htmlFor="phone" className={labelClass}>
             Telefon *
           </label>
           <input id="phone" name="phone" type="tel" required className={inputClass} placeholder="+49 ..." />
-          {errors.phone && <p className="mt-1 text-sm text-accent-heart">{errors.phone}</p>}
+          {errors.phone && <p className="mt-1.5 text-sm text-accent-heart">{errors.phone}</p>}
         </div>
       </div>
       <div>
@@ -122,7 +125,7 @@ export function InquiryForm() {
           E-Mail *
         </label>
         <input id="email" name="email" type="email" required className={inputClass} placeholder="eure@email.de" />
-        {errors.email && <p className="mt-1 text-sm text-accent-heart">{errors.email}</p>}
+        {errors.email && <p className="mt-1.5 text-sm text-accent-heart">{errors.email}</p>}
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
@@ -136,7 +139,7 @@ export function InquiryForm() {
               </option>
             ))}
           </select>
-          {errors.eventType && <p className="mt-1 text-sm text-accent-heart">{errors.eventType}</p>}
+          {errors.eventType && <p className="mt-1.5 text-sm text-accent-heart">{errors.eventType}</p>}
         </div>
         <div>
           <label htmlFor="childrenCount" className={labelClass}>
@@ -152,7 +155,7 @@ export function InquiryForm() {
             placeholder="z. B. 12"
           />
           {errors.childrenCount && (
-            <p className="mt-1 text-sm text-accent-heart">{errors.childrenCount}</p>
+            <p className="mt-1.5 text-sm text-accent-heart">{errors.childrenCount}</p>
           )}
         </div>
       </div>
@@ -162,14 +165,14 @@ export function InquiryForm() {
             Datum *
           </label>
           <input id="date" name="date" type="date" required className={inputClass} />
-          {errors.date && <p className="mt-1 text-sm text-accent-heart">{errors.date}</p>}
+          {errors.date && <p className="mt-1.5 text-sm text-accent-heart">{errors.date}</p>}
         </div>
         <div>
           <label htmlFor="time" className={labelClass}>
             Uhrzeit *
           </label>
           <input id="time" name="time" type="time" required className={inputClass} />
-          {errors.time && <p className="mt-1 text-sm text-accent-heart">{errors.time}</p>}
+          {errors.time && <p className="mt-1.5 text-sm text-accent-heart">{errors.time}</p>}
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
@@ -184,7 +187,7 @@ export function InquiryForm() {
             Ort / Location *
           </label>
           <input id="location" name="location" type="text" required className={inputClass} placeholder="Adresse" />
-          {errors.location && <p className="mt-1 text-sm text-accent-heart">{errors.location}</p>}
+          {errors.location && <p className="mt-1.5 text-sm text-accent-heart">{errors.location}</p>}
         </div>
       </div>
       <div>
@@ -205,7 +208,7 @@ export function InquiryForm() {
           name="privacy"
           type="checkbox"
           defaultChecked
-          className="mt-1 h-5 w-5 accent-primary"
+          className="mt-1.5 h-5 w-5 accent-primary"
         />
         <label htmlFor="privacy" className="text-sm leading-relaxed text-text-secondary">
           Ich stimme der{" "}
@@ -216,7 +219,13 @@ export function InquiryForm() {
         </label>
       </div>
       {errors.privacy && <p className="text-sm text-accent-heart">{errors.privacy}</p>}
-      <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto" icon={<Send className="h-4 w-4" />}>
+      <Button
+        type="submit"
+        disabled={isSubmitting}
+        size="lg"
+        className="w-full"
+        icon={<Send className="h-4 w-4" />}
+      >
         {isSubmitting ? "Wird gesendet..." : "Anfrage senden"}
       </Button>
     </form>

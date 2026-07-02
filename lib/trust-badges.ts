@@ -8,7 +8,7 @@ export interface TrustBadge {
 
 export const trustBadges: TrustBadge[] = [
   { icon: Award, text: "Erfahrenes Team" },
-  { icon: Heart, text: "Mit Herz dabei" },
+  { icon: Heart, text: "Mit Herz" },
   { icon: Shield, text: "Sicher & zuverlässig" },
-  { icon: MapPin, text: "Bundesweit im Einsatz" },
+  { icon: MapPin, text: "NRW & Umgebung" },
 ];

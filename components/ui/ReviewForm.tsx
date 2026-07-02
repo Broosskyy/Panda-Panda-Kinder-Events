@@ -1,11 +1,15 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Star } from "lucide-react";
+import { Check, Star } from "lucide-react";
 import { eventTypes } from "@/lib/faqs";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 const inputClass =
-  "w-full rounded-lg border border-border bg-bg-card px-4 py-3.5 text-base text-text-primary placeholder:text-text-muted transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
+  "w-full rounded-xl border border-border bg-bg-card px-4 py-4 text-base text-text-primary placeholder:text-text-muted transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 min-h-[52px]";
+
+const labelClass = "mb-2.5 block text-sm font-medium text-text-primary";
 
 export function ReviewForm() {
   const [name, setName] = useState("");
@@ -56,100 +60,103 @@ export function ReviewForm() {
 
   if (success) {
     return (
-      <div className="rounded-2xl border border-primary/20 bg-primary/5 p-6 text-center">
-        <p className="font-medium text-text-primary">{success}</p>
-        <button
-          type="button"
-          onClick={() => setSuccess("")}
-          className="mt-4 text-sm text-primary underline"
-        >
+      <Card padding="lg" hover={false} className="text-center">
+        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-text-inverse shadow-md">
+          <Check className="h-8 w-8" />
+        </div>
+        <p className="text-lg font-medium text-text-primary">{success}</p>
+        <Button className="mt-6 w-full sm:w-auto" variant="secondary" onClick={() => setSuccess("")}>
           Weitere Bewertung abgeben
-        </button>
-      </div>
+        </Button>
+      </Card>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl border border-border bg-bg-card p-6">
-      <h3 className="font-heading text-lg font-bold text-text-primary">Bewertung abgeben</h3>
-      <div>
-        <label htmlFor="review-name" className="mb-2 block text-sm font-medium">
-          Name *
-        </label>
-        <input
-          id="review-name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          required
-          className={inputClass}
-          placeholder="Euer Name"
-        />
-      </div>
-      <div>
-        <label htmlFor="review-event" className="mb-2 block text-sm font-medium">
-          Event-Art *
-        </label>
-        <select
-          id="review-event"
-          value={eventType}
-          onChange={(e) => setEventType(e.target.value)}
-          required
-          className={inputClass}
-        >
-          {eventTypes.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div>
-        <p className="mb-2 text-sm font-medium">Sterne *</p>
-        <div className="flex gap-1">
-          {[1, 2, 3, 4, 5].map((star) => (
-            <button
-              key={star}
-              type="button"
-              onClick={() => setRating(star)}
-              onMouseEnter={() => setHoverRating(star)}
-              onMouseLeave={() => setHoverRating(0)}
-              className="p-1"
-              aria-label={`${star} Sterne`}
-            >
-              <Star
-                className={`h-7 w-7 ${
-                  star <= (hoverRating || rating)
-                    ? "fill-accent-gold text-accent-gold"
-                    : "text-border"
-                }`}
-              />
-            </button>
-          ))}
+    <Card padding="lg" hover={false}>
+      <h3 className="font-heading text-xl font-bold text-text-primary md:text-2xl">
+        Bewertung abgeben
+      </h3>
+      <p className="mt-2 text-sm text-text-muted">
+        Eure Bewertung wird nach Prüfung veröffentlicht.
+      </p>
+
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+        <div>
+          <label htmlFor="review-name" className={labelClass}>
+            Name *
+          </label>
+          <input
+            id="review-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            className={inputClass}
+            placeholder="Euer Name"
+          />
         </div>
-      </div>
-      <div>
-        <label htmlFor="review-text" className="mb-2 block text-sm font-medium">
-          Bewertungstext *
-        </label>
-        <textarea
-          id="review-text"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          required
-          minLength={10}
-          rows={4}
-          className={inputClass}
-          placeholder="Erzählt uns von eurer Erfahrung..."
-        />
-      </div>
-      {error && <p className="text-sm text-accent-heart">{error}</p>}
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-full bg-primary py-3.5 text-sm font-medium text-white disabled:opacity-50 sm:w-auto sm:px-8"
-      >
-        {loading ? "Wird gesendet..." : "Bewertung absenden"}
-      </button>
-    </form>
+        <div>
+          <label htmlFor="review-event" className={labelClass}>
+            Event-Art *
+          </label>
+          <select
+            id="review-event"
+            value={eventType}
+            onChange={(e) => setEventType(e.target.value)}
+            required
+            className={inputClass}
+          >
+            {eventTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <p className={labelClass}>Sterne *</p>
+          <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                onClick={() => setRating(star)}
+                onMouseEnter={() => setHoverRating(star)}
+                onMouseLeave={() => setHoverRating(0)}
+                className="flex h-12 w-12 items-center justify-center rounded-xl transition-colors hover:bg-bg-secondary"
+                aria-label={`${star} Sterne`}
+              >
+                <Star
+                  className={`h-8 w-8 transition-colors ${
+                    star <= (hoverRating || rating)
+                      ? "fill-accent-gold text-accent-gold"
+                      : "text-border"
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+        <div>
+          <label htmlFor="review-text" className={labelClass}>
+            Bewertungstext *
+          </label>
+          <textarea
+            id="review-text"
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            required
+            minLength={10}
+            rows={4}
+            className={inputClass}
+            placeholder="Erzählt uns von eurer Erfahrung..."
+          />
+        </div>
+        {error && <p className="text-sm text-accent-heart">{error}</p>}
+        <Button type="submit" disabled={loading} size="lg" className="w-full">
+          {loading ? "Wird gesendet..." : "Bewertung absenden"}
+        </Button>
+      </form>
+    </Card>
   );
 }

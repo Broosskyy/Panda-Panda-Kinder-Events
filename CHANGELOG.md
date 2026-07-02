@@ -2,6 +2,44 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.3.0] — 2026-07-02
+
+### Premium UI/UX Sprint V2
+
+Visuelles und UX-Upgrade auf Premium-Niveau (Apple × Airbnb × Boutique). Keine neuen Features — alle bestehenden Funktionen (Supabase, Resend, Admin, Bewertungen, Kontaktformular) bleiben erhalten.
+
+#### Design System
+- Konsequente Farbpalette: Olive Green, Warm Beige, Soft Gold
+- Einheitliche Premium-Karten (`.card-premium`) mit Radius, Schatten, Hover
+- Verbesserte Typografie, Zeilenhöhen und Weißraum
+- Dezente Scroll-Reveal-Animationen
+
+#### Mobile First
+- Leistungen: horizontaler Swipe-Slider mit größeren Icons und Texten
+- Buchungsablauf: vertikale Timeline mit Verbindungslinie
+- Galerie: Swipe-Galerie mit Lightbox
+- Bewertungen: horizontaler Swipe mit großen Karten
+- Größere Touch-Targets, Thumb-friendly Buttons, Safe-Area für WhatsApp-FAB
+
+#### Sektionen
+- **Header:** Größeres Logo, Sticky mit Blur, aktive Navigation, elegantes Burger-Menü
+- **Hero:** Mockup-nah mit emotionalem Bild, Lisa-Karte, Trust-Badges
+- **Warum Panda-Bande:** Vier Premium-USP-Karten
+- **Leistungen:** Desktop 4×2 Grid, Mobile Swipe
+- **Buchungsablauf:** Desktop 5-Schritte-Timeline, Mobile vertikal
+- **Galerie:** Masonry Grid (Desktop), Lightbox, Lazy Loading
+- **Bewertungen:** Airbnb-Qualität — Rating-Summary, verifizierte Buchung, Empty State
+- **Über uns:** Persönliche Gründerin-Story mit emotionalem Bild
+- **FAQ:** Weichere Accordion-Animation, größere Touchflächen
+- **Kontakt:** 2-Spalten Desktop, größere Eingabefelder, klarere Success-Meldung
+- **Footer:** Erweitert mit Kontakt, Social, Rechtlichem
+
+#### Neue UI-Komponenten
+- `Card`, `ScrollReveal`, `StarRating`, `Lightbox`
+- `useActiveSection` Hook für aktive Navigation
+
+---
+
 ## [0.2.0] — 2026-07-02
 
 ### Sprint 1 Polish + Sprint 2 Start

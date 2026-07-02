@@ -1,16 +1,16 @@
 import Image from "next/image";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 import { trustBadges } from "@/lib/trust-badges";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 
 export function Hero() {
   return (
-    <section id="startseite" className="scroll-mt-24 pt-28 pb-12 md:pt-32 md:pb-20">
+    <section id="startseite" className="scroll-mt-24 pt-24 pb-10 sm:pt-28 sm:pb-12 md:pt-32 md:pb-20">
       <Container>
         <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
           <div>
-            <h1 className="font-heading text-4xl font-bold leading-tight text-text-primary md:text-5xl">
+            <h1 className="font-heading text-3xl font-bold leading-tight text-text-primary sm:text-4xl md:text-5xl">
               {siteConfig.name}
             </h1>
             <p className="font-accent mt-3 text-2xl text-primary md:text-[1.375rem]">
@@ -24,9 +24,11 @@ export function Hero() {
               Wir sorgen dafür, dass eure kleinen Gäste strahlen — und ihr entspannt
               feiern könnt.
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-              <Button href="#kontakt">Jetzt anfragen</Button>
-              <Button href="#leistungen" variant="secondary">
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+              <Button href="#kontakt" className="w-full sm:w-auto">
+                Jetzt anfragen
+              </Button>
+              <Button href="#leistungen" variant="secondary" className="w-full sm:w-auto">
                 Unsere Leistungen
               </Button>
             </div>

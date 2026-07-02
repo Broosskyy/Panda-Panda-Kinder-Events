@@ -1,5 +1,5 @@
 import { MessageCircle } from "lucide-react";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 
 export function WhatsAppFab() {
   return (

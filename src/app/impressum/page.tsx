@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 
 export const metadata: Metadata = {
   title: "Impressum",

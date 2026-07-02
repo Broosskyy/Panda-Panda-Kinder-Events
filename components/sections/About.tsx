@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 

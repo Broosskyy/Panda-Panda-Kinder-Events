@@ -1,6 +1,6 @@
 import Image from "next/image";
 import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
-import { siteConfig } from "@/lib/site-config";
+import { siteConfig } from "@/config/site";
 import { InquiryForm } from "@/components/ui/InquiryForm";
 import { Container } from "@/components/ui/Container";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -73,11 +73,11 @@ export function Contact() {
             </div>
             <div className="mt-10 hidden text-center lg:block">
               <Image
-                src="/logo.svg"
-                alt="Panda-Bande Logo"
-                width={120}
-                height={120}
-                className="mx-auto"
+                src={siteConfig.assets.logo}
+                alt={siteConfig.assets.logoAlt}
+                width={160}
+                height={56}
+                className="mx-auto h-24 w-auto object-contain"
               />
               <p className="font-accent mt-4 text-2xl text-primary">
                 Mit Herz für kleine Abenteurer. <span className="text-accent-heart">♡</span>

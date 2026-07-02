@@ -10,10 +10,22 @@ Unvergessliche Kinderfeiern und Familien-Events — digital präsentiert, persö
 
 ```bash
 npm install
+cp .env.example .env.local   # Werte eintragen
 npm run dev      # http://localhost:3000
 npm run build    # Production Build
 npm run lint     # ESLint
 ```
+
+### Umgebungsvariablen
+
+Siehe `.env.example` — benötigt für volle Funktionalität:
+- **Supabase** (Anfragen & Bewertungen speichern)
+- **Resend** (E-Mail an manuel.bauch0705@gmail.com)
+- **ADMIN_PASSWORD** (Admin-Bereich unter `/admin`)
+
+### Logo
+
+Originales Logo nach `public/assets/logo.png` legen (siehe `public/assets/README.md`).
 
 ## Projektstruktur
 
@@ -40,22 +52,11 @@ npm run lint     # ESLint
 | [Roadmap](docs/05_ROADMAP/Roadmap.md) | Entwicklungsphasen V0–V4 |
 | [V1 To-do-Liste](docs/05_ROADMAP/V1-Todo-Liste.md) | Konkrete Aufgaben für Version 1 |
 
-## Ordnerstruktur
+## Nächste Schritte (Sprint 2)
 
-```
-/
-├── docs/
-│   ├── 01_VISION/       # Vision & Strategie
-│   ├── 02_BRANDING/     # Markenrichtlinien
-│   ├── 03_FEATURES/     # Feature-Spezifikation
-│   ├── 04_TECH/         # Technische Dokumentation
-│   └── 05_ROADMAP/      # Entwicklungs-Roadmap
-├── src/                 # Quellcode (App, Seiten, Styles)
-├── components/          # Wiederverwendbare UI-Komponenten
-├── lib/                 # Hilfsfunktionen und Utilities
-└── public/              # Statische Assets (Bilder, Fonts, Favicon)
-```
+- E-Mail-Versand für Anfrageformular (Resend/SendGrid)
+- Echte Fotos und finale Texte von Panda-Bande einpflegen
+- Rechtstexte durch Anwalt prüfen lassen
+- Vercel Deployment mit Custom Domain
 
-## Nächste Schritte
-
-Siehe [Roadmap](docs/05_ROADMAP/Roadmap.md) — Phase 1: MVP Website.
+Siehe [Roadmap](docs/05_ROADMAP/Roadmap.md) und [CHANGELOG.md](CHANGELOG.md).

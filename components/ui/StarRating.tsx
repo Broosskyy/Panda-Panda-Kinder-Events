@@ -15,13 +15,18 @@ const sizeMap = {
 
 export function StarRating({ rating, max = 5, size = "md", className = "" }: StarRatingProps) {
   return (
-    <div className={`flex gap-0.5 ${className}`} aria-label={`${rating} von ${max} Sternen`}>
+    <div
+      role="img"
+      className={`flex gap-0.5 ${className}`}
+      aria-label={`${rating} von ${max} Sternen`}
+    >
       {Array.from({ length: max }).map((_, i) => (
         <Star
           key={i}
           className={`${sizeMap[size]} ${
-            i < rating ? "fill-accent-gold text-accent-gold" : "text-border"
+            i < rating ? "fill-accent-gold text-accent-gold" : "text-text-muted/50"
           }`}
+          aria-hidden
         />
       ))}
     </div>

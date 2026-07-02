@@ -16,7 +16,11 @@ export function Services() {
         </ScrollReveal>
 
         {/* Mobile: horizontal swipe slider */}
-        <div className="swipe-track -mx-5 px-5 md:hidden">
+        <div
+          className="swipe-track -mx-5 px-5 md:hidden"
+          role="region"
+          aria-label="Leistungen — horizontal scrollen"
+        >
           {services.map((service) => (
             <div key={service.title} className="swipe-item w-[min(85vw,20rem)]">
               <Card className="h-full" padding="lg">

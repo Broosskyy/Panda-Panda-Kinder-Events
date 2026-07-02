@@ -43,7 +43,7 @@ export function Hero() {
               {trustBadges.map((badge) => (
                 <div key={badge.text} className="flex flex-col items-center gap-2 text-center sm:items-start sm:text-left">
                   <badge.icon className="h-5 w-5 shrink-0 text-primary" strokeWidth={1.5} aria-hidden />
-                  <span className="text-xs font-medium leading-snug text-text-primary sm:text-sm">
+                  <span className="text-sm font-medium leading-snug text-text-primary">
                     {badge.text}
                   </span>
                 </div>
@@ -77,7 +77,7 @@ export function Hero() {
                 </div>
                 <div>
                   <p className="font-semibold text-text-primary">Lisa</p>
-                  <p className="text-xs text-text-muted">Gründerin der Panda-Bande</p>
+                  <p className="text-sm text-text-muted">Gründerin der Panda-Bande</p>
                   <p className="mt-2 text-sm leading-relaxed italic text-text-secondary">
                     &ldquo;Jedes Kind verdient einen Tag voller Abenteuer.&rdquo;
                   </p>

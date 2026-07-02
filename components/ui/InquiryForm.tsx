@@ -5,13 +5,17 @@ import { Check, Send } from "lucide-react";
 import Link from "next/link";
 import { eventTypes } from "@/lib/faqs";
 import { inquirySchema, type InquiryFormData } from "@/lib/validation";
+import { inputClassName, labelClassName } from "@/lib/a11y";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 
-const inputClass =
-  "w-full rounded-xl border border-border bg-bg-card px-4 py-4 text-base text-text-primary placeholder:text-text-muted transition-all focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15 min-h-[52px]";
-
-const labelClass = "mb-2.5 block text-sm font-medium text-text-primary";
+function FieldError({ id, message }: { id: string; message: string }) {
+  return (
+    <p id={id} role="alert" className="mt-1.5 text-sm font-medium text-accent-heart">
+      {message}
+    </p>
+  );
+}
 
 export function InquiryForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof InquiryFormData, string>>>({});
@@ -80,8 +84,12 @@ export function InquiryForm() {
   if (isSuccess) {
     return (
       <Card padding="lg" hover={false} className="text-center">
-        <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-text-inverse shadow-md">
-          <Check className="h-8 w-8" />
+        <div
+          role="status"
+          aria-live="polite"
+          className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-text-inverse shadow-md"
+        >
+          <Check className="h-8 w-8" aria-hidden />
         </div>
         <h3 className="font-heading text-2xl font-bold text-text-primary">
           Vielen Dank für eure Anfrage!
@@ -98,52 +106,102 @@ export function InquiryForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+    <form onSubmit={handleSubmit} className="space-y-5" noValidate aria-label="Anfrageformular">
       {submitError && (
-        <div className="rounded-xl border border-accent-heart/30 bg-accent-heart/5 p-4 text-sm text-accent-heart">
+        <div
+          role="alert"
+          aria-live="assertive"
+          className="rounded-xl border border-accent-heart/40 bg-accent-heart/5 p-4 text-base font-medium text-accent-heart"
+        >
           {submitError}
         </div>
       )}
+      <p className="text-sm text-text-muted">
+        Mit <span className="text-accent-heart">*</span> markierte Felder sind Pflichtfelder.
+      </p>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="name" className={labelClass}>
-            Name *
+          <label htmlFor="name" className={labelClassName}>
+            Name <span className="text-accent-heart" aria-hidden>*</span>
+            <span className="sr-only">(Pflichtfeld)</span>
           </label>
-          <input id="name" name="name" type="text" required className={inputClass} placeholder="Euer Name" />
-          {errors.name && <p className="mt-1.5 text-sm text-accent-heart">{errors.name}</p>}
+          <input
+            id="name"
+            name="name"
+            type="text"
+            required
+            aria-required="true"
+            aria-invalid={!!errors.name}
+            aria-describedby={errors.name ? "name-error" : undefined}
+            className={inputClassName}
+            placeholder="Euer Name"
+          />
+          {errors.name && <FieldError id="name-error" message={errors.name} />}
         </div>
         <div>
-          <label htmlFor="phone" className={labelClass}>
-            Telefon *
+          <label htmlFor="phone" className={labelClassName}>
+            Telefon <span className="text-accent-heart" aria-hidden>*</span>
+            <span className="sr-only">(Pflichtfeld)</span>
           </label>
-          <input id="phone" name="phone" type="tel" required className={inputClass} placeholder="+49 ..." />
-          {errors.phone && <p className="mt-1.5 text-sm text-accent-heart">{errors.phone}</p>}
+          <input
+            id="phone"
+            name="phone"
+            type="tel"
+            required
+            aria-required="true"
+            aria-invalid={!!errors.phone}
+            aria-describedby={errors.phone ? "phone-error" : undefined}
+            className={inputClassName}
+            placeholder="+49 ..."
+          />
+          {errors.phone && <FieldError id="phone-error" message={errors.phone} />}
         </div>
       </div>
       <div>
-        <label htmlFor="email" className={labelClass}>
-          E-Mail *
+        <label htmlFor="email" className={labelClassName}>
+          E-Mail <span className="text-accent-heart" aria-hidden>*</span>
+          <span className="sr-only">(Pflichtfeld)</span>
         </label>
-        <input id="email" name="email" type="email" required className={inputClass} placeholder="eure@email.de" />
-        {errors.email && <p className="mt-1.5 text-sm text-accent-heart">{errors.email}</p>}
+        <input
+          id="email"
+          name="email"
+          type="email"
+          required
+          aria-required="true"
+          aria-invalid={!!errors.email}
+          aria-describedby={errors.email ? "email-error" : undefined}
+          className={inputClassName}
+          placeholder="eure@email.de"
+        />
+        {errors.email && <FieldError id="email-error" message={errors.email} />}
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="eventType" className={labelClass}>
-            Art der Veranstaltung *
+          <label htmlFor="eventType" className={labelClassName}>
+            Art der Veranstaltung <span className="text-accent-heart" aria-hidden>*</span>
+            <span className="sr-only">(Pflichtfeld)</span>
           </label>
-          <select id="eventType" name="eventType" required className={inputClass}>
+          <select
+            id="eventType"
+            name="eventType"
+            required
+            aria-required="true"
+            aria-invalid={!!errors.eventType}
+            aria-describedby={errors.eventType ? "eventType-error" : undefined}
+            className={inputClassName}
+          >
             {eventTypes.map((type) => (
               <option key={type} value={type}>
                 {type}
               </option>
             ))}
           </select>
-          {errors.eventType && <p className="mt-1.5 text-sm text-accent-heart">{errors.eventType}</p>}
+          {errors.eventType && <FieldError id="eventType-error" message={errors.eventType} />}
         </div>
         <div>
-          <label htmlFor="childrenCount" className={labelClass}>
-            Anzahl der Kinder *
+          <label htmlFor="childrenCount" className={labelClassName}>
+            Anzahl der Kinder <span className="text-accent-heart" aria-hidden>*</span>
+            <span className="sr-only">(Pflichtfeld)</span>
           </label>
           <input
             id="childrenCount"
@@ -151,54 +209,94 @@ export function InquiryForm() {
             type="number"
             min="1"
             required
-            className={inputClass}
+            aria-required="true"
+            aria-invalid={!!errors.childrenCount}
+            aria-describedby={errors.childrenCount ? "childrenCount-error" : undefined}
+            className={inputClassName}
             placeholder="z. B. 12"
           />
           {errors.childrenCount && (
-            <p className="mt-1.5 text-sm text-accent-heart">{errors.childrenCount}</p>
+            <FieldError id="childrenCount-error" message={errors.childrenCount} />
           )}
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="date" className={labelClass}>
-            Datum *
+          <label htmlFor="date" className={labelClassName}>
+            Datum <span className="text-accent-heart" aria-hidden>*</span>
+            <span className="sr-only">(Pflichtfeld)</span>
           </label>
-          <input id="date" name="date" type="date" required className={inputClass} />
-          {errors.date && <p className="mt-1.5 text-sm text-accent-heart">{errors.date}</p>}
+          <input
+            id="date"
+            name="date"
+            type="date"
+            required
+            aria-required="true"
+            aria-invalid={!!errors.date}
+            aria-describedby={errors.date ? "date-error" : undefined}
+            className={inputClassName}
+          />
+          {errors.date && <FieldError id="date-error" message={errors.date} />}
         </div>
         <div>
-          <label htmlFor="time" className={labelClass}>
-            Uhrzeit *
+          <label htmlFor="time" className={labelClassName}>
+            Uhrzeit <span className="text-accent-heart" aria-hidden>*</span>
+            <span className="sr-only">(Pflichtfeld)</span>
           </label>
-          <input id="time" name="time" type="time" required className={inputClass} />
-          {errors.time && <p className="mt-1.5 text-sm text-accent-heart">{errors.time}</p>}
+          <input
+            id="time"
+            name="time"
+            type="time"
+            required
+            aria-required="true"
+            aria-invalid={!!errors.time}
+            aria-describedby={errors.time ? "time-error" : undefined}
+            className={inputClassName}
+          />
+          {errors.time && <FieldError id="time-error" message={errors.time} />}
         </div>
       </div>
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="duration" className={labelClass}>
+          <label htmlFor="duration" className={labelClassName}>
             Dauer
           </label>
-          <input id="duration" name="duration" type="text" className={inputClass} placeholder="z. B. 4 Stunden" />
+          <input
+            id="duration"
+            name="duration"
+            type="text"
+            className={inputClassName}
+            placeholder="z. B. 4 Stunden"
+          />
         </div>
         <div>
-          <label htmlFor="location" className={labelClass}>
-            Ort / Location *
+          <label htmlFor="location" className={labelClassName}>
+            Ort / Location <span className="text-accent-heart" aria-hidden>*</span>
+            <span className="sr-only">(Pflichtfeld)</span>
           </label>
-          <input id="location" name="location" type="text" required className={inputClass} placeholder="Adresse" />
-          {errors.location && <p className="mt-1.5 text-sm text-accent-heart">{errors.location}</p>}
+          <input
+            id="location"
+            name="location"
+            type="text"
+            required
+            aria-required="true"
+            aria-invalid={!!errors.location}
+            aria-describedby={errors.location ? "location-error" : undefined}
+            className={inputClassName}
+            placeholder="Adresse"
+          />
+          {errors.location && <FieldError id="location-error" message={errors.location} />}
         </div>
       </div>
       <div>
-        <label htmlFor="message" className={labelClass}>
+        <label htmlFor="message" className={labelClassName}>
           Nachricht
         </label>
         <textarea
           id="message"
           name="message"
           rows={4}
-          className={inputClass}
+          className={inputClassName}
           placeholder="Besonderheiten, Wünsche, Allergien..."
         />
       </div>
@@ -208,23 +306,30 @@ export function InquiryForm() {
           name="privacy"
           type="checkbox"
           defaultChecked
-          className="mt-1.5 h-5 w-5 accent-primary"
+          required
+          aria-required="true"
+          aria-invalid={!!errors.privacy}
+          aria-describedby={errors.privacy ? "privacy-error" : undefined}
+          className="mt-1.5 h-6 w-6 accent-primary"
         />
-        <label htmlFor="privacy" className="text-sm leading-relaxed text-text-secondary">
+        <label htmlFor="privacy" className="text-base leading-relaxed text-text-secondary">
           Ich stimme der{" "}
           <Link href="/datenschutz" className="text-primary underline hover:no-underline">
             Datenschutzerklärung
           </Link>{" "}
-          zu und bin einverstanden, dass meine Daten zur Bearbeitung der Anfrage gespeichert werden. *
+          zu und bin einverstanden, dass meine Daten zur Bearbeitung der Anfrage gespeichert werden.{" "}
+          <span className="text-accent-heart" aria-hidden>*</span>
+          <span className="sr-only">(Pflichtfeld)</span>
         </label>
       </div>
-      {errors.privacy && <p className="text-sm text-accent-heart">{errors.privacy}</p>}
+      {errors.privacy && <FieldError id="privacy-error" message={errors.privacy} />}
       <Button
         type="submit"
         disabled={isSubmitting}
         size="lg"
         className="w-full"
-        icon={<Send className="h-4 w-4" />}
+        icon={<Send className="h-4 w-4" aria-hidden />}
+        aria-busy={isSubmitting}
       >
         {isSubmitting ? "Wird gesendet..." : "Anfrage senden"}
       </Button>

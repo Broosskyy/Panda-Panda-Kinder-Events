@@ -8,12 +8,24 @@ interface ScrollRevealProps {
   delay?: number;
 }
 
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
 export function ScrollReveal({ children, className = "", delay = 0 }: ScrollRevealProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+
+    if (prefersReducedMotion()) {
+      el.classList.add("visible");
+      return;
+    }
 
     const observer = new IntersectionObserver(
       ([entry]) => {

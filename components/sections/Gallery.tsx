@@ -25,7 +25,11 @@ export function Gallery() {
         </ScrollReveal>
 
         {/* Mobile: swipe gallery */}
-        <div className="swipe-track -mx-5 px-5 md:hidden">
+        <div
+          className="swipe-track -mx-5 px-5 md:hidden"
+          role="region"
+          aria-label="Galerie — horizontal scrollen"
+        >
           {galleryImages.map((image) => (
             <button
               key={image.src}
@@ -36,7 +40,7 @@ export function Gallery() {
             >
               <Image
                 src={image.src}
-                alt={image.alt}
+                alt=""
                 fill
                 className="object-cover transition-transform duration-500 group-active:scale-105"
                 sizes="75vw"

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useId, useRef } from "react";
 import Image from "next/image";
 import { X } from "lucide-react";
+import { focusRing } from "@/lib/a11y";
 
 interface LightboxProps {
   src: string;
@@ -11,9 +12,16 @@ interface LightboxProps {
 }
 
 export function Lightbox({ src, alt, onClose }: LightboxProps) {
+  const titleId = useId();
+  const closeRef = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
     document.body.style.overflow = "hidden";
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    closeRef.current?.focus();
+
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
     window.addEventListener("keydown", onKey);
     return () => {
       document.body.style.overflow = "";
@@ -27,15 +35,19 @@ export function Lightbox({ src, alt, onClose }: LightboxProps) {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label="Bildansicht"
+      aria-labelledby={titleId}
     >
+      <p id={titleId} className="sr-only">
+        Bildansicht: {alt}
+      </p>
       <button
+        ref={closeRef}
         type="button"
         onClick={onClose}
-        className="absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-        aria-label="Schließen"
+        className={`absolute right-4 top-4 z-10 flex h-12 w-12 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 ${focusRing}`}
+        aria-label="Bildansicht schließen"
       >
-        <X className="h-6 w-6" />
+        <X className="h-6 w-6" aria-hidden />
       </button>
       <div className="relative max-h-[85vh] w-full max-w-4xl" onClick={(e) => e.stopPropagation()}>
         <Image

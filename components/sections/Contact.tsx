@@ -105,7 +105,7 @@ export function Contact() {
               <div className="mt-6 hidden text-center lg:block">
                 <Image
                   src={siteConfig.assets.logo}
-                  alt={siteConfig.assets.logoAlt}
+                  alt=""
                   width={180}
                   height={64}
                   className="mx-auto h-24 w-auto object-contain"

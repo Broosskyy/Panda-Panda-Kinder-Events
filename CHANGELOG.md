@@ -2,6 +2,45 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.4.0] — 2026-07-02
+
+### Accessibility / Barrierefreiheit Sprint
+
+Gezielter Barrierefreiheits-Check ohne neue Features. Ziel: bessere Nutzbarkeit auf Mobile und Desktop, Lighthouse Accessibility 95+.
+
+#### Kontraste & Farben
+- Dunklere Textfarben (`text-secondary`, `text-muted`, `text-placeholder`) für WCAG AA
+- Footer-Kontraste verbessert (`white/80`, `white/90`)
+- Gold-Akzent für Sterne dunkler (`#b8922e`)
+
+#### Tastatur & Focus
+- Globaler sichtbarer `:focus-visible` Outline
+- Skip-Link „Zum Hauptinhalt springen"
+- Escape schließt Burger-Menü und Lightbox
+- Focus-Management beim Öffnen/Schließen von Menü und Lightbox
+
+#### ARIA & Semantik
+- FAQ: `aria-controls`, `aria-expanded`, `aria-labelledby`
+- Swipe-Bereiche: `role="region"` mit beschreibenden Labels
+- Formulare: `aria-invalid`, `aria-describedby`, `role="alert"`, `aria-live`
+- Sterne: `role="img"` / `role="radiogroup"`
+- `main id="main-content"` für Skip-Link
+
+#### Touch & Typografie
+- Mindest-Touchflächen 44–52px für Buttons, FAQ, Formulare
+- Body 16px, Labels und Buttons in `text-base`
+- Hero Trust-Badges mindestens `text-sm`
+
+#### Motion
+- `prefers-reduced-motion` — Animationen deaktiviert/reduziert
+- ScrollReveal respektiert Systemeinstellung
+
+#### Dokumentation
+- `docs/05_ROADMAP/Sprint-Report-Accessibility.md`
+- `docs/05_ROADMAP/Sprint-Report-Premium-UI-UX-V2.md`
+
+---
+
 ## [0.3.0] — 2026-07-02
 
 ### Premium UI/UX Sprint V2

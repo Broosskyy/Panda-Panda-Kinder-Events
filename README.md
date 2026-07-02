@@ -12,6 +12,7 @@ Unvergessliche Kinderfeiern und Familien-Events — digital präsentiert, persö
 |----------|--------------|
 | [Vision](docs/01_VISION/Vision.md) | Mission, Ziele, Zielgruppe und Werte |
 | [Branding](docs/02_BRANDING/Branding.md) | Markenidentität, Farben, Typografie und Designstil |
+| [Design-System](docs/02_BRANDING/Design-System.md) | Vollständiges UI-Design-System (aus Mockup abgeleitet) |
 | [Features](docs/03_FEATURES/Features.md) | Geplante Funktionen und Priorisierung |
 | [Techstack](docs/04_TECH/Techstack.md) | Technische Architektur und Tool-Auswahl |
 | [Roadmap](docs/05_ROADMAP/Roadmap.md) | Entwicklungsphasen und Meilensteine |

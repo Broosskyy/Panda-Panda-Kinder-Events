@@ -42,7 +42,7 @@
 ## Visueller Stil
 
 ### Designrichtung
-**Modern Playful** — eine Mischung aus verspielter Kindlichkeit und professioneller Klarheit.
+**Warm Professional Playful** — vertrauenswürdig für Eltern, einladend für Kinder.
 
 Die Website und alle Markenmaterialien sollen:
 - hell und einladend wirken
@@ -50,24 +50,27 @@ Die Website und alle Markenmaterialien sollen:
 - Illustrationen und Fotos kombinieren
 - auf Mobilgeräten genauso gut funktionieren wie auf dem Desktop
 
-### Farbpalette (Vorschlag)
+> **Vollständiges Design-System:** Siehe [Design-System.md](Design-System.md) — abgeleitet aus dem genehmigten Website-Mockup.
+
+### Farbpalette (finalisiert aus Mockup)
 
 | Farbe | Hex | Verwendung |
 |-------|-----|------------|
-| Panda-Schwarz | `#2D2D2D` | Texte, Akzente, Maskottchen-Konturen |
-| Bambus-Grün | `#6BBF59` | Primärfarbe, CTAs, positive Akzente |
-| Sonnen-Gelb | `#FFD166` | Highlights, Buttons, fröhliche Elemente |
-| Himmel-Blau | `#4ECDC4` | Sekundärfarbe, Hintergründe, Icons |
-| Warm-Weiß | `#FFF9F0` | Haupthintergrund — warm statt steril |
-| Korallen-Rosa | `#FF8A80` | Akzente für Mädchen-/Familien-Elemente (sparsam) |
+| Olivgrün | `#555D42` | Primärfarbe, Buttons, Footer, aktive Icons |
+| Warm-Weiß | `#FDFCF9` | Haupthintergrund |
+| Hell-Beige | `#F4F1EA` | Abwechselnde Sektionen (FAQ, Kontakt) |
+| Anthrazit | `#2C2C2C` | Überschriften |
+| Charcoal | `#4A4A4A` | Fließtext |
+| Gold | `#E8B84A` | Sternebewertungen |
+| Hellgrau | `#E5E2DB` | Rahmen, Trennlinien |
 
-### Typografie (Vorschlag)
+### Typografie (finalisiert aus Mockup)
 
 | Rolle | Schriftart | Charakter |
 |-------|------------|-----------|
-| Überschriften | **Nunito** oder **Quicksand** | Rund, freundlich, gut lesbar |
-| Fließtext | **Inter** oder **Open Sans** | Klar, modern, barrierefrei |
-| Akzente / Spielereien | **Baloo 2** (sparsam) | Verspielt für Event-Titel oder Banner |
+| Überschriften | **Playfair Display** | Elegant, etabliert, Serif |
+| Fließtext | **Montserrat** | Klar, modern, gut lesbar |
+| Akzente / Spielereien | **Caveat** (sparsam) | Handschrift für dekorative Unterzeilen |
 
 ### Bildsprache
 - Echte Kinder in Bewegung — authentisch, nicht gestellt
@@ -105,11 +108,14 @@ Die Website und alle Markenmaterialien sollen:
 4. **Spielerische Akzente** — Illustrationen und Mikro-Animationen, nicht überladen
 5. **Barrierefreiheit** — ausreichende Kontraste, lesbare Schriftgrößen, Alt-Texte
 
-### Komponenten-Stil (für spätere Umsetzung)
-- Abgerundete Ecken (`border-radius: 12–16px`)
-- Weiche Schatten für Karten und Event-Pakete
-- Buttons: kräftig, eindeutig, mit Hover-Feedback
-- Icons: rund, einfarbig oder zweifarbig im Markenstil
+### Komponenten-Stil (finalisiert aus Mockup)
+- Pill-Buttons (vollständig abgerundet) in Olivgrün
+- Karten mit `border-radius: 16px`, dezente Schatten
+- Dünne Line-Art-Icons (1.5–2px Strichstärke)
+- Organische Blob-Formen für Hero-Bilder
+- Sektions-Trenner mit Herz-Icon
+
+Details zu allen Komponenten, Abständen und Tokens: [Design-System.md](Design-System.md)
 
 ---
 

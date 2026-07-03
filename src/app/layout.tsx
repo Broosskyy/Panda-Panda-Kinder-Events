@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Montserrat, Caveat } from "next/font/google";
 import { siteConfig } from "@/config/site";
+import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -56,7 +57,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="de"
       className={`${playfair.variable} ${montserrat.variable} ${caveat.variable}`}
     >
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <AnalyticsProvider>{children}</AnalyticsProvider>
+      </body>
     </html>
   );
 }

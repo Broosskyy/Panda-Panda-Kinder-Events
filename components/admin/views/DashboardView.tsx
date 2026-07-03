@@ -2,52 +2,197 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  BarChart3,
+  Eye,
+  Image,
+  Inbox,
+  Newspaper,
+  Star,
+  Users,
+} from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { Inbox, Image, Newspaper, Star } from "lucide-react";
+import type { AdminAnalyticsDashboard } from "@/lib/analytics/types";
 
-interface Stats {
-  newBookings: number;
-  pendingReviews: number;
-  galleryCount: number;
-  postsCount: number;
+function StatCard({
+  label,
+  value,
+  href,
+  icon: Icon,
+}: {
+  label: string;
+  value: number | string;
+  href?: string;
+  icon: React.ComponentType<{ className?: string }>;
+}) {
+  const content = (
+    <AdminCard className={`h-full ${href ? "transition-shadow hover:shadow-md" : ""}`}>
+      <div className="flex items-center justify-between gap-3">
+        <Icon className="h-7 w-7 shrink-0 text-primary/70" aria-hidden />
+        <span className="font-heading text-2xl font-bold text-text-primary sm:text-3xl">{value}</span>
+      </div>
+      <p className="mt-2 text-sm font-medium text-text-secondary">{label}</p>
+    </AdminCard>
+  );
+
+  return href ? <Link href={href}>{content}</Link> : content;
+}
+
+function MiniBarChart({
+  title,
+  data,
+  dataKey,
+}: {
+  title: string;
+  data: { date: string; views: number; visitors: number }[];
+  dataKey: "views" | "visitors";
+}) {
+  const max = Math.max(...data.map((d) => d[dataKey]), 1);
+
+  return (
+    <AdminCard title={title}>
+      {data.length === 0 ? (
+        <p className="text-sm text-text-muted">Noch keine Daten vorhanden.</p>
+      ) : (
+        <div className="flex h-36 items-end gap-1.5 sm:gap-2">
+          {data.map((row) => {
+            const height = Math.max(8, Math.round((row[dataKey] / max) * 100));
+            const label = new Date(row.date).toLocaleDateString("de-DE", {
+              day: "2-digit",
+              month: "2-digit",
+            });
+            return (
+              <div key={row.date} className="flex flex-1 flex-col items-center gap-1">
+                <span className="text-[10px] font-medium text-text-muted">{row[dataKey]}</span>
+                <div
+                  className="w-full rounded-t-md bg-primary/80 transition-all"
+                  style={{ height: `${height}%` }}
+                  title={`${label}: ${row[dataKey]}`}
+                />
+                <span className="text-[10px] text-text-muted">{label}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </AdminCard>
+  );
 }
 
 export function DashboardView() {
-  const [stats, setStats] = useState<Stats | null>(null);
+  const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("/api/admin/dashboard")
       .then((r) => r.json())
-      .then(setStats);
+      .then((data) => {
+        if (data.error) throw new Error(data.error);
+        setStats(data);
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : "Laden fehlgeschlagen"));
   }, []);
 
-  const cards = [
-    { label: "Neue Anfragen", value: stats?.newBookings ?? "—", href: "/admin/anfragen", icon: Inbox },
-    { label: "Offene Bewertungen", value: stats?.pendingReviews ?? "—", href: "/admin/bewertungen", icon: Star },
-    { label: "Galerie Bilder", value: stats?.galleryCount ?? "—", href: "/admin/galerie", icon: Image },
-    { label: "Beiträge", value: stats?.postsCount ?? "—", href: "/admin/beitraege", icon: Newspaper },
-  ];
-
   return (
-    <div>
+    <div className="space-y-8">
       <AdminPageHeader
         title="Dashboard"
-        description="Willkommen im Panda-Bande CMS — hier siehst du den Überblick."
+        description="Kennzahlen, Besucherstatistik und CMS-Überblick."
       />
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(({ label, value, href, icon: Icon }) => (
-          <Link key={href} href={href}>
-            <AdminCard className="transition-shadow hover:shadow-md">
-              <div className="flex items-center justify-between">
-                <Icon className="h-8 w-8 text-primary/70" aria-hidden />
-                <span className="font-heading text-3xl font-bold text-text-primary">{value}</span>
-              </div>
-              <p className="mt-3 text-sm font-medium text-text-secondary">{label}</p>
-            </AdminCard>
-          </Link>
-        ))}
-      </div>
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+
+      {error ? (
+        <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
+          {error}
+        </p>
+      ) : null}
+
+      <section>
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-semibold text-text-primary">
+          <Users className="h-5 w-5 text-primary" aria-hidden />
+          Besucher
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Gesamtbesucher" value={stats?.visitors.total ?? "—"} icon={Users} />
+          <StatCard label="Besucher heute" value={stats?.visitors.today ?? "—"} icon={Users} />
+          <StatCard label="Letzte 7 Tage" value={stats?.visitors.last7Days ?? "—"} icon={Users} />
+          <StatCard label="Letzte 30 Tage" value={stats?.visitors.last30Days ?? "—"} icon={Users} />
+        </div>
+      </section>
+
+      <section>
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-semibold text-text-primary">
+          <Eye className="h-5 w-5 text-primary" aria-hidden />
+          Seitenaufrufe
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <StatCard label="Seitenaufrufe gesamt" value={stats?.pageViews.total ?? "—"} icon={Eye} />
+          <StatCard label="Aufrufe heute" value={stats?.pageViews.today ?? "—"} icon={Eye} />
+          <StatCard label="Aufrufe 7 Tage" value={stats?.pageViews.last7Days ?? "—"} icon={Eye} />
+          <StatCard label="Aufrufe 30 Tage" value={stats?.pageViews.last30Days ?? "—"} icon={Eye} />
+        </div>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <MiniBarChart title="Besucher — letzte 7 Tage" data={stats?.chart7Days ?? []} dataKey="visitors" />
+        <MiniBarChart title="Seitenaufrufe — letzte 7 Tage" data={stats?.chart7Days ?? []} dataKey="views" />
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <MiniBarChart title="Besucher — letzte 30 Tage" data={stats?.chart30Days ?? []} dataKey="visitors" />
+        <MiniBarChart title="Seitenaufrufe — letzte 30 Tage" data={stats?.chart30Days ?? []} dataKey="views" />
+      </section>
+
+      <section>
+        <AdminCard title="Meistbesuchte Seiten">
+          {!stats?.topPages.length ? (
+            <p className="text-sm text-text-muted">Noch keine Seitenaufrufe erfasst.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[280px] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border text-text-muted">
+                    <th className="pb-2 pr-4 font-medium">Seite</th>
+                    <th className="pb-2 font-medium text-right">Aufrufe</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {stats.topPages.map((page) => (
+                    <tr key={page.path} className="border-b border-border/50">
+                      <td className="py-2.5 pr-4 font-mono text-text-primary">{page.path}</td>
+                      <td className="py-2.5 text-right font-semibold text-text-primary">{page.views}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </AdminCard>
+      </section>
+
+      <section>
+        <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-semibold text-text-primary">
+          <BarChart3 className="h-5 w-5 text-primary" aria-hidden />
+          CMS Kennzahlen
+        </h2>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <StatCard label="Anfragen gesamt" value={stats?.bookings.total ?? "—"} href="/admin/anfragen" icon={Inbox} />
+          <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} />
+          <StatCard label="Bestätigte Anfragen" value={stats?.bookings.confirmed ?? "—"} href="/admin/anfragen" icon={Inbox} />
+          <StatCard label="Bewertungen gesamt" value={stats?.reviews.total ?? "—"} href="/admin/bewertungen" icon={Star} />
+          <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} />
+          <StatCard label="Freigegebene Bewertungen" value={stats?.reviews.approved ?? "—"} href="/admin/bewertungen" icon={Star} />
+          <StatCard label="Galerie-Bilder gesamt" value={stats?.galleryCount ?? "—"} href="/admin/galerie" icon={Image} />
+          <StatCard label="Beiträge gesamt" value={stats?.postsCount ?? "—"} href="/admin/beitraege" icon={Newspaper} />
+        </div>
+      </section>
+
+      {stats && !stats.trackingEnabled ? (
+        <p className="text-sm text-text-muted">
+          Tracking ist deaktiviert (Supabase nicht konfiguriert). Besucherstatistiken sind erst nach Migration und Deploy verfügbar.
+        </p>
+      ) : null}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
           { href: "/admin/inhalte", label: "Hero & Kontakt bearbeiten" },
           { href: "/admin/galerie", label: "Galerie pflegen" },

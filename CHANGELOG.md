@@ -2,6 +2,18 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.2] — 2026-07-03
+
+### Sprint B2 — Admin Statistik-Dashboard
+
+- Erweitertes Admin-Dashboard mit Besucher- und Seitenaufruf-Kennzahlen
+- Eigenes anonymes Tracking über Supabase (`page_views` Tabelle)
+- Cookie-frei: Session-ID in `sessionStorage`, keine IP-Speicherung
+- Diagramme für 7/30 Tage, Tabelle meistbesuchte Seiten
+- CMS-Kennzahlen: Anfragen, Bewertungen, Galerie, Beiträge
+- Vercel Analytics geprüft — nicht integriert (eigenes Tracking bevorzugt)
+- `docs/05_ROADMAP/Statistik-Report.md`
+
 ## [0.8.1] — 2026-07-03
 
 ### CMS Bugfix — Admin speichert, Website übernimmt

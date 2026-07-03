@@ -1,10 +1,19 @@
 import { Instagram, Mail, MapPin, MessageCircle } from "lucide-react";
-import { siteConfig } from "@/config/site";
+import type { SiteContactSettings, SiteFooterSettings } from "@/lib/cms/types";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { ICON_STROKE } from "@/lib/design";
 import { Logo } from "@/components/ui/Logo";
 import { Container } from "@/components/ui/Container";
 
-export function Footer() {
+interface FooterProps {
+  contact?: SiteContactSettings;
+  footer?: SiteFooterSettings;
+}
+
+export function Footer({
+  contact = DEFAULT_SITE_SETTINGS.contact,
+  footer = DEFAULT_SITE_SETTINGS.footer,
+}: FooterProps) {
   return (
     <footer className="footer-premium text-text-inverse">
       <Container className="relative py-12 sm:py-16 md:py-20">
@@ -13,18 +22,16 @@ export function Footer() {
             <Logo variant="inverse" size="large" className="md:hidden" />
             <Logo variant="inverse" size="xl" className="hidden md:block" />
             <p className="font-accent mt-5 max-w-xs text-center text-lg leading-snug text-white/90 sm:mt-6 sm:text-xl md:max-w-none md:text-left md:text-2xl">
-              Mit Herz für kleine Abenteurer. ♡
+              {footer.tagline}
             </p>
           </div>
 
           <div className="text-center md:text-left">
-            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-              Kontakt
-            </p>
+            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">Kontakt</p>
             <ul className="space-y-4 text-base">
               <li>
                 <a
-                  href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+                  href={`https://wa.me/${contact.whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
@@ -35,35 +42,33 @@ export function Footer() {
               </li>
               <li>
                 <a
-                  href={siteConfig.contact.instagram}
+                  href={contact.instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
                 >
                   <Instagram className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                  {siteConfig.contact.instagramHandle}
+                  {contact.instagramHandle}
                 </a>
               </li>
               <li>
                 <a
-                  href={`mailto:${siteConfig.contact.email}`}
+                  href={`mailto:${contact.email}`}
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
                 >
                   <Mail className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                  {siteConfig.contact.email}
+                  {contact.email}
                 </a>
               </li>
               <li className="inline-flex items-center gap-3 text-white/85">
                 <MapPin className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                {siteConfig.contact.location}
+                {contact.location}
               </li>
             </ul>
           </div>
 
           <div className="text-center md:text-right">
-            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">
-              Rechtliches
-            </p>
+            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">Rechtliches</p>
             <nav className="flex flex-col gap-4 text-base" aria-label="Rechtliches">
               <a href="/impressum" className="transition-opacity duration-300 hover:opacity-85">
                 Impressum
@@ -77,7 +82,7 @@ export function Footer() {
             </nav>
             <div className="mt-10 flex items-center justify-center gap-4 md:justify-end">
               <a
-                href={siteConfig.contact.instagram}
+                href={contact.instagram}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="social-pill"
@@ -86,7 +91,7 @@ export function Footer() {
                 <Instagram className="h-5 w-5" strokeWidth={ICON_STROKE} />
               </a>
               <a
-                href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+                href={`https://wa.me/${contact.whatsapp}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="social-pill"
@@ -99,7 +104,7 @@ export function Footer() {
         </div>
 
         <p className="mt-12 border-t border-white/10 pt-7 text-center text-sm text-white/70 sm:mt-16 sm:pt-8 sm:text-base">
-          © {new Date().getFullYear()} {siteConfig.name}. Alle Rechte vorbehalten.
+          © {new Date().getFullYear()} {footer.copyrightName}. Alle Rechte vorbehalten.
         </p>
       </Container>
     </footer>

@@ -1,10 +1,15 @@
 import { MessageCircle } from "lucide-react";
-import { siteConfig } from "@/config/site";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import type { SiteContactSettings } from "@/lib/cms/types";
 
-export function WhatsAppFab() {
+interface WhatsAppFabProps {
+  contact?: SiteContactSettings;
+}
+
+export function WhatsAppFab({ contact = DEFAULT_SITE_SETTINGS.contact }: WhatsAppFabProps) {
   return (
     <a
-      href={`https://wa.me/${siteConfig.contact.whatsapp}`}
+      href={`https://wa.me/${contact.whatsapp}`}
       target="_blank"
       rel="noopener noreferrer"
       className="safe-bottom safe-right fixed z-40 flex h-14 w-14 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-1 hover:shadow-xl active:translate-y-0 md:h-16 md:w-16"

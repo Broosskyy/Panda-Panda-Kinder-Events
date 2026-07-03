@@ -1,30 +1,37 @@
 import Image from "next/image";
 import { Calendar, Heart } from "lucide-react";
-import { siteConfig } from "@/config/site";
 import { trustBadges } from "@/lib/trust-badges";
 import { ICON_STROKE } from "@/lib/design";
+import type { SiteAboutSettings, SiteHeroSettings } from "@/lib/cms/types";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 
-function LisaBadge({ className = "" }: { className?: string }) {
+interface HeroProps {
+  hero?: SiteHeroSettings;
+  about?: Pick<SiteAboutSettings, "founderName" | "imageUrl">;
+}
+
+function LisaBadge({
+  className = "",
+  founderName,
+  imageUrl,
+}: {
+  className?: string;
+  founderName: string;
+  imageUrl: string;
+}) {
   return (
     <div className={`rounded-[var(--radius-card)] bg-bg-card p-4 sm:p-6 ${className}`}>
       <div className="flex items-start gap-3 sm:gap-4">
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-white shadow-md sm:h-16 sm:w-16 sm:ring-[3px]">
-          <Image
-            src="https://images.unsplash.com/photo-1580489944761-15a19d654956?w=128&h=128&fit=crop"
-            alt="Lisa — Gründerin"
-            fill
-            className="object-cover"
-          />
+          <Image src={imageUrl} alt={`${founderName} — Gründerin`} fill className="object-cover" />
         </div>
         <div>
-          <p className="font-accent text-base text-primary sm:text-xl">Hallo, ich bin Lisa!</p>
-          <p className="text-xs font-medium tracking-wide text-text-muted sm:text-sm">
-            Gründerin der Panda-Bande
-          </p>
+          <p className="font-accent text-base text-primary sm:text-xl">Hallo, ich bin {founderName}!</p>
+          <p className="text-xs font-medium tracking-wide text-text-muted sm:text-sm">Gründerin der Panda-Bande</p>
           <p className="mt-1.5 text-xs leading-relaxed text-text-secondary sm:mt-2.5 sm:text-sm sm:leading-relaxed">
             &ldquo;Jedes Kind verdient einen Tag voller Abenteuer.&rdquo;
           </p>
@@ -34,7 +41,7 @@ function LisaBadge({ className = "" }: { className?: string }) {
   );
 }
 
-export function Hero() {
+export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_SETTINGS.about }: HeroProps) {
   return (
     <section
       id="startseite"
@@ -50,16 +57,16 @@ export function Hero() {
         <div className="grid items-center gap-10 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
           <ScrollReveal className="relative z-10 order-1 max-w-xl lg:order-none lg:py-4">
             <p className="font-accent text-xl leading-snug text-primary sm:text-[1.75rem] md:text-[2rem]">
-              {siteConfig.tagline}{" "}
+              {hero.tagline}{" "}
               <span className="text-accent-heart" aria-hidden>
                 ♡
               </span>
             </p>
             <h1 className="font-heading mt-5 text-[2rem] font-bold leading-[1.08] tracking-tight text-text-primary sm:mt-7 sm:text-[2.65rem] md:text-5xl lg:mt-8 lg:text-[3.65rem] lg:leading-[1.04]">
-              {siteConfig.name}
+              {hero.headline}
             </h1>
             <p className="mt-5 max-w-md text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg sm:leading-8 md:text-xl md:leading-9">
-              Liebevolle Kinderbetreuung für eure besonderen Momente.
+              {hero.subtitle}
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
               <Button
@@ -68,7 +75,7 @@ export function Hero() {
                 className="w-full shadow-lg sm:w-auto sm:shadow-xl"
                 icon={<Calendar className="h-5 w-5" aria-hidden />}
               >
-                Jetzt anfragen
+                {hero.ctaPrimary}
               </Button>
               <Button
                 href="#leistungen"
@@ -77,7 +84,7 @@ export function Hero() {
                 className="w-full sm:w-auto"
                 icon={<Heart className="h-5 w-5" aria-hidden />}
               >
-                Unsere Leistungen
+                {hero.ctaSecondary}
               </Button>
             </div>
             <div className="mt-10 grid grid-cols-2 gap-3 border-t border-border/40 pt-8 sm:mt-14 sm:gap-4 sm:pt-10 md:grid-cols-4 lg:gap-6">
@@ -107,11 +114,11 @@ export function Hero() {
             </div>
 
             <div className="hero-badge mt-5 lg:hidden">
-              <LisaBadge className="!bg-transparent !p-0" />
+              <LisaBadge className="!bg-transparent !p-0" founderName={about.founderName} imageUrl={about.imageUrl} />
             </div>
 
             <div className="hero-badge absolute -bottom-8 left-8 z-10 hidden max-w-[300px] bg-bg-card/95 p-1 backdrop-blur-md lg:block">
-              <LisaBadge className="!bg-transparent !p-0" />
+              <LisaBadge className="!bg-transparent !p-0" founderName={about.founderName} imageUrl={about.imageUrl} />
             </div>
           </ScrollReveal>
         </div>

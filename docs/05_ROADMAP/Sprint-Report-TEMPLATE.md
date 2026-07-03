@@ -48,6 +48,6 @@
 
 | Format | Link |
 |--------|------|
-| **Markdown** | [Sprint-Report-[NAME].md herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-[NAME].md) |
-| **PDF** | [Sprint-Report-[NAME].pdf herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-[NAME].pdf) |
+| **Markdown** | [Sprint-Report-[NAME].md herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-[NAME].md) |
+| **PDF** | [Sprint-Report-[NAME].pdf herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-[NAME].pdf) |
 | **Alle Reports** | [Sprint-Reports Übersicht](Sprint-Reports.md) |

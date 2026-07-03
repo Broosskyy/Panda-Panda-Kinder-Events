@@ -154,6 +154,6 @@ Die Website ist auf Smartphones deutlich sauberer, kompakter und angenehmer nutz
 
 | Format | Link |
 |--------|------|
-| **Markdown** | [Sprint-Report-Mobile-Bugfix.md herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Mobile-Bugfix.md) |
-| **PDF** | [Sprint-Report-Mobile-Bugfix.pdf herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Mobile-Bugfix.pdf) |
+| **Markdown** | [Sprint-Report-Mobile-Bugfix.md herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Mobile-Bugfix.md) |
+| **PDF** | [Sprint-Report-Mobile-Bugfix.pdf herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Mobile-Bugfix.pdf) |
 | **Alle Reports** | [Sprint-Reports Übersicht](Sprint-Reports.md) |

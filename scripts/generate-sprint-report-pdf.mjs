@@ -3,7 +3,7 @@
  * Generiert PDF aus einem Sprint-Report Markdown.
  * Usage: node scripts/generate-sprint-report-pdf.mjs Sprint-Report-Mobile-Bugfix
  */
-import { readFileSync, existsSync, mkdirSync } from "fs";
+import { readFileSync, existsSync, mkdirSync, copyFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 
@@ -19,7 +19,9 @@ if (!name) {
 
 const mdPath = join(root, "docs/05_ROADMAP", `${name}.md`);
 const outDir = join(root, "docs/05_ROADMAP/downloads");
+const publicDir = join(root, "public/downloads/sprint-reports");
 const pdfPath = join(outDir, `${name}.pdf`);
+const publicPdfPath = join(publicDir, `${name}.pdf`);
 
 if (!existsSync(mdPath)) {
   console.error(`File not found: ${mdPath}`);
@@ -27,6 +29,7 @@ if (!existsSync(mdPath)) {
 }
 
 mkdirSync(outDir, { recursive: true });
+mkdirSync(publicDir, { recursive: true });
 
 const { mdToPdf } = await import("md-to-pdf");
 
@@ -52,7 +55,9 @@ const pdf = await mdToPdf(
 );
 
 if (pdf?.filename) {
+  copyFileSync(pdfPath, publicPdfPath);
   console.log(`PDF created: ${pdf.filename}`);
+  console.log(`Public copy: ${publicPdfPath}`);
 } else {
   console.error("PDF generation failed");
   process.exit(1);

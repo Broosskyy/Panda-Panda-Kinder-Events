@@ -123,6 +123,6 @@ Nach Deploy mit Chrome DevTools Lighthouse → Accessibility prüfen. Erwarteter
 
 | Format | Link |
 |--------|------|
-| **Markdown** | [Sprint-Report-Accessibility.md herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Accessibility.md) |
-| **PDF** | [Sprint-Report-Accessibility.pdf herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Accessibility.pdf) |
+| **Markdown** | [Sprint-Report-Accessibility.md herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Accessibility.md) |
+| **PDF** | [Sprint-Report-Accessibility.pdf herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Accessibility.pdf) |
 | **Alle Reports** | [Sprint-Reports Übersicht](Sprint-Reports.md) |

@@ -1,62 +1,57 @@
 # Sprint Reports — Direkt-Download
 
-> Nach jedem Sprint liegt hier der Report als **Direkt-Download** (Markdown).  
-> PDF optional via `npm run sprint-report:pdf -- <dateiname-ohne-endung>`
+> Nach jedem Sprint: Report als PDF/Markdown herunterladen.
 
 **Repository:** [Broosskyy/Panda-Panda-Kinder-Events](https://github.com/Broosskyy/Panda-Panda-Kinder-Events)
 
 ---
 
-## Sprint-Reports (Hauptberichte)
+## PDF-Downloads (Direktlinks)
 
-| Version | Sprint | Datum | Markdown (Direkt-Download) |
-|---------|--------|-------|----------------------------|
-| **0.6.0** | Responsive / Mobile Bugfix | 2026-07-03 | [Sprint-Report-Mobile-Bugfix.md](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Mobile-Bugfix.md) |
-| **0.5.0** | Premium Design V3 | 2026-07-02 | [Sprint-Report-Premium-Design-V3.md](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md) |
-| **0.4.0** | Accessibility | 2026-07-02 | [Sprint-Report-Accessibility.md](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Accessibility.md) |
-| **0.3.0** | Premium UI/UX V2 | 2026-07-02 | [Sprint-Report-Premium-UI-UX-V2.md](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Premium-UI-UX-V2.md) |
+| Version | Sprint | PDF herunterladen |
+|---------|--------|-------------------|
+| **0.6.0** | Responsive / Mobile Bugfix | **[Sprint-Report-Mobile-Bugfix.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Mobile-Bugfix.pdf)** |
+| **0.5.0** | Premium Design V3 | **[Sprint-Report-Premium-Design-V3.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Premium-Design-V3.pdf)** |
+| **0.4.0** | Accessibility | **[Sprint-Report-Accessibility.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Accessibility.pdf)** |
+| **0.3.0** | Premium UI/UX V2 | **[Sprint-Report-Premium-UI-UX-V2.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Premium-UI-UX-V2.pdf)** |
 
----
+### Auf der Live-Website (nach Deploy)
 
-## Zusatzberichte
-
-| Thema | Markdown (Direkt-Download) |
-|-------|----------------------------|
-| Mobile Bugfix — technische Bug-Liste | [Mobile-Bugfix-Report.md](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Mobile-Bugfix-Report.md) |
-| Quality Gap — Veröffentlichungsreife | [Quality-Gap-Review.md](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Quality-Gap-Review.md) |
+```
+https://DEINE-DOMAIN/api/downloads/sprint-reports/Sprint-Report-Mobile-Bugfix.pdf
+```
 
 ---
 
-## PDF-Downloads
+## Markdown-Reports
 
-| Version | Sprint | PDF (Direkt-Download) |
-|---------|--------|------------------------|
-| **0.6.0** | Mobile Bugfix | [Sprint-Report-Mobile-Bugfix.pdf](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Mobile-Bugfix.pdf) |
-| **0.5.0** | Premium Design V3 | [Sprint-Report-Premium-Design-V3.pdf](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Premium-Design-V3.pdf) |
-| **0.4.0** | Accessibility | [Sprint-Report-Accessibility.pdf](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Accessibility.pdf) |
-| **0.3.0** | Premium UI/UX V2 | [Sprint-Report-Premium-UI-UX-V2.pdf](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Premium-UI-UX-V2.pdf) |
+| Version | Sprint | Markdown |
+|---------|--------|----------|
+| **0.6.0** | Mobile Bugfix | [Sprint-Report-Mobile-Bugfix.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Mobile-Bugfix.md) |
+| **0.5.0** | Premium Design V3 | [Sprint-Report-Premium-Design-V3.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md) |
+| **0.4.0** | Accessibility | [Sprint-Report-Accessibility.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Accessibility.md) |
+| **0.3.0** | Premium UI/UX V2 | [Sprint-Report-Premium-UI-UX-V2.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Premium-UI-UX-V2.md) |
 
-> PDFs erzeugen: `npm run sprint-report:pdf -- Sprint-Report-Mobile-Bugfix`
+### Zusatzberichte
+
+| Thema | Markdown |
+|-------|----------|
+| Mobile Bugfix — Bug-Liste | [Mobile-Bugfix-Report.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Mobile-Bugfix-Report.md) |
+| Quality Gap — Go-Live | [Quality-Gap-Review.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Quality-Gap-Review.md) |
 
 ---
 
 ## Neuen Sprint-Report anlegen
 
-1. Vorlage kopieren: `Sprint-Report-TEMPLATE.md` → `Sprint-Report-<Name>.md`
-2. Report ausfüllen (Ziel, Ergebnis, Fixes, Verifikation)
-3. Eintrag in **dieser Datei** ergänzen (Markdown + PDF-Zeile)
-4. Download-Block am Ende des Reports einfügen (siehe Vorlage)
+1. Vorlage: `Sprint-Report-TEMPLATE.md` → `Sprint-Report-<Name>.md`
+2. PDF erzeugen: `npm run sprint-report:pdf -- Sprint-Report-<Name>`
+3. Dateiname in `src/app/api/downloads/sprint-reports/[file]/route.ts` → `ALLOWED` ergänzen
+4. Eintrag in **dieser Datei** ergänzen
 5. `CHANGELOG.md` aktualisieren
-6. Optional: `npm run sprint-report:pdf -- Sprint-Report-<Name>`
 
 ---
 
-## Link-Format (für Copy & Paste)
+## Warum Downloads vorher nicht funktionierten
 
-```
-Markdown:
-https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/<DATEINAME>.md
-
-PDF:
-https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/<DATEINAME>.pdf
-```
+Die Links zeigten auf `main`, die Dateien lagen nur auf dem Feature-Branch → **404**.  
+Fix: PDFs in `public/downloads/sprint-reports/` + Merge nach `main`.

@@ -75,6 +75,6 @@ Die technisch funktionierende Website auf Pixel-Perfect-Niveau einer hochwertige
 
 | Format | Link |
 |--------|------|
-| **Markdown** | [Sprint-Report-Premium-Design-V3.md herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md) |
-| **PDF** | [Sprint-Report-Premium-Design-V3.pdf herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Premium-Design-V3.pdf) |
+| **Markdown** | [Sprint-Report-Premium-Design-V3.md herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md) |
+| **PDF** | [Sprint-Report-Premium-Design-V3.pdf herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Premium-Design-V3.pdf) |
 | **Alle Reports** | [Sprint-Reports Übersicht](Sprint-Reports.md) |

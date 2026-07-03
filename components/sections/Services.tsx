@@ -15,22 +15,24 @@ export function Services() {
           />
         </ScrollReveal>
 
-        <div
-          className="swipe-track -mx-5 gap-5 px-5 md:hidden"
-          role="region"
-          aria-label="Leistungen — horizontal scrollen"
-        >
-          {services.map((service) => (
-            <div key={service.title} className="swipe-item w-[min(88vw,22rem)]">
-              <Card className="h-full border-border/80" padding="lg">
-                <service.icon className="mb-5 h-10 w-10 text-primary" strokeWidth={1.25} aria-hidden />
-                <h3 className="text-xl font-semibold text-text-primary">{service.title}</h3>
+        <div className="swipe-bleed md:hidden">
+          <div
+            className="swipe-track"
+            role="region"
+            aria-label="Leistungen — horizontal scrollen"
+          >
+            {services.map((service) => (
+              <div key={service.title} className="swipe-item w-[min(88vw,20rem)] sm:w-[min(85vw,22rem)]">
+                <Card className="h-full border-border/80" padding="md">
+                  <service.icon className="mb-4 h-9 w-9 text-primary sm:mb-5 sm:h-10 sm:w-10" strokeWidth={1.25} aria-hidden />
+                  <h3 className="text-lg font-semibold text-text-primary sm:text-xl">{service.title}</h3>
                 <p className="mt-3 text-base leading-relaxed text-text-secondary">
                   {service.description}
                 </p>
               </Card>
             </div>
           ))}
+          </div>
         </div>
 
         {/* Desktop: weiße Karten mit feiner Linie — Mockup-Stil */}

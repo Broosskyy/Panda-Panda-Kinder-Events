@@ -52,7 +52,7 @@ export function Contact() {
           />
         </ScrollReveal>
 
-        <div className="grid gap-14 lg:grid-cols-2 lg:gap-20">
+        <div className="grid gap-8 sm:gap-10 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal>
             <InquiryForm />
           </ScrollReveal>
@@ -62,9 +62,9 @@ export function Contact() {
               {contactLinks.map((link) => {
                 const Icon = link.icon;
                 const content = (
-                  <Card className="flex items-center gap-5" padding="md" hover>
-                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-bg-secondary">
-                      <Icon className="h-6 w-6 text-primary" strokeWidth={1.5} />
+                  <Card className="flex items-center gap-4 sm:gap-5" padding="md" hover>
+                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-bg-secondary sm:h-14 sm:w-14">
+                      <Icon className="h-5 w-5 text-primary sm:h-6 sm:w-6" strokeWidth={1.5} />
                     </div>
                     <div>
                       <p className="text-base font-semibold text-text-primary">{link.label}</p>

@@ -2,6 +2,39 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.6.0] — 2026-07-03
+
+### Responsive / Mobile Bugfix Sprint
+
+Mobile-first Überarbeitung von Layout, Abständen und Typografie. Keine neuen Features, keine Änderungen an Supabase, Resend, Admin oder Formularlogik.
+
+#### Global
+- `overflow-x: clip` gegen horizontalen Scroll
+- Kompaktere `section-padding` / `section-padding-lg` auf Mobile
+- `.swipe-bleed` für Carousel-Bereiche ohne Viewport-Overflow
+- Mobile Card-Radius 18px, reparierter `prefers-reduced-motion` Block
+
+#### Header
+- Niedrigere Mobile-Höhe (`h-16`), kompakteres Logo
+- CTA im Header erst ab `md`
+- Burger-Menü 48×48px Touchfläche
+
+#### Hero
+- Kompakteres Padding und Typografie
+- Bild früher sichtbar, begrenzte Mobile-Höhe
+- Lisa-Badge im normalen Flow auf Mobile (kein Overlap)
+- Trust-Badges als 2×2 Chips
+
+#### Sections
+- SectionHeading, Cards, Buttons: Mobile-optimierte Größen
+- Services, Galerie, Bewertungen: `swipe-bleed` statt negative Margins
+- Process: kompaktere vertikale Timeline
+- Footer, About, Contact, Usps: reduzierte Abstände
+
+#### Dokumentation
+- `docs/05_ROADMAP/Mobile-Bugfix-Report.md`
+- `docs/05_ROADMAP/Quality-Gap-Review.md`
+
 ## [0.5.0] — 2026-07-02
 
 ### Final Premium Design Sprint V3 (Pixel Perfect)

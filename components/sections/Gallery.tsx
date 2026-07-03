@@ -24,16 +24,17 @@ export function Gallery() {
           />
         </ScrollReveal>
 
-        <div
-          className="swipe-track -mx-5 gap-5 px-5 md:hidden"
-          role="region"
-          aria-label="Galerie — horizontal scrollen"
-        >
-          {galleryImages.map((image) => (
-            <button
-              key={image.src}
-              type="button"
-              className="swipe-item group relative aspect-[4/5] w-[min(80vw,20rem)] overflow-hidden rounded-[var(--radius-card)] shadow-lg"
+        <div className="swipe-bleed md:hidden">
+          <div
+            className="swipe-track"
+            role="region"
+            aria-label="Galerie — horizontal scrollen"
+          >
+            {galleryImages.map((image) => (
+              <button
+                key={image.src}
+                type="button"
+                className="swipe-item group relative aspect-[4/5] w-[min(78vw,18rem)] overflow-hidden rounded-[var(--radius-card-mobile)] shadow-md sm:w-[min(80vw,20rem)] sm:rounded-[var(--radius-card)] sm:shadow-lg"
               onClick={() => setLightboxImage(image)}
               aria-label={`${image.alt} vergrößern`}
             >
@@ -47,6 +48,7 @@ export function Gallery() {
               />
             </button>
           ))}
+          </div>
         </div>
 
         <div className="masonry-grid hidden gap-6 md:block">
@@ -74,7 +76,7 @@ export function Gallery() {
         </div>
 
         <ScrollReveal>
-          <div className="mt-16 text-center">
+          <div className="mt-10 text-center sm:mt-16">
             <Button
               href={siteConfig.contact.instagram}
               size="lg"

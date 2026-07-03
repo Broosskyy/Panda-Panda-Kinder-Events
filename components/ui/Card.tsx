@@ -9,9 +9,9 @@ interface CardProps {
 }
 
 const paddingMap = {
-  sm: "p-6",
-  md: "p-7 sm:p-9",
-  lg: "p-8 sm:p-10 md:p-11",
+  sm: "p-4 sm:p-6",
+  md: "p-5 sm:p-7 md:p-9",
+  lg: "p-5 sm:p-8 md:p-10 lg:p-11",
 };
 
 export function Card({

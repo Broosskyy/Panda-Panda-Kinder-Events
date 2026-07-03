@@ -15,22 +15,22 @@ export function Process() {
           />
         </ScrollReveal>
 
-        <div className="grid items-center gap-14 lg:grid-cols-[1fr_auto] lg:gap-20">
+        <div className="grid items-center gap-10 lg:grid-cols-[1fr_auto] lg:gap-20">
           <div className="relative lg:hidden">
             <div className="timeline-line" aria-hidden />
-            <div className="space-y-10">
+            <div className="space-y-8">
               {processSteps.map((step, i) => (
                 <ScrollReveal key={step.number} delay={i * 80}>
-                  <div className="relative flex gap-6 pl-1">
-                    <div className="relative z-10 flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-base font-semibold text-text-inverse shadow-lg">
+                  <div className="relative flex gap-4 pl-1 sm:gap-6">
+                    <div className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-semibold text-text-inverse shadow-lg sm:h-12 sm:w-12 sm:text-base">
                       {step.number}
                     </div>
-                    <div className="flex-1 pb-2">
-                      <div className="mb-2 flex items-center gap-3">
-                        <step.icon className="h-6 w-6 text-primary" strokeWidth={1.25} aria-hidden />
-                        <h3 className="text-lg font-semibold text-text-primary">{step.title}</h3>
+                    <div className="flex-1 pb-1">
+                      <div className="mb-1.5 flex items-center gap-2.5 sm:mb-2 sm:gap-3">
+                        <step.icon className="h-5 w-5 text-primary sm:h-6 sm:w-6" strokeWidth={1.25} aria-hidden />
+                        <h3 className="text-base font-semibold text-text-primary sm:text-lg">{step.title}</h3>
                       </div>
-                      <p className="text-base leading-relaxed text-text-secondary">
+                      <p className="text-sm leading-relaxed text-text-secondary sm:text-base">
                         {step.description}
                       </p>
                     </div>
@@ -64,7 +64,7 @@ export function Process() {
             </div>
           </div>
 
-          <ScrollReveal delay={200} className="relative mx-auto w-60 xl:w-72">
+          <ScrollReveal delay={200} className="relative mx-auto w-48 sm:w-60 xl:w-72">
             <Image
               src="/panda-illustration.svg"
               alt="Panda-Maskottchen der Panda-Bande"
@@ -72,7 +72,7 @@ export function Process() {
               height={316}
               className="w-full drop-shadow-lg"
             />
-            <div className="absolute -top-3 right-0 max-w-[220px] rounded-[var(--radius-card)] rounded-br-md border border-white/50 bg-bg-card/95 px-6 py-5 text-base leading-relaxed shadow-float backdrop-blur-sm">
+            <div className="absolute -top-2 right-0 max-w-[min(100%,12rem)] rounded-[var(--radius-card)] rounded-br-md border border-white/50 bg-bg-card/95 px-4 py-3 text-sm leading-relaxed shadow-float backdrop-blur-sm sm:-top-3 sm:max-w-[220px] sm:px-6 sm:py-5 sm:text-base">
               Wir kümmern uns um den Rest!{" "}
               <span className="text-accent-heart" aria-hidden>
                 ♡

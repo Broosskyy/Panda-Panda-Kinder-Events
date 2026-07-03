@@ -21,8 +21,8 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes = {
-  default: "min-h-12 min-w-12 px-8 py-3.5 text-base tracking-wide",
-  lg: "min-h-[3.75rem] min-w-[3.75rem] px-10 py-4 text-base font-semibold tracking-wide",
+  default: "min-h-11 min-w-11 px-5 py-3 text-[0.9375rem] tracking-wide sm:min-h-12 sm:px-8 sm:py-3.5 sm:text-base",
+  lg: "min-h-12 min-w-12 px-6 py-3.5 text-[0.9375rem] font-semibold tracking-wide sm:min-h-[3.75rem] sm:min-w-[3.75rem] sm:px-10 sm:py-4 sm:text-base",
 };
 
 export function Button({

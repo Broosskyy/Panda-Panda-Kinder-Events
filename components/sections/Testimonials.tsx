@@ -40,16 +40,16 @@ function getInitials(name: string) {
 
 function ReviewCard({ review }: { review: PublicReview }) {
   return (
-    <Card className="flex h-full flex-col" padding="lg" hover={false}>
-      <StarRating rating={review.rating} size="xl" className="mb-6" />
+    <Card className="flex h-full flex-col" padding="md" hover={false}>
+      <StarRating rating={review.rating} size="xl" className="mb-4 sm:mb-6" />
 
-      <blockquote className="flex-1 font-heading text-lg leading-relaxed text-text-primary md:text-xl md:leading-9">
+      <blockquote className="flex-1 font-heading text-base leading-relaxed text-text-primary sm:text-lg md:text-xl md:leading-9">
         &ldquo;{review.text}&rdquo;
       </blockquote>
 
-      <div className="mt-8 flex items-center justify-between gap-4 border-t border-border/50 pt-6">
-        <div className="flex items-center gap-4">
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-base font-semibold text-primary shadow-sm">
+      <div className="mt-6 flex items-center justify-between gap-3 border-t border-border/50 pt-5 sm:mt-8 sm:gap-4 sm:pt-6">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-primary shadow-sm sm:h-14 sm:w-14 sm:text-base">
             {getInitials(review.name)}
           </div>
           <div>
@@ -75,10 +75,10 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
   const displayAverage = average.toFixed(1).replace(".", ",");
 
   return (
-    <div className="mb-12 flex flex-col items-center gap-4 text-center md:mb-16">
+    <div className="mb-8 flex flex-col items-center gap-3 text-center sm:mb-12 md:mb-16">
       <StarRating rating={5} size="xl" />
       <div className="flex items-baseline gap-2">
-        <span className="font-heading text-5xl font-bold text-text-primary md:text-6xl">
+        <span className="font-heading text-4xl font-bold text-text-primary sm:text-5xl md:text-6xl">
           {displayAverage}
         </span>
         <span className="text-xl text-text-muted">/ 5</span>
@@ -152,32 +152,34 @@ export function Testimonials() {
 
             {total === 0 ? (
               <ScrollReveal>
-                <Card padding="lg" hover={false} className="mx-auto max-w-xl text-center">
-                  <PandaMascot size={110} className="mx-auto mb-6" />
-                  <p className="font-heading text-2xl font-bold text-text-primary">
+                <Card padding="md" hover={false} className="mx-auto max-w-xl text-center">
+                  <PandaMascot size={90} className="mx-auto mb-5 sm:mb-6" />
+                  <p className="font-heading text-xl font-bold text-text-primary sm:text-2xl">
                     Noch keine öffentlichen Bewertungen
                   </p>
-                  <p className="mx-auto mt-4 max-w-sm text-lg leading-relaxed text-text-secondary">
+                  <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-text-secondary sm:mt-4 sm:text-lg">
                     Seid die Ersten — teilt eure Erfahrung mit der Panda-Bande!
                   </p>
-                  <Button className="mt-10 w-full shadow-lg sm:w-auto" size="lg" onClick={scrollToForm}>
-                    Jetzt erste Bewertung schreiben
+                  <Button className="mt-8 w-full shadow-lg sm:mt-10 sm:w-auto" size="lg" onClick={scrollToForm}>
+                    Jetzt erste Bewertung abgeben
                   </Button>
                 </Card>
               </ScrollReveal>
             ) : (
               <>
                 <div className="lg:hidden">
-                  <div
-                    className="swipe-track -mx-5 gap-5 px-5"
-                    role="region"
-                    aria-label="Bewertungen — horizontal scrollen"
-                  >
-                    {reviews.map((review) => (
-                      <div key={review.id} className="swipe-item w-[min(92vw,26rem)]">
-                        <ReviewCard review={review} />
-                      </div>
-                    ))}
+                  <div className="swipe-bleed">
+                    <div
+                      className="swipe-track"
+                      role="region"
+                      aria-label="Bewertungen — horizontal scrollen"
+                    >
+                      {reviews.map((review) => (
+                        <div key={review.id} className="swipe-item w-[min(90vw,24rem)] sm:w-[min(92vw,26rem)]">
+                          <ReviewCard review={review} />
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -219,7 +221,7 @@ export function Testimonials() {
           </>
         )}
 
-        <div ref={formRef} id="bewertung-form" className="mx-auto mt-16 max-w-xl scroll-mt-28">
+        <div ref={formRef} id="bewertung-form" className="mx-auto mt-10 max-w-xl scroll-mt-24 sm:mt-16 sm:scroll-mt-28">
           <ScrollReveal>
             <ReviewForm />
           </ScrollReveal>

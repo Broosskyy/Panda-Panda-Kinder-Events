@@ -22,7 +22,7 @@ export function Card({
   variant = "default",
 }: CardProps) {
   const variantClass = variant === "beige" ? "card-beige" : "";
-  const hoverClass = hover ? "" : "hover:transform-none hover:shadow-md";
+  const hoverClass = hover ? "" : "card-static";
 
   return (
     <div

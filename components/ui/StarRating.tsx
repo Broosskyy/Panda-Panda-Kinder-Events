@@ -11,14 +11,14 @@ const sizeMap = {
   sm: "h-4 w-4",
   md: "h-5 w-5",
   lg: "h-7 w-7 sm:h-8 sm:w-8",
-  xl: "h-8 w-8 sm:h-9 sm:w-9",
+  xl: "h-9 w-9 sm:h-10 sm:w-10",
 };
 
 export function StarRating({ rating, max = 5, size = "md", className = "" }: StarRatingProps) {
   return (
     <div
       role="img"
-      className={`flex gap-0.5 ${className}`}
+      className={`flex gap-1 ${className}`}
       aria-label={`${rating} von ${max} Sternen`}
     >
       {Array.from({ length: max }).map((_, i) => (

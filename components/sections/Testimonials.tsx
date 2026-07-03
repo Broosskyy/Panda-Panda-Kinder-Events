@@ -40,14 +40,14 @@ function getInitials(name: string) {
 
 function ReviewCard({ review }: { review: PublicReview }) {
   return (
-    <Card className="flex h-full flex-col" padding="md" hover={false}>
-      <StarRating rating={review.rating} size="xl" className="mb-4 sm:mb-6" />
+    <Card className="review-card flex h-full flex-col" padding="md" hover={false}>
+      <StarRating rating={review.rating} size="xl" className="mb-5 sm:mb-7" />
 
-      <blockquote className="flex-1 font-heading text-base leading-relaxed text-text-primary sm:text-lg md:text-xl md:leading-9">
+      <blockquote className="flex-1 font-heading text-base leading-relaxed tracking-tight text-text-primary sm:text-lg md:text-xl md:leading-9">
         &ldquo;{review.text}&rdquo;
       </blockquote>
 
-      <div className="mt-6 flex items-center justify-between gap-3 border-t border-border/50 pt-5 sm:mt-8 sm:gap-4 sm:pt-6">
+      <div className="mt-7 flex items-center justify-between gap-3 border-t border-border/40 pt-6 sm:mt-9 sm:gap-4 sm:pt-7">
         <div className="flex items-center gap-3 sm:gap-4">
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-primary shadow-sm sm:h-14 sm:w-14 sm:text-base">
             {getInitials(review.name)}
@@ -131,7 +131,7 @@ export function Testimonials() {
   const nextDesktop = () => setDesktopIndex((i) => Math.min(desktopMaxIndex, i + 1));
 
   return (
-    <section id="bewertungen" className="scroll-mt-24 section-padding bg-bg-warm/40">
+    <section id="bewertungen" className="scroll-mt-24 section-padding section-warm">
       <Container>
         <ScrollReveal>
           <SectionHeading
@@ -152,15 +152,15 @@ export function Testimonials() {
 
             {total === 0 ? (
               <ScrollReveal>
-                <Card padding="md" hover={false} className="mx-auto max-w-xl text-center">
-                  <PandaMascot size={90} className="mx-auto mb-5 sm:mb-6" />
-                  <p className="font-heading text-xl font-bold text-text-primary sm:text-2xl">
+                <Card padding="lg" hover={false} className="review-card mx-auto max-w-xl text-center">
+                  <PandaMascot size={100} className="mx-auto mb-6 opacity-90" />
+                  <p className="font-heading text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
                     Noch keine öffentlichen Bewertungen
                   </p>
-                  <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-text-secondary sm:mt-4 sm:text-lg">
+                  <p className="mx-auto mt-4 max-w-sm text-base leading-relaxed text-text-secondary sm:text-lg">
                     Seid die Ersten — teilt eure Erfahrung mit der Panda-Bande!
                   </p>
-                  <Button className="mt-8 w-full shadow-lg sm:mt-10 sm:w-auto" size="lg" onClick={scrollToForm}>
+                  <Button className="mt-9 w-full shadow-lg sm:mt-10 sm:w-auto" size="lg" onClick={scrollToForm}>
                     Jetzt erste Bewertung abgeben
                   </Button>
                 </Card>
@@ -191,7 +191,7 @@ export function Testimonials() {
                           type="button"
                           onClick={prevDesktop}
                           disabled={desktopIndex === 0}
-                          className={`absolute -left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg-card shadow-md transition-opacity disabled:opacity-30 ${focusRing}`}
+                          className={`absolute -left-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-bg-card shadow-md transition-all duration-500 hover:border-primary/20 hover:shadow-lg disabled:opacity-30 ${focusRing}`}
                           aria-label="Vorherige Bewertungen"
                         >
                           <ChevronLeft className="h-5 w-5" />
@@ -200,7 +200,7 @@ export function Testimonials() {
                           type="button"
                           onClick={nextDesktop}
                           disabled={desktopIndex >= desktopMaxIndex}
-                          className={`absolute -right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg-card shadow-md transition-opacity disabled:opacity-30 ${focusRing}`}
+                          className={`absolute -right-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-bg-card shadow-md transition-all duration-500 hover:border-primary/20 hover:shadow-lg disabled:opacity-30 ${focusRing}`}
                           aria-label="Nächste Bewertungen"
                         >
                           <ChevronRight className="h-5 w-5" />

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { ICON_STROKE } from "@/lib/design";
 import { Card } from "@/components/ui/Card";
 import { InquiryForm } from "@/components/ui/InquiryForm";
 import { Container } from "@/components/ui/Container";
@@ -41,8 +42,8 @@ const contactLinks = [
 
 export function Contact() {
   return (
-    <section id="kontakt" className="relative scroll-mt-24 section-padding bg-bg-warm/30">
-      <FlowerOrnament className="absolute right-4 top-20 hidden h-28 w-28 opacity-30 lg:block" variant="right" />
+    <section id="kontakt" className="relative scroll-mt-24 section-padding section-warm">
+      <FlowerOrnament className="absolute right-4 top-20 hidden h-28 w-28 opacity-25 lg:block" variant="right" />
 
       <Container>
         <ScrollReveal>
@@ -52,23 +53,25 @@ export function Contact() {
           />
         </ScrollReveal>
 
-        <div className="grid gap-8 sm:gap-10 lg:grid-cols-2 lg:gap-20">
+        <div className="grid gap-10 sm:gap-12 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal>
-            <InquiryForm />
+            <Card padding="lg" hover={false} className="form-luxury">
+              <InquiryForm />
+            </Card>
           </ScrollReveal>
 
           <ScrollReveal delay={100}>
-            <div className="flex flex-col gap-5">
+            <div className="flex flex-col gap-4 sm:gap-5">
               {contactLinks.map((link) => {
                 const Icon = link.icon;
                 const content = (
                   <Card className="flex items-center gap-4 sm:gap-5" padding="md" hover>
-                    <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-bg-secondary sm:h-14 sm:w-14">
-                      <Icon className="h-5 w-5 text-primary sm:h-6 sm:w-6" strokeWidth={1.5} />
+                    <div className="icon-wrap h-12 w-12 shrink-0 sm:h-14 sm:w-14">
+                      <Icon className="h-5 w-5 text-primary sm:h-6 sm:w-6" strokeWidth={ICON_STROKE} />
                     </div>
                     <div>
                       <p className="text-base font-semibold text-text-primary">{link.label}</p>
-                      <p className="mt-0.5 text-base text-text-secondary">{link.value}</p>
+                      <p className="mt-0.5 text-[0.9375rem] text-text-secondary sm:text-base">{link.value}</p>
                     </div>
                   </Card>
                 );
@@ -90,13 +93,10 @@ export function Contact() {
                 return <div key={link.label}>{content}</div>;
               })}
 
-              <a
-                href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`}
-                className="block sm:hidden"
-              >
+              <a href={`tel:${siteConfig.contact.phone.replace(/\s/g, "")}`} className="block sm:hidden">
                 <Card className="flex items-center gap-5" padding="md" hover>
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-bg-secondary">
-                    <Phone className="h-6 w-6 text-primary" strokeWidth={1.5} />
+                  <div className="icon-wrap h-14 w-14 shrink-0">
+                    <Phone className="h-6 w-6 text-primary" strokeWidth={ICON_STROKE} />
                   </div>
                   <div>
                     <p className="text-base font-semibold text-text-primary">Telefon</p>
@@ -105,21 +105,21 @@ export function Contact() {
                 </Card>
               </a>
 
-              <div className="relative mt-8 hidden text-center lg:block">
+              <div className="relative mt-6 hidden text-center lg:block">
                 <Image
                   src={siteConfig.assets.logo}
                   alt=""
                   width={200}
                   height={72}
-                  className="mx-auto h-28 w-auto object-contain"
+                  className="mx-auto h-24 w-auto object-contain opacity-90"
                 />
-                <p className="font-accent mt-6 text-3xl text-primary">
+                <p className="font-accent mt-8 text-3xl text-primary">
                   Mit Herz für kleine Abenteurer.{" "}
                   <span className="text-accent-heart" aria-hidden>
                     ♡
                   </span>
                 </p>
-                <FlowerOrnament className="absolute -bottom-4 left-0 h-20 w-20 opacity-25" />
+                <FlowerOrnament className="absolute -bottom-4 left-0 h-20 w-20 opacity-20" />
               </div>
             </div>
           </ScrollReveal>

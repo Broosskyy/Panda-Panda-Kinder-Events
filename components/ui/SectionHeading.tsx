@@ -17,24 +17,24 @@ export function SectionHeading({
   id,
 }: SectionHeadingProps) {
   return (
-    <div className={`mb-8 text-center sm:mb-12 md:mb-16 lg:mb-20 ${align === "center" ? "" : "text-left"}`}>
-      <div className={`mb-6 flex items-center gap-3 sm:mb-8 sm:gap-5 ${align === "center" ? "" : "max-w-xl"}`}>
-        {align === "center" && <div className="hidden h-px flex-1 bg-divider sm:block" />}
-        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-          <Heart className="hidden h-4 w-4 fill-accent-heart/50 text-accent-heart sm:block" aria-hidden />
+    <div className={`mb-10 text-center sm:mb-14 md:mb-20 lg:mb-24 ${align === "center" ? "" : "text-left"}`}>
+      <div className={`mb-7 flex items-center gap-3 sm:mb-10 sm:gap-5 ${align === "center" ? "" : "max-w-xl"}`}>
+        {align === "center" && <div className="hidden h-px flex-1 bg-gradient-to-r from-transparent via-divider to-divider sm:block" />}
+        <div className="flex shrink-0 flex-col items-center gap-2 sm:flex-row sm:gap-3">
+          <Heart className="hidden h-3.5 w-3.5 fill-accent-heart/40 text-accent-heart sm:block" aria-hidden />
           <h2
             id={id}
-            className="font-heading text-[1.65rem] font-bold leading-snug tracking-tight text-text-primary sm:text-3xl sm:leading-tight md:text-4xl lg:text-[2.75rem]"
+            className="font-heading text-[1.75rem] font-bold leading-[1.15] tracking-tight text-text-primary sm:text-3xl sm:leading-tight md:text-[2.5rem] lg:text-[2.85rem]"
           >
             {title}
           </h2>
-          <Heart className="hidden h-4 w-4 fill-accent-heart/50 text-accent-heart sm:block" aria-hidden />
+          <Heart className="hidden h-3.5 w-3.5 fill-accent-heart/40 text-accent-heart sm:block" aria-hidden />
         </div>
-        {align === "center" && <div className="hidden h-px flex-1 bg-divider sm:block" />}
+        {align === "center" && <div className="hidden h-px flex-1 bg-gradient-to-l from-transparent via-divider to-divider sm:block" />}
       </div>
       {subtitle && (
         <p
-          className={`mx-auto max-w-2xl text-[0.9375rem] leading-relaxed text-text-secondary sm:text-lg md:text-xl md:leading-9 ${align === "center" ? "" : "mx-0"}`}
+          className={`mx-auto max-w-2xl text-[0.9375rem] leading-relaxed text-text-secondary sm:text-lg sm:leading-8 md:text-xl md:leading-9 ${align === "center" ? "" : "mx-0"}`}
         >
           {subtitle}
         </p>

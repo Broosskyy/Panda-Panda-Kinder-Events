@@ -3,7 +3,7 @@
  * Generiert PDF aus einem Sprint-Report Markdown.
  * Usage: node scripts/generate-sprint-report-pdf.mjs Sprint-Report-Mobile-Bugfix
  */
-import { readFileSync, existsSync, mkdirSync, copyFileSync } from "fs";
+import { existsSync, mkdirSync, copyFileSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 

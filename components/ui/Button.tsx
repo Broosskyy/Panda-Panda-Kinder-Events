@@ -13,11 +13,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-primary text-text-inverse hover:bg-primary-hover shadow-lg hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]",
+    "bg-primary text-text-inverse hover:bg-primary-hover shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 active:scale-[0.99]",
   secondary:
-    "bg-bg-card text-text-primary border-2 border-primary/25 hover:border-primary/60 hover:bg-bg-secondary shadow-sm hover:shadow-md",
+    "bg-bg-card/90 text-text-primary border border-primary/20 hover:border-primary/45 hover:bg-bg-secondary shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0",
   ghost:
-    "bg-transparent text-text-primary border border-border hover:bg-bg-secondary hover:border-primary/30",
+    "bg-transparent text-text-primary border border-border/80 hover:bg-bg-secondary/80 hover:border-primary/25",
 };
 
 const sizes = {
@@ -34,7 +34,7 @@ export function Button({
   className = "",
   ...props
 }: ButtonProps) {
-  const classes = `inline-flex items-center justify-center gap-2.5 rounded-full font-medium transition-all duration-300 ease-out ${variants[variant]} ${sizes[size]} ${focusRing} ${className}`;
+  const classes = `inline-flex items-center justify-center gap-2.5 rounded-full font-medium transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${variants[variant]} ${sizes[size]} ${focusRing} ${className}`;
 
   if (href) {
     return (

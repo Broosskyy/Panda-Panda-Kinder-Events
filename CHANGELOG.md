@@ -2,6 +2,35 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.7.0] — 2026-07-03
+
+### Sprint A — Final UI / Design Polish (V1.0 Candidate)
+
+Premium-Agentur-Niveau für UI/UX — ausschließlich Design, keine Backend-Änderungen.
+
+#### Design System
+- `--ease-premium` Easing, einheitliche Micro-Interactions
+- Premium Utilities: `icon-wrap`, `trust-chip`, `gallery-tile`, `step-circle`, `review-card`, `faq-item`, `social-pill`, `form-luxury`, `section-warm`
+- Card-Hover: translate statt scale, `card-static` für statische Cards
+- `lib/design.ts` mit `ICON_STROKE` Konstante
+
+#### UI Polish
+- **Hero:** Atmosphären-Gradient, Premium Trust-Chips, mehr Desktop-Whitespace
+- **Header:** Eleganterer Scroll-Blur und Nav-Transitions
+- **Buttons:** Apple-niveau Hover (translate, 500ms easing)
+- **SectionHeading:** Gradient-Divider, harmonisierte Typo
+- **Leistungen / USPs:** Icon-Container, ruhigeres Grid
+- **Process:** Step-Circles mit Ring-Glow, dezente Timeline
+- **Galerie:** Hover-Gradient-Overlay, Boutique-Transitions
+- **Bewertungen:** Emotionale Cards, größere Sterne, Premium Empty State
+- **About:** `about-image-frame`, wärmere Mission-Karten
+- **FAQ:** Kreis-Toggle mit Primary Open-State
+- **Kontakt:** Luxuriöser Formular-Rahmen
+- **Footer:** Social-Pills, Gradient-Overlay, weniger Redundanz
+
+#### Dokumentation
+- `docs/05_ROADMAP/Design-Review-Report.md`
+
 ## [0.6.0] — 2026-07-03
 
 ### Responsive / Mobile Bugfix Sprint

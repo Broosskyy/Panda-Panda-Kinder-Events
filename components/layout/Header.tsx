@@ -60,8 +60,9 @@ export function Header() {
             : "bg-bg-primary/60 backdrop-blur-sm"
         }`}
       >
-        <div className="mx-auto flex h-20 max-w-[1240px] items-center justify-between px-5 md:h-[5.5rem] md:px-12">
-          <Logo size="xl" />
+        <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-4 sm:px-5 md:h-[5.5rem] md:px-12">
+          <Logo size="large" className="sm:hidden" />
+          <Logo size="xl" className="hidden sm:block" />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
             {navigation.map((item) => {
@@ -79,7 +80,7 @@ export function Header() {
             <Button
               href="#kontakt"
               size="default"
-              className="hidden shadow-lg sm:inline-flex"
+              className="hidden shadow-lg md:inline-flex"
               icon={<Calendar className="h-4 w-4" aria-hidden />}
             >
               Jetzt anfragen
@@ -115,7 +116,7 @@ export function Header() {
             id={menuId}
             className="absolute inset-y-0 right-0 flex w-full max-w-[min(100%,22rem)] animate-fade-in-up flex-col bg-bg-primary shadow-2xl"
           >
-            <div className="flex items-center justify-between border-b border-border px-5 py-5">
+            <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5 sm:py-5">
               <h2 id={`${menuId}-title`} className="sr-only">
                 Navigation
               </h2>

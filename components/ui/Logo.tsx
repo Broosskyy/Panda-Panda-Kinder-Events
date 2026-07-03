@@ -16,10 +16,10 @@ export function Logo({ variant = "default", className = "", size = "default" }: 
   const subColor = variant === "inverse" ? "text-white/85" : "text-text-muted";
   const heightClass =
     size === "xl"
-      ? "h-16 md:h-[5.5rem]"
+      ? "h-11 sm:h-14 md:h-[5.5rem]"
       : size === "large"
-        ? "h-[3.75rem] md:h-[5rem]"
-        : "h-12 md:h-14";
+        ? "h-10 sm:h-[3.75rem] md:h-[5rem]"
+        : "h-10 sm:h-12 md:h-14";
 
   return (
     <a

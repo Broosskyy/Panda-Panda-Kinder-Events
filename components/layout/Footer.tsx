@@ -7,14 +7,16 @@ import { PandaMascot } from "@/components/ui/PandaMascot";
 export function Footer() {
   return (
     <footer className="footer-premium text-text-inverse">
-      <Container className="py-14 md:py-20">
-        <div className="grid gap-12 md:grid-cols-[1.2fr_1fr_1fr] md:gap-10">
+      <Container className="py-10 sm:py-14 md:py-20">
+        <div className="grid gap-10 sm:gap-12 md:grid-cols-[1.2fr_1fr_1fr] md:gap-10">
           <div className="flex flex-col items-center md:items-start">
-            <Logo variant="inverse" size="xl" />
-            <p className="font-accent mt-5 text-xl text-white/90 md:text-2xl">
+            <Logo variant="inverse" size="large" className="md:hidden" />
+            <Logo variant="inverse" size="xl" className="hidden md:block" />
+            <p className="font-accent mt-4 text-lg text-white/90 sm:mt-5 sm:text-xl md:text-2xl">
               Mit Herz für kleine Abenteurer. ♡
             </p>
-            <PandaMascot size={72} className="mt-6 opacity-80" />
+            <PandaMascot size={56} className="mt-4 opacity-80 sm:mt-6 sm:hidden" />
+            <PandaMascot size={72} className="mt-6 hidden opacity-80 sm:block" />
           </div>
 
           <div className="text-center md:text-left">
@@ -98,7 +100,7 @@ export function Footer() {
           </div>
         </div>
 
-        <p className="mt-14 border-t border-white/12 pt-8 text-center text-base text-white/75">
+        <p className="mt-10 border-t border-white/12 pt-6 text-center text-sm text-white/75 sm:mt-14 sm:pt-8 sm:text-base">
           © {new Date().getFullYear()} {siteConfig.name}. Alle Rechte vorbehalten.
         </p>
       </Container>

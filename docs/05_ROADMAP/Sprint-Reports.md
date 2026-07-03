@@ -10,6 +10,7 @@
 
 | Version | Sprint | PDF herunterladen |
 |---------|--------|-------------------|
+| **0.8.2** | Admin Statistik-Dashboard | **[Statistik-Report.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/cursor/admin-stats-e022/public/downloads/sprint-reports/Statistik-Report.pdf)** |
 | **0.8.1** | CMS Bugfix | **[CMS-Bugfix-Report.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/cursor/cms-bugfix-e022/public/downloads/sprint-reports/CMS-Bugfix-Report.pdf)** |
 | **0.8.0** | CMS / Admin Dashboard | **[Sprint-Report-CMS-Admin.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/cursor/cms-admin-e022/public/downloads/sprint-reports/Sprint-Report-CMS-Admin.pdf)** |
 | **0.6.0** | Responsive / Mobile Bugfix | **[Sprint-Report-Mobile-Bugfix.pdf](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Mobile-Bugfix.pdf)** |

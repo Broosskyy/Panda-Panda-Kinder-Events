@@ -3,6 +3,7 @@ import { join } from "path";
 import { NextResponse } from "next/server";
 
 const ALLOWED = new Set([
+  "Statistik-Report.pdf",
   "CMS-Bugfix-Report.pdf",
   "Sprint-Report-CMS-Admin.pdf",
   "Sprint-Report-Mobile-Bugfix.pdf",

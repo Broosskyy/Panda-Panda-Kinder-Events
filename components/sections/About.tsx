@@ -35,6 +35,7 @@ export function About({ about = DEFAULT_SITE_SETTINGS.about }: AboutProps) {
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   loading="lazy"
+                  unoptimized={about.imageUrl.includes("supabase.co")}
                 />
               </div>
               <PandaMascot size={80} className="absolute -bottom-4 -right-2 hidden opacity-90 md:block" />

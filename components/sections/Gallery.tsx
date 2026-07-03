@@ -50,6 +50,7 @@ export function Gallery({
                   className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-active:scale-105"
                   sizes="80vw"
                   loading="lazy"
+                  unoptimized={image.src.includes("supabase.co")}
                 />
               </button>
             ))}
@@ -74,6 +75,7 @@ export function Gallery({
                   className="object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
                   sizes="(max-width: 1024px) 33vw, 20vw"
                   loading="lazy"
+                  unoptimized={image.src.includes("supabase.co")}
                 />
               </button>
             </ScrollReveal>

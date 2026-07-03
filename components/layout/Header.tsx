@@ -60,7 +60,7 @@ export function Header() {
             : "bg-bg-primary/50 backdrop-blur-md"
         }`}
       >
-        <div className="mx-auto flex h-16 max-w-[1240px] items-center justify-between px-4 sm:px-5 md:h-[5.5rem] md:px-12">
+        <div className="mx-auto flex min-h-16 items-center justify-between px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:px-12 md:py-3">
           <Logo size="large" className="sm:hidden" />
           <Logo size="xl" className="hidden sm:block" />
 

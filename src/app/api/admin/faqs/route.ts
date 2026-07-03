@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { revalidatePublicCms } from "@/lib/cms/revalidate";
+
+const OK = { message: "Gespeichert und Startseite aktualisiert." };
 
 export async function GET() {
   const authError = await requireAdmin();
@@ -24,8 +27,9 @@ export async function POST(request: Request) {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.from("cms_faqs").insert(body).select().single();
 
-  if (error) return NextResponse.json({ error: "Erstellen fehlgeschlagen." }, { status: 500 });
-  return NextResponse.json({ faq: data });
+  if (error) return NextResponse.json({ error: `Erstellen fehlgeschlagen: ${error.message}` }, { status: 500 });
+  revalidatePublicCms();
+  return NextResponse.json({ faq: data, ...OK });
 }
 
 export async function PATCH(request: Request) {
@@ -41,8 +45,9 @@ export async function PATCH(request: Request) {
     .update({ ...updates, updated_at: new Date().toISOString() })
     .eq("id", id);
 
-  if (error) return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
-  return NextResponse.json({ success: true });
+  if (error) return NextResponse.json({ error: `Update fehlgeschlagen: ${error.message}` }, { status: 500 });
+  revalidatePublicCms();
+  return NextResponse.json({ success: true, ...OK });
 }
 
 export async function DELETE(request: Request) {
@@ -56,5 +61,6 @@ export async function DELETE(request: Request) {
   const { error } = await supabase.from("cms_faqs").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: "Löschen fehlgeschlagen." }, { status: 500 });
-  return NextResponse.json({ success: true });
+  revalidatePublicCms();
+  return NextResponse.json({ success: true, ...OK });
 }

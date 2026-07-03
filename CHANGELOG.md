@@ -2,6 +2,31 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.1] — 2026-07-03
+
+### CMS Bugfix — Admin speichert, Website übernimmt
+
+Kritischer Bugfix: CMS-Inhalte aus dem Admin wurden nicht auf der öffentlichen Website angezeigt.
+
+#### Cache & Revalidation
+- Startseite und Beitragsseiten auf `force-dynamic` umgestellt
+- `unstable_noStore()` für alle CMS-Fetches
+- `revalidatePath("/")` nach jedem Admin-Speichern
+
+#### Public Binding
+- CMS-Daten haben Vorrang vor statischen Fallbacks
+- Galerie/Services/FAQ: Fallback nur wenn CMS-Tabelle leer
+
+#### Uploads
+- Robustere Bildvalidierung (MIME + Dateiendung)
+- Über-uns Bild: Upload speichert automatisch in `site_settings`
+- Echte Fehlermeldungen im Admin-UI
+
+#### Sonstiges
+- CMS Debug-Panel unter Admin → Einstellungen
+- Header/Logo-Abschneiden behoben
+- `docs/05_ROADMAP/CMS-Bugfix-Report.md`
+
 ## [0.8.0] — 2026-07-03
 
 ### Sprint B — CMS / Admin Dashboard

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPublicUrl } from "@/lib/cms/storage";
+import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import type { CmsPost } from "@/lib/cms/types";
 
 function slugify(text: string): string {
@@ -26,6 +27,18 @@ async function ensureUniqueSlug(base: string, excludeId?: string): Promise<strin
     if (!data) return slug;
     slug = `${base}-${counter++}`;
   }
+}
+
+function pickPostFields(body: Record<string, unknown>) {
+  return {
+    title: String(body.title ?? ""),
+    subtitle: String(body.subtitle ?? ""),
+    content: String(body.content ?? ""),
+    hero_image_path: (body.hero_image_path as string | null) ?? null,
+    category: String(body.category ?? "aktuelles"),
+    published: Boolean(body.published),
+    published_at: body.published_at ? String(body.published_at) : null,
+  };
 }
 
 export async function GET() {
@@ -53,37 +66,56 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
-  const slug = await ensureUniqueSlug(body.slug ? slugify(body.slug) : slugify(body.title ?? "beitrag"));
+  const fields = pickPostFields(body);
+  const slug = await ensureUniqueSlug(body.slug ? slugify(String(body.slug)) : slugify(fields.title || "beitrag"));
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("cms_posts")
-    .insert({ ...body, slug })
+    .insert({ ...fields, slug })
     .select()
     .single();
 
-  if (error) return NextResponse.json({ error: "Erstellen fehlgeschlagen." }, { status: 500 });
-  return NextResponse.json({ post: data });
+  if (error) {
+    console.error("posts POST:", error.message);
+    return NextResponse.json({ error: `Erstellen fehlgeschlagen: ${error.message}` }, { status: 500 });
+  }
+
+  revalidatePublicCms(data.slug);
+  return NextResponse.json({ post: data, message: "Gespeichert und Startseite aktualisiert." });
 }
 
 export async function PATCH(request: Request) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
-  const { id, slug: rawSlug, ...updates } = await request.json();
+  const { id, slug: rawSlug, ...rawUpdates } = await request.json();
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
 
+  const updates = pickPostFields({ ...rawUpdates, title: rawUpdates.title ?? "" });
+  let newSlug: string | undefined;
   if (rawSlug) {
-    updates.slug = await ensureUniqueSlug(slugify(rawSlug), id);
+    newSlug = await ensureUniqueSlug(slugify(String(rawSlug)), id);
   }
 
   const supabase = getSupabaseAdmin();
+  const { data: existing } = await supabase.from("cms_posts").select("slug").eq("id", id).single();
   const { error } = await supabase
     .from("cms_posts")
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update({
+      ...updates,
+      ...(newSlug ? { slug: newSlug } : {}),
+      updated_at: new Date().toISOString(),
+    })
     .eq("id", id);
 
-  if (error) return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
-  return NextResponse.json({ success: true });
+  if (error) {
+    console.error("posts PATCH:", error.message);
+    return NextResponse.json({ error: `Update fehlgeschlagen: ${error.message}` }, { status: 500 });
+  }
+
+  const slug = newSlug ?? existing?.slug;
+  revalidatePublicCms(slug);
+  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
 }
 
 export async function DELETE(request: Request) {
@@ -94,8 +126,10 @@ export async function DELETE(request: Request) {
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
 
   const supabase = getSupabaseAdmin();
+  const { data: existing } = await supabase.from("cms_posts").select("slug").eq("id", id).single();
   const { error } = await supabase.from("cms_posts").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: "Löschen fehlgeschlagen." }, { status: 500 });
-  return NextResponse.json({ success: true });
+  revalidatePublicCms(existing?.slug);
+  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
 }

@@ -6,6 +6,13 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 import type { SiteSettingsBundle } from "@/lib/cms/types";
 
+const SECTION_LABELS: Record<keyof SiteSettingsBundle, string> = {
+  hero: "Hero",
+  contact: "Kontakt",
+  about: "Über uns",
+  footer: "Footer",
+};
+
 export function ContentView() {
   const { toast, withLoading } = useAdminUi();
   const [settings, setSettings] = useState<SiteSettingsBundle | null>(null);
@@ -21,31 +28,49 @@ export function ContentView() {
     void withLoading(load());
   }, [load, withLoading]);
 
-  const saveSection = async (section: keyof SiteSettingsBundle) => {
-    if (!settings) return;
-    await withLoading(
-      (async () => {
-        const res = await fetch("/api/admin/settings", {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ section, value: settings[section] }),
-        });
-        if (!res.ok) throw new Error("Speichern fehlgeschlagen");
-        toast(`${section === "hero" ? "Hero" : section === "contact" ? "Kontakt" : section === "about" ? "Über uns" : "Footer"} gespeichert`);
-      })(),
-    );
+  const saveSection = async (section: keyof SiteSettingsBundle, value?: SiteSettingsBundle[keyof SiteSettingsBundle]) => {
+    const payload = value ?? settings?.[section];
+    if (!payload) return;
+
+    try {
+      await withLoading(
+        (async () => {
+          const res = await fetch("/api/admin/settings", {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ section, value: payload }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
+          toast(data.message ?? `${SECTION_LABELS[section]} gespeichert und Startseite aktualisiert.`);
+        })(),
+      );
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Speichern fehlgeschlagen", "error");
+    }
   };
 
   const uploadAboutImage = async (file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("bucket", "site-assets");
-    fd.append("folder", "about");
-    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    if (!res.ok) throw new Error("Upload fehlgeschlagen");
-    const data = await res.json();
-    setSettings((s) => (s ? { ...s, about: { ...s.about, imageUrl: data.url } } : s));
-    toast("Bild hochgeladen");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("bucket", "site-assets");
+      fd.append("folder", "about");
+      const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen");
+
+      const newAbout = settings ? { ...settings.about, imageUrl: data.url } : null;
+      if (!newAbout) return;
+
+      setSettings((s) => (s ? { ...s, about: newAbout } : s));
+      await saveSection("about", newAbout);
+      toast("Bild hochgeladen und gespeichert.");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Upload fehlgeschlagen";
+      toast(message, "error");
+      console.error("uploadAboutImage:", err);
+    }
   };
 
   if (!settings) return null;

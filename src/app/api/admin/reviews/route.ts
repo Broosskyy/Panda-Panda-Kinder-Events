@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { deleteStorageFile } from "@/lib/cms/storage";
+import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
 export async function GET() {
   if (!(await isAdminAuthenticated())) {
@@ -52,7 +53,8 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true });
+  revalidatePublicCms();
+  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
 }
 
 export async function DELETE(request: Request) {
@@ -86,5 +88,6 @@ export async function DELETE(request: Request) {
     } catch { /* best effort */ }
   }
 
-  return NextResponse.json({ success: true });
+  revalidatePublicCms();
+  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
 }

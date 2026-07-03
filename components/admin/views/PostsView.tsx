@@ -71,8 +71,9 @@ export function PostsView() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(editingId ? { id: editingId, ...payload } : payload),
         });
-        if (!res.ok) throw new Error("Speichern fehlgeschlagen");
-        toast(editingId ? "Beitrag aktualisiert" : "Beitrag erstellt");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
+        toast(data.message ?? (editingId ? "Beitrag aktualisiert" : "Beitrag erstellt"));
         setDraft(emptyPost());
         setEditingId(null);
         await load();
@@ -102,10 +103,14 @@ export function PostsView() {
     fd.append("bucket", "site-assets");
     fd.append("folder", "posts");
     const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    if (!res.ok) throw new Error("Upload fehlgeschlagen");
     const data = await res.json();
+    if (!res.ok) {
+      toast(data.error ?? "Upload fehlgeschlagen", "error");
+      console.error("uploadHero:", data);
+      return;
+    }
     setDraft((d) => ({ ...d, hero_image_path: data.path, hero_image_url: data.url }));
-    toast("Hero-Bild hochgeladen");
+    toast("Hero-Bild hochgeladen — bitte Beitrag speichern.");
   };
 
   const filtered = posts.filter((p) =>

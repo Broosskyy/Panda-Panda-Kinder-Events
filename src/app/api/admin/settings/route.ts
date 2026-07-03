@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { fetchSiteSettings, saveSiteSettings } from "@/lib/cms/data";
+import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import type { SiteSettingsBundle } from "@/lib/cms/types";
 
 export async function GET() {
@@ -28,8 +29,16 @@ export async function PUT(request: Request) {
 
   try {
     await saveSiteSettings(section, value);
-    return NextResponse.json({ success: true });
-  } catch {
-    return NextResponse.json({ error: "Speichern fehlgeschlagen." }, { status: 500 });
+    revalidatePublicCms();
+    return NextResponse.json({
+      success: true,
+      message: "Gespeichert und Startseite aktualisiert.",
+      section,
+      savedAt: new Date().toISOString(),
+    });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Speichern fehlgeschlagen.";
+    console.error("settings PUT:", message);
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

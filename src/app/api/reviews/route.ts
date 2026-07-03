@@ -11,6 +11,8 @@ const reviewSchema = z.object({
   text: z.string().min(10, "Bitte schreibe mindestens 10 Zeichen."),
 });
 
+export const dynamic = "force-dynamic";
+
 export async function POST(request: Request) {
   try {
     if (!isSupabaseConfigured()) {
@@ -124,7 +126,11 @@ export async function GET() {
       return NextResponse.json({ reviews: [] });
     }
 
-    return NextResponse.json({ reviews: data ?? [] });
+    return NextResponse.json({ reviews: data ?? [] }, {
+      headers: {
+        "Cache-Control": "no-store, max-age=0",
+      },
+    });
   } catch (error) {
     console.error("Reviews GET error:", error);
     return NextResponse.json({ reviews: [] });

@@ -15,7 +15,7 @@ export function Gallery() {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
 
   return (
-    <section id="galerie" className="scroll-mt-24 section-padding">
+    <section id="galerie" className="scroll-mt-24 section-padding bg-bg-primary">
       <Container>
         <ScrollReveal>
           <SectionHeading
@@ -25,38 +25,34 @@ export function Gallery() {
         </ScrollReveal>
 
         <div className="swipe-bleed md:hidden">
-          <div
-            className="swipe-track"
-            role="region"
-            aria-label="Galerie — horizontal scrollen"
-          >
+          <div className="swipe-track" role="region" aria-label="Galerie — horizontal scrollen">
             {galleryImages.map((image) => (
               <button
                 key={image.src}
                 type="button"
-                className="swipe-item group relative aspect-[4/5] w-[min(78vw,18rem)] overflow-hidden rounded-[var(--radius-card-mobile)] shadow-md sm:w-[min(80vw,20rem)] sm:rounded-[var(--radius-card)] sm:shadow-lg"
-              onClick={() => setLightboxImage(image)}
-              aria-label={`${image.alt} vergrößern`}
-            >
-              <Image
-                src={image.src}
-                alt=""
-                fill
-                className="object-cover transition-transform duration-700 ease-out group-active:scale-105"
-                sizes="80vw"
-                loading="lazy"
-              />
-            </button>
-          ))}
+                className="gallery-tile swipe-item relative aspect-[4/5] w-[min(78vw,18rem)] sm:w-[min(80vw,20rem)]"
+                onClick={() => setLightboxImage(image)}
+                aria-label={`${image.alt} vergrößern`}
+              >
+                <Image
+                  src={image.src}
+                  alt=""
+                  fill
+                  className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-active:scale-105"
+                  sizes="80vw"
+                  loading="lazy"
+                />
+              </button>
+            ))}
           </div>
         </div>
 
-        <div className="masonry-grid hidden gap-6 md:block">
+        <div className="masonry-grid hidden md:block">
           {galleryImages.map((image, i) => (
             <ScrollReveal key={image.src} delay={i * 80}>
               <button
                 type="button"
-                className={`masonry-item group relative w-full overflow-hidden rounded-[var(--radius-card)] shadow-lg ${
+                className={`gallery-tile masonry-item group relative w-full ${
                   i % 3 === 0 ? "aspect-[3/4]" : "aspect-[4/3]"
                 }`}
                 onClick={() => setLightboxImage(image)}
@@ -66,7 +62,7 @@ export function Gallery() {
                   src={image.src}
                   alt=""
                   fill
-                  className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.04]"
+                  className="object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
                   sizes="(max-width: 1024px) 33vw, 20vw"
                   loading="lazy"
                 />
@@ -76,7 +72,7 @@ export function Gallery() {
         </div>
 
         <ScrollReveal>
-          <div className="mt-10 text-center sm:mt-16">
+          <div className="mt-12 text-center sm:mt-16">
             <Button
               href={siteConfig.contact.instagram}
               size="lg"

@@ -22,7 +22,7 @@ export function Faq() {
             subtitle="Antworten auf die wichtigsten Fragen rund um euer Event."
           />
         </ScrollReveal>
-        <div className="mx-auto max-w-3xl divide-y divide-border" role="list">
+        <div className="mx-auto max-w-3xl divide-y divide-border/80" role="list">
           {faqs.map((faq, index) => {
             const isOpen = openIndex === index;
             const buttonId = `${baseId}-faq-${index}`;
@@ -30,21 +30,21 @@ export function Faq() {
 
             return (
               <ScrollReveal key={faq.question} delay={index * 50}>
-                <div role="listitem" className="py-1">
+                <div role="listitem" className={`faq-item py-2 ${isOpen ? "is-open" : ""}`}>
                   <h3 className="m-0">
                     <button
                       id={buttonId}
                       type="button"
-                      className={`flex w-full min-h-14 items-center justify-between gap-5 py-5 text-left ${focusRing}`}
+                      className={`flex w-full min-h-14 items-center justify-between gap-5 rounded-2xl px-2 py-5 text-left transition-colors sm:px-4 ${focusRing}`}
                       onClick={() => setOpenIndex(isOpen ? null : index)}
                       aria-expanded={isOpen}
                       aria-controls={panelId}
                     >
-                      <span className="text-lg font-medium text-text-primary md:text-xl">
+                      <span className="text-lg font-medium leading-snug text-text-primary md:text-xl">
                         {faq.question}
                       </span>
-                      <span className="shrink-0 text-primary" aria-hidden>
-                        {isOpen ? <Minus className="h-5 w-5" /> : <Plus className="h-5 w-5" />}
+                      <span className="faq-toggle" aria-hidden>
+                        {isOpen ? <Minus className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                       </span>
                     </button>
                   </h3>
@@ -56,7 +56,7 @@ export function Faq() {
                     className={`faq-content ${isOpen ? "open" : ""}`}
                   >
                     <div>
-                      <p className="pb-6 text-base leading-relaxed text-text-secondary md:text-lg md:leading-8">
+                      <p className="px-2 pb-7 text-base leading-relaxed text-text-secondary sm:px-4 md:text-lg md:leading-8">
                         {faq.answer}
                       </p>
                     </div>

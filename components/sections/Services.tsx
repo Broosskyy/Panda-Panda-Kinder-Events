@@ -1,4 +1,5 @@
 import { services } from "@/lib/services";
+import { ICON_STROKE } from "@/lib/design";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
@@ -16,35 +17,34 @@ export function Services() {
         </ScrollReveal>
 
         <div className="swipe-bleed md:hidden">
-          <div
-            className="swipe-track"
-            role="region"
-            aria-label="Leistungen — horizontal scrollen"
-          >
+          <div className="swipe-track" role="region" aria-label="Leistungen — horizontal scrollen">
             {services.map((service) => (
               <div key={service.title} className="swipe-item w-[min(88vw,20rem)] sm:w-[min(85vw,22rem)]">
-                <Card className="h-full border-border/80" padding="md">
-                  <service.icon className="mb-4 h-9 w-9 text-primary sm:mb-5 sm:h-10 sm:w-10" strokeWidth={1.25} aria-hidden />
-                  <h3 className="text-lg font-semibold text-text-primary sm:text-xl">{service.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-text-secondary">
-                  {service.description}
-                </p>
-              </Card>
-            </div>
-          ))}
+                <Card className="h-full" padding="md">
+                  <div className="icon-wrap mb-5 h-14 w-14">
+                    <service.icon className="h-7 w-7 text-primary" strokeWidth={ICON_STROKE} aria-hidden />
+                  </div>
+                  <h3 className="text-lg font-semibold tracking-tight text-text-primary sm:text-xl">
+                    {service.title}
+                  </h3>
+                  <p className="mt-3 text-[0.9375rem] leading-relaxed text-text-secondary sm:text-base">
+                    {service.description}
+                  </p>
+                </Card>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Desktop: weiße Karten mit feiner Linie — Mockup-Stil */}
-        <div className="hidden gap-6 md:grid md:grid-cols-2 lg:grid-cols-4 lg:gap-7">
+        <div className="hidden gap-7 md:grid md:grid-cols-2 lg:grid-cols-4 lg:gap-8">
           {services.map((service, i) => (
             <ScrollReveal key={service.title} delay={i * 60}>
-              <Card className="h-full border-border/70 shadow-sm" padding="lg">
-                <service.icon className="mb-6 h-9 w-9 text-primary" strokeWidth={1.25} aria-hidden />
-                <h3 className="text-lg font-semibold text-text-primary">{service.title}</h3>
-                <p className="mt-3 text-base leading-relaxed text-text-secondary">
-                  {service.description}
-                </p>
+              <Card className="h-full" padding="lg">
+                <div className="icon-wrap mb-6 h-16 w-16">
+                  <service.icon className="h-8 w-8 text-primary" strokeWidth={ICON_STROKE} aria-hidden />
+                </div>
+                <h3 className="text-lg font-semibold tracking-tight text-text-primary">{service.title}</h3>
+                <p className="mt-3 text-base leading-relaxed text-text-secondary">{service.description}</p>
               </Card>
             </ScrollReveal>
           ))}

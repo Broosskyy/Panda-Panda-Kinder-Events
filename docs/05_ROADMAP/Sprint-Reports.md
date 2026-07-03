@@ -27,6 +27,7 @@ https://DEINE-DOMAIN/api/downloads/sprint-reports/Sprint-Report-Mobile-Bugfix.pd
 
 | Version | Sprint | Markdown |
 |---------|--------|----------|
+| **0.7.0** | Final UI Polish (V1.0) | [Sprint-Report-Final-UI-Polish.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Final-UI-Polish.md) · [Design-Review-Report.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Design-Review-Report.md) |
 | **0.6.0** | Mobile Bugfix | [Sprint-Report-Mobile-Bugfix.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Mobile-Bugfix.md) |
 | **0.5.0** | Premium Design V3 | [Sprint-Report-Premium-Design-V3.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md) |
 | **0.4.0** | Accessibility | [Sprint-Report-Accessibility.md](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Accessibility.md) |

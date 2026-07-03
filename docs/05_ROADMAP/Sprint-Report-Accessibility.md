@@ -116,3 +116,13 @@ Nach Deploy mit Chrome DevTools Lighthouse → Accessibility prüfen. Erwarteter
 - Swipe-Carousels ohne vollständige WAI-ARIA Carousel-Pattern (kein Feature-Sprint)
 - Review-Sterne als Custom Radio-Buttons ohne Pfeiltasten-Navigation
 - Admin-Bereich nicht Teil dieses Audits
+
+---
+
+## Download
+
+| Format | Link |
+|--------|------|
+| **Markdown** | [Sprint-Report-Accessibility.md herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Accessibility.md) |
+| **PDF** | [Sprint-Report-Accessibility.pdf herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Accessibility.pdf) |
+| **Alle Reports** | [Sprint-Reports Übersicht](Sprint-Reports.md) |

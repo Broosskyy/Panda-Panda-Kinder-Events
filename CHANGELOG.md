@@ -34,6 +34,7 @@ Mobile-first Überarbeitung von Layout, Abständen und Typografie. Keine neuen F
 #### Dokumentation
 - `docs/05_ROADMAP/Mobile-Bugfix-Report.md`
 - `docs/05_ROADMAP/Quality-Gap-Review.md`
+- `docs/05_ROADMAP/Sprint-Reports.md` — Direkt-Download-Übersicht aller Sprint-Berichte
 
 ## [0.5.0] — 2026-07-02
 

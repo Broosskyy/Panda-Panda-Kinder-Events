@@ -64,3 +64,13 @@ Die bestehende Panda-Bande Website optisch und hinsichtlich der User Experience 
 ## Nächster Schritt
 
 Accessibility / Barrierefreiheit Sprint für WCAG-Konformität und Lighthouse Score 95+.
+
+---
+
+## Download
+
+| Format | Link |
+|--------|------|
+| **Markdown** | [Sprint-Report-Premium-UI-UX-V2.md herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/Sprint-Report-Premium-UI-UX-V2.md) |
+| **PDF** | [Sprint-Report-Premium-UI-UX-V2.pdf herunterladen](https://raw.githubusercontent.com/Broosskyy/Panda-Panda-Kinder-Events/main/docs/05_ROADMAP/downloads/Sprint-Report-Premium-UI-UX-V2.pdf) |
+| **Alle Reports** | [Sprint-Reports Übersicht](Sprint-Reports.md) |

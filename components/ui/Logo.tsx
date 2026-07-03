@@ -7,14 +7,19 @@ import { siteConfig } from "@/config/site";
 interface LogoProps {
   variant?: "default" | "inverse";
   className?: string;
-  size?: "default" | "large";
+  size?: "default" | "large" | "xl";
 }
 
 export function Logo({ variant = "default", className = "", size = "default" }: LogoProps) {
   const [imgError, setImgError] = useState(false);
   const textColor = variant === "inverse" ? "text-text-inverse" : "text-text-primary";
-  const subColor = variant === "inverse" ? "text-white/80" : "text-text-muted";
-  const heightClass = size === "large" ? "h-14 md:h-[4.5rem]" : "h-12 md:h-14";
+  const subColor = variant === "inverse" ? "text-white/85" : "text-text-muted";
+  const heightClass =
+    size === "xl"
+      ? "h-16 md:h-[5.5rem]"
+      : size === "large"
+        ? "h-[3.75rem] md:h-[5rem]"
+        : "h-12 md:h-14";
 
   return (
     <a

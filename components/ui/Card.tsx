@@ -5,18 +5,28 @@ interface CardProps {
   className?: string;
   hover?: boolean;
   padding?: "sm" | "md" | "lg";
+  variant?: "default" | "beige";
 }
 
 const paddingMap = {
-  sm: "p-5",
-  md: "p-6 sm:p-8",
-  lg: "p-8 sm:p-10",
+  sm: "p-6",
+  md: "p-7 sm:p-9",
+  lg: "p-8 sm:p-10 md:p-11",
 };
 
-export function Card({ children, className = "", hover = true, padding = "md" }: CardProps) {
+export function Card({
+  children,
+  className = "",
+  hover = true,
+  padding = "md",
+  variant = "default",
+}: CardProps) {
+  const variantClass = variant === "beige" ? "card-beige" : "";
+  const hoverClass = hover ? "" : "hover:transform-none hover:shadow-md";
+
   return (
     <div
-      className={`card-premium ${paddingMap[padding]} ${hover ? "" : "hover:transform-none hover:shadow-md"} ${className}`}
+      className={`card-premium ${variantClass} ${paddingMap[padding]} ${hoverClass} ${className}`}
     >
       {children}
     </div>

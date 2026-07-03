@@ -1,21 +1,15 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Check, Send } from "lucide-react";
+import { Send } from "lucide-react";
 import Link from "next/link";
 import { eventTypes } from "@/lib/faqs";
 import { inquirySchema, type InquiryFormData } from "@/lib/validation";
-import { inputClassName, labelClassName } from "@/lib/a11y";
+import { inputClassName, textareaClassName } from "@/lib/a11y";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-
-function FieldError({ id, message }: { id: string; message: string }) {
-  return (
-    <p id={id} role="alert" className="mt-1.5 text-sm font-medium text-accent-heart">
-      {message}
-    </p>
-  );
-}
+import { FormField } from "@/components/ui/FormField";
+import { PandaMascot } from "@/components/ui/PandaMascot";
 
 export function InquiryForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof InquiryFormData, string>>>({});
@@ -81,24 +75,26 @@ export function InquiryForm() {
     }
   };
 
+  const fieldProps = (key: keyof InquiryFormData) => ({
+    error: errors[key],
+    "aria-invalid": !!errors[key],
+    "aria-describedby": errors[key] ? `${key}-error` : undefined,
+  });
+
   if (isSuccess) {
     return (
       <Card padding="lg" hover={false} className="text-center">
-        <div
-          role="status"
-          aria-live="polite"
-          className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-text-inverse shadow-md"
-        >
-          <Check className="h-8 w-8" aria-hidden />
+        <PandaMascot size={100} className="mx-auto mb-6" />
+        <div role="status" aria-live="polite">
+          <h3 className="font-heading text-2xl font-bold text-text-primary md:text-3xl">
+            Vielen Dank für eure Anfrage!
+          </h3>
+          <p className="mx-auto mt-4 max-w-sm text-lg leading-relaxed text-text-secondary">
+            Wir haben eure Nachricht erhalten und melden uns in Kürze bei euch. Bis bald — eure
+            Panda-Bande!
+          </p>
         </div>
-        <h3 className="font-heading text-2xl font-bold text-text-primary">
-          Vielen Dank für eure Anfrage!
-        </h3>
-        <p className="mx-auto mt-3 max-w-sm text-base leading-relaxed text-text-secondary">
-          Wir haben eure Nachricht erhalten und melden uns in Kürze bei euch. Bis bald — eure
-          Panda-Bande!
-        </p>
-        <Button className="mt-8 w-full sm:w-auto" size="lg" onClick={() => setIsSuccess(false)}>
+        <Button className="mt-10 w-full sm:w-auto" size="lg" onClick={() => setIsSuccess(false)}>
           Neue Anfrage senden
         </Button>
       </Card>
@@ -106,89 +102,66 @@ export function InquiryForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5" noValidate aria-label="Anfrageformular">
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate aria-label="Anfrageformular">
       {submitError && (
         <div
           role="alert"
           aria-live="assertive"
-          className="rounded-xl border border-accent-heart/40 bg-accent-heart/5 p-4 text-base font-medium text-accent-heart"
+          className="rounded-2xl border border-accent-heart/40 bg-accent-heart/5 p-5 text-base font-medium text-accent-heart"
         >
           {submitError}
         </div>
       )}
-      <p className="text-sm text-text-muted">
-        Mit <span className="text-accent-heart">*</span> markierte Felder sind Pflichtfelder.
-      </p>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="name" className={labelClassName}>
-            Name <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <FormField id="name" label="Name" required error={errors.name}>
           <input
             id="name"
             name="name"
             type="text"
             required
             aria-required="true"
-            aria-invalid={!!errors.name}
-            aria-describedby={errors.name ? "name-error" : undefined}
+            placeholder=" "
             className={inputClassName}
-            placeholder="Euer Name"
+            {...fieldProps("name")}
           />
-          {errors.name && <FieldError id="name-error" message={errors.name} />}
-        </div>
-        <div>
-          <label htmlFor="phone" className={labelClassName}>
-            Telefon <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+        </FormField>
+        <FormField id="phone" label="Telefon" required error={errors.phone}>
           <input
             id="phone"
             name="phone"
             type="tel"
             required
             aria-required="true"
-            aria-invalid={!!errors.phone}
-            aria-describedby={errors.phone ? "phone-error" : undefined}
+            placeholder=" "
             className={inputClassName}
-            placeholder="+49 ..."
+            {...fieldProps("phone")}
           />
-          {errors.phone && <FieldError id="phone-error" message={errors.phone} />}
-        </div>
+        </FormField>
       </div>
-      <div>
-        <label htmlFor="email" className={labelClassName}>
-          E-Mail <span className="text-accent-heart" aria-hidden>*</span>
-          <span className="sr-only">(Pflichtfeld)</span>
-        </label>
+
+      <FormField id="email" label="E-Mail" required error={errors.email}>
         <input
           id="email"
           name="email"
           type="email"
           required
           aria-required="true"
-          aria-invalid={!!errors.email}
-          aria-describedby={errors.email ? "email-error" : undefined}
+          placeholder=" "
           className={inputClassName}
-          placeholder="eure@email.de"
+          {...fieldProps("email")}
         />
-        {errors.email && <FieldError id="email-error" message={errors.email} />}
-      </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="eventType" className={labelClassName}>
-            Art der Veranstaltung <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+      </FormField>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <FormField id="eventType" label="Art der Veranstaltung" required error={errors.eventType}>
           <select
             id="eventType"
             name="eventType"
             required
             aria-required="true"
-            aria-invalid={!!errors.eventType}
-            aria-describedby={errors.eventType ? "eventType-error" : undefined}
             className={inputClassName}
+            {...fieldProps("eventType")}
           >
             {eventTypes.map((type) => (
               <option key={type} value={type}>
@@ -196,13 +169,8 @@ export function InquiryForm() {
               </option>
             ))}
           </select>
-          {errors.eventType && <FieldError id="eventType-error" message={errors.eventType} />}
-        </div>
-        <div>
-          <label htmlFor="childrenCount" className={labelClassName}>
-            Anzahl der Kinder <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+        </FormField>
+        <FormField id="childrenCount" label="Anzahl der Kinder" required error={errors.childrenCount}>
           <input
             id="childrenCount"
             name="childrenCount"
@@ -210,97 +178,73 @@ export function InquiryForm() {
             min="1"
             required
             aria-required="true"
-            aria-invalid={!!errors.childrenCount}
-            aria-describedby={errors.childrenCount ? "childrenCount-error" : undefined}
+            placeholder=" "
             className={inputClassName}
-            placeholder="z. B. 12"
+            {...fieldProps("childrenCount")}
           />
-          {errors.childrenCount && (
-            <FieldError id="childrenCount-error" message={errors.childrenCount} />
-          )}
-        </div>
+        </FormField>
       </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="date" className={labelClassName}>
-            Datum <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <FormField id="date" label="Datum" required error={errors.date}>
           <input
             id="date"
             name="date"
             type="date"
             required
             aria-required="true"
-            aria-invalid={!!errors.date}
-            aria-describedby={errors.date ? "date-error" : undefined}
             className={inputClassName}
+            {...fieldProps("date")}
           />
-          {errors.date && <FieldError id="date-error" message={errors.date} />}
-        </div>
-        <div>
-          <label htmlFor="time" className={labelClassName}>
-            Uhrzeit <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+        </FormField>
+        <FormField id="time" label="Uhrzeit" required error={errors.time}>
           <input
             id="time"
             name="time"
             type="time"
             required
             aria-required="true"
-            aria-invalid={!!errors.time}
-            aria-describedby={errors.time ? "time-error" : undefined}
             className={inputClassName}
+            {...fieldProps("time")}
           />
-          {errors.time && <FieldError id="time-error" message={errors.time} />}
-        </div>
+        </FormField>
       </div>
-      <div className="grid gap-5 sm:grid-cols-2">
-        <div>
-          <label htmlFor="duration" className={labelClassName}>
-            Dauer
-          </label>
+
+      <div className="grid gap-6 sm:grid-cols-2">
+        <FormField id="duration" label="Dauer">
           <input
             id="duration"
             name="duration"
             type="text"
+            placeholder=" "
             className={inputClassName}
-            placeholder="z. B. 4 Stunden"
           />
-        </div>
-        <div>
-          <label htmlFor="location" className={labelClassName}>
-            Ort / Location <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+        </FormField>
+        <FormField id="location" label="Ort / Location" required error={errors.location}>
           <input
             id="location"
             name="location"
             type="text"
             required
             aria-required="true"
-            aria-invalid={!!errors.location}
-            aria-describedby={errors.location ? "location-error" : undefined}
+            placeholder=" "
             className={inputClassName}
-            placeholder="Adresse"
+            {...fieldProps("location")}
           />
-          {errors.location && <FieldError id="location-error" message={errors.location} />}
-        </div>
+        </FormField>
       </div>
-      <div>
-        <label htmlFor="message" className={labelClassName}>
-          Nachricht
-        </label>
+
+      <FormField id="message" label="Nachricht">
         <textarea
           id="message"
           name="message"
           rows={4}
-          className={inputClassName}
-          placeholder="Besonderheiten, Wünsche, Allergien..."
+          placeholder=" "
+          className={textareaClassName}
         />
-      </div>
-      <div className="flex items-start gap-3">
+      </FormField>
+
+      <div className="flex items-start gap-4 rounded-2xl border border-border/60 bg-bg-secondary/40 p-5">
         <input
           id="privacy"
           name="privacy"
@@ -310,25 +254,28 @@ export function InquiryForm() {
           aria-required="true"
           aria-invalid={!!errors.privacy}
           aria-describedby={errors.privacy ? "privacy-error" : undefined}
-          className="mt-1.5 h-6 w-6 accent-primary"
+          className="mt-1 h-6 w-6 accent-primary"
         />
         <label htmlFor="privacy" className="text-base leading-relaxed text-text-secondary">
           Ich stimme der{" "}
           <Link href="/datenschutz" className="text-primary underline hover:no-underline">
             Datenschutzerklärung
           </Link>{" "}
-          zu und bin einverstanden, dass meine Daten zur Bearbeitung der Anfrage gespeichert werden.{" "}
-          <span className="text-accent-heart" aria-hidden>*</span>
-          <span className="sr-only">(Pflichtfeld)</span>
+          zu und bin einverstanden, dass meine Daten zur Bearbeitung der Anfrage gespeichert werden. *
         </label>
       </div>
-      {errors.privacy && <FieldError id="privacy-error" message={errors.privacy} />}
+      {errors.privacy && (
+        <p id="privacy-error" role="alert" className="text-sm font-medium text-accent-heart">
+          {errors.privacy}
+        </p>
+      )}
+
       <Button
         type="submit"
         disabled={isSubmitting}
         size="lg"
-        className="w-full"
-        icon={<Send className="h-4 w-4" aria-hidden />}
+        className="w-full shadow-xl"
+        icon={<Send className="h-5 w-5" aria-hidden />}
         aria-busy={isSubmitting}
       >
         {isSubmitting ? "Wird gesendet..." : "Anfrage senden"}

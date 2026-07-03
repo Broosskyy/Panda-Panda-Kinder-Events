@@ -3,14 +3,15 @@ import { Star } from "lucide-react";
 interface StarRatingProps {
   rating: number;
   max?: number;
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
   className?: string;
 }
 
 const sizeMap = {
   sm: "h-4 w-4",
   md: "h-5 w-5",
-  lg: "h-6 w-6 sm:h-7 sm:w-7",
+  lg: "h-7 w-7 sm:h-8 sm:w-8",
+  xl: "h-8 w-8 sm:h-9 sm:w-9",
 };
 
 export function StarRating({ rating, max = 5, size = "md", className = "" }: StarRatingProps) {

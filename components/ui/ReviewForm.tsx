@@ -1,11 +1,13 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Check, Star } from "lucide-react";
+import { Star } from "lucide-react";
 import { eventTypes } from "@/lib/faqs";
-import { focusRing, inputClassName, labelClassName } from "@/lib/a11y";
+import { focusRing, inputClassName, labelClassName, textareaClassName } from "@/lib/a11y";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { FormField } from "@/components/ui/FormField";
+import { PandaMascot } from "@/components/ui/PandaMascot";
 
 export function ReviewForm() {
   const [name, setName] = useState("");
@@ -57,15 +59,11 @@ export function ReviewForm() {
   if (success) {
     return (
       <Card padding="lg" hover={false} className="text-center">
-        <div
-          role="status"
-          aria-live="polite"
-          className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-primary text-text-inverse shadow-md"
-        >
-          <Check className="h-8 w-8" aria-hidden />
+        <PandaMascot size={90} className="mx-auto mb-6" />
+        <div role="status" aria-live="polite">
+          <p className="text-xl font-medium text-text-primary">{success}</p>
         </div>
-        <p className="text-lg font-medium text-text-primary">{success}</p>
-        <Button className="mt-6 w-full sm:w-auto" variant="secondary" onClick={() => setSuccess("")}>
+        <Button className="mt-8 w-full sm:w-auto" variant="secondary" size="lg" onClick={() => setSuccess("")}>
           Weitere Bewertung abgeben
         </Button>
       </Card>
@@ -74,34 +72,25 @@ export function ReviewForm() {
 
   return (
     <Card padding="lg" hover={false}>
-      <h3 className="font-heading text-xl font-bold text-text-primary md:text-2xl">
-        Bewertung abgeben
-      </h3>
-      <p className="mt-2 text-base text-text-muted">
+      <h3 className="font-heading text-2xl font-bold text-text-primary">Bewertung abgeben</h3>
+      <p className="mt-3 text-base text-text-muted">
         Eure Bewertung wird nach Prüfung veröffentlicht.
       </p>
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5" noValidate aria-label="Bewertungsformular">
-        <div>
-          <label htmlFor="review-name" className={labelClassName}>
-            Name <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate aria-label="Bewertungsformular">
+        <FormField id="review-name" label="Name" required>
           <input
             id="review-name"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             aria-required="true"
+            placeholder=" "
             className={inputClassName}
-            placeholder="Euer Name"
           />
-        </div>
-        <div>
-          <label htmlFor="review-event" className={labelClassName}>
-            Event-Art <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+        </FormField>
+
+        <FormField id="review-event" label="Event-Art" required>
           <select
             id="review-event"
             value={eventType}
@@ -116,13 +105,14 @@ export function ReviewForm() {
               </option>
             ))}
           </select>
-        </div>
+        </FormField>
+
         <fieldset>
           <legend className={labelClassName}>
             Sterne <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
+            <span className="sr-only"> (Pflichtfeld)</span>
           </legend>
-          <div className="flex gap-1" role="radiogroup" aria-label="Sternebewertung">
+          <div className="mt-2 flex gap-2" role="radiogroup" aria-label="Sternebewertung">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
@@ -132,11 +122,11 @@ export function ReviewForm() {
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
-                className={`flex h-12 w-12 items-center justify-center rounded-xl transition-colors hover:bg-bg-secondary ${focusRing}`}
+                className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all hover:bg-bg-secondary hover:scale-105 ${focusRing}`}
                 aria-label={`${star} von 5 Sternen`}
               >
                 <Star
-                  className={`h-8 w-8 transition-colors ${
+                  className={`h-9 w-9 transition-colors ${
                     star <= (hoverRating || rating)
                       ? "fill-accent-gold text-accent-gold"
                       : "text-text-muted/50"
@@ -147,11 +137,8 @@ export function ReviewForm() {
             ))}
           </div>
         </fieldset>
-        <div>
-          <label htmlFor="review-text" className={labelClassName}>
-            Bewertungstext <span className="text-accent-heart" aria-hidden>*</span>
-            <span className="sr-only">(Pflichtfeld)</span>
-          </label>
+
+        <FormField id="review-text" label="Bewertungstext" required>
           <textarea
             id="review-text"
             value={text}
@@ -160,16 +147,18 @@ export function ReviewForm() {
             aria-required="true"
             minLength={10}
             rows={4}
-            className={inputClassName}
-            placeholder="Erzählt uns von eurer Erfahrung..."
+            placeholder=" "
+            className={textareaClassName}
           />
-        </div>
+        </FormField>
+
         {error && (
           <p role="alert" aria-live="assertive" className="text-base font-medium text-accent-heart">
             {error}
           </p>
         )}
-        <Button type="submit" disabled={loading} size="lg" className="w-full" aria-busy={loading}>
+
+        <Button type="submit" disabled={loading} size="lg" className="w-full shadow-lg" aria-busy={loading}>
           {loading ? "Wird gesendet..." : "Bewertung absenden"}
         </Button>
       </form>

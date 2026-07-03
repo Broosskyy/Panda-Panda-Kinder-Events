@@ -21,6 +21,8 @@ import {
   fetchSiteSettings,
 } from "@/lib/cms/data";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [settings, services, faqs, galleryImages, posts] = await Promise.all([
     fetchSiteSettings(),

@@ -27,7 +27,7 @@ function LisaBadge({
     <div className={`rounded-[var(--radius-card)] bg-bg-card p-4 sm:p-6 ${className}`}>
       <div className="flex items-start gap-3 sm:gap-4">
         <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-white shadow-md sm:h-16 sm:w-16 sm:ring-[3px]">
-          <Image src={imageUrl} alt={`${founderName} — Gründerin`} fill className="object-cover" />
+          <Image src={imageUrl} alt={`${founderName} — Gründerin`} fill className="object-cover" unoptimized={imageUrl.includes("supabase.co")} />
         </div>
         <div>
           <p className="font-accent text-base text-primary sm:text-xl">Hallo, ich bin {founderName}!</p>

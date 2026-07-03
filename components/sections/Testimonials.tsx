@@ -54,7 +54,14 @@ function ReviewCard({ review }: { review: PublicReview }) {
 
       {review.event_image_url ? (
         <div className="relative mt-6 aspect-[16/10] w-full overflow-hidden rounded-xl">
-          <Image src={review.event_image_url} alt={`Eventfoto von ${review.name}`} fill className="object-cover" sizes="(max-width: 768px) 90vw, 320px" />
+          <Image
+            src={review.event_image_url}
+            alt={`Eventfoto von ${review.name}`}
+            fill
+            className="object-cover"
+            sizes="(max-width: 768px) 90vw, 320px"
+            unoptimized={review.event_image_url.includes("supabase.co")}
+          />
         </div>
       ) : null}
 
@@ -69,7 +76,14 @@ function ReviewCard({ review }: { review: PublicReview }) {
         <div className="flex items-center gap-3 sm:gap-4">
           {review.profile_image_url ? (
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-sm sm:h-14 sm:w-14">
-              <Image src={review.profile_image_url} alt={review.name} fill className="object-cover" sizes="56px" />
+              <Image
+                src={review.profile_image_url}
+                alt={review.name}
+                fill
+                className="object-cover"
+                sizes="56px"
+                unoptimized={review.profile_image_url.includes("supabase.co")}
+              />
             </div>
           ) : (
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-primary shadow-sm sm:h-14 sm:w-14 sm:text-base">
@@ -123,7 +137,7 @@ export function Testimonials() {
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch("/api/reviews")
+    fetch("/api/reviews", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         let approved: PublicReview[] = data.reviews ?? [];

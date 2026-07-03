@@ -9,6 +9,8 @@ import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
 import { Container } from "@/components/ui/Container";
 import { fetchPostBySlug, fetchSiteSettings } from "@/lib/cms/data";
 
+export const dynamic = "force-dynamic";
+
 interface PageProps {
   params: Promise<{ slug: string }>;
 }

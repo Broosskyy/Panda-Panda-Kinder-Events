@@ -50,6 +50,7 @@ Originales Logo nach `public/assets/logo.png` legen (siehe `public/assets/README
 | [Features (Original)](docs/03_FEATURES/Features.md) | Ursprüngliche Feature-Spezifikation |
 | [Techstack](docs/04_TECH/Techstack.md) | Technische Architektur und Tool-Auswahl |
 | [Roadmap](docs/05_ROADMAP/Roadmap.md) | Entwicklungsphasen V0–V4 |
+| [Sprint Reports (Download)](docs/05_ROADMAP/Sprint-Reports.md) | Direkt-Download aller Sprint-Berichte |
 | [V1 To-do-Liste](docs/05_ROADMAP/V1-Todo-Liste.md) | Konkrete Aufgaben für Version 1 |
 
 ## Nächste Schritte (Sprint 2)

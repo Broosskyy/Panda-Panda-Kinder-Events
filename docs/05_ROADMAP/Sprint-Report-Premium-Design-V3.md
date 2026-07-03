@@ -68,3 +68,13 @@ Die technisch funktionierende Website auf Pixel-Perfect-Niveau einer hochwertige
 - `npm run build` ✅
 - `npm run lint` ✅
 - Lighthouse nach Deploy empfohlen
+
+---
+
+## Download
+
+| Format | Link |
+|--------|------|
+| **Markdown** | [Sprint-Report-Premium-Design-V3.md herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md) |
+| **PDF** | [Sprint-Report-Premium-Design-V3.pdf herunterladen](https://github.com/Broosskyy/Panda-Panda-Kinder-Events/raw/main/public/downloads/sprint-reports/Sprint-Report-Premium-Design-V3.pdf) |
+| **Alle Reports** | [Sprint-Reports Übersicht](Sprint-Reports.md) |

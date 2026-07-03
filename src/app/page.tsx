@@ -11,59 +11,69 @@ import { Testimonials } from "@/components/sections/Testimonials";
 import { About } from "@/components/sections/About";
 import { Faq } from "@/components/sections/Faq";
 import { Contact } from "@/components/sections/Contact";
+import { News } from "@/components/sections/News";
 import { siteConfig } from "@/config/site";
-import { faqs } from "@/lib/faqs";
+import {
+  fetchCmsFaqs,
+  fetchCmsServices,
+  fetchGalleryImages,
+  fetchPublishedPosts,
+  fetchSiteSettings,
+} from "@/lib/cms/data";
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "LocalBusiness",
-  name: siteConfig.name,
-  description: siteConfig.description,
-  url: siteConfig.url,
-  email: siteConfig.contact.email,
-  telephone: siteConfig.contact.phone,
-  areaServed: "DE",
-};
+export default async function HomePage() {
+  const [settings, services, faqs, galleryImages, posts] = await Promise.all([
+    fetchSiteSettings(),
+    fetchCmsServices(),
+    fetchCmsFaqs(),
+    fetchGalleryImages(),
+    fetchPublishedPosts(6),
+  ]);
 
-const faqJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "FAQPage",
-  mainEntity: faqs.map((faq) => ({
-    "@type": "Question",
-    name: faq.question,
-    acceptedAnswer: {
-      "@type": "Answer",
-      text: faq.answer,
-    },
-  })),
-};
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: siteConfig.name,
+    description: siteConfig.description,
+    url: siteConfig.url,
+    email: settings.contact.email,
+    telephone: settings.contact.phone,
+    areaServed: "DE",
+  };
 
-export default function HomePage() {
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((faq) => ({
+      "@type": "Question",
+      name: faq.question,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: faq.answer,
+      },
+    })),
+  };
+
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <SkipLink />
       <Header />
       <main id="main-content">
-        <Hero />
+        <Hero hero={settings.hero} about={settings.about} />
         <Usps />
-        <Services />
+        <Services items={services} />
         <Process />
-        <Gallery />
+        <Gallery images={galleryImages} contact={settings.contact} />
         <Testimonials />
-        <About />
-        <Faq />
-        <Contact />
+        <About about={settings.about} />
+        <News posts={posts} />
+        <Faq items={faqs} />
+        <Contact contact={settings.contact} />
       </main>
-      <Footer />
-      <WhatsAppFab />
+      <Footer contact={settings.contact} footer={settings.footer} />
+      <WhatsAppFab contact={settings.contact} />
     </>
   );
 }

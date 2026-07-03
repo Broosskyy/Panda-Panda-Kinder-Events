@@ -3,15 +3,24 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Instagram } from "lucide-react";
-import { galleryImages } from "@/lib/gallery";
-import { siteConfig } from "@/config/site";
+import { galleryImages as defaultGallery } from "@/lib/gallery";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import type { SiteContactSettings } from "@/lib/cms/types";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-export function Gallery() {
+interface GalleryProps {
+  images?: { src: string; alt: string }[];
+  contact?: SiteContactSettings;
+}
+
+export function Gallery({
+  images = defaultGallery,
+  contact = DEFAULT_SITE_SETTINGS.contact,
+}: GalleryProps) {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
 
   return (
@@ -26,7 +35,7 @@ export function Gallery() {
 
         <div className="swipe-bleed md:hidden">
           <div className="swipe-track" role="region" aria-label="Galerie — horizontal scrollen">
-            {galleryImages.map((image) => (
+            {images.map((image) => (
               <button
                 key={image.src}
                 type="button"
@@ -48,7 +57,7 @@ export function Gallery() {
         </div>
 
         <div className="masonry-grid hidden md:block">
-          {galleryImages.map((image, i) => (
+          {images.map((image, i) => (
             <ScrollReveal key={image.src} delay={i * 80}>
               <button
                 type="button"
@@ -74,7 +83,7 @@ export function Gallery() {
         <ScrollReveal>
           <div className="mt-12 text-center sm:mt-16">
             <Button
-              href={siteConfig.contact.instagram}
+              href={contact.instagram}
               size="lg"
               className="w-full shadow-lg sm:w-auto"
               icon={<Instagram className="h-5 w-5" aria-hidden />}
@@ -86,11 +95,7 @@ export function Gallery() {
       </Container>
 
       {lightboxImage && (
-        <Lightbox
-          src={lightboxImage.src}
-          alt={lightboxImage.alt}
-          onClose={() => setLightboxImage(null)}
-        />
+        <Lightbox src={lightboxImage.src} alt={lightboxImage.alt} onClose={() => setLightboxImage(null)} />
       )}
     </section>
   );

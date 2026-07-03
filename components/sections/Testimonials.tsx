@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Image from "next/image";
 import { BadgeCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
 import { focusRing } from "@/lib/a11y";
@@ -20,6 +21,10 @@ interface PublicReview {
   rating: number;
   text: string;
   created_at: string;
+  profile_image_url?: string | null;
+  event_image_url?: string | null;
+  admin_reply?: string | null;
+  verified?: boolean;
 }
 
 function formatReviewDate(dateStr: string) {
@@ -47,21 +52,42 @@ function ReviewCard({ review }: { review: PublicReview }) {
         &ldquo;{review.text}&rdquo;
       </blockquote>
 
+      {review.event_image_url ? (
+        <div className="relative mt-6 aspect-[16/10] w-full overflow-hidden rounded-xl">
+          <Image src={review.event_image_url} alt={`Eventfoto von ${review.name}`} fill className="object-cover" sizes="(max-width: 768px) 90vw, 320px" />
+        </div>
+      ) : null}
+
+      {review.admin_reply ? (
+        <div className="mt-6 rounded-xl border border-primary/15 bg-primary/5 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Antwort von Panda-Bande</p>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary sm:text-base">{review.admin_reply}</p>
+        </div>
+      ) : null}
+
       <div className="mt-7 flex items-center justify-between gap-3 border-t border-border/40 pt-6 sm:mt-9 sm:gap-4 sm:pt-7">
         <div className="flex items-center gap-3 sm:gap-4">
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-primary shadow-sm sm:h-14 sm:w-14 sm:text-base">
-            {getInitials(review.name)}
-          </div>
+          {review.profile_image_url ? (
+            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-sm sm:h-14 sm:w-14">
+              <Image src={review.profile_image_url} alt={review.name} fill className="object-cover" sizes="56px" />
+            </div>
+          ) : (
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-primary shadow-sm sm:h-14 sm:w-14 sm:text-base">
+              {getInitials(review.name)}
+            </div>
+          )}
           <div>
             <p className="font-semibold text-text-primary">{review.name}</p>
             <p className="text-sm text-text-muted">{review.event_type}</p>
             <p className="mt-1 text-sm text-text-muted">{formatReviewDate(review.created_at)}</p>
           </div>
         </div>
-        <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-2 text-xs font-semibold text-primary sm:inline-flex">
-          <BadgeCheck className="h-4 w-4" aria-hidden />
-          Verifizierte Buchung
-        </span>
+        {review.verified ? (
+          <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-2 text-xs font-semibold text-primary sm:inline-flex">
+            <BadgeCheck className="h-4 w-4" aria-hidden />
+            Verifizierte Buchung
+          </span>
+        ) : null}
       </div>
     </Card>
   );
@@ -78,9 +104,7 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
     <div className="mb-8 flex flex-col items-center gap-3 text-center sm:mb-12 md:mb-16">
       <StarRating rating={5} size="xl" />
       <div className="flex items-baseline gap-2">
-        <span className="font-heading text-4xl font-bold text-text-primary sm:text-5xl md:text-6xl">
-          {displayAverage}
-        </span>
+        <span className="font-heading text-4xl font-bold text-text-primary sm:text-5xl md:text-6xl">{displayAverage}</span>
         <span className="text-xl text-text-muted">/ 5</span>
       </div>
       <p className="text-base text-text-muted md:text-lg">
@@ -111,6 +135,7 @@ export function Testimonials() {
             rating: d.stars,
             text: d.text,
             created_at: new Date().toISOString(),
+            verified: true,
           }));
         }
         setReviews(approved);
@@ -169,11 +194,7 @@ export function Testimonials() {
               <>
                 <div className="lg:hidden">
                   <div className="swipe-bleed">
-                    <div
-                      className="swipe-track"
-                      role="region"
-                      aria-label="Bewertungen — horizontal scrollen"
-                    >
+                    <div className="swipe-track" role="region" aria-label="Bewertungen — horizontal scrollen">
                       {reviews.map((review) => (
                         <div key={review.id} className="swipe-item w-[min(90vw,24rem)] sm:w-[min(92vw,26rem)]">
                           <ReviewCard review={review} />

@@ -2,6 +2,36 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.0] — 2026-07-03
+
+### Sprint B — CMS / Admin Dashboard
+
+Vollständiges Content-Management: Inhalte, Galerie, Bewertungen, Beiträge, FAQ und Leistungen über das Admin-Dashboard pflegbar.
+
+#### Admin Dashboard
+- Moderne Sidebar-Navigation mit 9 Bereichen
+- Dashboard mit Statistiken und Schnellzugriffen
+- Toast-Meldungen, Ladeindikatoren, Suche und Filter
+- Mobile-taugliche Admin-Oberfläche
+
+#### Website-Inhalte (site_settings)
+- Hero, Kontakt, Über uns, Footer bearbeitbar
+- Fallback auf statische Konfiguration wenn leer
+
+#### CMS-Module
+- **Galerie:** Upload, Ersetzen, Löschen, Sortieren, Kategorien (Supabase Storage `gallery`)
+- **Bewertungen:** Profil-/Eventfotos, Admin-Antwort, Verifiziert-Badge, Freigabe/Ablehnung
+- **Anfragen:** Status inkl. Abgesagt, interne Notizen
+- **Leistungen & FAQ:** CRUD, Sortierung, Sichtbarkeit
+- **Beiträge:** Kleines CMS mit Slug, Hero-Bild, Veröffentlichung
+- **Aktuelles:** Neue Section auf der Startseite + Detailseiten `/aktuelles/[slug]`
+
+#### Technik
+- SQL-Migration `supabase/migrations/20260703_cms_v080.sql`
+- Serverseitige Uploads (Buckets: `gallery`, `reviews`, `site-assets`)
+- Admin-APIs unter `/api/admin/*`
+- `CMS_ADMIN_GUIDE.md` für Nicht-Techniker
+
 ## [0.7.0] — 2026-07-03
 
 ### Sprint A — Final UI / Design Polish (V1.0 Candidate)

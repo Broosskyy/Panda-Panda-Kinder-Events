@@ -5,6 +5,7 @@ export type BookingStatus =
   | "contacted"
   | "confirmed"
   | "declined"
+  | "cancelled"
   | "completed";
 
 export interface BookingRequest {
@@ -21,6 +22,7 @@ export interface BookingRequest {
   children_count: number;
   message: string | null;
   status: BookingStatus;
+  admin_notes: string | null;
 }
 
 export interface Review {
@@ -31,6 +33,10 @@ export interface Review {
   rating: number;
   text: string;
   approved: boolean;
+  profile_image_url: string | null;
+  event_image_url: string | null;
+  admin_reply: string | null;
+  verified: boolean;
 }
 
 function getSupabaseUrl() {

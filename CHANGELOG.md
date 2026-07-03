@@ -37,10 +37,18 @@ Visuelles Feintuning auf Boutique-Agentur-Niveau — ausschließlich Design/UI/U
 - `PandaMascot` in Empty State, Success-Meldungen, Footer, About
 - `FlowerOrnament` in Hero, About, Kontakt
 
-#### Dokumentation
-- `docs/05_ROADMAP/Sprint-Report-Premium-Design-V3.md`
+#### Design-Philosophie
+- Mockup als Stil- und Markenreferenz, nicht als starres Pixel-Template
+- UX-Verbesserungen dort, wo das Mockup suboptimal ist (z. B. FAQ ohne schwere Karten, Hero-Badge mobil oben)
 
----
+#### Mockup-Abgleich & UX-Optimierungen
+- Hero Lisa-Badge: unten links (Desktop/Mockup), oben (Mobile/Lesbarkeit)
+- USPs Desktop: leichte Icon-Zeile statt schwerer Karten
+- Leistungen: weiße Karten mit feiner Linie (Mockup-Stil)
+- FAQ: minimalistisches Accordion mit Trennlinien
+- Bewertungen Desktop: Pfeil-Navigation bei mehr als 3 Einträgen
+- Hintergrund `#faf9f6` (Mockup-Wärme)
+
 
 ## [0.4.0] — 2026-07-02
 

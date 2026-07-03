@@ -59,9 +59,7 @@ export function Hero() {
                   key={badge.text}
                   className="flex flex-col items-center gap-3 text-center sm:items-start sm:text-left"
                 >
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-bg-secondary/80">
-                    <badge.icon className="h-5 w-5 text-primary" strokeWidth={1.5} aria-hidden />
-                  </div>
+                  <badge.icon className="h-6 w-6 text-primary" strokeWidth={1.25} aria-hidden />
                   <span className="text-sm font-medium leading-snug text-text-primary md:text-base">
                     {badge.text}
                   </span>
@@ -82,7 +80,8 @@ export function Hero() {
               />
             </div>
 
-            <div className="hero-badge absolute -top-4 left-4 right-4 z-10 rounded-[var(--radius-card)] bg-bg-card/95 p-5 md:left-6 md:right-auto md:max-w-[300px] lg:-top-6 lg:left-8">
+            {/* Mockup: bottom-left on desktop; top on mobile for bessere Lesbarkeit */}
+            <div className="hero-badge absolute -top-4 left-4 right-4 z-10 rounded-[var(--radius-card)] bg-bg-card/95 p-5 md:left-6 md:right-auto md:max-w-[300px] lg:-bottom-6 lg:top-auto lg:left-8 lg:max-w-[280px]">
               <div className="flex items-start gap-4">
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full ring-[3px] ring-white shadow-lg">
                   <Image

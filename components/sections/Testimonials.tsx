@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { siteConfig } from "@/config/site";
+import { focusRing } from "@/lib/a11y";
 import { Card } from "@/components/ui/Card";
 import { ReviewForm } from "@/components/ui/ReviewForm";
 import { StarRating } from "@/components/ui/StarRating";
@@ -89,9 +90,12 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
   );
 }
 
+const DESKTOP_VISIBLE = 3;
+
 export function Testimonials() {
   const [reviews, setReviews] = useState<PublicReview[]>([]);
   const [loading, setLoading] = useState(true);
+  const [desktopIndex, setDesktopIndex] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -120,8 +124,14 @@ export function Testimonials() {
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
+  const desktopMaxIndex = Math.max(0, total - DESKTOP_VISIBLE);
+  const visibleDesktop = reviews.slice(desktopIndex, desktopIndex + DESKTOP_VISIBLE);
+
+  const prevDesktop = () => setDesktopIndex((i) => Math.max(0, i - 1));
+  const nextDesktop = () => setDesktopIndex((i) => Math.min(desktopMaxIndex, i + 1));
+
   return (
-    <section id="bewertungen" className="scroll-mt-24 section-padding bg-bg-warm/50">
+    <section id="bewertungen" className="scroll-mt-24 section-padding bg-bg-warm/40">
       <Container>
         <ScrollReveal>
           <SectionHeading
@@ -171,12 +181,38 @@ export function Testimonials() {
                   </div>
                 </div>
 
-                <div className="hidden gap-8 lg:grid lg:grid-cols-3">
-                  {reviews.slice(0, 3).map((review, i) => (
-                    <ScrollReveal key={review.id} delay={i * 120}>
-                      <ReviewCard review={review} />
-                    </ScrollReveal>
-                  ))}
+                <div className="hidden lg:block">
+                  <div className="relative">
+                    {total > DESKTOP_VISIBLE && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={prevDesktop}
+                          disabled={desktopIndex === 0}
+                          className={`absolute -left-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg-card shadow-md transition-opacity disabled:opacity-30 ${focusRing}`}
+                          aria-label="Vorherige Bewertungen"
+                        >
+                          <ChevronLeft className="h-5 w-5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={nextDesktop}
+                          disabled={desktopIndex >= desktopMaxIndex}
+                          className={`absolute -right-4 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-bg-card shadow-md transition-opacity disabled:opacity-30 ${focusRing}`}
+                          aria-label="Nächste Bewertungen"
+                        >
+                          <ChevronRight className="h-5 w-5" />
+                        </button>
+                      </>
+                    )}
+                    <div className="grid gap-8 lg:grid-cols-3">
+                      {visibleDesktop.map((review, i) => (
+                        <ScrollReveal key={review.id} delay={i * 80}>
+                          <ReviewCard review={review} />
+                        </ScrollReveal>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               </>
             )}

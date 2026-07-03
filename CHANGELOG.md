@@ -31,6 +31,7 @@ Vollständiges Content-Management: Inhalte, Galerie, Bewertungen, Beiträge, FAQ
 - Serverseitige Uploads (Buckets: `gallery`, `reviews`, `site-assets`)
 - Admin-APIs unter `/api/admin/*`
 - `CMS_ADMIN_GUIDE.md` für Nicht-Techniker
+- `docs/05_ROADMAP/Sprint-Report-CMS-Admin.md` — Sprint-B Report
 
 ## [0.7.0] — 2026-07-03
 

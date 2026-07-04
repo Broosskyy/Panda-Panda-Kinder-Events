@@ -5,6 +5,7 @@ import { NextResponse } from "next/server";
 const ALLOWED = new Set([
   "Statistik-Report.pdf",
   "CMS-Bugfix-Report.pdf",
+  "Stabilization-Live-Test-Report.pdf",
   "Sprint-Report-CMS-Admin.pdf",
   "Sprint-Report-Mobile-Bugfix.pdf",
   "Sprint-Report-Premium-Design-V3.pdf",

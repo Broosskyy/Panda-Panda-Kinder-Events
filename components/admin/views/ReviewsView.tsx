@@ -60,7 +60,7 @@ export function ReviewsView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           id,
-          [type === "profile" ? "profile_image_url" : "event_image_url"]: upData.url,
+          [type === "profile" ? "profile_image_url" : "event_image_url"]: upData.path,
         }),
       });
       if (!res.ok) throw new Error("Speichern fehlgeschlagen");

@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
-import { deleteStorageFile, extractStoragePathFromUrl } from "@/lib/cms/storage";
+import { deleteStorageFile } from "@/lib/cms/storage";
+import { mapReviewRow } from "@/lib/cms/reviews";
+import { storagePathForDelete, toStoragePath } from "@/lib/cms/storage-ref";
 import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
@@ -24,7 +26,9 @@ export async function GET() {
     return NextResponse.json({ error: "Fehler beim Laden." }, { status: 500 });
   }
 
-  return NextResponse.json({ reviews: data ?? [] });
+  return NextResponse.json({
+    reviews: (data ?? []).map((row) => mapReviewRow(row as Record<string, unknown>)),
+  });
 }
 
 export async function PATCH(request: Request) {
@@ -42,8 +46,14 @@ export async function PATCH(request: Request) {
   if (typeof approved === "boolean") updates.approved = approved;
   if (admin_reply !== undefined) updates.admin_reply = admin_reply;
   if (typeof verified === "boolean") updates.verified = verified;
-  if (profile_image_url !== undefined) updates.profile_image_url = profile_image_url;
-  if (event_image_url !== undefined) updates.event_image_url = event_image_url;
+  if (profile_image_url !== undefined) {
+    updates.profile_image_url =
+      typeof profile_image_url === "string" ? toStoragePath("reviews", profile_image_url) : profile_image_url;
+  }
+  if (event_image_url !== undefined) {
+    updates.event_image_url =
+      typeof event_image_url === "string" ? toStoragePath("reviews", event_image_url) : event_image_url;
+  }
 
   if (!Object.keys(updates).length) {
     return NextResponse.json({ error: "Keine Updates." }, { status: 400 });
@@ -80,13 +90,13 @@ export async function DELETE(request: Request) {
 
   if (review?.profile_image_url) {
     try {
-      const path = extractStoragePathFromUrl("reviews", review.profile_image_url);
+      const path = storagePathForDelete("reviews", review.profile_image_url);
       if (path) await deleteStorageFile("reviews", path);
     } catch { /* best effort */ }
   }
   if (review?.event_image_url) {
     try {
-      const path = extractStoragePathFromUrl("reviews", review.event_image_url);
+      const path = storagePathForDelete("reviews", review.event_image_url);
       if (path) await deleteStorageFile("reviews", path);
     } catch { /* best effort */ }
   }

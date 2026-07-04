@@ -3,6 +3,7 @@ import { z } from "zod";
 import { eventTypes } from "@/lib/faqs";
 import { mapReviewRow } from "@/lib/cms/reviews";
 import { uploadImage } from "@/lib/cms/storage";
+import { toStoragePath } from "@/lib/cms/storage-ref";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 
 const reviewSchema = z.object({
@@ -72,12 +73,12 @@ export async function POST(request: Request) {
 
     if (profileImage) {
       const uploaded = await uploadImage("reviews", profileImage, "profiles");
-      profile_image_url = uploaded.url;
+      profile_image_url = toStoragePath("reviews", uploaded.path);
     }
 
     if (eventImage) {
       const uploaded = await uploadImage("reviews", eventImage, "events");
-      event_image_url = uploaded.url;
+      event_image_url = toStoragePath("reviews", uploaded.path);
     }
 
     const { error } = await supabase.from("reviews").insert({

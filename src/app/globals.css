@@ -209,9 +209,17 @@ img {
 /* Hero atmosphere */
 .hero-section {
   min-height: auto;
+  overflow: visible;
   background:
     radial-gradient(ellipse 90% 70% at 10% -10%, rgba(244, 241, 234, 0.95) 0%, transparent 55%),
     radial-gradient(ellipse 50% 40% at 95% 10%, rgba(239, 233, 223, 0.45) 0%, transparent 45%);
+}
+
+/* Above-the-fold hero text must never be clipped or hidden by reveal animation */
+.hero-section .hero-content,
+.hero-section .hero-content .reveal {
+  opacity: 1;
+  transform: none;
 }
 
 .hero-image-wrap {

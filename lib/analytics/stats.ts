@@ -20,19 +20,46 @@ function emptyDashboard(): AdminAnalyticsDashboard {
     galleryCount: 0,
     postsCount: 0,
     trackingEnabled: false,
+    trackingTableReady: false,
   };
 }
 
-async function countPageViews(since?: string): Promise<number> {
+async function isPageViewsTableReady(): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("page_views").select("id").limit(1);
+  if (!error) return true;
+  if (error.code === "42P01" || error.message.includes("does not exist")) return false;
+  return true;
+}
+
+async function countPageViewsRpc(since?: string): Promise<number | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.rpc("analytics_page_view_count", {
     since_ts: since ?? null,
   });
   if (error) {
     console.error("analytics_page_view_count:", error.message);
-    return 0;
+    return null;
   }
   return Number(data ?? 0);
+}
+
+async function countPageViewsDirect(since?: string): Promise<number> {
+  const supabase = getSupabaseAdmin();
+  let query = supabase.from("page_views").select("id", { count: "exact", head: true });
+  if (since) query = query.gte("created_at", since);
+  const { count, error } = await query;
+  if (error) {
+    console.error("countPageViewsDirect:", error.message);
+    return 0;
+  }
+  return count ?? 0;
+}
+
+async function countPageViews(since?: string): Promise<number> {
+  const rpc = await countPageViewsRpc(since);
+  if (rpc !== null) return rpc;
+  return countPageViewsDirect(since);
 }
 
 async function getTodayStartBerlin(): Promise<string> {
@@ -46,24 +73,79 @@ async function getTodayStartBerlin(): Promise<string> {
   return String(data);
 }
 
-async function distinctSessions(since?: string): Promise<number> {
+async function distinctSessionsRpc(since?: string): Promise<number | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.rpc("analytics_distinct_sessions", {
     since_ts: since ?? null,
   });
   if (error) {
     console.error("analytics_distinct_sessions:", error.message);
-    return 0;
+    return null;
   }
   return Number(data ?? 0);
 }
 
-async function fetchDailyStats(days: number): Promise<DailyStat[]> {
+async function distinctSessionsDirect(since?: string): Promise<number> {
+  const supabase = getSupabaseAdmin();
+  let query = supabase.from("page_views").select("session_id");
+  if (since) query = query.gte("created_at", since);
+  const { data, error } = await query;
+  if (error) {
+    console.error("distinctSessionsDirect:", error.message);
+    return 0;
+  }
+  return new Set((data ?? []).map((row) => row.session_id)).size;
+}
+
+async function distinctSessions(since?: string): Promise<number> {
+  const rpc = await distinctSessionsRpc(since);
+  if (rpc !== null) return rpc;
+  return distinctSessionsDirect(since);
+}
+
+function aggregateDailyStats(
+  rows: { created_at: string; session_id: string }[],
+  days: number,
+): DailyStat[] {
+  const byDay = new Map<string, { views: number; sessions: Set<string> }>();
+  const cutoff = Date.now() - days * 24 * 60 * 60 * 1000;
+
+  for (const row of rows) {
+    const ts = new Date(row.created_at).getTime();
+    if (ts < cutoff) continue;
+    const day = new Date(row.created_at).toLocaleDateString("en-CA", { timeZone: "Europe/Berlin" });
+    const entry = byDay.get(day) ?? { views: 0, sessions: new Set<string>() };
+    entry.views += 1;
+    entry.sessions.add(row.session_id);
+    byDay.set(day, entry);
+  }
+
+  return [...byDay.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, stats]) => ({
+      date,
+      views: stats.views,
+      visitors: stats.sessions.size,
+    }));
+}
+
+function aggregateTopPages(rows: { path: string }[], limit = 10): TopPage[] {
+  const counts = new Map<string, number>();
+  for (const row of rows) {
+    counts.set(row.path, (counts.get(row.path) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([path, views]) => ({ path, views }));
+}
+
+async function fetchDailyStatsRpc(days: number): Promise<DailyStat[] | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.rpc("analytics_daily_stats", { days_count: days });
   if (error) {
     console.error("analytics_daily_stats:", error.message);
-    return [];
+    return null;
   }
   return ((data ?? []) as { day: string; views: number; visitors: number }[]).map((row) => ({
     date: row.day,
@@ -72,12 +154,32 @@ async function fetchDailyStats(days: number): Promise<DailyStat[]> {
   }));
 }
 
-async function fetchTopPages(): Promise<TopPage[]> {
+async function fetchDailyStatsDirect(days: number): Promise<DailyStat[]> {
+  const supabase = getSupabaseAdmin();
+  const since = daysAgoIso(days);
+  const { data, error } = await supabase
+    .from("page_views")
+    .select("created_at, session_id")
+    .gte("created_at", since);
+  if (error) {
+    console.error("fetchDailyStatsDirect:", error.message);
+    return [];
+  }
+  return aggregateDailyStats(data ?? [], days);
+}
+
+async function fetchDailyStats(days: number): Promise<DailyStat[]> {
+  const rpc = await fetchDailyStatsRpc(days);
+  if (rpc !== null) return rpc;
+  return fetchDailyStatsDirect(days);
+}
+
+async function fetchTopPagesRpc(): Promise<TopPage[] | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.rpc("analytics_top_pages", { limit_count: 10 });
   if (error) {
     console.error("analytics_top_pages:", error.message);
-    return [];
+    return null;
   }
   return ((data ?? []) as { path: string; views: number }[]).map((row) => ({
     path: row.path,
@@ -85,11 +187,28 @@ async function fetchTopPages(): Promise<TopPage[]> {
   }));
 }
 
+async function fetchTopPagesDirect(): Promise<TopPage[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("page_views").select("path");
+  if (error) {
+    console.error("fetchTopPagesDirect:", error.message);
+    return [];
+  }
+  return aggregateTopPages(data ?? []);
+}
+
+async function fetchTopPages(): Promise<TopPage[]> {
+  const rpc = await fetchTopPagesRpc();
+  if (rpc !== null) return rpc;
+  return fetchTopPagesDirect();
+}
+
 export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDashboard> {
   noStore();
 
   if (!isSupabaseConfigured()) return emptyDashboard();
 
+  const tableReady = await isPageViewsTableReady();
   const supabase = getSupabaseAdmin();
   const todayStart = await getTodayStartBerlin();
   const sevenDaysAgo = daysAgoIso(7);
@@ -167,9 +286,10 @@ export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDash
       galleryCount: galleryCount.count ?? 0,
       postsCount: postsCount.count ?? 0,
       trackingEnabled: true,
+      trackingTableReady: tableReady,
     };
   } catch (err) {
     console.error("fetchAdminAnalyticsDashboard:", err);
-    return emptyDashboard();
+    return { ...emptyDashboard(), trackingEnabled: true, trackingTableReady: tableReady };
   }
 }

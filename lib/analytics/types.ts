@@ -54,4 +54,5 @@ export interface AdminAnalyticsDashboard {
   galleryCount: number;
   postsCount: number;
   trackingEnabled: boolean;
+  trackingTableReady: boolean;
 }

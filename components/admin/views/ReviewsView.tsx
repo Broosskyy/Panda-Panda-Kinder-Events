@@ -45,6 +45,33 @@ export function ReviewsView() {
     } else toast("Fehler", "error");
   };
 
+  const uploadReviewImage = async (id: string, file: File, type: "profile" | "event") => {
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("bucket", "reviews");
+      fd.append("folder", type === "profile" ? "profiles" : "events");
+      const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
+      const upData = await up.json();
+      if (!up.ok) throw new Error(upData.error ?? "Upload fehlgeschlagen");
+
+      const res = await fetch("/api/admin/reviews", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id,
+          [type === "profile" ? "profile_image_url" : "event_image_url"]: upData.url,
+        }),
+      });
+      if (!res.ok) throw new Error("Speichern fehlgeschlagen");
+
+      toast(type === "profile" ? "Profilbild hochgeladen" : "Eventfoto hochgeladen");
+      load();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Upload fehlgeschlagen", "error");
+    }
+  };
+
   const remove = async (id: string) => {
     if (!confirm("Bewertung wirklich löschen?")) return;
     const res = await fetch("/api/admin/reviews", {
@@ -87,7 +114,7 @@ export function ReviewsView() {
             <div className="flex flex-wrap gap-4">
               {r.profile_image_url && (
                 <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full">
-                  <Image src={r.profile_image_url} alt="" fill className="object-cover" />
+                  <Image src={r.profile_image_url} alt="" fill className="object-cover" unoptimized={r.profile_image_url.includes("supabase.co")} />
                 </div>
               )}
               <div className="min-w-0 flex-1">
@@ -112,9 +139,37 @@ export function ReviewsView() {
                 <p className="mt-2 text-sm text-text-secondary">&ldquo;{r.text}&rdquo;</p>
                 {r.event_image_url && (
                   <div className="relative mt-3 h-32 w-48 overflow-hidden rounded-xl">
-                    <Image src={r.event_image_url} alt="Eventfoto" fill className="object-cover" />
+                    <Image src={r.event_image_url} alt="Eventfoto" fill className="object-cover" unoptimized={r.event_image_url.includes("supabase.co")} />
                   </div>
                 )}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <label className="admin-btn-secondary cursor-pointer text-xs">
+                    Profilbild
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadReviewImage(r.id, file, "profile");
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <label className="admin-btn-secondary cursor-pointer text-xs">
+                    Eventfoto
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadReviewImage(r.id, file, "event");
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
                 <div className="mt-4">
                   <label className="mb-1 block text-xs font-medium text-text-muted">
                     Antwort von Panda-Bande

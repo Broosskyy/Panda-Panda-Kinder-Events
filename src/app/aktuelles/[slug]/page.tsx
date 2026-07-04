@@ -58,7 +58,7 @@ export default async function PostPage({ params }: PageProps) {
 
           {post.hero_image_url ? (
             <div className="relative mt-8 aspect-[16/10] w-full overflow-hidden rounded-2xl">
-              <Image src={post.hero_image_url} alt="" fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 768px" />
+              <Image src={post.hero_image_url} alt="" fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 768px" unoptimized={post.hero_image_url.includes("supabase.co")} />
             </div>
           ) : null}
 

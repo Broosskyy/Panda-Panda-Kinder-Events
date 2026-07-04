@@ -3,6 +3,8 @@ import { z } from "zod";
 import { detectDeviceType, sanitizePath, sanitizeReferrer, sanitizeUserAgent } from "@/lib/analytics/device";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 
+export const dynamic = "force-dynamic";
+
 const trackSchema = z.object({
   path: z.string().min(1).max(300),
   referrer: z.string().max(500).nullable().optional(),

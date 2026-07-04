@@ -4,7 +4,7 @@ import { galleryImages as staticGallery } from "@/lib/gallery";
 import { services as staticServices } from "@/lib/services";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
-import { getPublicUrl } from "./storage";
+import { resolveImageUrl } from "./resolve-image";
 import { resolveServiceIcon } from "./icons";
 import type {
   CmsFaq,
@@ -20,10 +20,21 @@ function mergeSection<T extends object>(defaults: T, cmsValue: unknown): T {
   return { ...defaults, ...(cmsValue as T) };
 }
 
+function normalizeAboutSettings(about: SiteSettingsBundle["about"]): SiteSettingsBundle["about"] {
+  const resolved =
+    resolveImageUrl("site-assets", about.imageUrl) ??
+    (about.imageUrl?.trim() ? about.imageUrl.trim() : DEFAULT_SITE_SETTINGS.about.imageUrl);
+  return { ...about, imageUrl: resolved };
+}
+
 function buildSettingsFromRows(
   rows: { key: string; value: unknown }[],
 ): SiteSettingsBundle {
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
+
+  const about = byKey.has("about")
+    ? mergeSection(DEFAULT_SITE_SETTINGS.about, byKey.get("about"))
+    : DEFAULT_SITE_SETTINGS.about;
 
   return {
     hero: byKey.has("hero")
@@ -32,9 +43,7 @@ function buildSettingsFromRows(
     contact: byKey.has("contact")
       ? mergeSection(DEFAULT_SITE_SETTINGS.contact, byKey.get("contact"))
       : DEFAULT_SITE_SETTINGS.contact,
-    about: byKey.has("about")
-      ? mergeSection(DEFAULT_SITE_SETTINGS.about, byKey.get("about"))
-      : DEFAULT_SITE_SETTINGS.about,
+    about: normalizeAboutSettings(about),
     footer: byKey.has("footer")
       ? mergeSection(DEFAULT_SITE_SETTINGS.footer, byKey.get("footer"))
       : DEFAULT_SITE_SETTINGS.footer,
@@ -171,12 +180,13 @@ export async function fetchGalleryImages(): Promise<{ src: string; alt: string }
     }
 
     return (data as GalleryImageRecord[]).map((img) => ({
-      src: getPublicUrl("gallery", img.storage_path),
+      src: resolveImageUrl("gallery", img.storage_path) ?? "",
       alt: img.alt_text || img.title || "Galeriebild",
-    }));
+    })).filter((img) => img.src);
   } catch (err) {
     console.error("fetchGalleryImages:", err);
-    return staticGallery;
+    const hasCms = await tableHasRows("gallery_images").catch(() => false);
+    return hasCms ? [] : staticGallery;
   }
 }
 
@@ -190,7 +200,8 @@ export async function fetchPublishedPosts(limit = 6): Promise<CmsPost[]> {
       .from("cms_posts")
       .select("*")
       .eq("published", true)
-      .order("published_at", { ascending: false })
+      .order("published_at", { ascending: false, nullsFirst: false })
+      .order("created_at", { ascending: false })
       .limit(limit);
 
     if (error) {
@@ -202,9 +213,7 @@ export async function fetchPublishedPosts(limit = 6): Promise<CmsPost[]> {
 
     return (data as CmsPost[]).map((post) => ({
       ...post,
-      hero_image_url: post.hero_image_path
-        ? getPublicUrl("site-assets", post.hero_image_path)
-        : null,
+      hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
     }));
   } catch (err) {
     console.error("fetchPublishedPosts:", err);
@@ -234,9 +243,7 @@ export async function fetchPostBySlug(slug: string): Promise<CmsPost | null> {
   const post = data as CmsPost;
   return {
     ...post,
-    hero_image_url: post.hero_image_path
-      ? getPublicUrl("site-assets", post.hero_image_path)
-      : null,
+    hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
   };
 }
 

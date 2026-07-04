@@ -192,6 +192,13 @@ export function DashboardView() {
         </p>
       ) : null}
 
+      {stats?.trackingEnabled && stats.trackingTableReady === false ? (
+        <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
+          Die Tabelle <code className="font-mono">page_views</code> fehlt. Bitte Migration{" "}
+          <code className="font-mono">20260703_page_views_analytics.sql</code> in Supabase ausführen.
+        </p>
+      ) : null}
+
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
           { href: "/admin/inhalte", label: "Hero & Kontakt bearbeiten" },

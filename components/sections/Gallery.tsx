@@ -35,9 +35,9 @@ export function Gallery({
 
         <div className="swipe-bleed md:hidden">
           <div className="swipe-track" role="region" aria-label="Galerie — horizontal scrollen">
-            {images.map((image) => (
+            {images.map((image, index) => (
               <button
-                key={image.src}
+                key={`${image.src}-${index}`}
                 type="button"
                 className="gallery-tile swipe-item relative aspect-[4/5] w-[min(78vw,18rem)] sm:w-[min(80vw,20rem)]"
                 onClick={() => setLightboxImage(image)}
@@ -59,7 +59,7 @@ export function Gallery({
 
         <div className="masonry-grid hidden md:block">
           {images.map((image, i) => (
-            <ScrollReveal key={image.src} delay={i * 80}>
+            <ScrollReveal key={`${image.src}-${i}`} delay={i * 80}>
               <button
                 type="button"
                 className={`gallery-tile masonry-item group relative w-full ${

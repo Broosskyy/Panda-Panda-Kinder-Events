@@ -16,6 +16,31 @@ function getSessionId(): string {
   return id;
 }
 
+function sendPageView(path: string, referrer: string | null, sessionId: string) {
+  const payload = JSON.stringify({
+    path,
+    referrer,
+    sessionId,
+  });
+
+  if (typeof navigator !== "undefined" && navigator.sendBeacon) {
+    const sent = navigator.sendBeacon(
+      "/api/track",
+      new Blob([payload], { type: "application/json" }),
+    );
+    if (sent) return;
+  }
+
+  void fetch("/api/track", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: payload,
+    keepalive: true,
+  }).catch(() => {
+    /* anonymes Tracking — Fehler still ignorieren */
+  });
+}
+
 export function PageViewTracker() {
   const pathname = usePathname();
   const lastTrack = useRef<{ path: string; at: number } | null>(null);
@@ -35,18 +60,7 @@ export function PageViewTracker() {
     const sessionId = getSessionId();
     if (!sessionId) return;
 
-    void fetch("/api/track", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: pathname,
-        referrer: document.referrer || null,
-        sessionId,
-      }),
-      keepalive: true,
-    }).catch(() => {
-      /* anonymes Tracking — Fehler still ignorieren */
-    });
+    sendPageView(pathname, document.referrer || null, sessionId);
   }, [pathname]);
 
   return null;

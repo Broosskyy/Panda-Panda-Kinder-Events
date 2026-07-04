@@ -112,7 +112,7 @@ export function GalleryView() {
         {images.map((img) => (
           <AdminCard key={img.id} className="!p-0 overflow-hidden">
             <div className="relative aspect-[4/3]">
-              <Image src={img.url} alt={img.alt_text} fill className="object-cover" />
+              <Image src={img.url} alt={img.alt_text} fill className="object-cover" unoptimized={img.url.includes("supabase.co")} />
             </div>
             <div className="space-y-3 p-4">
               <input

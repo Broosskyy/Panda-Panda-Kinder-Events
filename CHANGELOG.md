@@ -2,6 +2,36 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.3] — 2026-07-04
+
+### Critical CMS + UI Bugfix Sprint
+
+Vollständige Verbindung Admin → öffentliche Website, Upload-Fixes, Hero-Clipping, Statistik-Fallbacks.
+
+#### CMS Binding
+- `resolveImageUrl()` für Galerie, Beiträge und Über-uns-Bilder (Pfad oder volle URL)
+- `fetchPostBySlug` repariert (fehlender Import / kaputtes Hero-Bild)
+- `published_at` wird beim Veröffentlichen automatisch gesetzt
+- Über-uns `imageUrl` wird beim Laden normalisiert
+
+#### Uploads
+- Öffentliche Storage-Buckets: Migration `20260704_storage_buckets_public.sql`
+- Admin: Bewertungs-Profilbild und Eventfoto nachträglich hochladbar
+- Robustes Storage-Pfad-Parsing via `extractStoragePathFromUrl()`
+- `unoptimized` für alle Supabase-Bilder (News, Beitragsseite, Admin-Galerie)
+
+#### Header / Hero
+- Tagline im Portrait (320–430px) nicht mehr abgeschnitten
+- Safe-Area-Padding, kein `overflow-hidden`, Hero-Text ohne ScrollReveal-Verstecken
+
+#### Statistik
+- Fallback-Queries wenn Analytics-RPCs fehlen
+- `sendBeacon` im PageViewTracker
+- Dashboard-Hinweis wenn `page_views`-Tabelle fehlt
+
+#### Dokumentation
+- `docs/05_ROADMAP/CMS-UI-Bugfix-Report.md`
+
 ## [0.8.2] — 2026-07-03
 
 ### Sprint B2 — Admin Statistik-Dashboard

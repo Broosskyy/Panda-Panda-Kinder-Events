@@ -45,7 +45,7 @@ export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_S
   return (
     <section
       id="startseite"
-      className="hero-section relative scroll-mt-20 overflow-hidden section-padding-lg pt-24 sm:scroll-mt-24 sm:pt-32 md:pt-40 lg:pt-48"
+      className="hero-section relative scroll-mt-20 section-padding-lg pt-[max(6.5rem,calc(5rem+env(safe-area-inset-top,0px)))] sm:scroll-mt-24 sm:pt-[max(8rem,calc(6rem+env(safe-area-inset-top,0px)))] md:pt-[max(10rem,calc(7rem+env(safe-area-inset-top,0px)))] lg:pt-[max(12rem,calc(8rem+env(safe-area-inset-top,0px)))]"
     >
       <FlowerOrnament className="pointer-events-none absolute left-0 top-20 h-20 w-20 opacity-35 sm:-left-4 sm:top-24 sm:h-28 sm:w-28 sm:opacity-50 md:h-40 md:w-40" />
       <FlowerOrnament
@@ -55,7 +55,7 @@ export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_S
 
       <Container>
         <div className="grid items-center gap-10 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
-          <ScrollReveal className="relative z-10 order-1 max-w-xl lg:order-none lg:py-4">
+          <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:py-4">
             <p className="font-accent text-xl leading-snug text-primary sm:text-[1.75rem] md:text-[2rem]">
               {hero.tagline}{" "}
               <span className="text-accent-heart" aria-hidden>
@@ -99,7 +99,7 @@ export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_S
                 </div>
               ))}
             </div>
-          </ScrollReveal>
+          </div>
 
           <ScrollReveal delay={150} className="relative order-2 lg:-mr-4 lg:order-none xl:-mr-8">
             <div className="hero-image-wrap relative aspect-[5/6] w-full max-h-[min(48vh,20rem)] overflow-hidden sm:aspect-[4/5] sm:max-h-none">

@@ -60,6 +60,18 @@ export async function uploadImage(
   return { path, url: getPublicUrl(bucket, path) };
 }
 
+/** Extracts object path from a Supabase public storage URL. */
+export function extractStoragePathFromUrl(bucket: StorageBucket, url: string): string | null {
+  if (!url?.trim()) return null;
+  const marker = `/storage/v1/object/public/${bucket}/`;
+  const idx = url.indexOf(marker);
+  if (idx === -1) {
+    const legacy = url.split(`/${bucket}/`)[1];
+    return legacy?.split("?")[0] ?? null;
+  }
+  return url.slice(idx + marker.length).split("?")[0] || null;
+}
+
 export async function deleteStorageFile(bucket: StorageBucket, path: string): Promise<void> {
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.storage.from(bucket).remove([path]);

@@ -30,14 +30,20 @@ async function ensureUniqueSlug(base: string, excludeId?: string): Promise<strin
 }
 
 function pickPostFields(body: Record<string, unknown>) {
+  const published = Boolean(body.published);
+  let published_at: string | null = body.published_at ? String(body.published_at) : null;
+  if (published && !published_at) {
+    published_at = new Date().toISOString();
+  }
+
   return {
     title: String(body.title ?? ""),
     subtitle: String(body.subtitle ?? ""),
     content: String(body.content ?? ""),
     hero_image_path: (body.hero_image_path as string | null) ?? null,
     category: String(body.category ?? "aktuelles"),
-    published: Boolean(body.published),
-    published_at: body.published_at ? String(body.published_at) : null,
+    published,
+    published_at,
   };
 }
 

@@ -44,7 +44,14 @@ export function News({ posts }: NewsProps) {
                 <Card className="h-full overflow-hidden !p-0" padding="sm" hover>
                   {post.hero_image_url ? (
                     <div className="relative aspect-[16/10] w-full">
-                      <Image src={post.hero_image_url} alt="" fill className="object-cover" sizes="88vw" />
+                      <Image
+                        src={post.hero_image_url}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="88vw"
+                        unoptimized={post.hero_image_url.includes("supabase.co")}
+                      />
                     </div>
                   ) : null}
                   <div className="p-5">
@@ -72,6 +79,7 @@ export function News({ posts }: NewsProps) {
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-105"
                         sizes="(max-width: 1024px) 50vw, 33vw"
+                        unoptimized={post.hero_image_url.includes("supabase.co")}
                       />
                     </div>
                   ) : null}

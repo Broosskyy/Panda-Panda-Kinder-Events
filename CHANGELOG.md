@@ -2,6 +2,15 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.5] — 2026-07-04
+
+### Final Stabilization — Reviews & Über-uns
+
+- Bewertungsbilder: einheitlich `profile_image_url` / `event_image_url` als Storage-Pfad in DB
+- Öffentliche und Admin-Anzeige via `resolveImageUrl()` (kein `avatar_url`-Alias mehr)
+- Über-uns: `founderName`-Änderung synchronisiert `introText`; About-Bild speichert Pfad
+- `scripts/live-verify.mjs` für Live-Smoke-Tests (`npm run live:verify`)
+
 ## [0.8.4] — 2026-07-04
 
 ### Critical Stabilization Sprint

@@ -54,17 +54,29 @@ export function ContentView() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen");
 
-      const newAbout = settings ? { ...settings.about, imageUrl: data.url } : null;
+      const newAbout = settings ? { ...settings.about, imageUrl: data.path } : null;
       if (!newAbout) return;
 
-      setSettings((s) => (s ? { ...s, about: newAbout } : s));
       await saveSection("about", newAbout);
+      await load();
       toast("Bild hochgeladen und gespeichert.");
     } catch (err) {
       const message = err instanceof Error ? err.message : "Upload fehlgeschlagen";
       toast(message, "error");
       console.error("uploadAboutImage:", err);
     }
+  };
+
+  const updateFounderName = (newName: string) => {
+    setSettings((s) => {
+      if (!s) return s;
+      const oldName = s.about.founderName;
+      let introText = s.about.introText;
+      if (oldName && introText.includes(oldName)) {
+        introText = introText.split(oldName).join(newName);
+      }
+      return { ...s, about: { ...s.about, founderName: newName, introText } };
+    });
   };
 
   if (!settings) return null;
@@ -102,7 +114,7 @@ export function ContentView() {
 
       <AdminCard title="Über uns">
         <div className="grid gap-3">
-          <input className="admin-input" placeholder="Name" value={settings.about.founderName} onChange={(e) => setSettings({ ...settings, about: { ...settings.about, founderName: e.target.value } })} />
+          <input className="admin-input" placeholder="Name" value={settings.about.founderName} onChange={(e) => updateFounderName(e.target.value)} />
           <input className="admin-input" placeholder="Intro" value={settings.about.introText} onChange={(e) => setSettings({ ...settings, about: { ...settings.about, introText: e.target.value } })} />
           <textarea className="admin-input min-h-24" placeholder="Absatz 1" value={settings.about.paragraph1} onChange={(e) => setSettings({ ...settings, about: { ...settings.about, paragraph1: e.target.value } })} />
           <textarea className="admin-input min-h-24" placeholder="Absatz 2" value={settings.about.paragraph2} onChange={(e) => setSettings({ ...settings, about: { ...settings.about, paragraph2: e.target.value } })} />

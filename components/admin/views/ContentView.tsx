@@ -5,13 +5,7 @@ import { Save } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 import type { SiteSettingsBundle } from "@/lib/cms/types";
-
-const SECTION_LABELS: Record<keyof SiteSettingsBundle, string> = {
-  hero: "Hero",
-  contact: "Kontakt",
-  about: "Über uns",
-  footer: "Footer",
-};
+import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 
 export function ContentView() {
   const { toast, withLoading } = useAdminUi();
@@ -42,7 +36,7 @@ export function ContentView() {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-          toast(data.message ?? `${SECTION_LABELS[section]} gespeichert und Startseite aktualisiert.`);
+          toast(data.message ?? CMS_SAVE_SUCCESS_MESSAGE);
         })(),
       );
     } catch (err) {

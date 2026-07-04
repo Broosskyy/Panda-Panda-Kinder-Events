@@ -20,16 +20,18 @@ import {
   fetchPublishedPosts,
   fetchSiteSettings,
 } from "@/lib/cms/data";
+import { fetchApprovedReviews } from "@/lib/cms/reviews";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const [settings, services, faqs, galleryImages, posts] = await Promise.all([
+  const [settings, services, faqs, galleryImages, posts, reviews] = await Promise.all([
     fetchSiteSettings(),
     fetchCmsServices(),
     fetchCmsFaqs(),
     fetchGalleryImages(),
     fetchPublishedPosts(6),
+    fetchApprovedReviews(),
   ]);
 
   const jsonLd = {
@@ -68,7 +70,7 @@ export default async function HomePage() {
         <Services items={services} />
         <Process />
         <Gallery images={galleryImages} contact={settings.contact} />
-        <Testimonials />
+        <Testimonials reviews={reviews} />
         <About about={settings.about} />
         <News posts={posts} />
         <Faq items={faqs} />

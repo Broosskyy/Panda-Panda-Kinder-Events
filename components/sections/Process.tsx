@@ -17,59 +17,49 @@ export function Process() {
         </ScrollReveal>
 
         <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-24">
-          <div className="relative lg:hidden">
-            <div className="timeline-line" aria-hidden />
-            <div className="space-y-10">
-              {processSteps.map((step, i) => (
-                <ScrollReveal key={step.number} delay={i * 80}>
-                  <div className="relative flex gap-5 pl-1">
-                    <div className="step-circle relative z-10 h-11 w-11 shrink-0 text-sm sm:h-12 sm:w-12 sm:text-base">
-                      {step.number}
-                    </div>
-                    <div className="flex-1 pb-2">
-                      <div className="mb-2 flex items-center gap-3">
-                        <step.icon className="h-5 w-5 text-primary sm:h-6 sm:w-6" strokeWidth={ICON_STROKE} aria-hidden />
-                        <h3 className="text-base font-semibold text-text-primary sm:text-lg">{step.title}</h3>
-                      </div>
-                      <p className="text-sm leading-relaxed text-text-secondary sm:text-base sm:leading-7">
-                        {step.description}
-                      </p>
-                    </div>
-                  </div>
-                </ScrollReveal>
-              ))}
-            </div>
-          </div>
-
-          <div className="hidden lg:block">
-            <div className="flex items-start justify-between gap-4">
+          <div className="relative">
+            <div className="timeline-line lg:hidden" aria-hidden />
+            <ol
+              className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
+              role="list"
+            >
               {processSteps.map((step, index) => (
-                <ScrollReveal
+                <li
                   key={step.number}
-                  delay={index * 100}
-                  className="group relative flex flex-1 flex-col items-center px-2 text-center"
+                  className="group relative flex flex-1 flex-col lg:items-center lg:px-2 lg:text-center"
                 >
-                  {index < processSteps.length - 1 && (
+                  {index < processSteps.length - 1 ? (
                     <div
-                      className="absolute left-[calc(50%+1.75rem)] top-6 flex w-[calc(100%-3.5rem)] items-center"
+                      className="absolute left-[1.375rem] top-12 hidden h-[calc(100%+2.5rem)] w-px bg-primary/15 lg:left-[calc(50%+1.75rem)] lg:top-6 lg:flex lg:h-auto lg:w-[calc(100%-3.5rem)] lg:items-center"
                       aria-hidden
                     >
-                      <div className="h-px flex-1 border-t border-dashed border-primary/20" />
-                      <div className="mx-1.5 h-1 w-1 rounded-full bg-primary/25" />
-                      <div className="h-px flex-1 border-t border-dashed border-primary/20" />
+                      <div className="h-full w-px border-l border-dashed border-primary/20 lg:h-px lg:w-full lg:border-l-0 lg:border-t" />
                     </div>
-                  )}
-                  <div className="step-circle relative z-10 h-12 w-12 text-base">{step.number}</div>
-                  <step.icon
-                    className="mt-6 h-7 w-7 text-primary transition-transform duration-500 group-hover:scale-110"
-                    strokeWidth={ICON_STROKE}
-                    aria-hidden
-                  />
-                  <h3 className="mt-5 text-base font-semibold text-text-primary">{step.title}</h3>
-                  <p className="mt-2.5 text-sm leading-relaxed text-text-secondary">{step.description}</p>
-                </ScrollReveal>
+                  ) : null}
+
+                  <ScrollReveal delay={index * 80} className="relative z-10 w-full lg:flex lg:flex-col lg:items-center">
+                    <div className="flex gap-5 pl-1 lg:flex-col lg:items-center lg:pl-0">
+                      <div className="step-circle relative z-10 h-11 w-11 shrink-0 text-sm sm:h-12 sm:w-12 sm:text-base lg:h-12 lg:w-12">
+                        {step.number}
+                      </div>
+                      <div className="flex-1 pb-2 lg:pb-0">
+                        <div className="mb-2 flex items-center gap-3 lg:mb-0 lg:mt-6 lg:flex-col lg:gap-0">
+                          <step.icon
+                            className="h-5 w-5 text-primary sm:h-6 sm:w-6 lg:mt-6 lg:h-7 lg:w-7 lg:transition-transform lg:duration-500 lg:group-hover:scale-110"
+                            strokeWidth={ICON_STROKE}
+                            aria-hidden
+                          />
+                          <h3 className="text-base font-semibold text-text-primary sm:text-lg lg:mt-5">{step.title}</h3>
+                        </div>
+                        <p className="text-sm leading-relaxed text-text-secondary sm:text-base sm:leading-7 lg:mt-2.5">
+                          {step.description}
+                        </p>
+                      </div>
+                    </div>
+                  </ScrollReveal>
+                </li>
               ))}
-            </div>
+            </ol>
           </div>
 
           <ScrollReveal delay={200} className="relative mx-auto w-52 sm:w-64 xl:w-72">

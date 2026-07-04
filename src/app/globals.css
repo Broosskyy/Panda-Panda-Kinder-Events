@@ -342,6 +342,14 @@ img {
   overscroll-behavior-x: contain;
 }
 
+@media (min-width: 768px) {
+  .swipe-track[class*="md:grid"] {
+    display: grid;
+    overflow-x: visible;
+    scroll-snap-type: none;
+  }
+}
+
 @media (min-width: 640px) {
   .swipe-track {
     gap: 1rem;

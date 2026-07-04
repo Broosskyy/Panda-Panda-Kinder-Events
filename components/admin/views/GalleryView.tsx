@@ -32,6 +32,7 @@ export function GalleryView() {
 
   const upload = async (file: File) => {
     setLoading(true);
+    toast("Wird hochgeladen…", "info");
     try {
       const fd = new FormData();
       fd.append("file", file);

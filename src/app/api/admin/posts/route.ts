@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPublicUrl } from "@/lib/cms/storage";
+import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import type { CmsPost } from "@/lib/cms/types";
 
@@ -87,7 +88,7 @@ export async function POST(request: Request) {
   }
 
   revalidatePublicCms(data.slug);
-  return NextResponse.json({ post: data, message: "Gespeichert und Startseite aktualisiert." });
+  return NextResponse.json({ post: data, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
 
 export async function PATCH(request: Request) {
@@ -121,7 +122,7 @@ export async function PATCH(request: Request) {
 
   const slug = newSlug ?? existing?.slug;
   revalidatePublicCms(slug);
-  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
+  return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
 
 export async function DELETE(request: Request) {
@@ -137,5 +138,5 @@ export async function DELETE(request: Request) {
 
   if (error) return NextResponse.json({ error: "Löschen fehlgeschlagen." }, { status: 500 });
   revalidatePublicCms(existing?.slug);
-  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
+  return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }

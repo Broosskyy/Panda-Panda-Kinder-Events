@@ -33,69 +33,46 @@ export function News({ posts }: NewsProps) {
           />
         </ScrollReveal>
 
-        <div className="swipe-bleed md:hidden">
-          <div className="swipe-track" role="region" aria-label="Aktuelles — horizontal scrollen">
-            {posts.map((post) => (
-              <Link
-                key={post.id}
-                href={`/aktuelles/${post.slug}`}
-                className="swipe-item block w-[min(88vw,22rem)]"
-              >
-                <Card className="h-full overflow-hidden !p-0" padding="sm" hover>
-                  {post.hero_image_url ? (
-                    <div className="relative aspect-[16/10] w-full">
-                      <Image
-                        src={post.hero_image_url}
-                        alt=""
-                        fill
-                        className="object-cover"
-                        sizes="88vw"
-                        unoptimized={post.hero_image_url.includes("supabase.co")}
-                      />
-                    </div>
-                  ) : null}
-                  <div className="p-5">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">{post.category}</p>
-                    <h3 className="mt-2 font-heading text-lg font-bold text-text-primary">{post.title}</h3>
-                    {post.subtitle ? <p className="mt-2 text-sm text-text-secondary">{post.subtitle}</p> : null}
-                    <p className="mt-3 text-xs text-text-muted">{formatDate(post.published_at)}</p>
-                  </div>
-                </Card>
-              </Link>
+        <div className="swipe-bleed md:mx-0 md:px-0">
+          <ul
+            className="swipe-track md:grid md:grid-cols-2 md:gap-8 md:overflow-visible lg:grid-cols-3"
+            role="list"
+            aria-label="Aktuelles"
+          >
+            {posts.map((post, i) => (
+              <li key={post.id} className="swipe-item w-[min(88vw,22rem)] md:w-auto">
+                <ScrollReveal delay={i * 80}>
+                  <Link href={`/aktuelles/${post.slug}`} className="group block h-full">
+                    <Card className="h-full overflow-hidden !p-0" padding="sm" hover>
+                      {post.hero_image_url ? (
+                        <div className="relative aspect-[16/10] w-full overflow-hidden">
+                          <Image
+                            src={post.hero_image_url}
+                            alt=""
+                            fill
+                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            sizes="(max-width: 1024px) 50vw, 33vw"
+                            unoptimized={post.hero_image_url.includes("supabase.co")}
+                          />
+                        </div>
+                      ) : null}
+                      <div className="p-5 md:p-6">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-primary">{post.category}</p>
+                        <h3 className="mt-2 font-heading text-lg font-bold text-text-primary md:text-xl">{post.title}</h3>
+                        {post.subtitle ? (
+                          <p className="mt-2 text-sm text-text-secondary md:text-base">{post.subtitle}</p>
+                        ) : null}
+                        <p className="mt-3 flex items-center gap-2 text-sm font-medium text-primary md:mt-4">
+                          Weiterlesen <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                        </p>
+                        <p className="mt-2 text-xs text-text-muted">{formatDate(post.published_at)}</p>
+                      </div>
+                    </Card>
+                  </Link>
+                </ScrollReveal>
+              </li>
             ))}
-          </div>
-        </div>
-
-        <div className="hidden gap-8 md:grid md:grid-cols-2 lg:grid-cols-3">
-          {posts.map((post, i) => (
-            <ScrollReveal key={post.id} delay={i * 80}>
-              <Link href={`/aktuelles/${post.slug}`} className="group block h-full">
-                <Card className="h-full overflow-hidden !p-0" padding="sm" hover>
-                  {post.hero_image_url ? (
-                    <div className="relative aspect-[16/10] w-full overflow-hidden">
-                      <Image
-                        src={post.hero_image_url}
-                        alt=""
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-105"
-                        sizes="(max-width: 1024px) 50vw, 33vw"
-                        unoptimized={post.hero_image_url.includes("supabase.co")}
-                      />
-                    </div>
-                  ) : null}
-                  <div className="p-6">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-primary">{post.category}</p>
-                    <h3 className="mt-2 font-heading text-xl font-bold text-text-primary">{post.title}</h3>
-                    {post.subtitle ? <p className="mt-2 text-base text-text-secondary">{post.subtitle}</p> : null}
-                    <p className="mt-4 flex items-center gap-2 text-sm font-medium text-primary">
-                      Weiterlesen <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </p>
-                    <p className="mt-2 text-xs text-text-muted">{formatDate(post.published_at)}</p>
-                  </div>
-                </Card>
-              </Link>
-            </ScrollReveal>
-          ))}
+          </ul>
         </div>
       </Container>
     </section>

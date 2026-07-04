@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { fetchSiteSettings, saveSiteSettings } from "@/lib/cms/data";
+import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import type { SiteSettingsBundle } from "@/lib/cms/types";
 
@@ -32,7 +33,7 @@ export async function PUT(request: Request) {
     revalidatePublicCms();
     return NextResponse.json({
       success: true,
-      message: "Gespeichert und Startseite aktualisiert.",
+      message: CMS_SAVE_SUCCESS_MESSAGE,
       section,
       savedAt: new Date().toISOString(),
     });

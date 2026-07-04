@@ -4,6 +4,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPublicUrl } from "@/lib/cms/storage";
 import { deleteStorageFile } from "@/lib/cms/storage";
 import type { GalleryImageRecord } from "@/lib/cms/types";
+import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
 export async function GET() {
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
   revalidatePublicCms();
   return NextResponse.json({
     image: { ...data, url: getPublicUrl("gallery", data.storage_path) },
-    message: "Gespeichert und Startseite aktualisiert.",
+    message: CMS_SAVE_SUCCESS_MESSAGE,
   });
 }
 
@@ -76,7 +77,7 @@ export async function PATCH(request: Request) {
 
   if (error) return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
   revalidatePublicCms();
-  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
+  return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
 
 export async function DELETE(request: Request) {
@@ -101,5 +102,5 @@ export async function DELETE(request: Request) {
   }
 
   revalidatePublicCms();
-  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
+  return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }

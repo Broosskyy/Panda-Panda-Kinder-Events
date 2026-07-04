@@ -101,6 +101,19 @@ export interface ReviewRecord {
   verified: boolean;
 }
 
+export interface PublicReview {
+  id: string;
+  name: string;
+  event_type: string;
+  rating: number;
+  text: string;
+  created_at: string;
+  profile_image_url: string | null;
+  event_image_url: string | null;
+  admin_reply: string | null;
+  verified: boolean;
+}
+
 export interface BookingRecord {
   id: string;
   created_at: string;

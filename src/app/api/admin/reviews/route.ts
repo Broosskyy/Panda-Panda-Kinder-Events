@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { isAdminAuthenticated } from "@/lib/admin-auth";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { deleteStorageFile, extractStoragePathFromUrl } from "@/lib/cms/storage";
+import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
 export async function GET() {
@@ -56,7 +57,7 @@ export async function PATCH(request: Request) {
   }
 
   revalidatePublicCms();
-  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
+  return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
 
 export async function DELETE(request: Request) {
@@ -91,5 +92,5 @@ export async function DELETE(request: Request) {
   }
 
   revalidatePublicCms();
-  return NextResponse.json({ success: true, message: "Gespeichert und Startseite aktualisiert." });
+  return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }

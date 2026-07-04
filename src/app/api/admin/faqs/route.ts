@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
-const OK = { message: "Gespeichert und Startseite aktualisiert." };
+const OK = { message: CMS_SAVE_SUCCESS_MESSAGE };
 
 export async function GET() {
   const authError = await requireAdmin();

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { eventTypes } from "@/lib/faqs";
+import { mapReviewRow } from "@/lib/cms/reviews";
 import { uploadImage } from "@/lib/cms/storage";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 
@@ -115,24 +116,24 @@ export async function GET() {
     const supabase = getSupabaseAdmin();
     const { data, error } = await supabase
       .from("reviews")
-      .select(
-        "id, name, event_type, rating, text, created_at, profile_image_url, event_image_url, admin_reply, verified",
-      )
+      .select("*")
       .eq("approved", true)
       .order("created_at", { ascending: false });
 
     if (error) {
       console.error("Reviews fetch error:", error);
-      return NextResponse.json({ reviews: [] });
+      return NextResponse.json({ reviews: [], error: "Bewertungen konnten nicht geladen werden." }, { status: 500 });
     }
 
-    return NextResponse.json({ reviews: data ?? [] }, {
+    const reviews = (data ?? []).map((row) => mapReviewRow(row as Record<string, unknown>));
+
+    return NextResponse.json({ reviews }, {
       headers: {
         "Cache-Control": "no-store, max-age=0",
       },
     });
   } catch (error) {
     console.error("Reviews GET error:", error);
-    return NextResponse.json({ reviews: [] });
+    return NextResponse.json({ reviews: [], error: "Bewertungen konnten nicht geladen werden." }, { status: 500 });
   }
 }

@@ -33,53 +33,42 @@ export function Gallery({
           />
         </ScrollReveal>
 
-        <div className="swipe-bleed md:hidden">
-          <div className="swipe-track" role="region" aria-label="Galerie — horizontal scrollen">
+        <div className="swipe-bleed md:mx-0 md:px-0">
+          <ul
+            className="swipe-track md:grid md:grid-cols-2 md:gap-5 md:overflow-visible lg:grid-cols-3 lg:gap-6"
+            role="list"
+            aria-label="Galerie"
+          >
             {images.map((image, index) => (
-              <button
+              <li
                 key={`${image.src}-${index}`}
-                type="button"
-                className="gallery-tile swipe-item relative aspect-[4/5] w-[min(78vw,18rem)] sm:w-[min(80vw,20rem)]"
-                onClick={() => setLightboxImage(image)}
-                aria-label={`${image.alt} vergrößern`}
-              >
-                <Image
-                  src={image.src}
-                  alt=""
-                  fill
-                  className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-active:scale-105"
-                  sizes="80vw"
-                  loading="lazy"
-                  unoptimized={image.src.includes("supabase.co")}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="masonry-grid hidden md:block">
-          {images.map((image, i) => (
-            <ScrollReveal key={`${image.src}-${i}`} delay={i * 80}>
-              <button
-                type="button"
-                className={`gallery-tile masonry-item group relative w-full ${
-                  i % 3 === 0 ? "aspect-[3/4]" : "aspect-[4/3]"
+                className={`swipe-item w-[min(78vw,18rem)] sm:w-[min(80vw,20rem)] md:w-auto ${
+                  index % 3 === 0 ? "md:row-span-1" : ""
                 }`}
-                onClick={() => setLightboxImage(image)}
-                aria-label={`${image.alt} vergrößern`}
               >
-                <Image
-                  src={image.src}
-                  alt=""
-                  fill
-                  className="object-cover transition-transform duration-[800ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
-                  sizes="(max-width: 1024px) 33vw, 20vw"
-                  loading="lazy"
-                  unoptimized={image.src.includes("supabase.co")}
-                />
-              </button>
-            </ScrollReveal>
-          ))}
+                <ScrollReveal delay={index * 80}>
+                  <button
+                    type="button"
+                    className={`gallery-tile group relative w-full ${
+                      index % 3 === 0 ? "aspect-[3/4] md:aspect-[3/4]" : "aspect-[4/5] md:aspect-[4/3]"
+                    }`}
+                    onClick={() => setLightboxImage(image)}
+                    aria-label={`${image.alt} vergrößern`}
+                  >
+                    <Image
+                      src={image.src}
+                      alt=""
+                      fill
+                      className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05] group-active:scale-105"
+                      sizes="(max-width: 1024px) 33vw, 20vw"
+                      loading="lazy"
+                      unoptimized={image.src.includes("supabase.co")}
+                    />
+                  </button>
+                </ScrollReveal>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <ScrollReveal>

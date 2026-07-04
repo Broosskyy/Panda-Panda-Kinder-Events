@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
 import { BadgeCheck, ChevronLeft, ChevronRight } from "lucide-react";
-import { siteConfig } from "@/config/site";
 import { focusRing } from "@/lib/a11y";
+import type { PublicReview } from "@/lib/cms/types";
 import { Card } from "@/components/ui/Card";
 import { ReviewForm } from "@/components/ui/ReviewForm";
 import { StarRating } from "@/components/ui/StarRating";
@@ -13,19 +13,6 @@ import { Container } from "@/components/ui/Container";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-
-interface PublicReview {
-  id: string;
-  name: string;
-  event_type: string;
-  rating: number;
-  text: string;
-  created_at: string;
-  profile_image_url?: string | null;
-  event_image_url?: string | null;
-  admin_reply?: string | null;
-  verified?: boolean;
-}
 
 function formatReviewDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString("de-DE", {
@@ -44,6 +31,8 @@ function getInitials(name: string) {
 }
 
 function ReviewCard({ review }: { review: PublicReview }) {
+  const avatarUrl = review.profile_image_url;
+
   return (
     <Card className="review-card flex h-full flex-col" padding="md" hover={false}>
       <StarRating rating={review.rating} size="xl" className="mb-5 sm:mb-7" />
@@ -74,15 +63,15 @@ function ReviewCard({ review }: { review: PublicReview }) {
 
       <div className="mt-7 flex items-center justify-between gap-3 border-t border-border/40 pt-6 sm:mt-9 sm:gap-4 sm:pt-7">
         <div className="flex items-center gap-3 sm:gap-4">
-          {review.profile_image_url ? (
+          {avatarUrl ? (
             <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-sm sm:h-14 sm:w-14">
               <Image
-                src={review.profile_image_url}
+                src={avatarUrl}
                 alt={review.name}
                 fill
                 className="object-cover"
                 sizes="56px"
-                unoptimized={review.profile_image_url.includes("supabase.co")}
+                unoptimized={avatarUrl.includes("supabase.co")}
               />
             </div>
           ) : (
@@ -130,33 +119,13 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
 
 const DESKTOP_VISIBLE = 3;
 
-export function Testimonials() {
-  const [reviews, setReviews] = useState<PublicReview[]>([]);
-  const [loading, setLoading] = useState(true);
+interface TestimonialsProps {
+  reviews: PublicReview[];
+}
+
+export function Testimonials({ reviews }: TestimonialsProps) {
   const [desktopIndex, setDesktopIndex] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    fetch("/api/reviews", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((data) => {
-        let approved: PublicReview[] = data.reviews ?? [];
-        if (approved.length === 0 && siteConfig.reviews.showDemoReviews) {
-          approved = siteConfig.reviews.demoData.map((d, i) => ({
-            id: `demo-${i}`,
-            name: d.author,
-            event_type: d.event,
-            rating: d.stars,
-            text: d.text,
-            created_at: new Date().toISOString(),
-            verified: true,
-          }));
-        }
-        setReviews(approved);
-      })
-      .catch(() => setReviews([]))
-      .finally(() => setLoading(false));
-  }, []);
 
   const total = reviews.length;
   const scrollToForm = () => {
@@ -164,8 +133,6 @@ export function Testimonials() {
   };
 
   const desktopMaxIndex = Math.max(0, total - DESKTOP_VISIBLE);
-  const visibleDesktop = reviews.slice(desktopIndex, desktopIndex + DESKTOP_VISIBLE);
-
   const prevDesktop = () => setDesktopIndex((i) => Math.max(0, i - 1));
   const nextDesktop = () => setDesktopIndex((i) => Math.min(desktopMaxIndex, i + 1));
 
@@ -179,81 +146,73 @@ export function Testimonials() {
           />
         </ScrollReveal>
 
-        {loading ? (
-          <div className="mx-auto max-w-md space-y-4" aria-live="polite" aria-busy="true">
-            <p className="sr-only">Bewertungen werden geladen</p>
-            <div className="skeleton mx-auto h-10 w-36 rounded-full" />
-            <div className="skeleton h-56 rounded-[var(--radius-card)]" />
-          </div>
+        <RatingSummary reviews={reviews} />
+
+        {total === 0 ? (
+          <ScrollReveal>
+            <Card padding="lg" hover={false} className="review-card mx-auto max-w-xl text-center">
+              <PandaMascot size={100} className="mx-auto mb-6 opacity-90" />
+              <p className="font-heading text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
+                Noch keine öffentlichen Bewertungen
+              </p>
+              <p className="mx-auto mt-4 max-w-sm text-base leading-relaxed text-text-secondary sm:text-lg">
+                Seid die Ersten — teilt eure Erfahrung mit der Panda-Bande!
+              </p>
+              <Button className="mt-9 w-full shadow-lg sm:mt-10 sm:w-auto" size="lg" onClick={scrollToForm}>
+                Jetzt erste Bewertung abgeben
+              </Button>
+            </Card>
+          </ScrollReveal>
         ) : (
-          <>
-            <RatingSummary reviews={reviews} />
-
-            {total === 0 ? (
-              <ScrollReveal>
-                <Card padding="lg" hover={false} className="review-card mx-auto max-w-xl text-center">
-                  <PandaMascot size={100} className="mx-auto mb-6 opacity-90" />
-                  <p className="font-heading text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
-                    Noch keine öffentlichen Bewertungen
-                  </p>
-                  <p className="mx-auto mt-4 max-w-sm text-base leading-relaxed text-text-secondary sm:text-lg">
-                    Seid die Ersten — teilt eure Erfahrung mit der Panda-Bande!
-                  </p>
-                  <Button className="mt-9 w-full shadow-lg sm:mt-10 sm:w-auto" size="lg" onClick={scrollToForm}>
-                    Jetzt erste Bewertung abgeben
-                  </Button>
-                </Card>
-              </ScrollReveal>
-            ) : (
+          <div className="relative">
+            {total > DESKTOP_VISIBLE ? (
               <>
-                <div className="lg:hidden">
-                  <div className="swipe-bleed">
-                    <div className="swipe-track" role="region" aria-label="Bewertungen — horizontal scrollen">
-                      {reviews.map((review) => (
-                        <div key={review.id} className="swipe-item w-[min(90vw,24rem)] sm:w-[min(92vw,26rem)]">
-                          <ReviewCard review={review} />
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="hidden lg:block">
-                  <div className="relative">
-                    {total > DESKTOP_VISIBLE && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={prevDesktop}
-                          disabled={desktopIndex === 0}
-                          className={`absolute -left-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-bg-card shadow-md transition-all duration-500 hover:border-primary/20 hover:shadow-lg disabled:opacity-30 ${focusRing}`}
-                          aria-label="Vorherige Bewertungen"
-                        >
-                          <ChevronLeft className="h-5 w-5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={nextDesktop}
-                          disabled={desktopIndex >= desktopMaxIndex}
-                          className={`absolute -right-5 top-1/2 z-10 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-bg-card shadow-md transition-all duration-500 hover:border-primary/20 hover:shadow-lg disabled:opacity-30 ${focusRing}`}
-                          aria-label="Nächste Bewertungen"
-                        >
-                          <ChevronRight className="h-5 w-5" />
-                        </button>
-                      </>
-                    )}
-                    <div className="grid gap-8 lg:grid-cols-3">
-                      {visibleDesktop.map((review, i) => (
-                        <ScrollReveal key={review.id} delay={i * 80}>
-                          <ReviewCard review={review} />
-                        </ScrollReveal>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={prevDesktop}
+                  disabled={desktopIndex === 0}
+                  className={`absolute -left-5 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-bg-card shadow-md transition-all duration-500 hover:border-primary/20 hover:shadow-lg disabled:opacity-30 lg:flex ${focusRing}`}
+                  aria-label="Vorherige Bewertungen"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={nextDesktop}
+                  disabled={desktopIndex >= desktopMaxIndex}
+                  className={`absolute -right-5 top-1/2 z-10 hidden h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border border-border/80 bg-bg-card shadow-md transition-all duration-500 hover:border-primary/20 hover:shadow-lg disabled:opacity-30 lg:flex ${focusRing}`}
+                  aria-label="Nächste Bewertungen"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
               </>
-            )}
-          </>
+            ) : null}
+
+            <div className="swipe-bleed lg:mx-0 lg:px-0">
+              <ul
+                className="swipe-track lg:grid lg:grid-cols-3 lg:gap-8 lg:overflow-visible"
+                role="list"
+                aria-label="Bewertungen"
+              >
+                {reviews.map((review, index) => {
+                  const hiddenOnDesktop =
+                    total > DESKTOP_VISIBLE &&
+                    (index < desktopIndex || index >= desktopIndex + DESKTOP_VISIBLE);
+
+                  return (
+                    <li
+                      key={review.id}
+                      className={`swipe-item w-[min(90vw,24rem)] sm:w-[min(92vw,26rem)] lg:w-auto ${
+                        hiddenOnDesktop ? "lg:hidden" : ""
+                      }`}
+                    >
+                      <ReviewCard review={review} />
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          </div>
         )}
 
         <div ref={formRef} id="bewertung-form" className="mx-auto mt-10 max-w-xl scroll-mt-24 sm:mt-16 sm:scroll-mt-28">

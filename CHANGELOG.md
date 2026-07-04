@@ -2,6 +2,31 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.4] — 2026-07-04
+
+### Critical Stabilization Sprint
+
+Stabilisierung ohne neue Features — CMS-Binding, Doppel-DOM, Bewertungen, `/aktuelles`.
+
+#### Bewertungen
+- Server-seitiges Laden (`fetchApprovedReviews`) — kein hängender Loading-State
+- Legacy `avatar_url` → `profile_image_url` Mapping
+- Ein DOM-Loop für Mobile/Desktop Karussell
+
+#### Doppelte HTML-Ausgabe behoben
+- Usps, Services, Process, Gallery, News: ein Datenmodell, responsive CSS statt Mobile/Desktop-Doppelblöcke
+
+#### Beiträge
+- Neue Seite `/aktuelles` (Index aller veröffentlichten Beiträge)
+- Revalidation für `/aktuelles` ergänzt
+
+#### Admin UX
+- Einheitlicher Toast: „Gespeichert und Website aktualisiert.“
+- Upload-Feedback in Galerie
+
+#### Dokumentation
+- `docs/05_ROADMAP/Stabilization-Live-Test-Report.md`
+
 ## [0.8.3] — 2026-07-04
 
 ### Critical CMS + UI Bugfix Sprint

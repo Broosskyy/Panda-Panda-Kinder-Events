@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { detectDeviceType, sanitizePath, sanitizeReferrer, sanitizeUserAgent } from "@/lib/analytics/device";
+import { isBotUserAgent } from "@/lib/analytics/bot";
+import { parseUserAgent } from "@/lib/analytics/user-agent";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { safeApiError } from "@/lib/api-error";
@@ -37,7 +39,12 @@ export async function POST(request: Request) {
     }
 
     const userAgent = request.headers.get("user-agent");
+    if (isBotUserAgent(userAgent)) {
+      return NextResponse.json({ ok: true, skipped: true });
+    }
+
     const deviceType = detectDeviceType(userAgent);
+    const { browser, os } = parseUserAgent(userAgent);
 
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("page_views").insert({
@@ -45,6 +52,8 @@ export async function POST(request: Request) {
       referrer: sanitizeReferrer(parsed.data.referrer ?? null),
       user_agent: sanitizeUserAgent(userAgent),
       device_type: deviceType,
+      browser,
+      os,
       session_id: parsed.data.sessionId,
     });
 

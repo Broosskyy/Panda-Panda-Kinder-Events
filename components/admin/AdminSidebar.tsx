@@ -2,99 +2,125 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  HelpCircle,
-  Home,
-  Image,
-  Inbox,
-  Layout,
-  LogOut,
-  Newspaper,
-  Settings,
-  Sparkles,
-  Star,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { LogOut, Menu, X } from "lucide-react";
+import { ADMIN_NAV, isAdminNavActive } from "@/lib/admin/nav";
 
-const NAV = [
-  { href: "/admin", label: "Dashboard", icon: Home },
-  { href: "/admin/anfragen", label: "Anfragen", icon: Inbox },
-  { href: "/admin/bewertungen", label: "Bewertungen", icon: Star },
-  { href: "/admin/galerie", label: "Galerie", icon: Image },
-  { href: "/admin/beitraege", label: "Beiträge", icon: Newspaper },
-  { href: "/admin/leistungen", label: "Leistungen", icon: Sparkles },
-  { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
-  { href: "/admin/inhalte", label: "Website Inhalte", icon: Layout },
-  { href: "/admin/einstellungen", label: "Einstellungen", icon: Settings },
-] as const;
+const MOBILE_BOTTOM_NAV = ADMIN_NAV.filter((item) =>
+  ["/admin", "/admin/anfragen", "/admin/bewertungen", "/admin/galerie"].includes(item.href),
+);
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    setDrawerOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [drawerOpen]);
 
   const logout = async () => {
     await fetch("/api/admin/login", { method: "DELETE" });
     window.location.href = "/admin";
   };
 
+  const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
+    <>
+      {ADMIN_NAV.map(({ href, label, icon: Icon, mobileLabel }) => {
+        const active = isAdminNavActive(pathname, href);
+        return (
+          <Link
+            key={href}
+            href={href}
+            onClick={onNavigate}
+            className={`admin-nav-link ${active ? "admin-nav-link-active" : ""}`}
+          >
+            <Icon className="h-4 w-4 shrink-0" aria-hidden />
+            <span>{mobileLabel ?? label}</span>
+          </Link>
+        );
+      })}
+    </>
+  );
+
   return (
     <>
-      <aside className="hidden w-64 shrink-0 border-r border-border bg-bg-card md:flex md:flex-col">
-        <div className="border-b border-border px-5 py-5">
+      {/* Desktop sidebar */}
+      <aside className="admin-sidebar-desktop" aria-label="Admin Navigation">
+        <div className="admin-sidebar-brand">
           <p className="font-heading text-lg font-bold text-text-primary">Panda-Bande</p>
           <p className="text-xs text-text-muted">CMS Admin</p>
         </div>
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3" aria-label="Admin Navigation">
-          {NAV.map(({ href, label, icon: Icon }) => {
-            const active = pathname === href || (href !== "/admin" && pathname.startsWith(href));
-            return (
-              <Link
-                key={href}
-                href={href}
-                className={`flex min-h-11 items-center gap-3 rounded-xl px-4 py-2.5 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-primary/10 text-primary"
-                    : "text-text-secondary hover:bg-bg-secondary"
-                }`}
-              >
-                <Icon className="h-4 w-4 shrink-0" aria-hidden />
-                {label}
-              </Link>
-            );
-          })}
+        <nav className="admin-sidebar-nav">
+          <NavLinks />
         </nav>
-        <div className="border-t border-border p-3">
-          <button
-            type="button"
-            onClick={logout}
-            className="flex w-full min-h-11 items-center gap-3 rounded-xl px-4 py-2.5 text-sm text-text-muted hover:bg-bg-secondary hover:text-text-primary"
-          >
-            <LogOut className="h-4 w-4" aria-hidden />
+        <div className="admin-sidebar-footer">
+          <button type="button" onClick={logout} className="admin-nav-link w-full text-text-muted">
+            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
             Abmelden
           </button>
         </div>
       </aside>
 
-      <header className="flex items-center justify-between border-b border-border bg-bg-card px-4 py-3 md:hidden">
-        <p className="font-heading font-bold text-text-primary">Panda-Bande CMS</p>
-        <button type="button" onClick={logout} className="text-sm text-text-muted underline">
-          Abmelden
+      {/* Mobile top bar */}
+      <header className="admin-mobile-header md:hidden">
+        <button
+          type="button"
+          className="admin-icon-btn"
+          onClick={() => setDrawerOpen(true)}
+          aria-label="Menü öffnen"
+          aria-expanded={drawerOpen}
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+        <div className="text-center">
+          <p className="font-heading text-base font-bold text-text-primary">Panda-Bande</p>
+          <p className="text-[10px] uppercase tracking-wider text-text-muted">CMS</p>
+        </div>
+        <button type="button" onClick={logout} className="admin-icon-btn text-text-muted" aria-label="Abmelden">
+          <LogOut className="h-4 w-4" />
         </button>
       </header>
-      <nav className="flex gap-1 overflow-x-auto border-b border-border bg-bg-card px-2 py-2 md:hidden" aria-label="Admin Navigation mobil">
-        {NAV.map(({ href, label, icon: Icon }) => {
-          const active = pathname === href;
+
+      {/* Mobile drawer */}
+      {drawerOpen ? (
+        <div className="admin-drawer-root md:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
+          <button type="button" className="admin-drawer-backdrop" onClick={() => setDrawerOpen(false)} aria-label="Menü schließen" />
+          <aside className="admin-drawer-panel">
+            <div className="flex items-center justify-between border-b border-border px-4 py-4">
+              <p className="font-heading font-bold text-text-primary">Navigation</p>
+              <button type="button" className="admin-icon-btn" onClick={() => setDrawerOpen(false)} aria-label="Schließen">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <nav className="admin-sidebar-nav p-3">
+              <NavLinks onNavigate={() => setDrawerOpen(false)} />
+            </nav>
+          </aside>
+        </div>
+      ) : null}
+
+      {/* Mobile bottom navigation */}
+      <nav className="admin-bottom-nav md:hidden" aria-label="Schnellnavigation">
+        {MOBILE_BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
+          const active = isAdminNavActive(pathname, href);
           return (
-            <Link
-              key={href}
-              href={href}
-              className={`flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium ${
-                active ? "bg-primary text-white" : "bg-bg-secondary text-text-secondary"
-              }`}
-            >
-              <Icon className="h-3.5 w-3.5" aria-hidden />
-              {label}
+            <Link key={href} href={href} className={`admin-bottom-nav-item ${active ? "admin-bottom-nav-item-active" : ""}`}>
+              <Icon className="h-5 w-5" aria-hidden />
+              <span>{label.split(" ")[0]}</span>
             </Link>
           );
         })}
+        <button type="button" className="admin-bottom-nav-item" onClick={() => setDrawerOpen(true)}>
+          <Menu className="h-5 w-5" aria-hidden />
+          <span>Mehr</span>
+        </button>
       </nav>
     </>
   );
@@ -110,12 +136,12 @@ export function AdminPageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="admin-page-header">
       <div>
-        <h1 className="font-heading text-2xl font-bold text-text-primary">{title}</h1>
-        {description && <p className="mt-1 text-sm text-text-muted">{description}</p>}
+        <h1 className="admin-page-title">{title}</h1>
+        {description ? <p className="admin-page-description">{description}</p> : null}
       </div>
-      {children}
+      {children ? <div className="admin-page-actions">{children}</div> : null}
     </div>
   );
 }
@@ -130,8 +156,8 @@ export function AdminCard({
   title?: string;
 }) {
   return (
-    <div className={`rounded-2xl border border-border bg-bg-card p-5 shadow-sm sm:p-6 ${className}`}>
-      {title ? <h2 className="mb-4 font-heading text-lg font-semibold text-text-primary">{title}</h2> : null}
+    <div className={`admin-card ${className}`}>
+      {title ? <h2 className="admin-card-title">{title}</h2> : null}
       {children}
     </div>
   );

@@ -43,6 +43,30 @@ export interface ReviewStats {
   approved: number;
 }
 
+export interface BreakdownRow {
+  label: string;
+  views: number;
+  visitors: number;
+}
+
+export interface LiveStats {
+  viewsToday: number;
+  visitorsToday: number;
+  viewsLastHour: number;
+  visitorsLastHour: number;
+}
+
+export interface HourlyStat {
+  hour: number;
+  views: number;
+  visitors: number;
+}
+
+export interface ReferrerRow {
+  referrer: string;
+  views: number;
+}
+
 export interface AdminAnalyticsDashboard {
   visitors: VisitorStats;
   pageViews: PageViewStats;
@@ -53,6 +77,17 @@ export interface AdminAnalyticsDashboard {
   reviews: ReviewStats;
   galleryCount: number;
   postsCount: number;
+  servicesCount: number;
+  faqsCount: number;
   trackingEnabled: boolean;
   trackingTableReady: boolean;
+}
+
+export interface FullAnalyticsDashboard extends AdminAnalyticsDashboard {
+  referrers: ReferrerRow[];
+  devices: BreakdownRow[];
+  browsers: BreakdownRow[];
+  operatingSystems: BreakdownRow[];
+  live: LiveStats;
+  chartTodayHourly: HourlyStat[];
 }

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { HelpCircle, Plus } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 
 interface FaqRow {
@@ -40,25 +42,39 @@ export function FaqsView() {
   return (
     <div>
       <AdminPageHeader title="FAQ" description="Häufige Fragen verwalten">
-        <button
-          type="button"
+        <AdminButton
+          variant="primary"
+          icon={<Plus className="h-4 w-4" />}
           onClick={() =>
             save(
               { question: "Neue Frage?", answer: "Antwort...", sort_order: faqs.length, visible: true },
               "POST",
             )
           }
-          className="min-h-11 rounded-full bg-primary px-6 text-sm font-medium text-white"
         >
-          + Neue FAQ
-        </button>
+          Neue FAQ
+        </AdminButton>
       </AdminPageHeader>
       <div className="space-y-4">
+        {faqs.length === 0 ? (
+          <AdminEmptyState
+            icon={HelpCircle}
+            title="Noch keine FAQs"
+            description="Erstelle häufig gestellte Fragen, die auf der Startseite angezeigt werden."
+            actionLabel="Erste FAQ anlegen"
+            onAction={() =>
+              save(
+                { question: "Neue Frage?", answer: "Antwort...", sort_order: 0, visible: true },
+                "POST",
+              )
+            }
+          />
+        ) : null}
         {faqs.map((f) => (
           <AdminCard key={f.id}>
             <input
               defaultValue={f.question}
-              className="mb-3 w-full rounded-lg border border-border px-3 py-2 text-sm font-medium"
+              className="admin-input mb-3 font-medium"
               onBlur={(e) =>
                 e.target.value !== f.question && save({ id: f.id, question: e.target.value }, "PATCH")
               }
@@ -66,7 +82,7 @@ export function FaqsView() {
             <textarea
               defaultValue={f.answer}
               rows={3}
-              className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+              className="admin-input min-h-24"
               onBlur={(e) =>
                 e.target.value !== f.answer && save({ id: f.id, answer: e.target.value }, "PATCH")
               }
@@ -83,7 +99,7 @@ export function FaqsView() {
               <button
                 type="button"
                 onClick={() => confirm("Löschen?") && save({ id: f.id }, "DELETE")}
-                className="text-xs text-accent-heart underline"
+                className="admin-btn-danger text-xs"
               >
                 Löschen
               </button>

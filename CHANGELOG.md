@@ -2,6 +2,25 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.4] — 2026-07-05
+
+### Sprint 1 — Admin Dashboard UX 2.0
+
+- Admin Navigation: linke Sidebar (Desktop), Drawer + Bottom Nav (Mobile)
+- Dashboard: Willkommen, Schnellaktionen, Kennzahlen, Letzte Aktivitäten
+- Shared UI: AdminButton, AdminEmptyState, AdminSearchInput, AdminFilterBar, AdminStickySave
+- Admin Design System mit Dark-Mode-Architektur (`data-admin-theme`)
+- Empty States für Anfragen, Leistungen, FAQ
+- Dokumentation: `docs/05_ROADMAP/ADMIN_UX_REPORT.md`
+
+### Sprint 2 — Analytics
+
+- Migration `20260706_analytics_enhanced.sql` (Browser, OS, Referrer, Live Stats RPCs)
+- Bot-Filter im Tracking, Referrer als Hostname (DSGVO)
+- Analytics-Seite `/admin/analytics` mit Diagrammen, Live Counter, CSV Export
+- Lazy Loading für Analytics View (Code Splitting)
+- Dokumentation: `docs/05_ROADMAP/ANALYTICS_REPORT.md`
+
 ## [0.9.0-rc.3] — 2026-07-05
 
 ### RC1 Blocker Fix — Public UI + Full CMS Control

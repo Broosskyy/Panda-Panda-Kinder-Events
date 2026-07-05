@@ -11,6 +11,7 @@ import { FormField } from "@/components/ui/FormField";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 
 export function ReviewForm() {
+  const [formLoadedAt] = useState(() => Date.now());
   const [name, setName] = useState("");
   const [eventType, setEventType] = useState<string>(eventTypes[0]);
   const [rating, setRating] = useState(0);
@@ -53,6 +54,8 @@ export function ReviewForm() {
       fd.append("eventType", eventType);
       fd.append("rating", String(rating));
       fd.append("text", text);
+      fd.append("website", "");
+      fd.append("_formLoadedAt", String(formLoadedAt));
       if (profileFile) fd.append("profileImage", profileFile);
       if (eventFile) fd.append("eventImage", eventFile);
 
@@ -99,7 +102,16 @@ export function ReviewForm() {
       <h3 className="font-heading text-2xl font-bold text-text-primary">Bewertung abgeben</h3>
       <p className="mt-3 text-base text-text-muted">Eure Bewertung wird nach Prüfung veröffentlicht.</p>
 
-      <form onSubmit={handleSubmit} className="mt-8 space-y-6" noValidate aria-label="Bewertungsformular">
+      <form onSubmit={handleSubmit} className="relative mt-8 space-y-6" noValidate aria-label="Bewertungsformular">
+        <input
+          type="text"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+          className="pointer-events-none absolute -left-[9999px] h-0 w-0 opacity-0"
+          aria-hidden="true"
+        />
+        <input type="hidden" name="_formLoadedAt" value={formLoadedAt} />
         <FormField id="review-name" label="Name" required>
           <input
             id="review-name"

@@ -1,4 +1,5 @@
-import type { SiteSettingsBundle } from "./types";
+import type { SiteContactSettings, SiteSettingsBundle } from "./types";
+import { sanitizeHttpUrl } from "@/lib/validation";
 
 const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   hero: ["tagline", "headline", "subtitle", "ctaPrimary", "ctaSecondary"],
@@ -29,6 +30,17 @@ export function validateSiteSettingsSection(
 
   if (missing.length > 0) {
     return { ok: false, error: `Pflichtfelder fehlen: ${missing.join(", ")}` };
+  }
+
+  if (section === "contact") {
+    const instagram = sanitizeHttpUrl(String(obj.instagram));
+    if (!instagram) {
+      return { ok: false, error: "Instagram-URL muss mit http:// oder https:// beginnen." };
+    }
+    return {
+      ok: true,
+      value: { ...(value as SiteContactSettings), instagram } as SiteSettingsBundle["contact"],
+    };
   }
 
   return { ok: true, value: value as SiteSettingsBundle[keyof SiteSettingsBundle] };

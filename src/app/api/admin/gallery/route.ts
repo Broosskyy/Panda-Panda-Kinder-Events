@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
+import { galleryImageInsertSchema, galleryImagePatchSchema } from "@/lib/cms/admin-schemas";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPublicUrl } from "@/lib/cms/storage";
 import { deleteStorageFile } from "@/lib/cms/storage";
@@ -32,11 +33,12 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
-  const { storage_path, title, alt_text, category, sort_order, visible } = body;
-
-  if (!storage_path) {
-    return NextResponse.json({ error: "storage_path erforderlich." }, { status: 400 });
+  const parsed = galleryImageInsertSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Ungültige Galeriedaten." }, { status: 400 });
   }
+
+  const { storage_path, title, alt_text, category, sort_order, visible } = parsed.data;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -66,13 +68,18 @@ export async function PATCH(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
-  const { id, ...updates } = body;
+  const { id, ...rawUpdates } = body;
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+
+  const parsed = galleryImagePatchSchema.safeParse(rawUpdates);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Ungültige Galeriedaten." }, { status: 400 });
+  }
 
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("gallery_images")
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });

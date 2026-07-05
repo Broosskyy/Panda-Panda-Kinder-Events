@@ -1,15 +1,39 @@
 import { NextResponse } from "next/server";
-import { getAdminCookieName, getAdminToken, isAdminConfigured } from "@/lib/admin-auth";
+import { timingSafeEqual } from "crypto";
+import {
+  createAdminSessionToken,
+  getAdminCookieName,
+  getAdminSessionMaxAge,
+  isAdminConfigured,
+} from "@/lib/admin-auth";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+
+function passwordsMatch(input: string, expected: string): boolean {
+  const a = Buffer.from(input);
+  const b = Buffer.from(expected);
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(a, b);
+}
 
 export async function POST(request: Request) {
   if (!isAdminConfigured()) {
     return NextResponse.json({ error: "Admin ist nicht konfiguriert." }, { status: 503 });
   }
 
-  const { password } = await request.json();
-  const token = getAdminToken();
+  const ip = getClientIp(request);
+  const limited = rateLimit(`admin-login:${ip}`, 5, 15 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Zu viele Loginversuche. Bitte später erneut versuchen." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
 
-  if (!password || password !== process.env.ADMIN_PASSWORD || !token) {
+  const { password } = await request.json();
+  const expected = process.env.ADMIN_PASSWORD ?? "";
+  const token = createAdminSessionToken();
+
+  if (!password || !expected || !token || !passwordsMatch(password, expected)) {
     return NextResponse.json({ error: "Ungültiges Passwort." }, { status: 401 });
   }
 
@@ -17,15 +41,21 @@ export async function POST(request: Request) {
   response.cookies.set(getAdminCookieName(), token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    sameSite: "strict",
     path: "/",
-    maxAge: 60 * 60 * 8,
+    maxAge: getAdminSessionMaxAge(),
   });
   return response;
 }
 
 export async function DELETE() {
   const response = NextResponse.json({ success: true });
-  response.cookies.delete(getAdminCookieName());
+  response.cookies.set(getAdminCookieName(), "", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+    maxAge: 0,
+  });
   return response;
 }

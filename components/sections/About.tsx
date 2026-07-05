@@ -7,6 +7,7 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import type { SiteAboutSettings, SiteFooterSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 
 interface AboutProps {
   about?: SiteAboutSettings;
@@ -17,8 +18,9 @@ interface AboutProps {
 export function About({
   about = DEFAULT_SITE_SETTINGS.about,
   footer = DEFAULT_SITE_SETTINGS.footer,
-  heading = DEFAULT_SITE_SETTINGS.sections.about,
+  heading,
 }: AboutProps) {
+  const safeHeading = resolveSectionHeading(heading, "about");
   const aboutImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
 
   return (
@@ -26,8 +28,8 @@ export function About({
       <Container>
         <ScrollReveal>
           <SectionHeading
-            title={heading.title}
-            subtitle={heading.subtitle || footer.tagline}
+            title={safeHeading.title}
+            subtitle={safeHeading.subtitle || footer.tagline}
           />
         </ScrollReveal>
 

@@ -5,6 +5,7 @@ import { services as staticServices } from "@/lib/services";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { isPlaceholderContent, isValidCmsFaq, isValidCmsService } from "./content-quality";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
+import { normalizeSiteSettings } from "./normalize-settings";
 import { resolveImageUrl } from "./resolve-image";
 import { resolveServiceIcon } from "./icons";
 import { hasNonEmptyCmsValue, validateSiteSettingsSection } from "./validate-settings";
@@ -69,9 +70,10 @@ function filterPlaceholderItems<T extends { text?: string; title?: string; descr
 function buildSettingsFromRows(
   rows: { key: string; value: unknown }[],
 ): SiteSettingsBundle {
-  const byKey = new Map(rows.map((r) => [r.key, r.value]));
+  try {
+    const byKey = new Map(rows.map((r) => [r.key, r.value]));
 
-  const aboutRaw = cmsSection(
+    const aboutRaw = cmsSection(
     "about",
     DEFAULT_SITE_SETTINGS.about,
     byKey.get("about"),
@@ -155,11 +157,15 @@ function buildSettingsFromRows(
       byKey.has("publicTeam"),
     ),
   };
+  } catch (err) {
+    console.error("buildSettingsFromRows:", err);
+    return DEFAULT_SITE_SETTINGS;
+  }
 }
 
 export async function fetchSiteSettings(): Promise<SiteSettingsBundle> {
   noStore();
-  if (!isSupabaseConfigured()) return DEFAULT_SITE_SETTINGS;
+  if (!isSupabaseConfigured()) return normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
 
   try {
     const supabase = getSupabaseAdmin();
@@ -167,15 +173,15 @@ export async function fetchSiteSettings(): Promise<SiteSettingsBundle> {
 
     if (error) {
       console.error("fetchSiteSettings:", error.message);
-      return DEFAULT_SITE_SETTINGS;
+      return normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
     }
 
-    if (!data?.length) return DEFAULT_SITE_SETTINGS;
+    if (!data?.length) return normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
 
-    return buildSettingsFromRows(data);
+    return normalizeSiteSettings(buildSettingsFromRows(data));
   } catch (err) {
     console.error("fetchSiteSettings:", err);
-    return DEFAULT_SITE_SETTINGS;
+    return normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
   }
 }
 
@@ -216,7 +222,10 @@ async function queryCmsServices(): Promise<Service[]> {
     .eq("visible", true)
     .order("sort_order", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("queryCmsServices:", error.message);
+    return [];
+  }
 
   return (data as CmsService[])
     .filter((s) => isValidCmsService(s.title ?? "", s.description ?? ""))
@@ -242,18 +251,11 @@ export async function fetchCmsServices(): Promise<Service[]> {
     const hasCms = await tableHasRows("cms_services");
     if (!hasCms) return staticServices;
 
-    try {
-      const cmsServices = await queryCmsServices();
-      return hasValidCmsServices(cmsServices) ? cmsServices : staticServices;
-    } catch (firstError) {
-      console.error("fetchCmsServices (retry):", firstError);
-      const cmsServices = await queryCmsServices();
-      return hasValidCmsServices(cmsServices) ? cmsServices : staticServices;
-    }
+    const cmsServices = await queryCmsServices();
+    return hasValidCmsServices(cmsServices) ? cmsServices : staticServices;
   } catch (err) {
     console.error("fetchCmsServices:", err);
-    const hasCms = await tableHasRows("cms_services").catch(() => false);
-    return hasCms ? [] : staticServices;
+    return staticServices;
   }
 }
 
@@ -296,7 +298,10 @@ async function queryGalleryImages(): Promise<{ src: string; alt: string; categor
     .eq("visible", true)
     .order("sort_order", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("queryGalleryImages:", error.message);
+    return [];
+  }
 
   return (data as GalleryImageRecord[])
     .map((img) => ({
@@ -318,16 +323,11 @@ export async function fetchGalleryImages(): Promise<{ src: string; alt: string; 
     const hasCms = await tableHasRows("gallery_images");
     if (!hasCms) return withCategory(staticGallery);
 
-    try {
-      return await queryGalleryImages();
-    } catch (firstError) {
-      console.error("fetchGalleryImages (retry):", firstError);
-      return await queryGalleryImages();
-    }
+    const images = await queryGalleryImages();
+    return images.length > 0 ? images : withCategory(staticGallery);
   } catch (err) {
     console.error("fetchGalleryImages:", err);
-    const hasCms = await tableHasRows("gallery_images").catch(() => false);
-    return hasCms ? [] : withCategory(staticGallery);
+    return withCategory(staticGallery);
   }
 }
 

@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 import type { Service } from "@/lib/services";
 import { ICON_STROKE } from "@/lib/design";
 import type { SiteSectionHeading } from "@/lib/cms/types";
-import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
@@ -21,8 +21,9 @@ interface ServicesProps {
 
 export function Services({
   items,
-  heading = DEFAULT_SITE_SETTINGS.sections.services,
+  heading,
 }: ServicesProps) {
+  const safeHeading = resolveSectionHeading(heading, "services");
   const [active, setActive] = useState<Service | null>(null);
 
   if (!items?.length) return null;
@@ -31,7 +32,7 @@ export function Services({
     <section id="leistungen" className="section-padding bg-bg-primary">
       <Container>
         <ScrollReveal>
-          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
+          <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
         <div className="swipe-bleed md:mx-0 md:px-0">

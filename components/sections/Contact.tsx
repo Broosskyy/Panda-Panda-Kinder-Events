@@ -2,6 +2,7 @@ import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { ICON_STROKE } from "@/lib/design";
 import type { SiteContactSettings, SiteFooterSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Card } from "@/components/ui/Card";
 import { InquiryForm } from "@/components/ui/InquiryForm";
 import { Container } from "@/components/ui/Container";
@@ -58,8 +59,9 @@ function buildContactLinks(contact: SiteContactSettings) {
 export function Contact({
   contact = DEFAULT_SITE_SETTINGS.contact,
   footer = DEFAULT_SITE_SETTINGS.footer,
-  heading = DEFAULT_SITE_SETTINGS.sections.contact,
+  heading,
 }: ContactProps) {
+  const safeHeading = resolveSectionHeading(heading, "contact");
   const contactLinks = buildContactLinks(contact);
 
   return (
@@ -68,7 +70,7 @@ export function Contact({
 
       <Container>
         <ScrollReveal>
-          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
+          <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
         <div className="grid gap-10 sm:gap-12 lg:grid-cols-2 lg:gap-20">

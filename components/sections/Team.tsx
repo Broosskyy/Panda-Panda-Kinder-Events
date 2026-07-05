@@ -1,6 +1,7 @@
 import Image from "next/image";
 import type { SitePublicTeamSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
@@ -14,16 +15,18 @@ interface TeamProps {
 
 export function Team({
   team = DEFAULT_SITE_SETTINGS.publicTeam,
-  heading = DEFAULT_SITE_SETTINGS.sections.team,
+  heading,
 }: TeamProps) {
-  const items = team.items?.length ? team.items : DEFAULT_SITE_SETTINGS.publicTeam.items;
+  const safeHeading = resolveSectionHeading(heading, "team");
+  const safeTeam = team ?? DEFAULT_SITE_SETTINGS.publicTeam;
+  const items = safeTeam.items?.length ? safeTeam.items : DEFAULT_SITE_SETTINGS.publicTeam.items;
   if (!items.length) return null;
 
   return (
     <section id="team" className="section-padding bg-bg-secondary/30">
       <Container>
         <ScrollReveal>
-          <SectionHeading title={heading.title ?? team.title} subtitle={heading.subtitle ?? team.subtitle} />
+          <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
         <ul className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
@@ -33,7 +36,7 @@ export function Team({
                 <Card className="card-equal h-full overflow-hidden !p-0" padding="sm" hover>
                   <div className="relative aspect-[4/5] w-full overflow-hidden bg-bg-secondary">
                     <Image
-                      src={member.imageUrl}
+                      src={member.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.publicTeam.items[0].imageUrl}
                       alt={`${member.name} — ${member.role}`}
                       fill
                       className="object-cover"

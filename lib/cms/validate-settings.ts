@@ -1,8 +1,10 @@
 import type {
   SiteContactSettings,
   SiteSectionHeading,
+  SiteSectionsSettings,
   SiteSettingsBundle,
 } from "./types";
+import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { sanitizeHttpUrl } from "@/lib/validation";
 
 const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
@@ -125,14 +127,19 @@ function validateArraySection(
   }
 
   if (section === "sections") {
-    const sections = obj as unknown as SiteSettingsBundle["sections"];
-    for (const [key, heading] of Object.entries(sections)) {
-      const h = heading as SiteSectionHeading | undefined;
-      if (!h?.title?.trim() || !h?.subtitle?.trim()) {
-        return { ok: false, error: `Sektion „${key}" braucht Titel und Untertitel.` };
+    const defaults = DEFAULT_SITE_SETTINGS.sections;
+    const merged = { ...defaults } as SiteSectionsSettings;
+    for (const key of Object.keys(defaults) as (keyof SiteSectionsSettings)[]) {
+      const raw = (obj as Record<string, unknown>)[key];
+      if (!raw || typeof raw !== "object") continue;
+      const heading = raw as SiteSectionHeading;
+      const title = String(heading.title ?? "").trim();
+      const subtitle = String(heading.subtitle ?? "").trim();
+      if (title && subtitle) {
+        merged[key] = { title, subtitle };
       }
     }
-    return { ok: true, value: sections };
+    return { ok: true, value: merged };
   }
 
   return { ok: false, error: "Ungültige Sektion." };

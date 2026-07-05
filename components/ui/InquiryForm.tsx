@@ -1,19 +1,21 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { Send } from "lucide-react";
+import { Check, Send } from "lucide-react";
 import Link from "next/link";
 import { eventTypes } from "@/lib/faqs";
-import { inquirySchema, type InquiryFormData } from "@/lib/validation";
+import { inquirySimpleSchema, type InquirySimpleFormData } from "@/lib/validation";
 import { inputClassName, textareaClassName } from "@/lib/a11y";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 
+const TRUST_POINTS = ["Kostenlos", "Unverbindlich", "Schnelle Rückmeldung"] as const;
+
 export function InquiryForm() {
   const [formLoadedAt] = useState(() => Date.now());
-  const [errors, setErrors] = useState<Partial<Record<keyof InquiryFormData, string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof InquirySimpleFormData, string>>>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState("");
@@ -31,22 +33,19 @@ export function InquiryForm() {
       email: formData.get("email") as string,
       eventType: formData.get("eventType") as string,
       date: formData.get("date") as string,
-      time: formData.get("time") as string,
-      duration: (formData.get("duration") as string) || "",
-      location: formData.get("location") as string,
-      childrenCount: formData.get("childrenCount") as string,
-      message: (formData.get("message") as string) || "",
+      message: formData.get("message") as string,
+      childrenCount: (formData.get("childrenCount") as string) || "",
       privacy: formData.get("privacy") === "on",
       website: (formData.get("website") as string) || "",
       _formLoadedAt: Number(formData.get("_formLoadedAt")) || formLoadedAt,
     };
 
-    const result = inquirySchema.safeParse(data);
+    const result = inquirySimpleSchema.safeParse(data);
 
     if (!result.success) {
-      const fieldErrors: Partial<Record<keyof InquiryFormData, string>> = {};
+      const fieldErrors: Partial<Record<keyof InquirySimpleFormData, string>> = {};
       result.error.errors.forEach((err) => {
-        const key = err.path[0] as keyof InquiryFormData;
+        const key = err.path[0] as keyof InquirySimpleFormData;
         if (!fieldErrors[key]) fieldErrors[key] = err.message;
       });
       setErrors(fieldErrors);
@@ -78,7 +77,7 @@ export function InquiryForm() {
     }
   };
 
-  const fieldProps = (key: keyof InquiryFormData) => ({
+  const fieldProps = (key: keyof InquirySimpleFormData) => ({
     error: errors[key],
     "aria-invalid": !!errors[key],
     "aria-describedby": errors[key] ? `${key}-error` : undefined,
@@ -89,12 +88,14 @@ export function InquiryForm() {
       <Card padding="lg" hover={false} className="text-center">
         <PandaMascot size={100} className="mx-auto mb-6" />
         <div role="status" aria-live="polite">
-          <h3 className="font-heading text-2xl font-bold text-text-primary md:text-3xl">
-            Vielen Dank für eure Anfrage!
+          <p className="text-3xl" aria-hidden>
+            ✓
+          </p>
+          <h3 className="font-heading mt-3 text-2xl font-bold text-text-primary md:text-3xl">
+            Anfrage erfolgreich versendet
           </h3>
           <p className="mx-auto mt-4 max-w-sm text-lg leading-relaxed text-text-secondary">
-            Wir haben eure Nachricht erhalten und melden uns in Kürze bei euch. Bis bald — eure
-            Panda-Bande!
+            Wir melden uns innerhalb von 24 Stunden.
           </p>
         </div>
         <Button className="mt-10 w-full sm:w-auto" size="lg" onClick={() => setIsSuccess(false)}>
@@ -115,7 +116,17 @@ export function InquiryForm() {
         aria-hidden="true"
       />
       <input type="hidden" name="_formLoadedAt" value={formLoadedAt} />
-      {submitError && (
+
+      <ul className="flex flex-wrap gap-x-4 gap-y-2 text-sm text-text-secondary" aria-label="Vorteile">
+        {TRUST_POINTS.map((point) => (
+          <li key={point} className="inline-flex items-center gap-1.5">
+            <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+            {point}
+          </li>
+        ))}
+      </ul>
+
+      {submitError ? (
         <div
           role="alert"
           aria-live="assertive"
@@ -123,58 +134,27 @@ export function InquiryForm() {
         >
           {submitError}
         </div>
-      )}
+      ) : null}
 
       <div className="grid gap-6 sm:grid-cols-2">
         <FormField id="name" label="Name" required error={errors.name}>
-          <input
-            id="name"
-            name="name"
-            type="text"
-            required
-            aria-required="true"
-            placeholder=" "
-            className={inputClassName}
-            {...fieldProps("name")}
-          />
+          <input id="name" name="name" type="text" required className={inputClassName} placeholder=" " {...fieldProps("name")} />
         </FormField>
         <FormField id="phone" label="Telefon" required error={errors.phone}>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            required
-            aria-required="true"
-            placeholder=" "
-            className={inputClassName}
-            {...fieldProps("phone")}
-          />
+          <input id="phone" name="phone" type="tel" required className={inputClassName} placeholder=" " {...fieldProps("phone")} />
         </FormField>
       </div>
 
       <FormField id="email" label="E-Mail" required error={errors.email}>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          required
-          aria-required="true"
-          placeholder=" "
-          className={inputClassName}
-          {...fieldProps("email")}
-        />
+        <input id="email" name="email" type="email" required className={inputClassName} placeholder=" " {...fieldProps("email")} />
       </FormField>
 
       <div className="grid gap-6 sm:grid-cols-2">
+        <FormField id="date" label="Datum" required error={errors.date}>
+          <input id="date" name="date" type="date" required className={inputClassName} {...fieldProps("date")} />
+        </FormField>
         <FormField id="eventType" label="Art der Veranstaltung" required error={errors.eventType}>
-          <select
-            id="eventType"
-            name="eventType"
-            required
-            aria-required="true"
-            className={inputClassName}
-            {...fieldProps("eventType")}
-          >
+          <select id="eventType" name="eventType" required className={inputClassName} {...fieldProps("eventType")}>
             {eventTypes.map((type) => (
               <option key={type} value={type}>
                 {type}
@@ -182,77 +162,30 @@ export function InquiryForm() {
             ))}
           </select>
         </FormField>
-        <FormField id="childrenCount" label="Anzahl der Kinder" required error={errors.childrenCount}>
-          <input
-            id="childrenCount"
-            name="childrenCount"
-            type="number"
-            min="1"
-            required
-            aria-required="true"
-            placeholder=" "
-            className={inputClassName}
-            {...fieldProps("childrenCount")}
-          />
-        </FormField>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <FormField id="date" label="Datum" required error={errors.date}>
-          <input
-            id="date"
-            name="date"
-            type="date"
-            required
-            aria-required="true"
-            className={inputClassName}
-            {...fieldProps("date")}
-          />
-        </FormField>
-        <FormField id="time" label="Uhrzeit" required error={errors.time}>
-          <input
-            id="time"
-            name="time"
-            type="time"
-            required
-            aria-required="true"
-            className={inputClassName}
-            {...fieldProps("time")}
-          />
-        </FormField>
-      </div>
+      <FormField id="childrenCount" label="Kinderanzahl (optional)" error={errors.childrenCount}>
+        <input
+          id="childrenCount"
+          name="childrenCount"
+          type="number"
+          min={1}
+          max={200}
+          placeholder="z. B. 12"
+          className={inputClassName}
+          {...fieldProps("childrenCount")}
+        />
+      </FormField>
 
-      <div className="grid gap-6 sm:grid-cols-2">
-        <FormField id="duration" label="Dauer">
-          <input
-            id="duration"
-            name="duration"
-            type="text"
-            placeholder=" "
-            className={inputClassName}
-          />
-        </FormField>
-        <FormField id="location" label="Ort / Location" required error={errors.location}>
-          <input
-            id="location"
-            name="location"
-            type="text"
-            required
-            aria-required="true"
-            placeholder=" "
-            className={inputClassName}
-            {...fieldProps("location")}
-          />
-        </FormField>
-      </div>
-
-      <FormField id="message" label="Nachricht">
+      <FormField id="message" label="Nachricht" required error={errors.message}>
         <textarea
           id="message"
           name="message"
           rows={4}
-          placeholder=" "
+          required
+          placeholder="Erzählt uns kurz von eurem Event…"
           className={textareaClassName}
+          {...fieldProps("message")}
         />
       </FormField>
 
@@ -263,34 +196,32 @@ export function InquiryForm() {
           type="checkbox"
           defaultChecked
           required
-          aria-required="true"
-          aria-invalid={!!errors.privacy}
-          aria-describedby={errors.privacy ? "privacy-error" : undefined}
           className="mt-1 h-6 w-6 accent-primary"
+          {...fieldProps("privacy")}
         />
         <label htmlFor="privacy" className="text-base leading-relaxed text-text-secondary">
           Ich stimme der{" "}
           <Link href="/datenschutz" className="text-primary underline hover:no-underline">
             Datenschutzerklärung
           </Link>{" "}
-          zu und bin einverstanden, dass meine Daten zur Bearbeitung der Anfrage gespeichert werden. *
+          zu. *
         </label>
       </div>
-      {errors.privacy && (
+      {errors.privacy ? (
         <p id="privacy-error" role="alert" className="text-sm font-medium text-accent-heart">
           {errors.privacy}
         </p>
-      )}
+      ) : null}
 
       <Button
         type="submit"
         disabled={isSubmitting}
         size="lg"
-        className="w-full shadow-xl"
+        className="btn-premium w-full min-h-[3rem] shadow-xl"
         icon={<Send className="h-5 w-5" aria-hidden />}
         aria-busy={isSubmitting}
       >
-        {isSubmitting ? "Wird gesendet..." : "Anfrage senden"}
+        {isSubmitting ? "Wird gesendet…" : "Jetzt unverbindlich anfragen"}
       </Button>
     </form>
   );

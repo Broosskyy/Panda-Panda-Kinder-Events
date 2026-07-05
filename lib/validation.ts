@@ -36,7 +36,31 @@ export const inquirySchema = z.object({
   _formLoadedAt: z.number().optional(),
 });
 
-export const inquiryApiSchema = inquirySchema;
+export const inquirySimpleSchema = z.object({
+  name: z.string().trim().min(2, "Bitte gib deinen Namen ein.").max(100),
+  phone: z.string().trim().min(6, "Bitte gib eine gültige Telefonnummer ein.").max(30),
+  email: z.string().trim().email("Bitte gib eine gültige E-Mail-Adresse ein.").max(120),
+  eventType: z.enum(eventTypes, {
+    errorMap: () => ({ message: "Bitte wähle eine Veranstaltungsart." }),
+  }),
+  date: z
+    .string()
+    .trim()
+    .min(1, "Bitte wähle ein Datum.")
+    .max(10)
+    .regex(/^\d{4}-\d{2}-\d{2}$/, "Ungültiges Datum."),
+  message: z.string().trim().min(3, "Bitte beschreibt kurz euer Anliegen.").max(5000),
+  childrenCount: z.string().trim().max(3).optional(),
+  privacy: z.literal(true, {
+    errorMap: () => ({ message: "Bitte stimme der Datenschutzerklärung zu." }),
+  }),
+  website: z.string().max(0).optional(),
+  _formLoadedAt: z.number().optional(),
+});
+
+export type InquirySimpleFormData = z.infer<typeof inquirySimpleSchema>;
+
+export const inquiryApiSchema = inquirySimpleSchema;
 
 export type InquiryFormData = z.infer<typeof inquirySchema>;
 

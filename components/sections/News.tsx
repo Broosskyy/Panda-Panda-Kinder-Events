@@ -6,6 +6,7 @@ import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface NewsProps {
@@ -65,7 +66,7 @@ export function News({
                           <p className="mt-2 text-sm text-text-secondary md:text-base">{post.subtitle}</p>
                         ) : null}
                         <p className="mt-3 flex items-center gap-2 text-sm font-medium text-primary md:mt-4">
-                          Weiterlesen <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                          Mehr lesen <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                         </p>
                         <p className="mt-2 text-xs text-text-muted">{formatDate(post.published_at)}</p>
                       </div>
@@ -76,6 +77,17 @@ export function News({
             ))}
           </ul>
         </div>
+        <ScrollReveal>
+          <div className="mt-10 text-center sm:mt-12">
+            <Link
+              href="/aktuelles"
+              className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-primary/25 bg-bg-card px-6 py-3 text-sm font-semibold text-primary transition hover:bg-bg-secondary"
+            >
+              Alle Beiträge ansehen
+            </Link>
+          </div>
+          <SectionCta className="mt-10" label="Jetzt Termin anfragen" />
+        </ScrollReveal>
       </Container>
     </section>
   );

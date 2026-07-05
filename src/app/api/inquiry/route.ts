@@ -33,24 +33,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: spamError }, { status: 400 });
     }
 
+    const childrenRaw = parsed.data.childrenCount?.trim();
+    let childrenCount = 1;
+    if (childrenRaw) {
+      const parsedCount = Number.parseInt(childrenRaw, 10);
+      if (Number.isNaN(parsedCount) || parsedCount < 1 || parsedCount > 200) {
+        return NextResponse.json({ error: "Ungültige Kinderanzahl." }, { status: 400 });
+      }
+      childrenCount = parsedCount;
+    }
+
+    if (!eventTypes.includes(parsed.data.eventType)) {
+      return NextResponse.json({ error: "Ungültige Veranstaltungsart." }, { status: 400 });
+    }
+
     const data = {
-      ...parsed.data,
       name: stripHtml(parsed.data.name),
       phone: stripHtml(parsed.data.phone),
       email: stripHtml(parsed.data.email).toLowerCase(),
-      location: stripHtml(parsed.data.location),
-      message: parsed.data.message ? stripHtml(parsed.data.message) : undefined,
-      duration: parsed.data.duration ? stripHtml(parsed.data.duration) : undefined,
+      eventType: parsed.data.eventType,
+      date: parsed.data.date,
+      time: "12:00",
+      duration: undefined as string | undefined,
+      location: "Wird im Gespräch geklärt",
+      childrenCount: String(childrenCount),
+      message: stripHtml(parsed.data.message),
     };
-
-    const childrenCount = Number.parseInt(data.childrenCount, 10);
-    if (Number.isNaN(childrenCount) || childrenCount < 1 || childrenCount > 200) {
-      return NextResponse.json({ error: "Ungültige Kinderanzahl." }, { status: 400 });
-    }
-
-    if (!eventTypes.includes(data.eventType)) {
-      return NextResponse.json({ error: "Ungültige Veranstaltungsart." }, { status: 400 });
-    }
 
     if (isSupabaseConfigured()) {
       const supabase = getSupabaseAdmin();
@@ -61,10 +69,10 @@ export async function POST(request: Request) {
         event_type: data.eventType,
         event_date: data.date,
         event_time: data.time,
-        duration: data.duration || null,
+        duration: null,
         location: data.location,
         children_count: childrenCount,
-        message: data.message || null,
+        message: data.message,
         status: "new",
       });
 
@@ -86,7 +94,6 @@ export async function POST(request: Request) {
           eventType: data.eventType,
           date: data.date,
           time: data.time,
-          duration: data.duration,
           location: data.location,
           childrenCount: data.childrenCount,
           message: data.message,

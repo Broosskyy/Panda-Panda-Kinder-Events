@@ -46,11 +46,11 @@ function buildContactLinks(contact: SiteContactSettings) {
       external: false,
     },
     {
-      href: null,
+      href: contact.mapsUrl?.trim() || `https://maps.google.com/?q=${encodeURIComponent(contact.location)}`,
       icon: MapPin,
-      label: "Einsatzgebiet",
+      label: "Standort",
       value: contact.location,
-      external: false,
+      external: true,
     },
   ] as const;
 }

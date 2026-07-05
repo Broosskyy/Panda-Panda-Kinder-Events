@@ -5,6 +5,7 @@ import { resolveContentIcon } from "@/lib/cms/icons";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface UspsProps {
@@ -15,13 +16,13 @@ export function Usps({ usps = DEFAULT_SITE_SETTINGS.usps }: UspsProps) {
   const items = usps.items?.length ? usps.items : DEFAULT_SITE_SETTINGS.usps.items;
 
   return (
-    <section className="section-padding border-y border-border/30 bg-bg-secondary/30">
+    <section id="warum-panda-bande" className="section-padding border-y border-border/30 bg-bg-secondary/30">
       <Container>
         <ScrollReveal>
           <SectionHeading title={usps.title} subtitle={usps.subtitle} />
         </ScrollReveal>
 
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4 lg:gap-12" role="list">
+        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
           {items.map((usp, i) => {
             const Icon = resolveContentIcon(usp.iconKey);
             return (
@@ -51,6 +52,10 @@ export function Usps({ usps = DEFAULT_SITE_SETTINGS.usps }: UspsProps) {
             );
           })}
         </ul>
+
+        <ScrollReveal>
+          <SectionCta className="mt-12 sm:mt-16" />
+        </ScrollReveal>
       </Container>
     </section>
   );

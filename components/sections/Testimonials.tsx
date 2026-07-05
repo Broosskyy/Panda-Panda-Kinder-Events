@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 function formatReviewDate(dateStr: string) {
@@ -216,6 +217,10 @@ export function Testimonials({
             </div>
           </div>
         )}
+
+        <ScrollReveal>
+          <SectionCta className="mt-10 sm:mt-12" />
+        </ScrollReveal>
 
         <div ref={formRef} id="bewertung-form" className="mx-auto mt-10 max-w-xl scroll-mt-24 sm:mt-16 sm:scroll-mt-28">
           <ScrollReveal>

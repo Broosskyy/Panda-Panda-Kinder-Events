@@ -8,6 +8,7 @@ import type { SiteSectionHeading } from "@/lib/cms/types";
 import { focusRing } from "@/lib/a11y";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface FaqProps {
@@ -70,6 +71,10 @@ export function Faq({
             );
           })}
         </div>
+
+        <ScrollReveal>
+          <SectionCta className="mt-12 sm:mt-16" />
+        </ScrollReveal>
       </Container>
     </section>
   );

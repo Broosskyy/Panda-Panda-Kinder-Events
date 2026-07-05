@@ -1,8 +1,6 @@
 import { siteConfig } from "@/config/site";
 import { navigation } from "@/lib/navigation";
-import { processSteps } from "@/lib/process-steps";
 import { trustBadges } from "@/lib/trust-badges";
-import { usps } from "@/lib/usps";
 import type { SiteSettingsBundle } from "./types";
 
 const HERO_IMAGE_DEFAULT =
@@ -24,7 +22,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     whatsapp: siteConfig.contact.whatsapp,
     instagram: siteConfig.contact.instagram,
     instagramHandle: siteConfig.contact.instagramHandle,
+    facebook: "",
     location: siteConfig.contact.location,
+    mapsUrl: "https://maps.google.com/?q=NRW+Deutschland",
   },
   about: {
     founderName: "Lisa",
@@ -63,24 +63,26 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   },
   usps: {
     title: "Warum Panda-Bande?",
-    subtitle: "Professionelle Betreuung mit echter Herzlichkeit — für unvergessliche Momente.",
+    subtitle: "Vertrauen, Herzlichkeit und professionelle Kinderbetreuung — für euer besonderes Event.",
     items: [
-      { iconKey: "Heart", title: usps[0].title, description: usps[0].description },
-      { iconKey: "Palette", title: usps[1].title, description: usps[1].description },
-      { iconKey: "Sparkles", title: usps[2].title, description: usps[2].description },
-      { iconKey: "PartyPopper", title: usps[3].title, description: usps[3].description },
+      { iconKey: "Users", title: "Erfahrenes Team", description: "Geschulte Betreuerinnen mit Herz und Erfahrung bei Events jeder Größe." },
+      { iconKey: "Heart", title: "Liebevoll", description: "Jedes Kind wird individuell wahrgenommen — mit Geduld, Wärme und Einfühlungsvermögen." },
+      { iconKey: "Shield", title: "Zuverlässig", description: "Pünktlich, vorbereitet und verlässlich — damit ihr entspannt feiern könnt." },
+      { iconKey: "Calendar", title: "Flexible Buchung", description: "Kurzfristige Anfragen, individuelle Zeiten und passende Teamgrößen." },
+      { iconKey: "MapPin", title: "NRW & Umgebung", description: "Einsatz in NRW und bundesweit — wir kommen zu eurer Location." },
+      { iconKey: "Sparkles", title: "Individuelle Betreuung", description: "Programme nach Alter, Wünschen und Rahmen eures Events." },
     ],
   },
   process: {
-    title: "So einfach buchst du uns",
-    subtitle: "In fünf Schritten zu eurem unvergesslichen Event.",
+    title: "So läuft es ab",
+    subtitle: "Von der ersten Anfrage bis zu glücklichen Kindern — in fünf Schritten.",
     speechBubble: "Wir kümmern uns um den Rest!",
     steps: [
-      { number: 1, title: processSteps[0].title, description: processSteps[0].description, iconKey: "PartyPopper" },
-      { number: 2, title: processSteps[1].title, description: processSteps[1].description, iconKey: "MapPin" },
-      { number: 3, title: processSteps[2].title, description: processSteps[2].description, iconKey: "Calendar" },
-      { number: 4, title: processSteps[3].title, description: processSteps[3].description, iconKey: "Clock" },
-      { number: 5, title: processSteps[4].title, description: processSteps[4].description, iconKey: "Users" },
+      { number: 1, title: "Anfrage", description: "Ihr sendet uns eure Wünsche — kostenlos und unverbindlich.", iconKey: "PartyPopper" },
+      { number: 2, title: "Beratung", description: "Wir besprechen Programm, Teamgröße und Ablauf persönlich.", iconKey: "MessageCircle" },
+      { number: 3, title: "Planung", description: "Gemeinsam planen wir Material, Zeiten und Betreuung.", iconKey: "Calendar" },
+      { number: 4, title: "Durchführung", description: "Unsere Panda-Bande sorgt vor Ort für strahlende Kinderaugen.", iconKey: "Users" },
+      { number: 5, title: "Glückliche Kinder", description: "Zufriedene Kinder, entspannte Eltern — Mission erfüllt!", iconKey: "Heart" },
     ],
   },
   sections: {
@@ -116,10 +118,33 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
       title: "Häufige Fragen",
       subtitle: "Antworten auf die wichtigsten Fragen rund um euer Event.",
     },
+    team: {
+      title: "Unser Team",
+      subtitle: "Die Menschen hinter der Panda-Bande — mit Herz für kleine Abenteurer.",
+    },
     contact: {
       title: "Jetzt unverbindlich anfragen",
       subtitle: "Erzählt uns von eurem Event — wir melden uns schnellstmöglich bei euch.",
     },
+  },
+  publicTeam: {
+    title: "Unser Team",
+    subtitle: "Liebevolle Betreuerinnen mit Erfahrung, Kreativität und Herz.",
+    items: [
+      {
+        name: "Lisa",
+        role: "Gründerin & Leitung",
+        description: "Mit viel Herz und Erfahrung koordiniert Lisa jedes Event persönlich.",
+        imageUrl:
+          "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=800&h=1000&fit=crop&q=85",
+      },
+      {
+        name: "Panda-Bande Team",
+        role: "Betreuerinnen",
+        description: "Unser erfahrenes Team begleitet Kinder liebevoll bei jedem Anlass.",
+        imageUrl: siteConfig.assets.logo,
+      },
+    ],
   },
   business: {
     companyName: siteConfig.name,

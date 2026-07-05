@@ -1538,3 +1538,220 @@ img {
 .admin-form-required {
   color: var(--color-accent-heart);
 }
+
+/* ── Public website polish ── */
+
+.public-main {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+.sticky-cta-bar {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  z-index: 45;
+  border-top: 1px solid color-mix(in srgb, var(--color-primary) 18%, transparent);
+  background: color-mix(in srgb, var(--color-bg-card) 96%, transparent);
+  backdrop-filter: blur(12px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -8px 32px rgba(44, 44, 44, 0.1);
+}
+
+.sticky-cta-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  max-width: 48rem;
+  margin-inline: auto;
+}
+
+.sticky-cta-text {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.sticky-cta-button {
+  min-width: min(100%, 20rem);
+}
+
+.floating-contact-stack {
+  position: fixed;
+  right: max(1rem, env(safe-area-inset-right, 0px));
+  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  z-index: 44;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .floating-contact-stack {
+    bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .public-main {
+    padding-bottom: 0;
+  }
+}
+
+.floating-contact-btn {
+  display: flex;
+  height: 3.5rem;
+  width: 3.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: white;
+  box-shadow: 0 8px 28px rgba(44, 44, 44, 0.22);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.floating-contact-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(44, 44, 44, 0.28);
+}
+
+.floating-contact-btn:active {
+  transform: scale(0.98);
+}
+
+.floating-contact-btn-phone {
+  background: var(--color-primary);
+}
+
+.floating-contact-btn-whatsapp {
+  background: #25d366;
+}
+
+.cookie-banner {
+  position: fixed;
+  inset-inline: 0;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 46;
+  padding: 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .cookie-banner {
+    bottom: 1rem;
+  }
+}
+
+.cookie-banner-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  max-width: 48rem;
+  margin-inline: auto;
+  border-radius: 1rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 640px) {
+  .cookie-banner-inner {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
+.cookie-banner-text {
+  flex: 1;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.cookie-banner-btn {
+  min-height: 2.75rem;
+  border-radius: 9999px;
+  background: var(--color-primary);
+  color: white;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.gallery-filter-chip {
+  min-height: 2.5rem;
+  border-radius: 9999px;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.gallery-filter-chip-active {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  color: var(--color-primary);
+}
+
+.service-modal-root {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 1rem;
+}
+
+@media (min-width: 640px) {
+  .service-modal-root {
+    align-items: center;
+  }
+}
+
+.service-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(44, 44, 44, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.service-modal-panel {
+  position: relative;
+  width: min(100%, 36rem);
+  max-height: min(90dvh, 720px);
+  overflow-y: auto;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-card);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-lg);
+}
+
+.service-modal-close {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  display: flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: var(--color-bg-secondary);
+}
+
+.card-equal,
+.btn-equal {
+  min-height: 3rem;
+}
+
+.btn-premium:active:not(:disabled) {
+  transform: scale(0.99);
+}
+
+.section-cta {
+  text-align: center;
+}

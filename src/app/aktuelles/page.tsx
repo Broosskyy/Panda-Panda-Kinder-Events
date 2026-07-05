@@ -3,12 +3,20 @@ import Image from "next/image";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
+import { PublicChrome } from "@/components/layout/PublicChrome";
 import { Container } from "@/components/ui/Container";
 import { Card } from "@/components/ui/Card";
 import { fetchPublishedPosts, fetchSiteSettings } from "@/lib/cms/data";
+import { buildPageMetadata } from "@/lib/seo";
+import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = buildPageMetadata({
+  title: "Aktuelles",
+  description: "Neuigkeiten, Tipps und Einblicke von der Panda-Bande Kinderevents.",
+  path: "/aktuelles",
+});
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return "";
@@ -24,7 +32,7 @@ export default async function AktuellesPage() {
 
   return (
     <>
-      <Header />
+      <Header navigation={settings.navigation} branding={settings.branding} />
       <main id="main-content" className="bg-bg-primary pt-[max(6.5rem,calc(5rem+env(safe-area-inset-top,0px)))]">
         <Container className="max-w-5xl py-10 sm:py-14">
           <Link
@@ -73,8 +81,8 @@ export default async function AktuellesPage() {
           )}
         </Container>
       </main>
-      <Footer contact={settings.contact} footer={settings.footer} />
-      <WhatsAppFab contact={settings.contact} />
+      <Footer contact={settings.contact} footer={settings.footer} branding={settings.branding} />
+      <PublicChrome contact={settings.contact} />
     </>
   );
 }

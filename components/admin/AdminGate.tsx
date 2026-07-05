@@ -30,7 +30,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
 
   return (
     <AdminUiProvider>
-      <div className="admin-shell flex min-h-screen flex-col md:flex-row" data-admin-theme="light">
+      <div className="admin-shell flex min-h-[100dvh] flex-col md:flex-row" data-admin-theme="light">
         <AdminSidebar />
         <main className="admin-main flex-1 overflow-x-hidden">{children}</main>
         <AdminQuickActions />

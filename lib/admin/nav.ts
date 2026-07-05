@@ -12,6 +12,7 @@ import {
   Settings,
   Sparkles,
   Star,
+  UserCog,
   Users,
 } from "lucide-react";
 
@@ -66,7 +67,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   },
   {
     id: "settings",
-    items: [{ href: "/admin/einstellungen", label: "Einstellungen", icon: Settings }],
+    label: "Verwaltung",
+    items: [
+      { href: "/admin/team", label: "Team", icon: UserCog },
+      { href: "/admin/einstellungen", label: "Einstellungen", icon: Settings },
+    ],
   },
 ];
 

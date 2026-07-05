@@ -6,7 +6,7 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
-import type { SiteBusinessSettings, SiteEmailSettings, SiteSettingsBundle } from "@/lib/cms/types";
+import type { SiteBusinessSettings, SiteEmailCustomAddresses, SiteEmailSettings, SiteSettingsBundle } from "@/lib/cms/types";
 
 interface EmailStatusResponse {
   resendConfigured: boolean;
@@ -21,6 +21,13 @@ const DOMAIN_STATUS_LABELS: Record<string, string> = {
   failed: "Verifizierung fehlgeschlagen",
   not_configured: "Nicht konfiguriert",
 };
+
+const CUSTOM_ADDRESS_LABELS: { key: keyof SiteEmailCustomAddresses; label: string }[] = [
+  { key: "info", label: "info@" },
+  { key: "kontakt", label: "kontakt@" },
+  { key: "rechnung", label: "rechnung@" },
+  { key: "angebote", label: "angebote@" },
+];
 
 export function SettingsView() {
   const [debug, setDebug] = useState<{
@@ -136,6 +143,14 @@ export function SettingsView() {
     setEmail({ ...email, [key]: value });
   };
 
+  const setCustomAddress = (key: keyof SiteEmailCustomAddresses, value: string) => {
+    if (!email) return;
+    setEmail({
+      ...email,
+      customAddresses: { ...email.customAddresses, [key]: value },
+    });
+  };
+
   const usesTestDomain = emailStatus?.resolved.usesTestDomain ?? true;
 
   return (
@@ -146,8 +161,8 @@ export function SettingsView() {
         <AdminCard title="E-Mail">
           {usesTestDomain ? (
             <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <strong>Resend-Testdomain aktiv.</strong> Momentan wird die Resend-Testdomain verwendet.
-              Nach der Verifizierung einer eigenen Domain werden alle E-Mails automatisch über Ihre Firmenadresse versendet.
+              <strong>Resend-Testdomain aktiv.</strong> Eigene Absenderadresse erst nach Resend-Domain-Verifizierung möglich.
+              Momentan wird <code className="rounded bg-white/60 px-1">onboarding@resend.dev</code> als Fallback verwendet.
             </div>
           ) : (
             <div className="mb-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-text-primary">
@@ -181,9 +196,6 @@ export function SettingsView() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Firmenname" required className="md:col-span-2">
-              <input className="admin-input" value={email.companyName} onChange={(e) => setEmailField("companyName", e.target.value)} />
-            </AdminFormField>
             <AdminFormField label="Absendername" required hint="Wird im From-Feld angezeigt">
               <input className="admin-input" value={email.senderName} onChange={(e) => setEmailField("senderName", e.target.value)} />
             </AdminFormField>
@@ -193,9 +205,38 @@ export function SettingsView() {
             <AdminFormField label="Reply-To-Adresse" required className="md:col-span-2">
               <input className="admin-input" type="email" value={email.replyTo} onChange={(e) => setEmailField("replyTo", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Benachrichtigungs-E-Mail" hint="Anfragen & Kopien (CRM)" className="md:col-span-2">
-              <input className="admin-input" type="email" value={email.notificationEmail} onChange={(e) => setEmailField("notificationEmail", e.target.value)} />
+            <AdminFormField label="Kopie-an-Adresse" hint="Allgemeine Kopie bei CRM-Versand">
+              <input className="admin-input" type="email" value={email.copyToEmail} onChange={(e) => setEmailField("copyToEmail", e.target.value)} />
             </AdminFormField>
+            <AdminFormField label="Angebots-Kopie an">
+              <input className="admin-input" type="email" value={email.quoteCopyTo} onChange={(e) => setEmailField("quoteCopyTo", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Rechnungs-Kopie an">
+              <input className="admin-input" type="email" value={email.invoiceCopyTo} onChange={(e) => setEmailField("invoiceCopyTo", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Kontaktformular-Empfänger" hint="Neue Anfragen von der Website" className="md:col-span-2">
+              <input className="admin-input" type="email" value={email.inquiryRecipient} onChange={(e) => setEmailField("inquiryRecipient", e.target.value)} />
+            </AdminFormField>
+          </div>
+
+          <div className="mt-6 border-t border-border pt-6">
+            <p className="mb-2 text-sm font-semibold text-text-primary">Gewünschte E-Mail-Adressen</p>
+            <p className="mb-4 text-xs text-text-muted">
+              Mailboxen müssen beim Domain-/Mailanbieter eingerichtet werden. Das Dashboard kann die Adresse verwenden,
+              sobald Domain und Resend verifiziert sind.
+            </p>
+            <div className="grid gap-3 md:grid-cols-2">
+              {CUSTOM_ADDRESS_LABELS.map(({ key, label }) => (
+                <AdminFormField key={key} label={label}>
+                  <input
+                    className="admin-input"
+                    placeholder={`${label}ihre-domain.de`}
+                    value={email.customAddresses?.[key] ?? ""}
+                    onChange={(e) => setCustomAddress(key, e.target.value)}
+                  />
+                </AdminFormField>
+              ))}
+            </div>
           </div>
 
           <div className="mt-6 flex flex-wrap gap-2">
@@ -205,7 +246,7 @@ export function SettingsView() {
           </div>
 
           <p className="mt-4 text-xs text-text-muted">
-            Ausführliche Anleitung: <code className="rounded bg-bg-secondary px-1">docs/EMAIL_SETUP.md</code> (Resend, DNS, Domainwechsel)
+            Anleitung: <code className="rounded bg-bg-secondary px-1">docs/EMAIL_DOMAIN_SETUP.md</code>
           </p>
 
           <div className="mt-6 border-t border-border pt-6">
@@ -228,16 +269,24 @@ export function SettingsView() {
 
       {business ? (
         <AdminCard title="Unternehmensdaten">
-          <p className="mb-4 text-sm text-text-muted">Diese Daten werden in PDFs für Angebote und Rechnungen verwendet.</p>
+          <p className="mb-4 text-sm text-text-muted">
+            Diese Daten werden in PDFs, E-Mails und Admin-Anzeigen verwendet.
+          </p>
           <div className="grid gap-4 md:grid-cols-2">
             <AdminFormField label="Firmenname" required className="md:col-span-2">
               <input className="admin-input" value={business.companyName} onChange={(e) => setBusinessField("companyName", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Logo-URL" hint="Wird in PDFs angezeigt" className="md:col-span-2">
+            <AdminFormField label="Logo" hint="URL zum Firmenlogo (PDF-Kopf)" className="md:col-span-2">
               <input className="admin-input" value={business.logoUrl} onChange={(e) => setBusinessField("logoUrl", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Adresse" className="md:col-span-2">
-              <textarea className="admin-input min-h-20" value={business.address} onChange={(e) => setBusinessField("address", e.target.value)} />
+            <AdminFormField label="Straße" className="md:col-span-2">
+              <input className="admin-input" value={business.street} onChange={(e) => setBusinessField("street", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="PLZ">
+              <input className="admin-input" value={business.zip} onChange={(e) => setBusinessField("zip", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Ort">
+              <input className="admin-input" value={business.city} onChange={(e) => setBusinessField("city", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Telefon">
               <input className="admin-input" value={business.phone} onChange={(e) => setBusinessField("phone", e.target.value)} />
@@ -245,11 +294,8 @@ export function SettingsView() {
             <AdminFormField label="E-Mail" required>
               <input className="admin-input" type="email" value={business.email} onChange={(e) => setBusinessField("email", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Website">
+            <AdminFormField label="Website" className="md:col-span-2">
               <input className="admin-input" value={business.website} onChange={(e) => setBusinessField("website", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Geschäftsführer">
-              <input className="admin-input" value={business.managingDirector} onChange={(e) => setBusinessField("managingDirector", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="IBAN">
               <input className="admin-input" value={business.iban} onChange={(e) => setBusinessField("iban", e.target.value)} />
@@ -257,16 +303,16 @@ export function SettingsView() {
             <AdminFormField label="BIC">
               <input className="admin-input" value={business.bic} onChange={(e) => setBusinessField("bic", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Bank">
+            <AdminFormField label="Bankname" className="md:col-span-2">
               <input className="admin-input" value={business.bankName} onChange={(e) => setBusinessField("bankName", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Steuernummer">
               <input className="admin-input" value={business.taxNumber} onChange={(e) => setBusinessField("taxNumber", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="USt-ID">
+            <AdminFormField label="USt-ID" hint="optional">
               <input className="admin-input" value={business.vatId} onChange={(e) => setBusinessField("vatId", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Zahlungsziel (Tage)">
+            <AdminFormField label="Standard Zahlungsziel (Tage)">
               <input className="admin-input" type="number" min={1} value={business.defaultPaymentDays} onChange={(e) => setBusinessField("defaultPaymentDays", Number(e.target.value) || 14)} />
             </AdminFormField>
             <AdminFormField label="Standard Angebotstext" className="md:col-span-2">
@@ -275,7 +321,7 @@ export function SettingsView() {
             <AdminFormField label="Standard Rechnungstext" className="md:col-span-2">
               <textarea className="admin-input min-h-20" value={business.defaultInvoiceText} onChange={(e) => setBusinessField("defaultInvoiceText", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Zahlungshinweis" className="md:col-span-2">
+            <AdminFormField label="Zahlungshinweis (Rechnungen)" className="md:col-span-2">
               <textarea className="admin-input min-h-20" value={business.defaultPaymentText} onChange={(e) => setBusinessField("defaultPaymentText", e.target.value)} />
             </AdminFormField>
           </div>

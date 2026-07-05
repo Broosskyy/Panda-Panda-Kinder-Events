@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { Copy, Trash2 } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
@@ -34,6 +35,35 @@ export function lineItemToApiPayload(item: QuoteLineItemDraft) {
   };
 }
 
+function centsToEuroInput(cents: number): string {
+  if (!cents) return "";
+  return (cents / 100).toFixed(2).replace(".", ",");
+}
+
+function LineItemPriceInput({
+  cents,
+  onChange,
+}: {
+  cents: number;
+  onChange: (cents: number) => void;
+}) {
+  const [value, setValue] = useState(centsToEuroInput(cents));
+
+  useEffect(() => {
+    setValue(centsToEuroInput(cents));
+  }, [cents]);
+
+  return (
+    <input
+      className="admin-input"
+      placeholder="0,00"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => onChange(parseEuroToCents(value))}
+    />
+  );
+}
+
 interface QuoteLineItemsEditorProps {
   items: QuoteLineItemDraft[];
   discountPercent: number;
@@ -57,7 +87,7 @@ export function QuoteLineItemsEditor({ items, discountPercent, taxRate, onChange
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm font-semibold text-text-primary">Positionen</p>
+        <p className="text-sm text-text-muted">Bezeichnung, Menge, Einzelpreis — Gesamt wird automatisch berechnet.</p>
         <AdminButton variant="secondary" onClick={() => onChange([...items, createEmptyLineItem()])}>
           + Neue Position
         </AdminButton>
@@ -95,16 +125,14 @@ export function QuoteLineItemsEditor({ items, discountPercent, taxRate, onChange
                   />
                 </AdminFormField>
                 <AdminFormField label="Einzelpreis (€)">
-                  <input
-                    className="admin-input"
-                    placeholder="0,00"
-                    defaultValue={item.unit_price_cents ? (item.unit_price_cents / 100).toFixed(2).replace(".", ",") : ""}
-                    onBlur={(e) => updateItem(index, { unit_price_cents: parseEuroToCents(e.target.value) })}
+                  <LineItemPriceInput
+                    cents={item.unit_price_cents}
+                    onChange={(unit_price_cents) => updateItem(index, { unit_price_cents })}
                   />
                 </AdminFormField>
                 <div className="flex items-end justify-between gap-3 md:col-span-2">
                   <p className="text-sm font-medium text-text-secondary">
-                    Gesamt: <span className="text-text-primary">{formatCents(lineTotal)}</span>
+                    Gesamt: <span className="text-lg font-semibold text-text-primary">{formatCents(lineTotal)}</span>
                   </p>
                   <div className="flex gap-2">
                     <AdminButton
@@ -135,11 +163,11 @@ export function QuoteLineItemsEditor({ items, discountPercent, taxRate, onChange
         <div className="flex justify-between text-sm"><span>Zwischensumme</span><span>{formatCents(totals.subtotal_cents)}</span></div>
         {discountPercent > 0 ? (
           <div className="flex justify-between text-sm text-text-muted">
-            <span>Rabatt ({discountPercent}%)</span>
+            <span>Rabatt ({discountPercent} %)</span>
             <span>-{formatCents(totals.discount_cents)}</span>
           </div>
         ) : null}
-        <div className="flex justify-between text-sm"><span>MwSt. ({taxRate}%)</span><span>{formatCents(totals.tax_cents)}</span></div>
+        <div className="flex justify-between text-sm"><span>MwSt. ({taxRate} %)</span><span>{formatCents(totals.tax_cents)}</span></div>
         <div className="flex justify-between border-t border-border pt-2 text-base font-semibold text-text-primary">
           <span>Gesamtbetrag</span>
           <span>{formatCents(totals.total_cents)}</span>

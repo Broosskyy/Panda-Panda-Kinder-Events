@@ -23,8 +23,8 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   usps: ["title", "subtitle"],
   process: ["title", "subtitle", "speechBubble"],
   sections: [],
-  business: ["companyName", "email", "senderName", "senderEmail"],
-  email: ["companyName", "senderName", "senderEmail", "replyTo"],
+  business: ["companyName", "email"],
+  email: ["senderName", "senderEmail", "replyTo"],
 };
 
 function hasNonEmptyItems(value: unknown): boolean {
@@ -161,8 +161,17 @@ export function validateSiteSettingsSection(
     if (!emailPattern.test(email.replyTo)) {
       return { ok: false, error: "Reply-To-Adresse ist ungültig." };
     }
-    if (email.notificationEmail && !emailPattern.test(email.notificationEmail)) {
-      return { ok: false, error: "Benachrichtigungs-E-Mail ist ungültig." };
+    const optionalEmails = [
+      email.copyToEmail,
+      email.quoteCopyTo,
+      email.invoiceCopyTo,
+      email.inquiryRecipient,
+      email.notificationEmail,
+    ].filter(Boolean);
+    for (const addr of optionalEmails) {
+      if (addr && !emailPattern.test(addr)) {
+        return { ok: false, error: `E-Mail-Adresse „${addr}" ist ungültig.` };
+      }
     }
   }
 

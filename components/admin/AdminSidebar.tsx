@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import {
   ADMIN_NAV_GROUPS,
@@ -37,7 +37,7 @@ function NavGroupSection({
               onClick={onNavigate}
               className={`admin-nav-link ${active ? "admin-nav-link-active" : ""}`}
             >
-              <Icon className="h-4 w-4 shrink-0" aria-hidden />
+              <Icon className="admin-nav-icon shrink-0" aria-hidden />
               <span>{mobileLabel ?? label}</span>
             </Link>
           );
@@ -50,15 +50,38 @@ function NavGroupSection({
 export function AdminSidebar() {
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const scrollYRef = useRef(0);
 
   useEffect(() => {
     setDrawerOpen(false);
   }, [pathname]);
 
   useEffect(() => {
-    document.body.style.overflow = drawerOpen ? "hidden" : "";
+    if (drawerOpen) {
+      scrollYRef.current = window.scrollY;
+      document.body.style.overflow = "hidden";
+      document.body.style.position = "fixed";
+      document.body.style.top = `-${scrollYRef.current}px`;
+      document.body.style.left = "0";
+      document.body.style.right = "0";
+      document.body.style.width = "100%";
+    } else {
+      document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
+      window.scrollTo(0, scrollYRef.current);
+    }
+
     return () => {
       document.body.style.overflow = "";
+      document.body.style.position = "";
+      document.body.style.top = "";
+      document.body.style.left = "";
+      document.body.style.right = "";
+      document.body.style.width = "";
     };
   }, [drawerOpen]);
 
@@ -88,7 +111,7 @@ export function AdminSidebar() {
         </nav>
         <div className="admin-sidebar-footer">
           <button type="button" onClick={logout} className="admin-nav-link w-full text-text-muted">
-            <LogOut className="h-4 w-4 shrink-0" aria-hidden />
+            <LogOut className="admin-nav-icon shrink-0" aria-hidden />
             Abmelden
           </button>
         </div>
@@ -119,15 +142,21 @@ export function AdminSidebar() {
         <div className="admin-drawer-root md:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
           <button type="button" className="admin-drawer-backdrop" onClick={() => setDrawerOpen(false)} aria-label="Menü schließen" />
           <aside className="admin-drawer-panel">
-            <div className="flex items-center justify-between border-b border-border px-4 py-4">
+            <div className="admin-drawer-header">
               <p className="font-heading font-bold text-text-primary">Navigation</p>
               <button type="button" className="admin-icon-btn" onClick={() => setDrawerOpen(false)} aria-label="Schließen">
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="admin-sidebar-nav p-3">
+            <nav className="admin-drawer-nav">
               <NavContent onNavigate={() => setDrawerOpen(false)} />
             </nav>
+            <div className="admin-drawer-footer">
+              <button type="button" onClick={logout} className="admin-nav-link w-full text-text-muted">
+                <LogOut className="admin-nav-icon shrink-0" aria-hidden />
+                Abmelden
+              </button>
+            </div>
           </aside>
         </div>
       ) : null}
@@ -149,13 +178,13 @@ export function AdminSidebar() {
                     : label);
           return (
             <Link key={href} href={href} className={`admin-bottom-nav-item ${active ? "admin-bottom-nav-item-active" : ""}`}>
-              <Icon className="h-5 w-5" aria-hidden />
+              <Icon className="admin-bottom-nav-icon" aria-hidden />
               <span>{displayLabel}</span>
             </Link>
           );
         })}
         <button type="button" className="admin-bottom-nav-item" onClick={() => setDrawerOpen(true)} aria-label="Mehr Navigation">
-          <Menu className="h-5 w-5" aria-hidden />
+          <Menu className="admin-bottom-nav-icon" aria-hidden />
           <span>Mehr</span>
         </button>
       </nav>

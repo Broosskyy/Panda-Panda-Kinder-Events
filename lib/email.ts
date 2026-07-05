@@ -1,13 +1,14 @@
 import { Resend } from "resend";
 import type { BusinessProfile } from "@/lib/crm/company";
 import {
+  getCopyEmailForDocument,
   getEmailSettings,
-  getNotificationEmailFromSettings,
+  getInquiryRecipient,
   resolveEmailSender,
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
 
-export { RESEND_TEST_FROM, checkResendDomainStatus, getEmailSettings, resolveEmailSender } from "@/lib/email/sender";
+export { RESEND_TEST_FROM, checkResendDomainStatus, getCopyEmailForDocument, getEmailSettings, getInquiryRecipient, resolveEmailSender } from "@/lib/email/sender";
 export type { EmailDomainCheck, EmailDomainStatus, ResolvedEmailSender } from "@/lib/email/sender";
 
 export function isResendConfigured(): boolean {
@@ -28,7 +29,7 @@ export async function getFromEmail(): Promise<string> {
 
 export async function getNotificationEmail(): Promise<string> {
   const settings = await getEmailSettings();
-  return getNotificationEmailFromSettings(settings);
+  return getInquiryRecipient(settings);
 }
 
 interface InquiryEmailData {
@@ -48,7 +49,7 @@ export async function sendInquiryNotification(data: InquiryEmailData) {
   const resend = getResendClient();
   const emailSettings = await getEmailSettings();
   const sender = await resolveEmailSender(emailSettings);
-  const to = getNotificationEmailFromSettings(emailSettings);
+  const to = getInquiryRecipient(emailSettings);
 
   const lines = [
     `Name: ${data.name}`,
@@ -162,10 +163,10 @@ ${opts.company?.website ?? ""}`.trim();
   });
 
   if (opts.copyToBusiness) {
-    const notificationTo = getNotificationEmailFromSettings(emailSettings);
+    const copyTo = getCopyEmailForDocument(emailSettings, opts.documentType);
     await resend.emails.send({
       from: sender.from,
-      to: notificationTo,
+      to: copyTo,
       replyTo: sender.replyTo,
       subject: `[Kopie] ${label} ${opts.documentNumber} an ${opts.customerName}`,
       text: `Kopie des versendeten Dokuments ${opts.documentNumber} an ${opts.to}.\n\n${text}`,

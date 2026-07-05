@@ -1,12 +1,13 @@
 {
   "name": "panda-bande-kinderevents",
-  "version": "0.9.0-rc.4",
+  "version": "0.9.0-rc.5",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:crm": "node scripts/crm-test.mjs",
     "live:verify": "node scripts/live-verify.mjs",
     "sprint-report:pdf": "node scripts/generate-sprint-report-pdf.mjs"
   },
@@ -14,6 +15,7 @@
     "@supabase/supabase-js": "^2.110.0",
     "lucide-react": "^0.511.0",
     "next": "^15.3.3",
+    "pdf-lib": "^1.17.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "resend": "^6.16.0",

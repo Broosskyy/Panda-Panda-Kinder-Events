@@ -55,3 +55,54 @@ export async function sendInquiryNotification(data: InquiryEmailData) {
     text: `Neue Buchungsanfrage über die Website:\n\n${lines.join("\n")}`,
   });
 }
+
+interface CrmDocumentEmailOptions {
+  to: string;
+  customerName: string;
+  documentNumber: string;
+  documentType: "quote" | "invoice";
+  totalFormatted: string;
+  pdfBuffer: Uint8Array;
+  copyToBusiness?: boolean;
+}
+
+export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
+  const resend = getResendClient();
+  const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
+  const filename = `${opts.documentNumber}.pdf`;
+
+  const text = `Guten Tag ${opts.customerName},
+
+anbei erhalten Sie ${opts.documentType === "quote" ? "unser Angebot" : "Ihre Rechnung"} ${opts.documentNumber}.
+
+Gesamtbetrag: ${opts.totalFormatted}
+
+Bei Fragen melden Sie sich gerne.
+
+Herzliche Grüße
+Panda-Bande Kinderevents
+https://panda-bande-events.de`;
+
+  const attachment = {
+    filename,
+    content: Buffer.from(opts.pdfBuffer),
+  };
+
+  await resend.emails.send({
+    from: getFromEmail(),
+    to: opts.to,
+    subject: `${label} ${opts.documentNumber} — Panda-Bande Kinderevents`,
+    text,
+    attachments: [attachment],
+  });
+
+  if (opts.copyToBusiness) {
+    await resend.emails.send({
+      from: getFromEmail(),
+      to: getNotificationEmail(),
+      subject: `[Kopie] ${label} ${opts.documentNumber} an ${opts.customerName}`,
+      text: `Kopie des versendeten Dokuments ${opts.documentNumber} an ${opts.to}.\n\n${text}`,
+      attachments: [attachment],
+    });
+  }
+}

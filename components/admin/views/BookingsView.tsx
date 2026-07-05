@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import type { BookingStatus } from "@/lib/supabase/admin";
-import { Inbox } from "lucide-react";
+import { Inbox, UserPlus } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
+import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
@@ -31,6 +32,7 @@ interface Booking {
   message: string | null;
   status: BookingStatus;
   admin_notes: string | null;
+  customer_id: string | null;
 }
 
 export function BookingsView() {
@@ -58,6 +60,18 @@ export function BookingsView() {
       toast("Gespeichert");
       load();
     } else toast("Fehler beim Speichern", "error");
+  };
+
+  const createCustomer = async (bookingId: string) => {
+    const res = await fetch("/api/admin/customers/from-booking", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ booking_id: bookingId }),
+    });
+    const data = await res.json();
+    if (!res.ok) return toast(data.error ?? "Kunde konnte nicht angelegt werden", "error");
+    toast(`Kunde „${data.customer?.name}" angelegt`);
+    load();
   };
 
   const filtered = bookings.filter((b) => {
@@ -116,6 +130,24 @@ export function BookingsView() {
                     </option>
                   ))}
                 </select>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                {b.customer_id ? (
+                  <Link
+                    href={`/admin/kunden`}
+                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
+                  >
+                    Kunde verknüpft
+                  </Link>
+                ) : (
+                  <AdminButton
+                    variant="secondary"
+                    icon={<UserPlus className="h-4 w-4" />}
+                    onClick={() => createCustomer(b.id)}
+                  >
+                    Kunde erstellen
+                  </AdminButton>
+                )}
               </div>
               <div className="mt-3 grid gap-1 text-sm text-text-secondary sm:grid-cols-2">
                 <p>E-Mail: {b.email}</p>

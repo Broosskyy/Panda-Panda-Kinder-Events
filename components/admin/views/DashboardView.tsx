@@ -3,18 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  HelpCircle,
+  FileText,
   Image,
   Inbox,
   Newspaper,
   Plus,
-  Sparkles,
+  Receipt,
   Star,
   Users,
 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import type { AdminActivityItem } from "@/lib/admin/activity";
 import type { AdminAnalyticsDashboard } from "@/lib/analytics/types";
+import { formatCents } from "@/lib/crm/money";
 
 function formatRelativeTime(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -57,10 +58,10 @@ function StatCard({
 }
 
 const QUICK_ACTIONS = [
+  { href: "/admin/kunden", label: "Neuer Kunde", icon: Users },
+  { href: "/admin/angebote", label: "Neues Angebot", icon: FileText },
   { href: "/admin/anfragen", label: "Neue Anfrage", icon: Inbox },
   { href: "/admin/bewertungen", label: "Neue Bewertung", icon: Star },
-  { href: "/admin/beitraege", label: "Neuer Beitrag", icon: Newspaper },
-  { href: "/admin/galerie", label: "Neue Galerie", icon: Image },
 ] as const;
 
 const ACTIVITY_ICONS = {
@@ -116,6 +117,15 @@ export function DashboardView() {
       <section>
         <h2 className="mb-4 font-heading text-lg font-semibold text-text-primary">Kennzahlen</h2>
         <div className="admin-stat-grid">
+          <StatCard label="Kunden" value={stats?.crm.customersCount ?? "—"} href="/admin/kunden" icon={Users} />
+          <StatCard label="Offene Angebote" value={stats?.crm.openQuotesCount ?? "—"} href="/admin/angebote" icon={FileText} />
+          <StatCard label="Offene Rechnungen" value={stats?.crm.openInvoicesCount ?? "—"} href="/admin/rechnungen" icon={Receipt} />
+          <StatCard
+            label="Umsatz (bezahlt)"
+            value={stats ? formatCents(stats.crm.revenueCents) : "—"}
+            href="/admin/rechnungen"
+            icon={Receipt}
+          />
           <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} />
           <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} />
           <StatCard
@@ -129,9 +139,6 @@ export function DashboardView() {
             icon={Users}
           />
           <StatCard label="Beiträge" value={stats?.postsCount ?? "—"} href="/admin/beitraege" icon={Newspaper} />
-          <StatCard label="Galeriebilder" value={stats?.galleryCount ?? "—"} href="/admin/galerie" icon={Image} />
-          <StatCard label="Leistungen" value={stats?.servicesCount ?? "—"} href="/admin/leistungen" icon={Sparkles} />
-          <StatCard label="FAQ" value={stats?.faqsCount ?? "—"} href="/admin/faq" icon={HelpCircle} />
         </div>
       </section>
 
@@ -178,9 +185,9 @@ export function DashboardView() {
         <AdminCard title="CMS Kurzlinks">
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { href: "/admin/inhalte", label: "Startseiten-Inhalte" },
+              { href: "/admin/kunden", label: "Kunden verwalten" },
+              { href: "/admin/angebote", label: "Angebote erstellen" },
               { href: "/admin/analytics", label: "Analytics öffnen" },
-              { href: "/admin/leistungen", label: "Leistungen pflegen" },
               { href: "/admin/einstellungen", label: "Einstellungen" },
             ].map((link) => (
               <Link

@@ -49,7 +49,11 @@ async function main() {
     record("Hero-Badge einmal im DOM", countOccurrences(home, /Hallo, ich bin/g) <= 1);
     record("Kein Platzhalter-E-Mail im HTML", !home.includes(PLACEHOLDER_EMAIL));
     record("Kein Platzhalter-Einsatzgebiet", !home.includes(PLACEHOLDER_LOCATION));
-    record("Footer-Telefon vorhanden", /tel:[^"']+/.test(home));
+    record("Kontakt-Sektion vorhanden", home.includes('id="kontakt"'));
+    record("Galerie-Sektion vorhanden", home.includes('id="galerie"'));
+    record("Über-uns-Sektion vorhanden", home.includes('id="ueber-uns"'));
+    record("Footer vorhanden", home.includes("<footer"));
+    record("Kein doppeltes Footer-Logo-Pattern", countOccurrences(home, /PANDA-BANDE[\s\S]{0,200}PANDA-BANDE/g) <= 1);
   } catch (e) {
     record("Homepage erreichbar", false, e.message);
   }
@@ -81,8 +85,11 @@ async function main() {
     record("Tracking API antwortet", res.ok || res.status === 503, `HTTP ${res.status}`);
     if (res.status === 503) {
       record("Tracking Supabase konfiguriert", false, "503 — Env/Migration prüfen");
+    } else if (res.status === 500 && data.tableMissing) {
+      record("Tracking Insert", false, "page_views Tabelle fehlt — Migration ausführen");
     } else {
       record("Tracking Insert", data.ok === true, JSON.stringify(data));
+      record("Tracking page_views Tabelle", data.tableMissing !== true, data.tableMissing ? "fehlt" : "ok");
     }
   } catch (e) {
     record("Tracking API", false, e.message);

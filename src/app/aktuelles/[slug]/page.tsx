@@ -63,8 +63,8 @@ export default async function PostPage({ params }: PageProps) {
           ) : null}
 
           <div className="prose-panda mt-10 space-y-5 text-base leading-relaxed text-text-secondary sm:text-lg sm:leading-8">
-            {post.content.split("\n").map((paragraph) => (
-              <p key={paragraph.slice(0, 40)}>{paragraph}</p>
+            {post.content.split("\n").map((paragraph, index) => (
+              <p key={`${index}-${paragraph.slice(0, 24)}`}>{paragraph}</p>
             ))}
           </div>
         </Container>

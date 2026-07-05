@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-route";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { deleteStorageFile } from "@/lib/cms/storage";
 import { mapReviewRow } from "@/lib/cms/reviews";
 import { storagePathForDelete, toStoragePath } from "@/lib/cms/storage-ref";
@@ -8,13 +8,8 @@ import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
 export async function GET() {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
-  }
-
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: "Supabase nicht konfiguriert." }, { status: 503 });
-  }
+  const authError = await requireAdmin();
+  if (authError) return authError;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -32,9 +27,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
-  }
+  const authError = await requireAdmin();
+  if (authError) return authError;
 
   const { id, approved, admin_reply, verified, profile_image_url, event_image_url } = await request.json();
 
@@ -71,9 +65,8 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
-  }
+  const authError = await requireAdmin();
+  if (authError) return authError;
 
   const { id } = await request.json();
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });

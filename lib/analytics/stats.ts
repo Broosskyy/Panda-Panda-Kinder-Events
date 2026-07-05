@@ -1,4 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { berlinTodayStartIso } from "@/lib/analytics/berlin-time";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import type { AdminAnalyticsDashboard, DailyStat, TopPage } from "./types";
 
@@ -26,10 +27,8 @@ function emptyDashboard(): AdminAnalyticsDashboard {
 
 async function isPageViewsTableReady(): Promise<boolean> {
   const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from("page_views").select("id").limit(1);
-  if (!error) return true;
-  if (error.code === "42P01" || error.message.includes("does not exist")) return false;
-  return true;
+  const { error } = await supabase.from("page_views").select("id", { count: "exact", head: true });
+  return !error;
 }
 
 async function countPageViewsRpc(since?: string): Promise<number | null> {
@@ -66,9 +65,7 @@ async function getTodayStartBerlin(): Promise<string> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase.rpc("analytics_today_start_berlin");
   if (error || !data) {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d.toISOString();
+    return berlinTodayStartIso();
   }
   return String(data);
 }

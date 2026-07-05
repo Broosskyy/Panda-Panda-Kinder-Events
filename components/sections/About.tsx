@@ -17,6 +17,8 @@ export function About({
   about = DEFAULT_SITE_SETTINGS.about,
   footer = DEFAULT_SITE_SETTINGS.footer,
 }: AboutProps) {
+  const aboutImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
+
   return (
     <section id="ueber-uns" className="scroll-mt-24 section-padding">
       <Container>
@@ -33,13 +35,13 @@ export function About({
               <FlowerOrnament className="pointer-events-none absolute -left-2 -top-4 h-16 w-16 opacity-25 sm:-left-6 sm:-top-6 sm:h-24 sm:w-24 sm:opacity-35" />
               <div className="about-image-frame relative mx-auto aspect-[4/5] max-h-[min(70vh,24rem)] w-full max-w-md sm:max-h-none sm:max-w-none">
                 <Image
-                  src={about.imageUrl}
+                  src={aboutImage}
                   alt={`${about.founderName} — Gründerin der Panda-Bande Kinderevents`}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   loading="lazy"
-                  unoptimized={about.imageUrl.includes("supabase.co")}
+                  unoptimized={aboutImage.includes("supabase.co")}
                 />
               </div>
               <PandaMascot size={80} className="absolute -bottom-4 -right-2 hidden opacity-90 md:block" />

@@ -42,7 +42,12 @@ export async function POST(request: Request) {
 
     if (error) {
       console.error("page_views insert:", error.message);
-      return NextResponse.json({ error: "Tracking fehlgeschlagen." }, { status: 500 });
+      const tableMissing =
+        error.code === "42P01" || error.message.toLowerCase().includes("does not exist");
+      return NextResponse.json(
+        { error: "Tracking fehlgeschlagen.", tableMissing },
+        { status: 500 },
+      );
     }
 
     return NextResponse.json({ ok: true });

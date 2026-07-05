@@ -21,8 +21,9 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes = {
-  default: "min-h-11 min-w-11 px-5 py-3 text-[0.9375rem] tracking-wide sm:min-h-12 sm:px-8 sm:py-3.5 sm:text-base",
-  lg: "min-h-12 min-w-12 px-6 py-3.5 text-[0.9375rem] font-semibold tracking-wide sm:min-h-[3.75rem] sm:min-w-[3.75rem] sm:px-10 sm:py-4 sm:text-base",
+  default:
+    "min-h-11 px-5 py-3 text-[0.9375rem] tracking-wide sm:min-h-12 sm:px-8 sm:py-3.5 sm:text-base",
+  lg: "min-h-12 px-6 py-3.5 text-[0.9375rem] font-semibold tracking-wide sm:min-h-[3.75rem] sm:px-8 sm:py-4 sm:text-base",
 };
 
 export function Button({
@@ -34,7 +35,7 @@ export function Button({
   className = "",
   ...props
 }: ButtonProps) {
-  const classes = `inline-flex items-center justify-center gap-2.5 rounded-full font-medium transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${variants[variant]} ${sizes[size]} ${focusRing} ${className}`;
+  const classes = `inline-flex max-w-full items-center justify-center gap-2.5 rounded-full font-medium transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${variants[variant]} ${sizes[size]} ${focusRing} ${className}`;
 
   if (href) {
     return (

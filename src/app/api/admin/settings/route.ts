@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { fetchSiteSettings, saveSiteSettings } from "@/lib/cms/data";
 import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
+import { validateSiteSettingsSection } from "@/lib/cms/validate-settings";
 import type { SiteSettingsBundle } from "@/lib/cms/types";
 
 export async function GET() {
@@ -23,13 +24,18 @@ export async function PUT(request: Request) {
     value: SiteSettingsBundle[keyof SiteSettingsBundle];
   };
 
-  const validSections = ["hero", "contact", "about", "footer"];
-  if (!validSections.includes(section) || !value) {
-    return NextResponse.json({ error: "Ungültige Daten." }, { status: 400 });
+  const validSections: (keyof SiteSettingsBundle)[] = ["hero", "contact", "about", "footer"];
+  if (!validSections.includes(section)) {
+    return NextResponse.json({ error: "Ungültige Sektion." }, { status: 400 });
+  }
+
+  const validated = validateSiteSettingsSection(section, value);
+  if (!validated.ok) {
+    return NextResponse.json({ error: validated.error }, { status: 400 });
   }
 
   try {
-    await saveSiteSettings(section, value);
+    await saveSiteSettings(section, validated.value);
     revalidatePublicCms();
     return NextResponse.json({
       success: true,

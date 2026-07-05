@@ -250,7 +250,7 @@ img {
 @media (min-width: 1024px) {
   .hero-image-wrap {
     border-radius: 4.5rem 1.75rem 1.75rem 1.75rem;
-    transform: translateX(1.5rem) scale(1.03);
+    transform: translateX(0.75rem) scale(1.02);
   }
 }
 

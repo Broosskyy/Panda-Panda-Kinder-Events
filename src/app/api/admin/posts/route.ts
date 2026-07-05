@@ -121,7 +121,8 @@ export async function PATCH(request: Request) {
   }
 
   const slug = newSlug ?? existing?.slug;
-  revalidatePublicCms(slug);
+  const previousSlug = existing?.slug;
+  revalidatePublicCms(slug, previousSlug !== slug ? previousSlug : undefined);
   return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
 

@@ -2,15 +2,22 @@
 
 import { useState } from "react";
 import Image from "next/image";
-import { siteConfig } from "@/config/site";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import type { SiteBrandingSettings } from "@/lib/cms/types";
 
 interface LogoProps {
   variant?: "default" | "inverse";
   className?: string;
   size?: "default" | "large" | "xl";
+  branding?: SiteBrandingSettings;
 }
 
-export function Logo({ variant = "default", className = "", size = "default" }: LogoProps) {
+export function Logo({
+  variant = "default",
+  className = "",
+  size = "default",
+  branding = DEFAULT_SITE_SETTINGS.branding,
+}: LogoProps) {
   const [imgError, setImgError] = useState(false);
   const textColor = variant === "inverse" ? "text-text-inverse" : "text-text-primary";
   const subColor = variant === "inverse" ? "text-white/85" : "text-text-muted";
@@ -21,17 +28,20 @@ export function Logo({ variant = "default", className = "", size = "default" }: 
         ? "max-h-9 sm:max-h-10 md:max-h-12"
         : "max-h-9 sm:max-h-10 md:max-h-12";
 
+  const logoUrl = branding.logoUrl?.trim() || DEFAULT_SITE_SETTINGS.branding.logoUrl;
+  const logoAlt = branding.logoAlt?.trim() || DEFAULT_SITE_SETTINGS.branding.logoAlt;
+
   return (
     <a
       href="#startseite"
       className={`flex shrink-0 items-center overflow-visible ${className} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2`}
-      aria-label="Panda-Bande Kinderevents — Startseite"
+      aria-label={`${branding.logoTextPrimary} — Startseite`}
     >
       {!imgError ? (
         <div className={`relative w-auto ${heightClass}`}>
           <Image
-            src={siteConfig.assets.logo}
-            alt=""
+            src={logoUrl}
+            alt={logoAlt}
             width={200}
             height={72}
             className={`${heightClass} w-auto object-contain object-left`}
@@ -41,8 +51,12 @@ export function Logo({ variant = "default", className = "", size = "default" }: 
         </div>
       ) : (
         <div className="py-0.5 leading-tight">
-          <span className={`block text-sm font-bold tracking-[0.15em] ${textColor}`}>PANDA-BANDE</span>
-          <span className={`block font-heading text-xs tracking-widest ${subColor}`}>KINDEREVENTS</span>
+          <span className={`block text-sm font-bold tracking-[0.15em] ${textColor}`}>
+            {branding.logoTextPrimary}
+          </span>
+          <span className={`block font-heading text-xs tracking-widest ${subColor}`}>
+            {branding.logoTextSecondary}
+          </span>
         </div>
       )}
     </a>

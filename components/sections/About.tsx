@@ -5,27 +5,29 @@ import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import type { SiteAboutSettings, SiteFooterSettings } from "@/lib/cms/types";
+import type { SiteAboutSettings, SiteFooterSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 
 interface AboutProps {
   about?: SiteAboutSettings;
   footer?: SiteFooterSettings;
+  heading?: SiteSectionHeading;
 }
 
 export function About({
   about = DEFAULT_SITE_SETTINGS.about,
   footer = DEFAULT_SITE_SETTINGS.footer,
+  heading = DEFAULT_SITE_SETTINGS.sections.about,
 }: AboutProps) {
   const aboutImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
 
   return (
-    <section id="ueber-uns" className="scroll-mt-24 section-padding">
+    <section id="ueber-uns" className="section-padding">
       <Container>
         <ScrollReveal>
           <SectionHeading
-            title="Über uns"
-            subtitle={footer.tagline || "Die Panda-Bande — mit Herz für kleine Abenteurer."}
+            title={heading.title}
+            subtitle={heading.subtitle || footer.tagline}
           />
         </ScrollReveal>
 

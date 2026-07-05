@@ -3,6 +3,8 @@
 import { useId, useState } from "react";
 import { Plus, Minus } from "lucide-react";
 import { faqs as defaultFaqs } from "@/lib/faqs";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import type { SiteSectionHeading } from "@/lib/cms/types";
 import { focusRing } from "@/lib/a11y";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
@@ -10,20 +12,24 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface FaqProps {
   items?: { question: string; answer: string }[];
+  heading?: SiteSectionHeading;
 }
 
-export function Faq({ items = defaultFaqs }: FaqProps) {
+export function Faq({
+  items = defaultFaqs,
+  heading = DEFAULT_SITE_SETTINGS.sections.faq,
+}: FaqProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const baseId = useId();
 
   return (
-    <section id="faq" className="scroll-mt-24 section-padding bg-bg-primary" aria-labelledby="faq-heading">
+    <section id="faq" className="section-padding bg-bg-primary" aria-labelledby="faq-heading">
       <Container>
         <ScrollReveal>
           <SectionHeading
             id="faq-heading"
-            title="Häufige Fragen"
-            subtitle="Antworten auf die wichtigsten Fragen rund um euer Event."
+            title={heading.title}
+            subtitle={heading.subtitle}
           />
         </ScrollReveal>
         <div className="mx-auto max-w-3xl divide-y divide-border/80" role="list">

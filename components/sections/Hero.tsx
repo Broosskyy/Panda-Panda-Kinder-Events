@@ -1,9 +1,13 @@
 import Image from "next/image";
 import { Calendar, Heart } from "lucide-react";
-import { trustBadges } from "@/lib/trust-badges";
 import { ICON_STROKE } from "@/lib/design";
-import type { SiteAboutSettings, SiteHeroSettings } from "@/lib/cms/types";
+import type {
+  SiteAboutSettings,
+  SiteHeroSettings,
+  SiteTrustBadgesSettings,
+} from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveContentIcon } from "@/lib/cms/icons";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
@@ -12,16 +16,19 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 interface HeroProps {
   hero?: SiteHeroSettings;
   about?: Pick<SiteAboutSettings, "founderName" | "imageUrl">;
+  trustBadges?: SiteTrustBadgesSettings;
 }
 
 function LisaBadge({
   className = "",
   founderName,
   imageUrl,
+  badgeQuote,
 }: {
   className?: string;
   founderName: string;
   imageUrl: string;
+  badgeQuote: string;
 }) {
   return (
     <div className={`rounded-[var(--radius-card)] bg-bg-card p-4 sm:p-6 ${className}`}>
@@ -33,7 +40,7 @@ function LisaBadge({
           <p className="font-accent text-base text-primary sm:text-xl">Hallo, ich bin {founderName}!</p>
           <p className="text-xs font-medium tracking-wide text-text-muted sm:text-sm">Gründerin der Panda-Bande</p>
           <p className="mt-1.5 text-xs leading-relaxed text-text-secondary sm:mt-2.5 sm:text-sm sm:leading-relaxed">
-            &ldquo;Jedes Kind verdient einen Tag voller Abenteuer.&rdquo;
+            &ldquo;{badgeQuote}&rdquo;
           </p>
         </div>
       </div>
@@ -41,15 +48,18 @@ function LisaBadge({
   );
 }
 
-export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_SETTINGS.about }: HeroProps) {
-  const founderImage =
-    about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
+export function Hero({
+  hero = DEFAULT_SITE_SETTINGS.hero,
+  about = DEFAULT_SITE_SETTINGS.about,
+  trustBadges = DEFAULT_SITE_SETTINGS.trustBadges,
+}: HeroProps) {
+  const founderImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
+  const heroImage = hero.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.hero.imageUrl;
+  const badgeQuote = hero.badgeQuote?.trim() || DEFAULT_SITE_SETTINGS.hero.badgeQuote;
+  const badges = trustBadges.items?.length ? trustBadges.items : DEFAULT_SITE_SETTINGS.trustBadges.items;
 
   return (
-    <section
-      id="startseite"
-      className="hero-section relative scroll-mt-20 section-padding-lg pt-[max(7.5rem,calc(6rem+env(safe-area-inset-top,0px)))] sm:scroll-mt-24 sm:pt-[max(9rem,calc(7rem+env(safe-area-inset-top,0px)))] md:pt-[max(10rem,calc(7rem+env(safe-area-inset-top,0px)))] lg:pt-[max(12rem,calc(8rem+env(safe-area-inset-top,0px)))]"
-    >
+    <section id="startseite" className="hero-section relative section-padding-lg">
       <FlowerOrnament className="pointer-events-none absolute left-0 top-20 h-20 w-20 opacity-35 sm:-left-4 sm:top-24 sm:h-28 sm:w-28 sm:opacity-50 md:h-40 md:w-40" />
       <FlowerOrnament
         variant="right"
@@ -91,28 +101,32 @@ export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_S
               </Button>
             </div>
             <div className="mt-10 grid grid-cols-2 gap-3 border-t border-border/40 pt-8 sm:mt-14 sm:gap-4 sm:pt-10 md:grid-cols-4 lg:gap-6">
-              {trustBadges.map((badge) => (
-                <div key={badge.text} className="trust-chip">
-                  <div className="trust-chip-icon">
-                    <badge.icon className="h-5 w-5 text-primary md:h-6 md:w-6" strokeWidth={ICON_STROKE} aria-hidden />
+              {badges.map((badge) => {
+                const Icon = resolveContentIcon(badge.iconKey);
+                return (
+                  <div key={badge.text} className="trust-chip">
+                    <div className="trust-chip-icon">
+                      <Icon className="h-5 w-5 text-primary md:h-6 md:w-6" strokeWidth={ICON_STROKE} aria-hidden />
+                    </div>
+                    <span className="text-xs font-medium leading-snug text-text-primary sm:text-sm lg:text-[0.9375rem]">
+                      {badge.text}
+                    </span>
                   </div>
-                  <span className="text-xs font-medium leading-snug text-text-primary sm:text-sm lg:text-[0.9375rem]">
-                    {badge.text}
-                  </span>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
           <ScrollReveal delay={150} className="relative order-2 lg:-mr-4 lg:order-none xl:-mr-8">
             <div className="hero-image-wrap relative aspect-[5/6] w-full max-h-[min(48vh,20rem)] overflow-hidden sm:aspect-[4/5] sm:max-h-none">
               <Image
-                src="https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=1000&h=1250&fit=crop&q=85"
+                src={heroImage}
                 alt="Panda-Bande Team bei der liebevollen Kinderbetreuung"
                 fill
                 className="object-cover"
                 priority
                 sizes="(max-width: 1024px) 100vw, 55vw"
+                unoptimized={heroImage.includes("supabase.co")}
               />
             </div>
 
@@ -121,6 +135,7 @@ export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_S
                 className="!bg-transparent !p-0"
                 founderName={about.founderName}
                 imageUrl={founderImage}
+                badgeQuote={badgeQuote}
               />
             </div>
           </ScrollReveal>

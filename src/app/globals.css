@@ -42,6 +42,19 @@
 html {
   scroll-behavior: smooth;
   overflow-x: clip;
+  --header-height: 4rem;
+  --header-offset: calc(var(--header-height) + env(safe-area-inset-top, 0px) + 0.75rem);
+}
+
+@media (min-width: 768px) {
+  html {
+    --header-height: 5.5rem;
+  }
+}
+
+/* Sticky header must never cover anchor targets or section titles */
+[id] {
+  scroll-margin-top: var(--header-offset);
 }
 
 body {
@@ -210,6 +223,7 @@ img {
 .hero-section {
   min-height: auto;
   overflow: visible;
+  padding-top: calc(var(--header-offset) + 1.25rem);
   background:
     radial-gradient(ellipse 90% 70% at 10% -10%, rgba(244, 241, 234, 0.95) 0%, transparent 55%),
     radial-gradient(ellipse 50% 40% at 95% 10%, rgba(239, 233, 223, 0.45) 0%, transparent 45%);

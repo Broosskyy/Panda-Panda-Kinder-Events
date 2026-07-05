@@ -3,6 +3,7 @@ import { faqs as staticFaqs } from "@/lib/faqs";
 import { galleryImages as staticGallery } from "@/lib/gallery";
 import { services as staticServices } from "@/lib/services";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
+import { isPlaceholderContent, isValidCmsFaq, isValidCmsService } from "./content-quality";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { resolveImageUrl } from "./resolve-image";
 import { resolveServiceIcon } from "./icons";
@@ -13,6 +14,7 @@ import type {
   CmsService,
   GalleryImageRecord,
   SiteAboutSettings,
+  SiteHeroSettings,
   SiteSettingsBundle,
 } from "./types";
 import type { Service } from "@/lib/services";
@@ -24,7 +26,11 @@ function cmsSection<T extends keyof SiteSettingsBundle>(
   hasKey: boolean,
 ): SiteSettingsBundle[T] {
   if (!hasKey || !hasNonEmptyCmsValue(cmsValue)) return defaults;
-  const validated = validateSiteSettingsSection(section, cmsValue);
+  const merged = {
+    ...(defaults as unknown as Record<string, unknown>),
+    ...(cmsValue as Record<string, unknown>),
+  };
+  const validated = validateSiteSettingsSection(section, merged);
   if (!validated.ok) return defaults;
   return validated.value as SiteSettingsBundle[T];
 }
@@ -34,6 +40,30 @@ function normalizeAboutSettings(about: SiteAboutSettings): SiteAboutSettings {
   const imageUrl =
     (resolved ?? about.imageUrl?.trim()) || DEFAULT_SITE_SETTINGS.about.imageUrl;
   return { ...about, imageUrl };
+}
+
+function normalizeHeroSettings(hero: SiteHeroSettings): SiteHeroSettings {
+  const resolved = resolveImageUrl("site-assets", hero.imageUrl);
+  const imageUrl =
+    (resolved ?? hero.imageUrl?.trim()) || DEFAULT_SITE_SETTINGS.hero.imageUrl;
+  return { ...hero, imageUrl };
+}
+
+function filterPlaceholderItems<T extends { text?: string; title?: string; description?: string; question?: string; answer?: string }>(
+  items: T[],
+): T[] {
+  return items.filter((item) => {
+    if ("text" in item && item.text !== undefined) {
+      return !isPlaceholderContent(item.text);
+    }
+    if ("title" in item && "description" in item) {
+      return !isPlaceholderContent(item.title) && !isPlaceholderContent(item.description);
+    }
+    if ("question" in item && "answer" in item) {
+      return !isPlaceholderContent(item.question) && !isPlaceholderContent(item.answer);
+    }
+    return true;
+  });
 }
 
 function buildSettingsFromRows(
@@ -48,8 +78,27 @@ function buildSettingsFromRows(
     byKey.has("about"),
   );
 
+  const heroRaw = cmsSection("hero", DEFAULT_SITE_SETTINGS.hero, byKey.get("hero"), byKey.has("hero"));
+  const trustBadgesRaw = cmsSection(
+    "trustBadges",
+    DEFAULT_SITE_SETTINGS.trustBadges,
+    byKey.get("trustBadges"),
+    byKey.has("trustBadges"),
+  );
+  const uspsRaw = cmsSection("usps", DEFAULT_SITE_SETTINGS.usps, byKey.get("usps"), byKey.has("usps"));
+  const processRaw = cmsSection(
+    "process",
+    DEFAULT_SITE_SETTINGS.process,
+    byKey.get("process"),
+    byKey.has("process"),
+  );
+
+  const trustItems = filterPlaceholderItems(trustBadgesRaw.items);
+  const uspItems = filterPlaceholderItems(uspsRaw.items);
+  const processSteps = filterPlaceholderItems(processRaw.steps);
+
   return {
-    hero: cmsSection("hero", DEFAULT_SITE_SETTINGS.hero, byKey.get("hero"), byKey.has("hero")),
+    hero: normalizeHeroSettings(heroRaw),
     contact: cmsSection(
       "contact",
       DEFAULT_SITE_SETTINGS.contact,
@@ -62,6 +111,35 @@ function buildSettingsFromRows(
       DEFAULT_SITE_SETTINGS.footer,
       byKey.get("footer"),
       byKey.has("footer"),
+    ),
+    navigation: cmsSection(
+      "navigation",
+      DEFAULT_SITE_SETTINGS.navigation,
+      byKey.get("navigation"),
+      byKey.has("navigation"),
+    ),
+    branding: cmsSection(
+      "branding",
+      DEFAULT_SITE_SETTINGS.branding,
+      byKey.get("branding"),
+      byKey.has("branding"),
+    ),
+    trustBadges: {
+      items: trustItems.length > 0 ? trustItems : DEFAULT_SITE_SETTINGS.trustBadges.items,
+    },
+    usps: {
+      ...uspsRaw,
+      items: uspItems.length > 0 ? uspItems : DEFAULT_SITE_SETTINGS.usps.items,
+    },
+    process: {
+      ...processRaw,
+      steps: processSteps.length > 0 ? processSteps : DEFAULT_SITE_SETTINGS.process.steps,
+    },
+    sections: cmsSection(
+      "sections",
+      DEFAULT_SITE_SETTINGS.sections,
+      byKey.get("sections"),
+      byKey.has("sections"),
     ),
   };
 }
@@ -128,12 +206,16 @@ async function queryCmsServices(): Promise<Service[]> {
   if (error) throw new Error(error.message);
 
   return (data as CmsService[])
-    .filter((s) => s.title?.trim() && s.description?.trim())
+    .filter((s) => isValidCmsService(s.title ?? "", s.description ?? ""))
     .map((s) => ({
       icon: resolveServiceIcon(s.icon_key),
       title: s.title.trim(),
       description: s.description.trim(),
     }));
+}
+
+function hasValidCmsServices(services: Service[]): boolean {
+  return services.length > 0;
 }
 
 export async function fetchCmsServices(): Promise<Service[]> {
@@ -145,10 +227,12 @@ export async function fetchCmsServices(): Promise<Service[]> {
     if (!hasCms) return staticServices;
 
     try {
-      return await queryCmsServices();
+      const cmsServices = await queryCmsServices();
+      return hasValidCmsServices(cmsServices) ? cmsServices : staticServices;
     } catch (firstError) {
       console.error("fetchCmsServices (retry):", firstError);
-      return await queryCmsServices();
+      const cmsServices = await queryCmsServices();
+      return hasValidCmsServices(cmsServices) ? cmsServices : staticServices;
     }
   } catch (err) {
     console.error("fetchCmsServices:", err);
@@ -177,9 +261,11 @@ export async function fetchCmsFaqs(): Promise<{ question: string; answer: string
       return staticFaqs;
     }
 
-    return (data as CmsFaq[])
-      .filter((f) => f.question?.trim() && f.answer?.trim())
+    const faqResults = (data as CmsFaq[])
+      .filter((f) => isValidCmsFaq(f.question ?? "", f.answer ?? ""))
       .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }));
+
+    return faqResults.length > 0 ? faqResults : staticFaqs;
   } catch (err) {
     console.error("fetchCmsFaqs:", err);
     return staticFaqs;

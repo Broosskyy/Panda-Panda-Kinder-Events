@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Instagram } from "lucide-react";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
-import type { SiteContactSettings } from "@/lib/cms/types";
+import type { SiteContactSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Lightbox } from "@/components/ui/Lightbox";
@@ -14,24 +14,23 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 interface GalleryProps {
   images?: { src: string; alt: string }[];
   contact?: SiteContactSettings;
+  heading?: SiteSectionHeading;
 }
 
 export function Gallery({
   images,
   contact = DEFAULT_SITE_SETTINGS.contact,
+  heading = DEFAULT_SITE_SETTINGS.sections.gallery,
 }: GalleryProps) {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
 
   if (!images?.length) return null;
 
   return (
-    <section id="galerie" className="scroll-mt-24 section-padding bg-bg-primary">
+    <section id="galerie" className="section-padding bg-bg-primary">
       <Container>
         <ScrollReveal>
-          <SectionHeading
-            title="Einblicke in unsere Arbeit"
-            subtitle="Echte Momente, echte Freude — so sieht Panda-Bande aus."
-          />
+          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
         </ScrollReveal>
 
         <div className="swipe-bleed md:mx-0 md:px-0">

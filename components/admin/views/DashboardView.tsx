@@ -106,17 +106,38 @@ export function DashboardView() {
         </p>
       ) : null}
 
+      {stats && !stats.trackingEnabled ? (
+        <p className="rounded-xl border border-border bg-bg-secondary px-4 py-3 text-sm text-text-secondary">
+          <strong>Statistik noch nicht eingerichtet.</strong> Supabase ist nicht konfiguriert — Besucherstatistiken sind
+          erst nach Konfiguration und Migration verfügbar.
+        </p>
+      ) : null}
+
+      {stats?.trackingEnabled && stats.trackingTableReady === false ? (
+        <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
+          <strong>Statistik noch nicht eingerichtet.</strong> Die Tabelle <code className="font-mono">page_views</code>{" "}
+          fehlt. Bitte Migration <code className="font-mono">20260703_page_views_analytics.sql</code> in Supabase
+          ausführen.
+        </p>
+      ) : null}
+
       <section>
         <h2 className="mb-4 flex items-center gap-2 font-heading text-lg font-semibold text-text-primary">
           <Users className="h-5 w-5 text-primary" aria-hidden />
           Besucher
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Gesamtbesucher" value={stats?.visitors.total ?? "—"} icon={Users} />
-          <StatCard label="Besucher heute" value={stats?.visitors.today ?? "—"} icon={Users} />
-          <StatCard label="Letzte 7 Tage" value={stats?.visitors.last7Days ?? "—"} icon={Users} />
-          <StatCard label="Letzte 30 Tage" value={stats?.visitors.last30Days ?? "—"} icon={Users} />
-        </div>
+        {stats?.trackingEnabled && stats.trackingTableReady === false ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-text-muted">
+            Statistik noch nicht eingerichtet — Migration ausführen, um Besucherzahlen zu sehen.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard label="Gesamtbesucher" value={stats?.visitors.total ?? "—"} icon={Users} />
+            <StatCard label="Besucher heute" value={stats?.visitors.today ?? "—"} icon={Users} />
+            <StatCard label="Letzte 7 Tage" value={stats?.visitors.last7Days ?? "—"} icon={Users} />
+            <StatCard label="Letzte 30 Tage" value={stats?.visitors.last30Days ?? "—"} icon={Users} />
+          </div>
+        )}
       </section>
 
       <section>
@@ -124,12 +145,18 @@ export function DashboardView() {
           <Eye className="h-5 w-5 text-primary" aria-hidden />
           Seitenaufrufe
         </h2>
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Seitenaufrufe gesamt" value={stats?.pageViews.total ?? "—"} icon={Eye} />
-          <StatCard label="Aufrufe heute" value={stats?.pageViews.today ?? "—"} icon={Eye} />
-          <StatCard label="Aufrufe 7 Tage" value={stats?.pageViews.last7Days ?? "—"} icon={Eye} />
-          <StatCard label="Aufrufe 30 Tage" value={stats?.pageViews.last30Days ?? "—"} icon={Eye} />
-        </div>
+        {stats?.trackingEnabled && stats.trackingTableReady === false ? (
+          <p className="rounded-xl border border-dashed border-border px-4 py-6 text-center text-sm text-text-muted">
+            Statistik noch nicht eingerichtet — Migration ausführen, um Seitenaufrufe zu sehen.
+          </p>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard label="Seitenaufrufe gesamt" value={stats?.pageViews.total ?? "—"} icon={Eye} />
+            <StatCard label="Aufrufe heute" value={stats?.pageViews.today ?? "—"} icon={Eye} />
+            <StatCard label="Aufrufe 7 Tage" value={stats?.pageViews.last7Days ?? "—"} icon={Eye} />
+            <StatCard label="Aufrufe 30 Tage" value={stats?.pageViews.last30Days ?? "—"} icon={Eye} />
+          </div>
+        )}
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
@@ -186,22 +213,9 @@ export function DashboardView() {
         </div>
       </section>
 
-      {stats && !stats.trackingEnabled ? (
-        <p className="text-sm text-text-muted">
-          Tracking ist deaktiviert (Supabase nicht konfiguriert). Besucherstatistiken sind erst nach Migration und Deploy verfügbar.
-        </p>
-      ) : null}
-
-      {stats?.trackingEnabled && stats.trackingTableReady === false ? (
-        <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
-          Die Tabelle <code className="font-mono">page_views</code> fehlt. Bitte Migration{" "}
-          <code className="font-mono">20260703_page_views_analytics.sql</code> in Supabase ausführen.
-        </p>
-      ) : null}
-
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { href: "/admin/inhalte", label: "Hero & Kontakt bearbeiten" },
+          { href: "/admin/inhalte", label: "Startseiten-Inhalte bearbeiten" },
           { href: "/admin/galerie", label: "Galerie pflegen" },
           { href: "/admin/beitraege", label: "Beitrag erstellen" },
         ].map((link) => (

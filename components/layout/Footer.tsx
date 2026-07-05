@@ -1,5 +1,5 @@
 import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
-import type { SiteContactSettings, SiteFooterSettings } from "@/lib/cms/types";
+import type { SiteBrandingSettings, SiteContactSettings, SiteFooterSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { ICON_STROKE } from "@/lib/design";
 import { Logo } from "@/components/ui/Logo";
@@ -8,18 +8,20 @@ import { Container } from "@/components/ui/Container";
 interface FooterProps {
   contact?: SiteContactSettings;
   footer?: SiteFooterSettings;
+  branding?: SiteBrandingSettings;
 }
 
 export function Footer({
   contact = DEFAULT_SITE_SETTINGS.contact,
   footer = DEFAULT_SITE_SETTINGS.footer,
+  branding = DEFAULT_SITE_SETTINGS.branding,
 }: FooterProps) {
   return (
     <footer className="footer-premium text-text-inverse">
       <Container className="relative py-12 sm:py-16 md:py-20">
         <div className="grid gap-12 sm:gap-14 md:grid-cols-[1.2fr_1fr_1fr] md:gap-12">
           <div className="flex flex-col items-center md:items-start">
-            <Logo variant="inverse" size="large" className="md:[&_img]:max-h-14" />
+            <Logo variant="inverse" size="large" branding={branding} className="md:[&_img]:max-h-14" />
             <p className="font-accent mt-5 max-w-xs text-center text-lg leading-snug text-white/90 sm:mt-6 sm:text-xl md:max-w-none md:text-left md:text-2xl">
               {footer.tagline}
             </p>

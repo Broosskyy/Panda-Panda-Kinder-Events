@@ -63,20 +63,28 @@ export default async function HomePage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
       <SkipLink />
-      <Header />
+      <Header navigation={settings.navigation} branding={settings.branding} />
       <main id="main-content">
-        <Hero hero={settings.hero} about={settings.about} />
-        <Usps />
-        <Services items={services} />
-        <Process />
-        <Gallery images={galleryImages} contact={settings.contact} />
-        <Testimonials reviews={reviews} />
-        <About about={settings.about} footer={settings.footer} />
-        <News posts={posts} />
-        <Faq items={faqs} />
-        <Contact contact={settings.contact} footer={settings.footer} />
+        <Hero
+          hero={settings.hero}
+          about={settings.about}
+          trustBadges={settings.trustBadges}
+        />
+        <Usps usps={settings.usps} />
+        <Services items={services} heading={settings.sections.services} />
+        <Process process={settings.process} heading={settings.sections.process} />
+        <Gallery images={galleryImages} contact={settings.contact} heading={settings.sections.gallery} />
+        <Testimonials reviews={reviews} heading={settings.sections.testimonials} />
+        <About about={settings.about} footer={settings.footer} heading={settings.sections.about} />
+        <News posts={posts} heading={settings.sections.news} />
+        <Faq items={faqs} heading={settings.sections.faq} />
+        <Contact
+          contact={settings.contact}
+          footer={settings.footer}
+          heading={settings.sections.contact}
+        />
       </main>
-      <Footer contact={settings.contact} footer={settings.footer} />
+      <Footer contact={settings.contact} footer={settings.footer} branding={settings.branding} />
       <WhatsAppFab contact={settings.contact} />
     </>
   );

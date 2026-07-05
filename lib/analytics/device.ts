@@ -19,7 +19,7 @@ export function sanitizeReferrer(referrer: string | null | undefined): string | 
   if (!referrer) return null;
   try {
     const url = new URL(referrer);
-    return url.pathname.slice(0, 200) || null;
+    return url.hostname.slice(0, 120) || null;
   } catch {
     return null;
   }

@@ -2,19 +2,27 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { detectDeviceType, sanitizePath, sanitizeReferrer, sanitizeUserAgent } from "@/lib/analytics/device";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { safeApiError } from "@/lib/api-error";
 
 export const dynamic = "force-dynamic";
 
 const trackSchema = z.object({
   path: z.string().min(1).max(300),
   referrer: z.string().max(500).nullable().optional(),
-  sessionId: z.string().min(8).max(64),
+  sessionId: z.string().min(8).max(64).regex(/^[a-zA-Z0-9-]+$/),
 });
 
 export async function POST(request: Request) {
   try {
     if (!isSupabaseConfigured()) {
       return NextResponse.json({ ok: false }, { status: 503 });
+    }
+
+    const ip = getClientIp(request);
+    const limited = rateLimit(`track:${ip}`, 120, 60 * 60 * 1000);
+    if (!limited.ok) {
+      return NextResponse.json({ ok: true, skipped: true });
     }
 
     const body = await request.json();
@@ -41,18 +49,13 @@ export async function POST(request: Request) {
     });
 
     if (error) {
-      console.error("page_views insert:", error.message);
-      const tableMissing =
-        error.code === "42P01" || error.message.toLowerCase().includes("does not exist");
-      return NextResponse.json(
-        { error: "Tracking fehlgeschlagen.", tableMissing },
-        { status: 500 },
-      );
+      safeApiError("page_views insert:", error, "");
+      return NextResponse.json({ error: "Tracking fehlgeschlagen." }, { status: 500 });
     }
 
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("track API:", err);
+    safeApiError("track API:", err, "");
     return NextResponse.json({ error: "Tracking fehlgeschlagen." }, { status: 500 });
   }
 }

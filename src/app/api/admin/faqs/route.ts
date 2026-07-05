@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
+import { cmsFaqPatchSchema, cmsFaqSchema } from "@/lib/cms/admin-schemas";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
@@ -25,10 +26,26 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase.from("cms_faqs").insert(body).select().single();
+  const parsed = cmsFaqSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Ungültige FAQ-Daten." }, { status: 400 });
+  }
 
-  if (error) return NextResponse.json({ error: `Erstellen fehlgeschlagen: ${error.message}` }, { status: 500 });
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("cms_faqs")
+    .insert({
+      ...parsed.data,
+      sort_order: parsed.data.sort_order ?? 0,
+      visible: parsed.data.visible ?? true,
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error("faqs POST:", error.message);
+    return NextResponse.json({ error: "Erstellen fehlgeschlagen." }, { status: 500 });
+  }
   revalidatePublicCms();
   return NextResponse.json({ faq: data, ...OK });
 }
@@ -37,16 +54,25 @@ export async function PATCH(request: Request) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
-  const { id, ...updates } = await request.json();
+  const body = await request.json();
+  const { id, ...rawUpdates } = body;
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+
+  const parsed = cmsFaqPatchSchema.safeParse(rawUpdates);
+  if (!parsed.success) {
+    return NextResponse.json({ error: "Ungültige FAQ-Daten." }, { status: 400 });
+  }
 
   const supabase = getSupabaseAdmin();
   const { error } = await supabase
     .from("cms_faqs")
-    .update({ ...updates, updated_at: new Date().toISOString() })
+    .update({ ...parsed.data, updated_at: new Date().toISOString() })
     .eq("id", id);
 
-  if (error) return NextResponse.json({ error: `Update fehlgeschlagen: ${error.message}` }, { status: 500 });
+  if (error) {
+    console.error("faqs PATCH:", error.message);
+    return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
+  }
   revalidatePublicCms();
   return NextResponse.json({ success: true, ...OK });
 }

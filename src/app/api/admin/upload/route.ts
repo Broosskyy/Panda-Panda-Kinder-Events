@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import type { StorageBucket } from "@/lib/cms/types";
-import { deleteStorageFile, uploadImage } from "@/lib/cms/storage";
+import { deleteStorageFile, sanitizeUploadFolder, uploadImage, validateStoragePath } from "@/lib/cms/storage";
 
 const VALID_BUCKETS: StorageBucket[] = ["gallery", "reviews", "site-assets"];
 
@@ -13,11 +13,12 @@ export async function POST(request: Request) {
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
     const bucket = formData.get("bucket") as StorageBucket | null;
-    const folder = (formData.get("folder") as string) || "uploads";
 
     if (!file || !bucket || !VALID_BUCKETS.includes(bucket)) {
       return NextResponse.json({ error: "Ungültige Upload-Daten." }, { status: 400 });
     }
+
+    const folder = sanitizeUploadFolder(bucket, (formData.get("folder") as string) || "uploads");
 
     const result = await uploadImage(bucket, file, folder);
     return NextResponse.json(result);
@@ -34,6 +35,10 @@ export async function DELETE(request: Request) {
   const { bucket, path } = await request.json();
   if (!bucket || !path || !VALID_BUCKETS.includes(bucket)) {
     return NextResponse.json({ error: "Ungültige Daten." }, { status: 400 });
+  }
+
+  if (!validateStoragePath(bucket, path)) {
+    return NextResponse.json({ error: "Ungültiger Speicherpfad." }, { status: 400 });
   }
 
   try {

@@ -12,6 +12,7 @@ import { FormField } from "@/components/ui/FormField";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 
 export function InquiryForm() {
+  const [formLoadedAt] = useState(() => Date.now());
   const [errors, setErrors] = useState<Partial<Record<keyof InquiryFormData, string>>>({});
   const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -36,6 +37,8 @@ export function InquiryForm() {
       childrenCount: formData.get("childrenCount") as string,
       message: (formData.get("message") as string) || "",
       privacy: formData.get("privacy") === "on",
+      website: (formData.get("website") as string) || "",
+      _formLoadedAt: Number(formData.get("_formLoadedAt")) || formLoadedAt,
     };
 
     const result = inquirySchema.safeParse(data);
@@ -102,7 +105,16 @@ export function InquiryForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6" noValidate aria-label="Anfrageformular">
+    <form onSubmit={handleSubmit} className="relative space-y-6" noValidate aria-label="Anfrageformular">
+      <input
+        type="text"
+        name="website"
+        tabIndex={-1}
+        autoComplete="off"
+        className="pointer-events-none absolute -left-[9999px] h-0 w-0 opacity-0"
+        aria-hidden="true"
+      />
+      <input type="hidden" name="_formLoadedAt" value={formLoadedAt} />
       {submitError && (
         <div
           role="alert"

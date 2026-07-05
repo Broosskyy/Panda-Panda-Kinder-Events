@@ -2,6 +2,21 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.2] — 2026-07-05
+
+### RC2 Security & Privacy Sprint
+
+- Admin: HMAC-signierte Sessions statt passwortableitbarem Cookie
+- Admin Login: Rate Limit (5/15min), timing-safe Vergleich, sameSite=strict
+- Security Headers: CSP, HSTS, X-Frame-Options, nosniff, Referrer-Policy
+- Spam-Schutz: Honeypot, Mindest-Submit-Zeit, Rate Limits auf öffentlichen APIs
+- Uploads: Magic-Byte-Prüfung, MIME+Extension AND, Ordner-Allowlist, Pfad-Validierung
+- Input Validation: Max-Längen, HTML-Stripping, Zod-Schemas für Admin-CRUD
+- API Errors: generische Client-Meldungen, keine DB-Details öffentlich
+- Datenschutz: technisch vorbereitete Abschnitte für alle Verarbeitungen
+- RLS Migration: Analytics-RPCs für anon/public gesperrt
+- Dokumentation: `SECURITY_PRIVACY_RC2.md`, `RC2_SECURITY_PRIVACY_REPORT.md`
+
 ## [0.9.0-rc.1] — 2026-07-05
 
 ### Release Candidate RC1 — Final Stabilization

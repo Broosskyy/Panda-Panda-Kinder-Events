@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { getInvoiceWithDetails, updateInvoiceStatus } from "@/lib/crm/db";
+import { getBusinessProfile } from "@/lib/crm/company";
 import { formatCents } from "@/lib/crm/money";
 import { generateCrmPdf, invoiceToPdfData } from "@/lib/crm/pdf";
 import { logCustomerEvent } from "@/lib/crm/events";
@@ -24,7 +25,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Rechnung oder Kunden-E-Mail fehlt." }, { status: 400 });
     }
 
-    const pdfBytes = await generateCrmPdf(invoiceToPdfData(invoice as never));
+    const company = await getBusinessProfile();
+    const pdfBytes = await generateCrmPdf(invoiceToPdfData(invoice as never, company));
 
     await sendCrmDocumentEmail({
       to: invoice.customer.email,
@@ -34,6 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       totalFormatted: formatCents(invoice.total_cents),
       pdfBuffer: pdfBytes,
       copyToBusiness,
+      company,
     });
 
     await updateInvoiceStatus(id, "sent");

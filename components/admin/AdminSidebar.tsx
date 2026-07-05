@@ -136,11 +136,21 @@ export function AdminSidebar() {
       <nav className="admin-bottom-nav md:hidden" aria-label="Schnellnavigation">
         {MOBILE_BOTTOM_NAV.map(({ href, label, icon: Icon, mobileLabel }) => {
           const active = isAdminNavActive(pathname, href);
-          const shortLabel = mobileLabel ?? label.split(" ")[0];
+          const displayLabel =
+            mobileLabel ??
+            (href === "/admin"
+              ? "Dashboard"
+              : href === "/admin/kunden"
+                ? "Kunden"
+                : href === "/admin/galerie"
+                  ? "Galerie"
+                  : href === "/admin/anfragen"
+                    ? "Anfragen"
+                    : label);
           return (
             <Link key={href} href={href} className={`admin-bottom-nav-item ${active ? "admin-bottom-nav-item-active" : ""}`}>
               <Icon className="h-5 w-5" aria-hidden />
-              <span>{shortLabel}</span>
+              <span>{displayLabel}</span>
             </Link>
           );
         })}

@@ -141,6 +141,12 @@ function buildSettingsFromRows(
       byKey.get("sections"),
       byKey.has("sections"),
     ),
+    business: cmsSection(
+      "business",
+      DEFAULT_SITE_SETTINGS.business,
+      byKey.get("business"),
+      byKey.has("business"),
+    ),
   };
 }
 

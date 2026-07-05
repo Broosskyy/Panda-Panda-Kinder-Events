@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { getQuoteWithDetails, markQuoteSent } from "@/lib/crm/db";
+import { getBusinessProfile } from "@/lib/crm/company";
 import { formatCents } from "@/lib/crm/money";
 import { generateCrmPdf, quoteToPdfData } from "@/lib/crm/pdf";
 import { logCustomerEvent } from "@/lib/crm/events";
@@ -24,7 +25,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Angebot oder Kunden-E-Mail fehlt." }, { status: 400 });
     }
 
-    const pdfBytes = await generateCrmPdf(quoteToPdfData(quote as never));
+    const company = await getBusinessProfile();
+    const pdfBytes = await generateCrmPdf(quoteToPdfData(quote as never, company));
 
     await sendCrmDocumentEmail({
       to: quote.customer.email,
@@ -34,6 +36,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       totalFormatted: formatCents(quote.total_cents),
       pdfBuffer: pdfBytes,
       copyToBusiness,
+      company,
     });
 
     await markQuoteSent(id);

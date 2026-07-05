@@ -110,6 +110,27 @@ export interface SiteFooterSettings {
   copyrightName: string;
 }
 
+export interface SiteBusinessSettings {
+  companyName: string;
+  logoUrl: string;
+  address: string;
+  phone: string;
+  email: string;
+  website: string;
+  iban: string;
+  bic: string;
+  bankName: string;
+  taxNumber: string;
+  vatId: string;
+  managingDirector: string;
+  defaultPaymentDays: number;
+  defaultQuoteText: string;
+  defaultInvoiceText: string;
+  defaultPaymentText: string;
+  senderName: string;
+  senderEmail: string;
+}
+
 export interface SiteSettingsBundle {
   hero: SiteHeroSettings;
   contact: SiteContactSettings;
@@ -121,6 +142,7 @@ export interface SiteSettingsBundle {
   usps: SiteUspsSettings;
   process: SiteProcessSettings;
   sections: SiteSectionsSettings;
+  business: SiteBusinessSettings;
 }
 
 export interface CmsService {

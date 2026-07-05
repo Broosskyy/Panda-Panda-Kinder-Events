@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Receipt, Send } from "lucide-react";
+import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput, AdminStatusBadge, crmDocumentStatusVariant } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
@@ -14,7 +15,7 @@ interface InvoiceRow {
   title: string;
   status: CrmDocumentStatus;
   total_cents: number;
-  customer?: { name: string };
+  customer?: { name: string; email?: string | null };
 }
 
 const STATUS_OPTIONS = Object.entries(CRM_STATUS_LABELS).map(([value, label]) => ({ value, label }));
@@ -22,6 +23,10 @@ const STATUS_OPTIONS = Object.entries(CRM_STATUS_LABELS).map(([value, label]) =>
 export function InvoicesView() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [search, setSearch] = useState("");
+  const [sendTarget, setSendTarget] = useState<InvoiceRow | null>(null);
+  const [sendToCustomer, setSendToCustomer] = useState(true);
+  const [copyToBusiness, setCopyToBusiness] = useState(true);
+  const [sending, setSending] = useState(false);
   const { toast } = useAdminUi();
 
   const load = () => {
@@ -33,12 +38,25 @@ export function InvoicesView() {
     load();
   }, [search]);
 
-  const send = async (id: string) => {
-    const res = await fetch(`/api/admin/invoices/${id}/send`, { method: "POST", body: JSON.stringify({ copyToBusiness: true }) });
-    const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Versand fehlgeschlagen", "error");
-    toast("Rechnung versendet");
-    load();
+  const confirmSend = async () => {
+    if (!sendTarget || !sendToCustomer) return;
+    setSending(true);
+    try {
+      const res = await fetch(`/api/admin/invoices/${sendTarget.id}/send`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ copyToBusiness }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
+      toast("Rechnung versendet");
+      setSendTarget(null);
+      load();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Versand fehlgeschlagen", "error");
+    } finally {
+      setSending(false);
+    }
   };
 
   const setStatus = async (id: string, status: string) => {
@@ -78,13 +96,36 @@ export function InvoicesView() {
                 <div className="flex flex-wrap items-center gap-2">
                   <AdminFilterSelect value={inv.status} onChange={(v) => setStatus(inv.id, v)} options={STATUS_OPTIONS} />
                   <AdminButton variant="secondary" href={`/api/admin/invoices/${inv.id}/pdf`} target="_blank">PDF</AdminButton>
-                  <AdminButton variant="primary" icon={<Send className="h-4 w-4" />} onClick={() => send(inv.id)}>Senden</AdminButton>
+                  <AdminButton
+                    variant="primary"
+                    icon={<Send className="h-4 w-4" />}
+                    onClick={() => {
+                      setSendTarget(inv);
+                      setSendToCustomer(true);
+                      setCopyToBusiness(true);
+                    }}
+                  >
+                    Senden
+                  </AdminButton>
                 </div>
               </div>
             </AdminCard>
           ))}
         </div>
       )}
+
+      <CrmSendModal
+        open={Boolean(sendTarget)}
+        title={`Rechnung ${sendTarget?.invoice_number ?? ""} versenden`}
+        customerEmail={sendTarget?.customer?.email}
+        sendToCustomer={sendToCustomer}
+        copyToBusiness={copyToBusiness}
+        loading={sending}
+        onChangeSendToCustomer={setSendToCustomer}
+        onChangeCopyToBusiness={setCopyToBusiness}
+        onClose={() => setSendTarget(null)}
+        onConfirm={() => void confirmSend()}
+      />
     </div>
   );
 }

@@ -2,6 +2,20 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.7] — 2026-07-05
+
+### CRM Final UX/UI Polish
+
+- Mobile Bottom-Nav: native App-Feeling (76px, große Icons, aktiver Tab hervorgehoben)
+- FAB höher positioniert, besserer Schatten und Animation
+- Dashboard gruppiert: Schnellaktionen, Statistik, CRM, Website
+- Angebote: klare Rabatt/MwSt.-Labels, Positionen-Editor mit Live-Summen
+- PDF: professionelles Layout mit Unternehmensdaten, Bankverbindung, Status
+- E-Mail: HTML-Template, Versand-Modal mit Checkboxen
+- Einstellungen: Unternehmensdaten zentral (`business` in site_settings)
+- Formulare vereinheitlicht mit `AdminFormField` und Pflichtfeld-Markierung
+- Dokumentation: `docs/05_ROADMAP/CRM_FINAL_POLISH.md`
+
 ## [0.9.0-rc.6] — 2026-07-05
 
 ### Admin Dashboard Final Polish

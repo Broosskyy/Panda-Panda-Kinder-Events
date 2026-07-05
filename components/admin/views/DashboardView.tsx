@@ -112,8 +112,8 @@ export function DashboardView() {
         <p className="text-sm text-text-muted">Dashboard wird geladen…</p>
       ) : null}
 
-      <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">Schnellaktionen</h2>
+      <section className="admin-dashboard-section">
+        <h2 className="admin-dashboard-section-title">Schnellaktionen</h2>
         <div className="admin-quick-actions">
           {DASHBOARD_QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
             <Link key={href + label} href={href} className="admin-quick-action">
@@ -124,8 +124,8 @@ export function DashboardView() {
         </div>
       </section>
 
-      <section>
-        <h2 className="mb-4 font-heading text-lg font-semibold text-text-primary">Kennzahlen</h2>
+      <section className="admin-dashboard-section">
+        <h2 className="admin-dashboard-section-title">Statistik</h2>
         <div className="admin-stat-grid">
           <StatCard
             label="Besucher gesamt"
@@ -146,11 +146,23 @@ export function DashboardView() {
             href="/admin/analytics"
             icon={BarChart3}
           />
-          <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} />
-          <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} />
+        </div>
+      </section>
+
+      <section className="admin-dashboard-section">
+        <h2 className="admin-dashboard-section-title">CRM</h2>
+        <div className="admin-stat-grid">
           <StatCard label="Kunden" value={stats?.crm.customersCount ?? "—"} href="/admin/kunden" icon={Users} />
           <StatCard label="Offene Angebote" value={stats?.crm.openQuotesCount ?? "—"} href="/admin/angebote" icon={FileText} />
           <StatCard label="Offene Rechnungen" value={stats?.crm.openInvoicesCount ?? "—"} href="/admin/rechnungen" icon={FileText} />
+        </div>
+      </section>
+
+      <section className="admin-dashboard-section">
+        <h2 className="admin-dashboard-section-title">Website</h2>
+        <div className="admin-stat-grid">
+          <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} />
+          <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} />
           <StatCard label="Beiträge" value={stats?.postsCount ?? "—"} href="/admin/beitraege" icon={Newspaper} />
           <StatCard label="Galerie-Bilder" value={stats?.galleryCount ?? "—"} href="/admin/galerie" icon={Image} />
         </div>

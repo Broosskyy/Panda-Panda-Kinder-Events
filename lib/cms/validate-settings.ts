@@ -23,6 +23,7 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   usps: ["title", "subtitle"],
   process: ["title", "subtitle", "speechBubble"],
   sections: [],
+  business: ["companyName", "email", "senderName", "senderEmail"],
 };
 
 function hasNonEmptyItems(value: unknown): boolean {

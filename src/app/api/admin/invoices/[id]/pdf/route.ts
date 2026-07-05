@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
 import { getInvoiceWithDetails } from "@/lib/crm/db";
+import { getBusinessProfile } from "@/lib/crm/company";
 import { generateCrmPdf, invoiceToPdfData } from "@/lib/crm/pdf";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -15,7 +16,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: "Rechnung nicht gefunden." }, { status: 404 });
     }
 
-    const pdfBytes = await generateCrmPdf(invoiceToPdfData(invoice as never));
+    const company = await getBusinessProfile();
+    const pdfBytes = await generateCrmPdf(invoiceToPdfData(invoice as never, company));
 
     return new NextResponse(Buffer.from(pdfBytes), {
       headers: {

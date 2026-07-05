@@ -61,8 +61,7 @@ export function Header() {
         }`}
       >
         <div className="mx-auto flex min-h-16 items-center justify-between px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:px-12 md:py-3">
-          <Logo size="large" className="sm:hidden" />
-          <Logo size="xl" className="hidden sm:block" />
+          <Logo size="large" className="sm:[&_img]:max-h-11 md:[&_img]:max-h-14" />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
             {navigation.map((item) => {

@@ -5,21 +5,25 @@ import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
-import type { SiteAboutSettings } from "@/lib/cms/types";
+import type { SiteAboutSettings, SiteFooterSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 
 interface AboutProps {
   about?: SiteAboutSettings;
+  footer?: SiteFooterSettings;
 }
 
-export function About({ about = DEFAULT_SITE_SETTINGS.about }: AboutProps) {
+export function About({
+  about = DEFAULT_SITE_SETTINGS.about,
+  footer = DEFAULT_SITE_SETTINGS.footer,
+}: AboutProps) {
   return (
     <section id="ueber-uns" className="scroll-mt-24 section-padding">
       <Container>
         <ScrollReveal>
           <SectionHeading
             title="Über uns"
-            subtitle="Die Panda-Bande — mit Herz für kleine Abenteurer."
+            subtitle={footer.tagline || "Die Panda-Bande — mit Herz für kleine Abenteurer."}
           />
         </ScrollReveal>
 
@@ -39,12 +43,11 @@ export function About({ about = DEFAULT_SITE_SETTINGS.about }: AboutProps) {
                 />
               </div>
               <PandaMascot size={80} className="absolute -bottom-4 -right-2 hidden opacity-90 md:block" />
-              <p className="font-accent mt-6 text-center text-xl text-primary sm:mt-8 sm:text-2xl md:text-3xl lg:text-left">
-                Mit Herz für kleine Abenteurer.{" "}
-                <span className="text-accent-heart" aria-hidden>
-                  ♡
-                </span>
-              </p>
+              {footer.tagline ? (
+                <p className="font-accent mt-6 text-center text-xl text-primary sm:mt-8 sm:text-2xl md:text-3xl lg:text-left">
+                  {footer.tagline}
+                </p>
+              ) : null}
             </div>
           </ScrollReveal>
 

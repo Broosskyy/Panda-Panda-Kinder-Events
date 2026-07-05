@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { fetchSiteSettings } from "@/lib/cms/data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Impressum",
   robots: { index: false },
 };
 
-export default function ImpressumPage() {
+export default async function ImpressumPage() {
+  const { contact } = await fetchSiteSettings();
+
   return (
     <div className="min-h-screen bg-bg-primary px-5 py-16 md:px-10">
       <div className="mx-auto max-w-3xl">
@@ -29,9 +34,9 @@ export default function ImpressumPage() {
           <section>
             <h2 className="text-lg font-semibold text-text-primary">Kontakt</h2>
             <p className="mt-2">
-              Telefon: {siteConfig.contact.phone}
+              Telefon: {contact.phone}
               <br />
-              E-Mail: {siteConfig.contact.email}
+              E-Mail: {contact.email}
             </p>
           </section>
           <section>

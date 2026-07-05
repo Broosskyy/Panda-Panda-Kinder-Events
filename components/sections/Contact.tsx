@@ -1,8 +1,6 @@
-import Image from "next/image";
 import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
-import { siteConfig } from "@/config/site";
 import { ICON_STROKE } from "@/lib/design";
-import type { SiteContactSettings } from "@/lib/cms/types";
+import type { SiteContactSettings, SiteFooterSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { Card } from "@/components/ui/Card";
 import { InquiryForm } from "@/components/ui/InquiryForm";
@@ -13,10 +11,18 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface ContactProps {
   contact?: SiteContactSettings;
+  footer?: SiteFooterSettings;
 }
 
 function buildContactLinks(contact: SiteContactSettings) {
   return [
+    {
+      href: `tel:${contact.phone.replace(/\s/g, "")}`,
+      icon: Phone,
+      label: "Telefon",
+      value: contact.phone,
+      external: false,
+    },
     {
       href: `https://wa.me/${contact.whatsapp}`,
       icon: MessageCircle,
@@ -48,7 +54,10 @@ function buildContactLinks(contact: SiteContactSettings) {
   ] as const;
 }
 
-export function Contact({ contact = DEFAULT_SITE_SETTINGS.contact }: ContactProps) {
+export function Contact({
+  contact = DEFAULT_SITE_SETTINGS.contact,
+  footer = DEFAULT_SITE_SETTINGS.footer,
+}: ContactProps) {
   const contactLinks = buildContactLinks(contact);
 
   return (
@@ -103,34 +112,12 @@ export function Contact({ contact = DEFAULT_SITE_SETTINGS.contact }: ContactProp
                 return <div key={link.label}>{content}</div>;
               })}
 
-              <a href={`tel:${contact.phone.replace(/\s/g, "")}`} className="block sm:hidden">
-                <Card className="flex items-center gap-5" padding="md" hover>
-                  <div className="icon-wrap h-14 w-14 shrink-0">
-                    <Phone className="h-6 w-6 text-primary" strokeWidth={ICON_STROKE} />
-                  </div>
-                  <div>
-                    <p className="text-base font-semibold text-text-primary">Telefon</p>
-                    <p className="mt-0.5 text-base text-text-secondary">{contact.phone}</p>
-                  </div>
-                </Card>
-              </a>
-
-              <div className="relative mt-6 hidden text-center lg:block">
-                <Image
-                  src={siteConfig.assets.logo}
-                  alt=""
-                  width={200}
-                  height={72}
-                  className="mx-auto h-24 w-auto object-contain opacity-90"
-                />
-                <p className="font-accent mt-8 text-3xl text-primary">
-                  Mit Herz für kleine Abenteurer.{" "}
-                  <span className="text-accent-heart" aria-hidden>
-                    ♡
-                  </span>
-                </p>
-                <FlowerOrnament className="absolute -bottom-4 left-0 h-20 w-20 opacity-20" />
-              </div>
+              {footer.tagline ? (
+                <div className="relative mt-6 hidden text-center lg:block">
+                  <p className="font-accent text-3xl text-primary">{footer.tagline}</p>
+                  <FlowerOrnament className="absolute -bottom-4 left-0 h-20 w-20 opacity-20" />
+                </div>
+              ) : null}
             </div>
           </ScrollReveal>
         </div>

@@ -1,4 +1,4 @@
-import { services as defaultServices, type Service } from "@/lib/services";
+import { type Service } from "@/lib/services";
 import { ICON_STROKE } from "@/lib/design";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
@@ -9,7 +9,9 @@ interface ServicesProps {
   items?: Service[];
 }
 
-export function Services({ items = defaultServices }: ServicesProps) {
+export function Services({ items }: ServicesProps) {
+  if (!items?.length) return null;
+
   return (
     <section id="leistungen" className="scroll-mt-24 section-padding bg-bg-primary">
       <Container>

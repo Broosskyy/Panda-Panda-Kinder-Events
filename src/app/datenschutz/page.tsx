@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { siteConfig } from "@/config/site";
+import { fetchSiteSettings } from "@/lib/cms/data";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Datenschutz",
   robots: { index: false },
 };
 
-export default function DatenschutzPage() {
+export default async function DatenschutzPage() {
+  const { contact } = await fetchSiteSettings();
+
   return (
     <div className="min-h-screen bg-bg-primary px-5 py-16 md:px-10">
       <div className="mx-auto max-w-3xl">
@@ -25,7 +30,7 @@ export default function DatenschutzPage() {
               <br />
               {siteConfig.legal.address}
               <br />
-              E-Mail: {siteConfig.contact.email}
+              E-Mail: {contact.email}
             </p>
           </section>
           <section>
@@ -40,7 +45,7 @@ export default function DatenschutzPage() {
             <h2 className="text-lg font-semibold text-text-primary">3. Ihre Rechte</h2>
             <p className="mt-2 text-sm leading-relaxed">
               Sie haben das Recht auf Auskunft, Berichtigung, Löschung und Einschränkung der
-              Verarbeitung Ihrer Daten. Kontaktieren Sie uns unter {siteConfig.contact.email}.
+              Verarbeitung Ihrer Daten. Kontaktieren Sie uns unter {contact.email}.
             </p>
           </section>
           <p className="rounded-lg border border-border bg-bg-secondary p-4 text-sm">

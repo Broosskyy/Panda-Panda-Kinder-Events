@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Image from "next/image";
 import { Instagram } from "lucide-react";
-import { galleryImages as defaultGallery } from "@/lib/gallery";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteContactSettings } from "@/lib/cms/types";
 import { Button } from "@/components/ui/Button";
@@ -18,10 +17,12 @@ interface GalleryProps {
 }
 
 export function Gallery({
-  images = defaultGallery,
+  images,
   contact = DEFAULT_SITE_SETTINGS.contact,
 }: GalleryProps) {
   const [lightboxImage, setLightboxImage] = useState<{ src: string; alt: string } | null>(null);
+
+  if (!images?.length) return null;
 
   return (
     <section id="galerie" className="scroll-mt-24 section-padding bg-bg-primary">

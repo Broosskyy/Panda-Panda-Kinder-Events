@@ -6,6 +6,7 @@ export type BusinessProfile = SiteBusinessSettings;
 export async function getBusinessProfile(): Promise<BusinessProfile> {
   const settings = await fetchSiteSettings();
   const b = settings.business;
+  const email = settings.email;
   const contact = settings.contact;
   const branding = settings.branding;
 
@@ -17,7 +18,7 @@ export async function getBusinessProfile(): Promise<BusinessProfile> {
     email: b.email || contact.email,
     website: b.website || "https://panda-bande-events.de",
     address: b.address || contact.location,
-    senderName: b.senderName || b.companyName,
-    senderEmail: b.senderEmail || b.email || contact.email,
+    senderName: email.senderName || b.senderName || b.companyName,
+    senderEmail: email.senderEmail || b.senderEmail || b.email || contact.email,
   };
 }

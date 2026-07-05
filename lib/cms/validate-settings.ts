@@ -24,6 +24,7 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   process: ["title", "subtitle", "speechBubble"],
   sections: [],
   business: ["companyName", "email", "senderName", "senderEmail"],
+  email: ["companyName", "senderName", "senderEmail", "replyTo"],
 };
 
 function hasNonEmptyItems(value: unknown): boolean {
@@ -149,6 +150,20 @@ export function validateSiteSettingsSection(
       ok: true,
       value: { ...(value as SiteContactSettings), instagram } as SiteSettingsBundle["contact"],
     };
+  }
+
+  if (section === "email") {
+    const email = value as SiteSettingsBundle["email"];
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(email.senderEmail)) {
+      return { ok: false, error: "Absender-E-Mail ist ungültig." };
+    }
+    if (!emailPattern.test(email.replyTo)) {
+      return { ok: false, error: "Reply-To-Adresse ist ungültig." };
+    }
+    if (email.notificationEmail && !emailPattern.test(email.notificationEmail)) {
+      return { ok: false, error: "Benachrichtigungs-E-Mail ist ungültig." };
+    }
   }
 
   return { ok: true, value: value as SiteSettingsBundle[keyof SiteSettingsBundle] };

@@ -110,6 +110,14 @@ export interface SiteFooterSettings {
   copyrightName: string;
 }
 
+export interface SiteEmailSettings {
+  companyName: string;
+  senderName: string;
+  senderEmail: string;
+  replyTo: string;
+  notificationEmail: string;
+}
+
 export interface SiteBusinessSettings {
   companyName: string;
   logoUrl: string;
@@ -143,6 +151,7 @@ export interface SiteSettingsBundle {
   process: SiteProcessSettings;
   sections: SiteSectionsSettings;
   business: SiteBusinessSettings;
+  email: SiteEmailSettings;
 }
 
 export interface CmsService {

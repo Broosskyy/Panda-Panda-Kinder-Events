@@ -142,4 +142,11 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     senderName: siteConfig.name,
     senderEmail: siteConfig.contact.email,
   },
+  email: {
+    companyName: siteConfig.name,
+    senderName: siteConfig.name,
+    senderEmail: siteConfig.contact.email,
+    replyTo: siteConfig.contact.email,
+    notificationEmail: siteConfig.contact.email,
+  },
 };

@@ -2,7 +2,9 @@
 
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
+import { ImageIcon } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 
 interface GalleryItem {
@@ -19,7 +21,7 @@ interface GalleryItem {
 export function GalleryView() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { toast, setLoading } = useAdminUi();
+  const { toast, withLoading } = useAdminUi();
 
   const load = () =>
     fetch("/api/admin/gallery")
@@ -31,34 +33,35 @@ export function GalleryView() {
   }, []);
 
   const upload = async (file: File) => {
-    setLoading(true);
     toast("Wird hochgeladen…", "info");
     try {
-      const fd = new FormData();
-      fd.append("file", file);
-      fd.append("bucket", "gallery");
-      fd.append("folder", "images");
-      const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
-      const upData = await up.json();
-      if (!up.ok) throw new Error(upData.error);
+      await withLoading(
+        (async () => {
+          const fd = new FormData();
+          fd.append("file", file);
+          fd.append("bucket", "gallery");
+          fd.append("folder", "images");
+          const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
+          const upData = await up.json();
+          if (!up.ok) throw new Error(upData.error);
 
-      const res = await fetch("/api/admin/gallery", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          storage_path: upData.path,
-          title: file.name.replace(/\.[^.]+$/, ""),
-          alt_text: file.name.replace(/\.[^.]+$/, ""),
-          sort_order: images.length,
-        }),
-      });
-      if (!res.ok) throw new Error("DB Fehler");
-      toast("Bild hochgeladen");
-      load();
+          const res = await fetch("/api/admin/gallery", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              storage_path: upData.path,
+              title: file.name.replace(/\.[^.]+$/, ""),
+              alt_text: file.name.replace(/\.[^.]+$/, ""),
+              sort_order: images.length,
+            }),
+          });
+          if (!res.ok) throw new Error("DB Fehler");
+          toast("Bild hochgeladen");
+          await load();
+        })(),
+      );
     } catch (e) {
       toast(e instanceof Error ? e.message : "Upload fehlgeschlagen", "error");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -71,7 +74,7 @@ export function GalleryView() {
     if (res.ok) {
       toast("Gespeichert");
       load();
-    }
+    } else toast("Fehler beim Speichern", "error");
   };
 
   const remove = async (id: string) => {
@@ -84,19 +87,15 @@ export function GalleryView() {
     if (res.ok) {
       toast("Gelöscht");
       load();
-    }
+    } else toast("Löschen fehlgeschlagen", "error");
   };
 
   return (
     <div>
       <AdminPageHeader title="Galerie" description="Bilder hochladen und verwalten">
-        <button
-          type="button"
-          onClick={() => fileRef.current?.click()}
-          className="min-h-11 rounded-full bg-primary px-6 text-sm font-medium text-white"
-        >
-          + Bild hochladen
-        </button>
+        <AdminButton variant="primary" onClick={() => fileRef.current?.click()}>
+          Bild hochladen
+        </AdminButton>
         <input
           ref={fileRef}
           type="file"
@@ -104,61 +103,68 @@ export function GalleryView() {
           className="sr-only"
           onChange={(e) => {
             const f = e.target.files?.[0];
-            if (f) upload(f);
+            if (f) void upload(f);
             e.target.value = "";
           }}
         />
       </AdminPageHeader>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {images.map((img) => (
-          <AdminCard key={img.id} className="!p-0 overflow-hidden">
-            <div className="relative aspect-[4/3]">
-              <Image src={img.url} alt={img.alt_text} fill className="object-cover" unoptimized={img.url.includes("supabase.co")} />
-            </div>
-            <div className="space-y-3 p-4">
-              <input
-                defaultValue={img.title}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-                placeholder="Titel"
-                onBlur={(e) => e.target.value !== img.title && update(img.id, { title: e.target.value })}
-              />
-              <input
-                defaultValue={img.alt_text}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-                placeholder="Alt-Text"
-                onBlur={(e) =>
-                  e.target.value !== img.alt_text && update(img.id, { alt_text: e.target.value })
-                }
-              />
-              <input
-                defaultValue={img.category}
-                className="w-full rounded-lg border border-border px-3 py-2 text-sm"
-                placeholder="Kategorie"
-                onBlur={(e) =>
-                  e.target.value !== img.category && update(img.id, { category: e.target.value })
-                }
-              />
-              <div className="flex items-center justify-between gap-2">
-                <label className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={img.visible}
-                    onChange={(e) => update(img.id, { visible: e.target.checked })}
-                  />
-                  Sichtbar
-                </label>
-                <button
-                  type="button"
-                  onClick={() => remove(img.id)}
-                  className="text-xs text-accent-heart underline"
-                >
-                  Löschen
-                </button>
+
+      {images.length === 0 ? (
+        <AdminEmptyState
+          icon={ImageIcon}
+          title="Noch keine Bilder hochgeladen."
+          description="Lade Bilder hoch, die auf der Website in der Galerie erscheinen."
+          actionLabel="Bild hochladen"
+          onAction={() => fileRef.current?.click()}
+        />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {images.map((img) => (
+            <AdminCard key={img.id} className="!p-0 overflow-hidden">
+              <div className="relative aspect-[4/3]">
+                <Image src={img.url} alt={img.alt_text} fill className="object-cover" unoptimized={img.url.includes("supabase.co")} />
               </div>
-            </div>
-          </AdminCard>
-        ))}
-      </div>
+              <div className="space-y-3 p-4">
+                <input
+                  defaultValue={img.title}
+                  className="admin-input"
+                  placeholder="Titel"
+                  onBlur={(e) => e.target.value !== img.title && update(img.id, { title: e.target.value })}
+                />
+                <input
+                  defaultValue={img.alt_text}
+                  className="admin-input"
+                  placeholder="Alt-Text"
+                  onBlur={(e) =>
+                    e.target.value !== img.alt_text && update(img.id, { alt_text: e.target.value })
+                  }
+                />
+                <input
+                  defaultValue={img.category}
+                  className="admin-input"
+                  placeholder="Kategorie"
+                  onBlur={(e) =>
+                    e.target.value !== img.category && update(img.id, { category: e.target.value })
+                  }
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      checked={img.visible}
+                      onChange={(e) => update(img.id, { visible: e.target.checked })}
+                    />
+                    Sichtbar
+                  </label>
+                  <AdminButton variant="danger" onClick={() => void remove(img.id)}>
+                    Löschen
+                  </AdminButton>
+                </div>
+              </div>
+            </AdminCard>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

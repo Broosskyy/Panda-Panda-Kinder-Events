@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 import { AdminSidebar } from "./AdminSidebar";
+import { AdminQuickActions } from "./AdminQuickActions";
 import { AdminUiProvider } from "./AdminUiProvider";
 import { AdminLoginForm } from "./AdminLoginForm";
 
@@ -32,6 +33,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
       <div className="admin-shell flex min-h-screen flex-col md:flex-row" data-admin-theme="light">
         <AdminSidebar />
         <main className="admin-main flex-1 overflow-x-hidden">{children}</main>
+        <AdminQuickActions />
       </div>
     </AdminUiProvider>
   );

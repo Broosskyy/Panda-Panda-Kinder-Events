@@ -4,11 +4,48 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
-import { ADMIN_NAV, isAdminNavActive } from "@/lib/admin/nav";
+import {
+  ADMIN_NAV_GROUPS,
+  MOBILE_BOTTOM_NAV_HREFS,
+  isAdminNavActive,
+  type AdminNavGroup,
+} from "@/lib/admin/nav";
 
-const MOBILE_BOTTOM_NAV = ADMIN_NAV.filter((item) =>
-  ["/admin", "/admin/anfragen", "/admin/bewertungen", "/admin/galerie"].includes(item.href),
+const MOBILE_BOTTOM_NAV = ADMIN_NAV_GROUPS.flatMap((g) => g.items).filter((item) =>
+  (MOBILE_BOTTOM_NAV_HREFS as readonly string[]).includes(item.href),
 );
+
+function NavGroupSection({
+  group,
+  pathname,
+  onNavigate,
+}: {
+  group: AdminNavGroup;
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <div className="admin-nav-group">
+      {group.label ? <p className="admin-nav-group-label">{group.label}</p> : null}
+      <div className="admin-nav-group-items">
+        {group.items.map(({ href, label, icon: Icon, mobileLabel }) => {
+          const active = isAdminNavActive(pathname, href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={onNavigate}
+              className={`admin-nav-link ${active ? "admin-nav-link-active" : ""}`}
+            >
+              <Icon className="h-4 w-4 shrink-0" aria-hidden />
+              <span>{mobileLabel ?? label}</span>
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export function AdminSidebar() {
   const pathname = usePathname();
@@ -30,22 +67,11 @@ export function AdminSidebar() {
     window.location.href = "/admin";
   };
 
-  const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
+  const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
-      {ADMIN_NAV.map(({ href, label, icon: Icon, mobileLabel }) => {
-        const active = isAdminNavActive(pathname, href);
-        return (
-          <Link
-            key={href}
-            href={href}
-            onClick={onNavigate}
-            className={`admin-nav-link ${active ? "admin-nav-link-active" : ""}`}
-          >
-            <Icon className="h-4 w-4 shrink-0" aria-hidden />
-            <span>{mobileLabel ?? label}</span>
-          </Link>
-        );
-      })}
+      {ADMIN_NAV_GROUPS.map((group) => (
+        <NavGroupSection key={group.id} group={group} pathname={pathname} onNavigate={onNavigate} />
+      ))}
     </>
   );
 
@@ -58,7 +84,7 @@ export function AdminSidebar() {
           <p className="text-xs text-text-muted">CMS Admin</p>
         </div>
         <nav className="admin-sidebar-nav">
-          <NavLinks />
+          <NavContent />
         </nav>
         <div className="admin-sidebar-footer">
           <button type="button" onClick={logout} className="admin-nav-link w-full text-text-muted">
@@ -100,7 +126,7 @@ export function AdminSidebar() {
               </button>
             </div>
             <nav className="admin-sidebar-nav p-3">
-              <NavLinks onNavigate={() => setDrawerOpen(false)} />
+              <NavContent onNavigate={() => setDrawerOpen(false)} />
             </nav>
           </aside>
         </div>
@@ -108,16 +134,17 @@ export function AdminSidebar() {
 
       {/* Mobile bottom navigation */}
       <nav className="admin-bottom-nav md:hidden" aria-label="Schnellnavigation">
-        {MOBILE_BOTTOM_NAV.map(({ href, label, icon: Icon }) => {
+        {MOBILE_BOTTOM_NAV.map(({ href, label, icon: Icon, mobileLabel }) => {
           const active = isAdminNavActive(pathname, href);
+          const shortLabel = mobileLabel ?? label.split(" ")[0];
           return (
             <Link key={href} href={href} className={`admin-bottom-nav-item ${active ? "admin-bottom-nav-item-active" : ""}`}>
               <Icon className="h-5 w-5" aria-hidden />
-              <span>{label.split(" ")[0]}</span>
+              <span>{shortLabel}</span>
             </Link>
           );
         })}
-        <button type="button" className="admin-bottom-nav-item" onClick={() => setDrawerOpen(true)}>
+        <button type="button" className="admin-bottom-nav-item" onClick={() => setDrawerOpen(true)} aria-label="Mehr Navigation">
           <Menu className="h-5 w-5" aria-hidden />
           <span>Mehr</span>
         </button>

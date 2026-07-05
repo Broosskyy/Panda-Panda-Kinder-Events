@@ -59,9 +59,9 @@ export function FaqsView() {
         {faqs.length === 0 ? (
           <AdminEmptyState
             icon={HelpCircle}
-            title="Noch keine FAQs"
+            title="Noch keine FAQ angelegt."
             description="Erstelle häufig gestellte Fragen, die auf der Startseite angezeigt werden."
-            actionLabel="Erste FAQ anlegen"
+            actionLabel="FAQ hinzufügen"
             onAction={() =>
               save(
                 { question: "Neue Frage?", answer: "Antwort...", sort_order: 0, visible: true },

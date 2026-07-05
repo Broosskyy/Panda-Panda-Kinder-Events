@@ -2,6 +2,20 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.6] — 2026-07-05
+
+### Admin Dashboard Final Polish
+
+- Navigation gruppiert: Dashboard, Analytics, CRM, Website, Kommunikation, Einstellungen
+- Sidebar (Desktop), Drawer + Bottom-Nav (Mobile) — keine horizontale Tab-Leiste
+- Dashboard: 10 Kennzahlen, 6 Schnellaktionen, klare Statistik-Hinweise
+- Globale Schnellaktionen (FAB): Kunde, Angebot, Rechnung, Beitrag, Bild
+- `AdminStatusBadge`, `AdminFormField`, einheitliche Listen-Karten
+- Empty States: FAQ, Beiträge, Kunden, Galerie, Bewertungen
+- Formular-/Karten-Vereinheitlichung in Beiträge, Galerie, Bewertungen, CRM
+- Toasts über Mobile-Bottom-Nav positioniert
+- Dokumentation: `docs/05_ROADMAP/ADMIN_DASHBOARD_FINAL_REPORT.md`
+
 ## [0.9.0-rc.5] — 2026-07-05
 
 ### Sprint 3 — Business CRM

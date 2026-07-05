@@ -36,6 +36,7 @@ export async function PUT(request: Request) {
     "process",
     "sections",
     "business",
+    "email",
   ];
   if (!validSections.includes(section)) {
     return NextResponse.json({ error: "Ungültige Sektion." }, { status: 400 });

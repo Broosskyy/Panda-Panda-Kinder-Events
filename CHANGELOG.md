@@ -2,6 +2,18 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.8] — 2026-07-05
+
+### E-Mail-System (Resend) — Produktionsreif
+
+- Neuer CMS-Bereich **Einstellungen → E-Mail**: Firmenname, Absendername, Absender-E-Mail, Reply-To, Benachrichtigungs-E-Mail
+- Flexibles Absender-System: automatisch `onboarding@resend.dev` ohne verifizierte Domain, sonst Firmenadresse
+- Resend Domain Status im Admin mit Hinweis zur Testdomain
+- Test-E-Mail senden aus dem Admin
+- Keine hardcodierten Absenderadressen mehr im Anwendungscode
+- API: `GET /api/admin/email/status`, `POST /api/admin/email/test`
+- Dokumentation: `docs/EMAIL_SETUP.md` (Resend, DNS, Domainwechsel)
+
 ## [0.9.0-rc.7] — 2026-07-05
 
 ### CRM Final UX/UI Polish

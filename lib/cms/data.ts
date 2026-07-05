@@ -147,6 +147,7 @@ function buildSettingsFromRows(
       byKey.get("business"),
       byKey.has("business"),
     ),
+    email: cmsSection("email", DEFAULT_SITE_SETTINGS.email, byKey.get("email"), byKey.has("email")),
   };
 }
 

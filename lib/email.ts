@@ -1,6 +1,14 @@
 import { Resend } from "resend";
-
 import type { BusinessProfile } from "@/lib/crm/company";
+import {
+  getEmailSettings,
+  getNotificationEmailFromSettings,
+  resolveEmailSender,
+  type ResolvedEmailSender,
+} from "@/lib/email/sender";
+
+export { RESEND_TEST_FROM, checkResendDomainStatus, getEmailSettings, resolveEmailSender } from "@/lib/email/sender";
+export type { EmailDomainCheck, EmailDomainStatus, ResolvedEmailSender } from "@/lib/email/sender";
 
 export function isResendConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
@@ -12,12 +20,15 @@ export function getResendClient() {
   return new Resend(apiKey);
 }
 
-export function getNotificationEmail(): string {
-  return process.env.INQUIRY_NOTIFICATION_EMAIL ?? "manuel.bauch0705@gmail.com";
+/** @deprecated Use resolveEmailSender() — kept for compatibility in tests */
+export async function getFromEmail(): Promise<string> {
+  const resolved = await resolveEmailSender();
+  return resolved.from;
 }
 
-export function getFromEmail(): string {
-  return process.env.RESEND_FROM_EMAIL ?? "onboarding@resend.dev";
+export async function getNotificationEmail(): Promise<string> {
+  const settings = await getEmailSettings();
+  return getNotificationEmailFromSettings(settings);
 }
 
 interface InquiryEmailData {
@@ -35,7 +46,9 @@ interface InquiryEmailData {
 
 export async function sendInquiryNotification(data: InquiryEmailData) {
   const resend = getResendClient();
-  const to = getNotificationEmail();
+  const emailSettings = await getEmailSettings();
+  const sender = await resolveEmailSender(emailSettings);
+  const to = getNotificationEmailFromSettings(emailSettings);
 
   const lines = [
     `Name: ${data.name}`,
@@ -51,8 +64,9 @@ export async function sendInquiryNotification(data: InquiryEmailData) {
   ].filter(Boolean);
 
   await resend.emails.send({
-    from: getFromEmail(),
+    from: sender.from,
     to,
+    replyTo: data.email,
     subject: `Neue Anfrage — ${data.eventType} (${data.name})`,
     text: `Neue Buchungsanfrage über die Website:\n\n${lines.join("\n")}`,
   });
@@ -67,9 +81,10 @@ interface CrmDocumentEmailOptions {
   pdfBuffer: Uint8Array;
   copyToBusiness?: boolean;
   company?: BusinessProfile;
+  sender?: ResolvedEmailSender;
 }
 
-function buildCrmEmailHtml(opts: CrmDocumentEmailOptions): string {
+function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): string {
   const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
   const company = opts.company;
   const brand = "#52563e";
@@ -82,7 +97,7 @@ function buildCrmEmailHtml(opts: CrmDocumentEmailOptions): string {
     <tr><td align="center">
       <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
         <tr><td style="background:${brand};padding:24px 28px;">
-          <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">${company?.companyName ?? "Panda-Bande Kinderevents"}</p>
+          <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">${companyName}</p>
           <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,.85);">${label} ${opts.documentNumber}</p>
         </td></tr>
         <tr><td style="padding:28px;">
@@ -96,12 +111,12 @@ function buildCrmEmailHtml(opts: CrmDocumentEmailOptions): string {
               <p style="margin:6px 0 0;font-size:24px;font-weight:700;color:${brand};">${opts.totalFormatted}</p>
             </td></tr>
           </table>
-          <p style="margin:0 0 8px;font-size:13px;color:#666;">📎 PDF-Anhang: <strong>${opts.documentNumber}.pdf</strong></p>
+          <p style="margin:0 0 8px;font-size:13px;color:#666;">PDF-Anhang: <strong>${opts.documentNumber}.pdf</strong></p>
           <p style="margin:0;font-size:14px;line-height:1.6;">Bei Fragen melden Sie sich gerne.</p>
         </td></tr>
         <tr><td style="padding:20px 28px;border-top:1px solid #ece8df;background:#faf9f6;">
           <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${brand};">Mit freundlichen Grüßen</p>
-          <p style="margin:0;font-size:13px;color:#555;">${company?.companyName ?? "Panda-Bande Kinderevents"}</p>
+          <p style="margin:0;font-size:13px;color:#555;">${companyName}</p>
           ${company?.website ? `<p style="margin:8px 0 0;font-size:12px;color:#888;"><a href="${company.website}" style="color:${brand};">${company.website}</a></p>` : ""}
           ${company?.phone || company?.email ? `<p style="margin:4px 0 0;font-size:12px;color:#888;">${[company.phone, company.email].filter(Boolean).join(" · ")}</p>` : ""}
         </td></tr>
@@ -113,9 +128,11 @@ function buildCrmEmailHtml(opts: CrmDocumentEmailOptions): string {
 
 export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
   const resend = getResendClient();
+  const emailSettings = await getEmailSettings();
+  const sender = opts.sender ?? (await resolveEmailSender(emailSettings));
   const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
   const filename = `${opts.documentNumber}.pdf`;
-  const companyName = opts.company?.companyName ?? "Panda-Bande Kinderevents";
+  const companyName = opts.company?.companyName ?? emailSettings.companyName;
 
   const text = `Guten Tag ${opts.customerName},
 
@@ -127,32 +144,72 @@ Bei Fragen melden Sie sich gerne.
 
 Mit freundlichen Grüßen
 ${companyName}
-${opts.company?.website ?? "https://panda-bande-events.de"}`;
+${opts.company?.website ?? ""}`.trim();
 
   const attachment = {
     filename,
     content: Buffer.from(opts.pdfBuffer),
   };
 
-  const from = opts.company?.senderEmail ? `${opts.company.senderName} <${getFromEmail()}>` : getFromEmail();
-
   await resend.emails.send({
-    from,
+    from: sender.from,
     to: opts.to,
+    replyTo: sender.replyTo,
     subject: `${label} ${opts.documentNumber} — ${companyName}`,
     text,
-    html: buildCrmEmailHtml(opts),
+    html: buildCrmEmailHtml(opts, companyName),
     attachments: [attachment],
   });
 
   if (opts.copyToBusiness) {
+    const notificationTo = getNotificationEmailFromSettings(emailSettings);
     await resend.emails.send({
-      from,
-      to: getNotificationEmail(),
+      from: sender.from,
+      to: notificationTo,
+      replyTo: sender.replyTo,
       subject: `[Kopie] ${label} ${opts.documentNumber} an ${opts.customerName}`,
       text: `Kopie des versendeten Dokuments ${opts.documentNumber} an ${opts.to}.\n\n${text}`,
-      html: buildCrmEmailHtml(opts),
+      html: buildCrmEmailHtml(opts, companyName),
       attachments: [attachment],
     });
   }
+}
+
+export async function sendTestEmail(to: string) {
+  const resend = getResendClient();
+  const emailSettings = await getEmailSettings();
+  const sender = await resolveEmailSender(emailSettings);
+  const companyName = emailSettings.companyName;
+
+  const text = `Dies ist eine Test-E-Mail von ${companyName}.
+
+Absender: ${sender.displayFrom}
+Reply-To: ${sender.replyTo}
+Domain-Status: ${sender.domainStatus}
+${sender.usesTestDomain ? "Hinweis: Es wird die Resend-Testdomain verwendet." : "Ihre verifizierte Domain wird verwendet."}
+
+Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
+
+  const html = `<!DOCTYPE html><html lang="de"><body style="font-family:Helvetica,Arial,sans-serif;padding:24px;color:#2c2c2c;">
+    <h1 style="color:#52563e;font-size:20px;">Test-E-Mail — ${companyName}</h1>
+    <p>Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
+    <table style="background:#f8f7f4;border-radius:12px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
+      <tr><td><strong>Absender:</strong> ${sender.displayFrom}</td></tr>
+      <tr><td><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
+      <tr><td><strong>Domain-Status:</strong> ${sender.domainStatus}</td></tr>
+    </table>
+    ${sender.usesTestDomain ? '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:8px;">Momentan wird die Resend-Testdomain verwendet.</p>' : '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">Ihre verifizierte Domain wird verwendet.</p>'}
+    <p style="color:#888;font-size:13px;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>
+  </body></html>`;
+
+  await resend.emails.send({
+    from: sender.from,
+    to,
+    replyTo: sender.replyTo,
+    subject: `Test-E-Mail — ${companyName}`,
+    text,
+    html,
+  });
+
+  return { sender, companyName };
 }

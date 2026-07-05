@@ -1,5 +1,7 @@
 import { type Service } from "@/lib/services";
 import { ICON_STROKE } from "@/lib/design";
+import type { SiteSectionHeading } from "@/lib/cms/types";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
@@ -7,19 +9,20 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface ServicesProps {
   items?: Service[];
+  heading?: SiteSectionHeading;
 }
 
-export function Services({ items }: ServicesProps) {
+export function Services({
+  items,
+  heading = DEFAULT_SITE_SETTINGS.sections.services,
+}: ServicesProps) {
   if (!items?.length) return null;
 
   return (
-    <section id="leistungen" className="scroll-mt-24 section-padding bg-bg-primary">
+    <section id="leistungen" className="section-padding bg-bg-primary">
       <Container>
         <ScrollReveal>
-          <SectionHeading
-            title="Unsere Leistungen"
-            subtitle="Von der Hochzeit bis zum Kindergeburtstag — wir gestalten unvergessliche Momente."
-          />
+          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
         </ScrollReveal>
 
         <div className="swipe-bleed md:mx-0 md:px-0">

@@ -46,7 +46,7 @@ export function ServicesView() {
         title: "Neue Leistung",
         description: "Beschreibung...",
         sort_order: services.length,
-        visible: true,
+        visible: false,
       },
       "POST",
     );

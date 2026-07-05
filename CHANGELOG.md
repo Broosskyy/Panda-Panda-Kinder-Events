@@ -2,6 +2,18 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.3] — 2026-07-05
+
+### RC1 Blocker Fix — Public UI + Full CMS Control
+
+- **Header/Hero Mobile:** CSS-Variablen `--header-height` / `--header-offset`, globales `scroll-margin-top` auf `[id]`, Hero-Padding über Safe-Area — kein Clipping der Tagline mehr
+- **Mobile CTA:** Header-Button ab `md` sichtbar, kompakt „Anfragen“ bis `lg`, `whitespace-nowrap`, unter `md` ausgeblendet (Menü-CTA bleibt)
+- **Leistungen:** Platzhalter-Filter (`content-quality.ts`) — „Neue Leistung / Beschreibung…“ erscheint nicht öffentlich; Fallback auf Default-Leistungen; neue Admin-Leistungen starten als `visible: false`
+- **Full CMS Control:** Navigation, Branding/Logo, Trust Badges, USPs, Buchungsablauf, Sektions-Überschriften, Hero-Bild & Badge-Zitat im Admin bearbeitbar
+- **CMS-Fallback:** CMS-Daten haben Vorrang; Defaults nur bei leerem/ungültigem CMS; Platzhalter-Inhalte werden gefiltert
+- **Statistik:** Dashboard zeigt „Statistik noch nicht eingerichtet“ statt stiller Nullen bei fehlender Migration
+- Dokumentation: `docs/05_ROADMAP/RC1-Blocker-Report.md`
+
 ## [0.9.0-rc.2] — 2026-07-05
 
 ### RC2 Security & Privacy Sprint

@@ -2,13 +2,27 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { Calendar, Menu, X } from "lucide-react";
-import { navigation } from "@/lib/navigation";
+import { navigation as defaultNavigation } from "@/lib/navigation";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import type { SiteBrandingSettings, SiteNavItem, SiteNavigationSettings } from "@/lib/cms/types";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import { focusRing } from "@/lib/a11y";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 
-export function Header() {
+interface HeaderProps {
+  navigation?: SiteNavigationSettings;
+  branding?: SiteBrandingSettings;
+}
+
+export function Header({
+  navigation = DEFAULT_SITE_SETTINGS.navigation,
+  branding = DEFAULT_SITE_SETTINGS.branding,
+}: HeaderProps) {
+  const navItems: SiteNavItem[] =
+    navigation.items?.length > 0
+      ? navigation.items
+      : defaultNavigation.map((item) => ({ label: item.label, href: item.href }));
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const activeId = useActiveSection();
@@ -63,11 +77,12 @@ export function Header() {
         <div className="mx-auto flex min-h-16 items-center justify-between gap-2 px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:gap-4 md:px-12 md:py-3">
           <Logo
             size="large"
+            branding={branding}
             className={`shrink-0 sm:[&_img]:max-h-11 md:[&_img]:max-h-14 ${isMenuOpen ? "invisible" : ""}`}
           />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
-            {navigation.map((item) => {
+            {navItems.map((item) => {
               const id = item.href.replace("#", "");
               const isActive = activeId === id;
               return (
@@ -82,10 +97,11 @@ export function Header() {
             <Button
               href="#kontakt"
               size="default"
-              className="hidden shrink-0 px-4 text-sm shadow-lg sm:inline-flex sm:px-5 sm:text-[0.9375rem] lg:px-8"
-              icon={<Calendar className="h-4 w-4 shrink-0" aria-hidden />}
+              className="hidden shrink-0 whitespace-nowrap px-3 text-xs shadow-lg md:inline-flex md:gap-1.5 md:px-4 md:text-sm lg:px-6 lg:text-[0.9375rem]"
+              icon={<Calendar className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4" aria-hidden />}
             >
-              Jetzt anfragen
+              <span className="lg:hidden">{navigation.ctaLabelShort || "Anfragen"}</span>
+              <span className="hidden lg:inline">{navigation.ctaLabel || "Jetzt anfragen"}</span>
             </Button>
             <button
               ref={menuButtonRef}
@@ -122,7 +138,7 @@ export function Header() {
               <h2 id={`${menuId}-title`} className="sr-only">
                 Navigation
               </h2>
-              <Logo />
+              <Logo branding={branding} />
               <button
                 ref={closeButtonRef}
                 type="button"
@@ -134,7 +150,7 @@ export function Header() {
               </button>
             </div>
             <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-4" aria-label="Mobile Navigation">
-              {navigation.map((item) => {
+              {navItems.map((item) => {
                 const id = item.href.replace("#", "");
                 const isActive = activeId === id;
                 return (
@@ -161,7 +177,7 @@ export function Header() {
                 icon={<Calendar className="h-4 w-4" aria-hidden />}
                 onClick={closeMenu}
               >
-                Jetzt anfragen
+                {navigation.ctaLabel || "Jetzt anfragen"}
               </Button>
             </div>
           </div>

@@ -12,6 +12,78 @@ export interface SiteHeroSettings {
   subtitle: string;
   ctaPrimary: string;
   ctaSecondary: string;
+  imageUrl: string;
+  badgeQuote: string;
+}
+
+export interface SiteNavItem {
+  label: string;
+  href: string;
+}
+
+export interface SiteNavigationSettings {
+  items: SiteNavItem[];
+  ctaLabel: string;
+  ctaLabelShort: string;
+}
+
+export interface SiteBrandingSettings {
+  logoUrl: string;
+  logoAlt: string;
+  logoTextPrimary: string;
+  logoTextSecondary: string;
+}
+
+export interface CmsIconTextItem {
+  iconKey: string;
+  text: string;
+}
+
+export interface CmsUspItem {
+  iconKey: string;
+  title: string;
+  description: string;
+}
+
+export interface CmsProcessStepItem {
+  number: number;
+  title: string;
+  description: string;
+  iconKey: string;
+}
+
+export interface SiteTrustBadgesSettings {
+  items: CmsIconTextItem[];
+}
+
+export interface SiteUspsSettings {
+  title: string;
+  subtitle: string;
+  items: CmsUspItem[];
+}
+
+export interface SiteProcessSettings {
+  title: string;
+  subtitle: string;
+  speechBubble: string;
+  steps: CmsProcessStepItem[];
+}
+
+export interface SiteSectionHeading {
+  title: string;
+  subtitle: string;
+}
+
+export interface SiteSectionsSettings {
+  usps: SiteSectionHeading;
+  services: SiteSectionHeading;
+  process: SiteSectionHeading;
+  gallery: SiteSectionHeading;
+  testimonials: SiteSectionHeading;
+  about: SiteSectionHeading;
+  news: SiteSectionHeading;
+  faq: SiteSectionHeading;
+  contact: SiteSectionHeading;
 }
 
 export interface SiteContactSettings {
@@ -43,6 +115,12 @@ export interface SiteSettingsBundle {
   contact: SiteContactSettings;
   about: SiteAboutSettings;
   footer: SiteFooterSettings;
+  navigation: SiteNavigationSettings;
+  branding: SiteBrandingSettings;
+  trustBadges: SiteTrustBadgesSettings;
+  usps: SiteUspsSettings;
+  process: SiteProcessSettings;
+  sections: SiteSectionsSettings;
 }
 
 export interface CmsService {

@@ -4,7 +4,8 @@ import { useRef, useState } from "react";
 import Image from "next/image";
 import { BadgeCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { focusRing } from "@/lib/a11y";
-import type { PublicReview } from "@/lib/cms/types";
+import type { PublicReview, SiteSectionHeading } from "@/lib/cms/types";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { Card } from "@/components/ui/Card";
 import { ReviewForm } from "@/components/ui/ReviewForm";
 import { StarRating } from "@/components/ui/StarRating";
@@ -121,9 +122,13 @@ const DESKTOP_VISIBLE = 3;
 
 interface TestimonialsProps {
   reviews: PublicReview[];
+  heading?: SiteSectionHeading;
 }
 
-export function Testimonials({ reviews }: TestimonialsProps) {
+export function Testimonials({
+  reviews,
+  heading = DEFAULT_SITE_SETTINGS.sections.testimonials,
+}: TestimonialsProps) {
   const [desktopIndex, setDesktopIndex] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -137,13 +142,10 @@ export function Testimonials({ reviews }: TestimonialsProps) {
   const nextDesktop = () => setDesktopIndex((i) => Math.min(desktopMaxIndex, i + 1));
 
   return (
-    <section id="bewertungen" className="scroll-mt-24 section-padding section-warm">
+    <section id="bewertungen" className="section-padding section-warm">
       <Container>
         <ScrollReveal>
-          <SectionHeading
-            title="Das sagen Eltern"
-            subtitle="Echte Rückmeldungen — freigegeben nach Prüfung durch unser Team."
-          />
+          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
         </ScrollReveal>
 
         <RatingSummary reviews={reviews} />

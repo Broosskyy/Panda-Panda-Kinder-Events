@@ -1,7 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import type { CmsPost } from "@/lib/cms/types";
+import type { CmsPost, SiteSectionHeading } from "@/lib/cms/types";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
@@ -9,6 +10,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface NewsProps {
   posts: CmsPost[];
+  heading?: SiteSectionHeading;
 }
 
 function formatDate(dateStr: string | null) {
@@ -20,17 +22,17 @@ function formatDate(dateStr: string | null) {
   });
 }
 
-export function News({ posts }: NewsProps) {
+export function News({
+  posts,
+  heading = DEFAULT_SITE_SETTINGS.sections.news,
+}: NewsProps) {
   if (!posts.length) return null;
 
   return (
-    <section id="aktuelles" className="scroll-mt-24 section-padding bg-bg-primary">
+    <section id="aktuelles" className="section-padding bg-bg-primary">
       <Container>
         <ScrollReveal>
-          <SectionHeading
-            title="Aktuelles"
-            subtitle="Neuigkeiten, Tipps und Einblicke von der Panda-Bande."
-          />
+          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
         </ScrollReveal>
 
         <div className="swipe-bleed md:mx-0 md:px-0">

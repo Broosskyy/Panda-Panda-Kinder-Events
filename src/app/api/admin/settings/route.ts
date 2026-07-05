@@ -24,7 +24,18 @@ export async function PUT(request: Request) {
     value: SiteSettingsBundle[keyof SiteSettingsBundle];
   };
 
-  const validSections: (keyof SiteSettingsBundle)[] = ["hero", "contact", "about", "footer"];
+  const validSections: (keyof SiteSettingsBundle)[] = [
+    "hero",
+    "contact",
+    "about",
+    "footer",
+    "navigation",
+    "branding",
+    "trustBadges",
+    "usps",
+    "process",
+    "sections",
+  ];
   if (!validSections.includes(section)) {
     return NextResponse.json({ error: "Ungültige Sektion." }, { status: 400 });
   }

@@ -1,6 +1,6 @@
 import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import { ICON_STROKE } from "@/lib/design";
-import type { SiteContactSettings, SiteFooterSettings } from "@/lib/cms/types";
+import type { SiteContactSettings, SiteFooterSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { Card } from "@/components/ui/Card";
 import { InquiryForm } from "@/components/ui/InquiryForm";
@@ -12,6 +12,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 interface ContactProps {
   contact?: SiteContactSettings;
   footer?: SiteFooterSettings;
+  heading?: SiteSectionHeading;
 }
 
 function buildContactLinks(contact: SiteContactSettings) {
@@ -57,19 +58,17 @@ function buildContactLinks(contact: SiteContactSettings) {
 export function Contact({
   contact = DEFAULT_SITE_SETTINGS.contact,
   footer = DEFAULT_SITE_SETTINGS.footer,
+  heading = DEFAULT_SITE_SETTINGS.sections.contact,
 }: ContactProps) {
   const contactLinks = buildContactLinks(contact);
 
   return (
-    <section id="kontakt" className="relative scroll-mt-24 section-padding section-warm">
+    <section id="kontakt" className="relative section-padding section-warm">
       <FlowerOrnament className="absolute right-4 top-20 hidden h-28 w-28 opacity-25 lg:block" variant="right" />
 
       <Container>
         <ScrollReveal>
-          <SectionHeading
-            title="Jetzt unverbindlich anfragen"
-            subtitle="Erzählt uns von eurem Event — wir melden uns schnellstmöglich bei euch."
-          />
+          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
         </ScrollReveal>
 
         <div className="grid gap-10 sm:gap-12 lg:grid-cols-2 lg:gap-20">

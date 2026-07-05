@@ -2,6 +2,19 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.9] — 2026-07-05
+
+### Admin + CRM Final Control Sprint
+
+- Sidebar/Drawer: scrollbar mit `100dvh`, Body-Lock ohne Scroll-Sprung, Safe-Area
+- Mobile Bottom-Nav: 80px, größere Icons/Text, FAB-Clearance
+- Angebote-Formular: gruppiert (Kunde, Daten, Positionen, Rabatt/Steuern, Hinweise), Rabatt/MwSt. editierbar
+- PDF: professionelleres Layout, Kundenblock, größere Tabelle, Zahlungsinfo, Fußzeile
+- Unternehmensdaten: Straße, PLZ, Ort + Standardtexte für PDFs
+- E-Mail: Kopie-an, Angebots-/Rechnungs-Kopie, Kontaktformular-Empfänger, gewünschte Adressen
+- Team: neuer Admin-Bereich mit Rollen (Admin, Bearbeiter, Nur Lesen) — Auth vorbereitet
+- Dokumentation: `docs/EMAIL_DOMAIN_SETUP.md`, `docs/05_ROADMAP/ADMIN_CRM_EMAIL_FINAL_REPORT.md`
+
 ## [0.9.0-rc.8] — 2026-07-05
 
 ### E-Mail-System (Resend) — Produktionsreif

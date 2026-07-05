@@ -42,12 +42,23 @@ const emptyForm = () => ({
   items: [createEmptyLineItem()] as QuoteLineItemDraft[],
 });
 
+function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="admin-form-section">
+      <h3 className="admin-form-section-title">{title}</h3>
+      {children}
+    </div>
+  );
+}
+
 export function QuotesView() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [customers, setCustomers] = useState<CrmCustomer[]>([]);
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [discountInput, setDiscountInput] = useState("0");
+  const [taxInput, setTaxInput] = useState("19");
   const [sendTarget, setSendTarget] = useState<QuoteRow | null>(null);
   const [sendToCustomer, setSendToCustomer] = useState(true);
   const [copyToBusiness, setCopyToBusiness] = useState(true);
@@ -64,16 +75,33 @@ export function QuotesView() {
     fetch("/api/admin/customers").then((r) => r.json()).then((d) => setCustomers(d.customers ?? []));
   }, [search]);
 
+  const resetForm = () => {
+    setForm(emptyForm());
+    setDiscountInput("0");
+    setTaxInput("19");
+  };
+
+  const parsePercent = (value: string, fallback: number) => {
+    const trimmed = value.trim();
+    if (trimmed === "") return fallback;
+    const num = Number(trimmed.replace(",", "."));
+    if (Number.isNaN(num)) return fallback;
+    return Math.min(100, Math.max(0, num));
+  };
+
   const create = async () => {
     if (!form.customer_id) return toast("Bitte Kunde wählen", "error");
     if (!form.items.some((i) => i.title.trim())) return toast("Mindestens eine Position mit Bezeichnung erforderlich", "error");
+
+    const discount_percent = parsePercent(discountInput, 0);
+    const tax_rate = parsePercent(taxInput, 19);
 
     const payload = {
       customer_id: form.customer_id,
       title: form.title,
       remarks: form.remarks,
-      discount_percent: form.discount_percent,
-      tax_rate: form.tax_rate,
+      discount_percent,
+      tax_rate,
       status: "draft" as const,
       items: form.items.map(lineItemToApiPayload),
     };
@@ -87,7 +115,7 @@ export function QuotesView() {
     if (!res.ok) return toast(data.error ?? "Fehler", "error");
     toast("Angebot erstellt");
     setShowForm(false);
-    setForm(emptyForm());
+    resetForm();
     load();
   };
 
@@ -128,6 +156,9 @@ export function QuotesView() {
     [customers],
   );
 
+  const discountPercent = parsePercent(discountInput, 0);
+  const taxRate = parsePercent(taxInput, 19);
+
   return (
     <div className="space-y-6">
       <AdminPageHeader title="Angebote" description="Angebote erstellen, als PDF versenden und in Rechnungen umwandeln.">
@@ -142,7 +173,7 @@ export function QuotesView() {
 
       {showForm ? (
         <AdminCard title="Neues Angebot">
-          <div className="grid gap-4 md:grid-cols-2">
+          <FormSection title="Kunde">
             <AdminFormField label="Kunde" required>
               <AdminFilterSelect
                 value={form.customer_id}
@@ -150,6 +181,9 @@ export function QuotesView() {
                 options={customerOptions}
               />
             </AdminFormField>
+          </FormSection>
+
+          <FormSection title="Angebotsdaten">
             <AdminFormField label="Titel" required>
               <input
                 className="admin-input"
@@ -158,29 +192,46 @@ export function QuotesView() {
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
               />
             </AdminFormField>
-            <AdminFormField label="Rabatt (%)" hint="Rabatt optional">
-              <input
-                className="admin-input"
-                type="number"
-                min={0}
-                max={100}
-                placeholder="0"
-                value={form.discount_percent}
-                onChange={(e) => setForm({ ...form, discount_percent: Number(e.target.value) || 0 })}
-              />
-            </AdminFormField>
-            <AdminFormField label="MwSt. (%)" hint="MwSt. Standard 19 %">
-              <input
-                className="admin-input"
-                type="number"
-                min={0}
-                max={100}
-                placeholder="19"
-                value={form.tax_rate}
-                onChange={(e) => setForm({ ...form, tax_rate: Number(e.target.value) || 19 })}
-              />
-            </AdminFormField>
-            <AdminFormField label="Bemerkung" className="md:col-span-2">
+          </FormSection>
+
+          <FormSection title="Positionen">
+            <QuoteLineItemsEditor
+              items={form.items}
+              discountPercent={discountPercent}
+              taxRate={taxRate}
+              onChange={(items) => setForm({ ...form, items })}
+            />
+          </FormSection>
+
+          <FormSection title="Rabatt & Steuern">
+            <div className="grid gap-4 md:grid-cols-2">
+              <AdminFormField label="Rabatt (%)" hint="Standard: 0">
+                <input
+                  className="admin-input"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0"
+                  value={discountInput}
+                  onChange={(e) => setDiscountInput(e.target.value)}
+                  onBlur={() => setDiscountInput(String(parsePercent(discountInput, 0)))}
+                />
+              </AdminFormField>
+              <AdminFormField label="MwSt. (%)" hint="Standard: 19">
+                <input
+                  className="admin-input"
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="19"
+                  value={taxInput}
+                  onChange={(e) => setTaxInput(e.target.value)}
+                  onBlur={() => setTaxInput(String(parsePercent(taxInput, 19)))}
+                />
+              </AdminFormField>
+            </div>
+          </FormSection>
+
+          <FormSection title="Hinweise">
+            <AdminFormField label="Bemerkung">
               <textarea
                 className="admin-input min-h-20"
                 placeholder="Zusätzliche Hinweise für den Kunden…"
@@ -188,22 +239,13 @@ export function QuotesView() {
                 onChange={(e) => setForm({ ...form, remarks: e.target.value })}
               />
             </AdminFormField>
-          </div>
-
-          <div className="mt-6 border-t border-border pt-6">
-            <QuoteLineItemsEditor
-              items={form.items}
-              discountPercent={form.discount_percent}
-              taxRate={form.tax_rate}
-              onChange={(items) => setForm({ ...form, items })}
-            />
-          </div>
+          </FormSection>
 
           <div className="mt-6 flex flex-wrap gap-2">
             <AdminButton variant="primary" onClick={() => void withLoading(create())}>
               Angebot speichern
             </AdminButton>
-            <AdminButton variant="secondary" onClick={() => { setShowForm(false); setForm(emptyForm()); }}>
+            <AdminButton variant="secondary" onClick={() => { setShowForm(false); resetForm(); }}>
               Abbrechen
             </AdminButton>
           </div>

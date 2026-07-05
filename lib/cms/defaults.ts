@@ -124,6 +124,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   business: {
     companyName: siteConfig.name,
     logoUrl: siteConfig.assets.logo,
+    street: "",
+    zip: "",
+    city: "",
     address: siteConfig.contact.location,
     phone: siteConfig.contact.phone,
     email: siteConfig.contact.email,
@@ -147,6 +150,15 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     senderName: siteConfig.name,
     senderEmail: siteConfig.contact.email,
     replyTo: siteConfig.contact.email,
-    notificationEmail: siteConfig.contact.email,
+    copyToEmail: siteConfig.contact.email,
+    quoteCopyTo: siteConfig.contact.email,
+    invoiceCopyTo: siteConfig.contact.email,
+    inquiryRecipient: siteConfig.contact.email,
+    customAddresses: {
+      info: "info@",
+      kontakt: "kontakt@",
+      rechnung: "rechnung@",
+      angebote: "angebote@",
+    },
   },
 };

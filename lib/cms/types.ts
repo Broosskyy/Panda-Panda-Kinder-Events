@@ -110,17 +110,34 @@ export interface SiteFooterSettings {
   copyrightName: string;
 }
 
+export interface SiteEmailCustomAddresses {
+  info: string;
+  kontakt: string;
+  rechnung: string;
+  angebote: string;
+}
+
 export interface SiteEmailSettings {
   companyName: string;
   senderName: string;
   senderEmail: string;
   replyTo: string;
-  notificationEmail: string;
+  copyToEmail: string;
+  quoteCopyTo: string;
+  invoiceCopyTo: string;
+  inquiryRecipient: string;
+  customAddresses: SiteEmailCustomAddresses;
+  /** @deprecated use inquiryRecipient */
+  notificationEmail?: string;
 }
 
 export interface SiteBusinessSettings {
   companyName: string;
   logoUrl: string;
+  street: string;
+  zip: string;
+  city: string;
+  /** Legacy combined address — derived from street/zip/city when empty */
   address: string;
   phone: string;
   email: string;
@@ -135,8 +152,22 @@ export interface SiteBusinessSettings {
   defaultQuoteText: string;
   defaultInvoiceText: string;
   defaultPaymentText: string;
+  /** @deprecated use email settings */
   senderName: string;
+  /** @deprecated use email settings */
   senderEmail: string;
+}
+
+export type TeamMemberRole = "admin" | "editor" | "readonly";
+
+export interface TeamMember {
+  id: string;
+  name: string;
+  email: string;
+  role: TeamMemberRole;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface SiteSettingsBundle {

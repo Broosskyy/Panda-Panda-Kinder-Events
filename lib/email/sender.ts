@@ -1,5 +1,6 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
 import type { SiteEmailSettings } from "@/lib/cms/types";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 
 export const RESEND_TEST_FROM = "onboarding@resend.dev";
 
@@ -28,23 +29,38 @@ function isResendTestDomain(email: string): boolean {
   return email.toLowerCase().endsWith("@resend.dev");
 }
 
-export async function getEmailSettings(): Promise<SiteEmailSettings> {
-  const settings = await fetchSiteSettings();
-  const email = settings.email;
-  const business = settings.business;
-  const contact = settings.contact;
+function mergeEmailSettings(raw: SiteEmailSettings, contactEmail: string): SiteEmailSettings {
+  const defaults = DEFAULT_SITE_SETTINGS.email;
+  const customAddresses = {
+    ...defaults.customAddresses,
+    ...(raw.customAddresses ?? {}),
+  };
+
+  const inquiryRecipient =
+    raw.inquiryRecipient ||
+    raw.notificationEmail ||
+    process.env.INQUIRY_NOTIFICATION_EMAIL ||
+    raw.copyToEmail ||
+    raw.replyTo ||
+    contactEmail;
 
   return {
-    companyName: email.companyName || business.companyName || settings.footer.copyrightName,
-    senderName: email.senderName || business.senderName || email.companyName,
-    senderEmail: email.senderEmail || business.senderEmail || contact.email,
-    replyTo: email.replyTo || email.senderEmail || business.senderEmail || contact.email,
-    notificationEmail:
-      email.notificationEmail ||
-      process.env.INQUIRY_NOTIFICATION_EMAIL ||
-      email.replyTo ||
-      contact.email,
+    companyName: raw.companyName || defaults.companyName,
+    senderName: raw.senderName || defaults.senderName,
+    senderEmail: raw.senderEmail || defaults.senderEmail,
+    replyTo: raw.replyTo || raw.senderEmail || contactEmail,
+    copyToEmail: raw.copyToEmail || inquiryRecipient,
+    quoteCopyTo: raw.quoteCopyTo || raw.copyToEmail || inquiryRecipient,
+    invoiceCopyTo: raw.invoiceCopyTo || raw.copyToEmail || inquiryRecipient,
+    inquiryRecipient,
+    customAddresses,
+    notificationEmail: raw.notificationEmail,
   };
+}
+
+export async function getEmailSettings(): Promise<SiteEmailSettings> {
+  const settings = await fetchSiteSettings();
+  return mergeEmailSettings(settings.email, settings.contact.email);
 }
 
 export async function checkResendDomainStatus(senderEmail: string): Promise<EmailDomainCheck> {
@@ -103,7 +119,7 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
       return {
         status: "test",
         domain,
-        message: `Domain „${domain}“ ist in Resend nicht hinterlegt. Testdomain wird verwendet.`,
+        message: `Domain „${domain}" ist in Resend nicht hinterlegt. Testdomain wird verwendet.`,
       };
     }
 
@@ -111,7 +127,7 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
       return {
         status: "verified",
         domain: match.name,
-        message: `Domain „${match.name}“ ist verifiziert.`,
+        message: `Domain „${match.name}" ist verifiziert.`,
       };
     }
 
@@ -119,14 +135,14 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
       return {
         status: "failed",
         domain: match.name,
-        message: `Domain „${match.name}“ — Verifizierung fehlgeschlagen (${match.status}).`,
+        message: `Domain „${match.name}" — Verifizierung fehlgeschlagen (${match.status}).`,
       };
     }
 
     return {
       status: "pending",
       domain: match.name,
-      message: `Domain „${match.name}“ — Verifizierung ausstehend (${match.status}).`,
+      message: `Domain „${match.name}" — Verifizierung ausstehend (${match.status}).`,
     };
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unbekannter Fehler";
@@ -166,6 +182,23 @@ export async function resolveEmailSender(settings?: SiteEmailSettings): Promise<
   };
 }
 
+export function getInquiryRecipient(settings: SiteEmailSettings): string {
+  return (
+    settings.inquiryRecipient ||
+    settings.notificationEmail ||
+    process.env.INQUIRY_NOTIFICATION_EMAIL ||
+    settings.copyToEmail ||
+    settings.replyTo
+  );
+}
+
+export function getCopyEmailForDocument(settings: SiteEmailSettings, type: "quote" | "invoice"): string {
+  if (type === "quote" && settings.quoteCopyTo?.trim()) return settings.quoteCopyTo.trim();
+  if (type === "invoice" && settings.invoiceCopyTo?.trim()) return settings.invoiceCopyTo.trim();
+  return settings.copyToEmail?.trim() || getInquiryRecipient(settings);
+}
+
+/** @deprecated use getInquiryRecipient or getCopyEmailForDocument */
 export function getNotificationEmailFromSettings(settings: SiteEmailSettings): string {
-  return settings.notificationEmail || process.env.INQUIRY_NOTIFICATION_EMAIL || settings.replyTo;
+  return getInquiryRecipient(settings);
 }

@@ -20,6 +20,8 @@ function emptyDashboard(): AdminAnalyticsDashboard {
     reviews: { total: 0, pending: 0, approved: 0 },
     galleryCount: 0,
     postsCount: 0,
+    servicesCount: 0,
+    faqsCount: 0,
     trackingEnabled: false,
     trackingTableReady: false,
   };
@@ -232,6 +234,8 @@ export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDash
       reviewsApproved,
       galleryCount,
       postsCount,
+      servicesCount,
+      faqsCount,
     ] = await Promise.all([
       distinctSessions(),
       distinctSessions(todayStart),
@@ -252,6 +256,8 @@ export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDash
       supabase.from("reviews").select("id", { count: "exact", head: true }).eq("approved", true),
       supabase.from("gallery_images").select("id", { count: "exact", head: true }),
       supabase.from("cms_posts").select("id", { count: "exact", head: true }),
+      supabase.from("cms_services").select("id", { count: "exact", head: true }),
+      supabase.from("cms_faqs").select("id", { count: "exact", head: true }),
     ]);
 
     return {
@@ -282,6 +288,8 @@ export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDash
       },
       galleryCount: galleryCount.count ?? 0,
       postsCount: postsCount.count ?? 0,
+      servicesCount: servicesCount.count ?? 0,
+      faqsCount: faqsCount.count ?? 0,
       trackingEnabled: true,
       trackingTableReady: tableReady,
     };

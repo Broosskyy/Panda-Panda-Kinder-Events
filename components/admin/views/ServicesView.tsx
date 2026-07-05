@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { SERVICE_ICON_KEYS } from "@/lib/cms/icons";
+import { Plus, Sparkles } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 
 interface ServiceRow {
@@ -54,26 +56,31 @@ export function ServicesView() {
   return (
     <div>
       <AdminPageHeader title="Leistungen" description="Services auf der Website verwalten">
-        <button
-          type="button"
-          onClick={addNew}
-          className="min-h-11 rounded-full bg-primary px-6 text-sm font-medium text-white"
-        >
-          + Neue Leistung
-        </button>
+        <AdminButton variant="primary" onClick={addNew} icon={<Plus className="h-4 w-4" />}>
+          Neue Leistung
+        </AdminButton>
       </AdminPageHeader>
       <div className="space-y-4">
+        {services.length === 0 ? (
+          <AdminEmptyState
+            icon={Sparkles}
+            title="Noch keine CMS-Leistungen"
+            description="Die Website zeigt Standard-Leistungen. Lege eigene Leistungen an, um sie zu überschreiben."
+            actionLabel="Erste Leistung anlegen"
+            onAction={addNew}
+          />
+        ) : null}
         {services.map((s) => (
           <AdminCard key={s.id}>
             <div className="grid gap-3 sm:grid-cols-2">
               <input
                 defaultValue={s.title}
-                className="rounded-lg border border-border px-3 py-2 text-sm font-semibold"
+                className="admin-input font-semibold"
                 onBlur={(e) => e.target.value !== s.title && save({ id: s.id, title: e.target.value }, "PATCH")}
               />
               <select
                 defaultValue={s.icon_key}
-                className="rounded-lg border border-border px-3 py-2 text-sm"
+                className="admin-input"
                 onChange={(e) => save({ id: s.id, icon_key: e.target.value }, "PATCH")}
               >
                 {SERVICE_ICON_KEYS.map((k) => (
@@ -85,7 +92,7 @@ export function ServicesView() {
               <textarea
                 defaultValue={s.description}
                 rows={2}
-                className="sm:col-span-2 rounded-lg border border-border px-3 py-2 text-sm"
+                className="admin-input sm:col-span-2 min-h-20"
                 onBlur={(e) =>
                   e.target.value !== s.description && save({ id: s.id, description: e.target.value }, "PATCH")
                 }
@@ -102,7 +109,7 @@ export function ServicesView() {
                 <input
                   type="number"
                   defaultValue={s.sort_order}
-                  className="w-20 rounded-lg border border-border px-2 py-1 text-sm"
+                  className="admin-input w-20"
                   title="Reihenfolge"
                   onBlur={(e) =>
                     save({ id: s.id, sort_order: parseInt(e.target.value, 10) }, "PATCH")
@@ -111,7 +118,7 @@ export function ServicesView() {
                 <button
                   type="button"
                   onClick={() => confirm("Löschen?") && save({ id: s.id }, "DELETE")}
-                  className="text-xs text-accent-heart underline"
+                  className="admin-btn-danger text-xs"
                 >
                   Löschen
                 </button>
@@ -119,12 +126,6 @@ export function ServicesView() {
             </div>
           </AdminCard>
         ))}
-        {services.length === 0 && (
-          <p className="text-text-muted">
-            Noch keine CMS-Leistungen — Website zeigt Standard-Leistungen. Neue Leistung anlegen
-            um zu überschreiben.
-          </p>
-        )}
       </div>
     </div>
   );

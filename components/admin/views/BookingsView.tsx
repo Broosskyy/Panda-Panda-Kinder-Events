@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import type { BookingStatus } from "@/lib/supabase/admin";
+import { Inbox } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
@@ -74,30 +76,25 @@ export function BookingsView() {
   return (
     <div>
       <AdminPageHeader title="Anfragen" description="Alle Buchungsanfragen verwalten" />
-      <div className="mb-4 flex flex-wrap gap-3">
-        <input
-          type="search"
-          placeholder="Suchen..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="min-h-11 flex-1 rounded-xl border border-border px-4 text-sm sm:max-w-xs"
-        />
-        <select
+      <AdminFilterBar>
+        <AdminSearchInput value={search} onChange={setSearch} placeholder="Name, E-Mail oder Event suchen…" />
+        <AdminFilterSelect
           value={filter}
-          onChange={(e) => setFilter(e.target.value)}
-          className="min-h-11 rounded-xl border border-border px-4 text-sm"
-        >
-          <option value="">Alle Status</option>
-          {Object.entries(STATUS_LABELS).map(([v, l]) => (
-            <option key={v} value={v}>
-              {l}
-            </option>
-          ))}
-        </select>
-      </div>
+          onChange={setFilter}
+          label="Status filtern"
+          options={[
+            { value: "", label: "Alle Status" },
+            ...Object.entries(STATUS_LABELS).map(([value, label]) => ({ value, label })),
+          ]}
+        />
+      </AdminFilterBar>
       <div className="space-y-4">
         {filtered.length === 0 ? (
-          <p className="text-text-muted">Keine Anfragen gefunden.</p>
+          <AdminEmptyState
+            icon={Inbox}
+            title="Keine Anfragen gefunden"
+            description={bookings.length === 0 ? "Sobald jemand das Kontaktformular nutzt, erscheinen Anfragen hier." : "Passe Suche oder Filter an."}
+          />
         ) : (
           filtered.map((b) => (
             <AdminCard key={b.id}>
@@ -111,7 +108,7 @@ export function BookingsView() {
                 <select
                   value={b.status}
                   onChange={(e) => update(b.id, { status: e.target.value as BookingStatus })}
-                  className="min-h-10 rounded-lg border border-border px-3 text-sm"
+                  className="admin-input"
                 >
                   {Object.entries(STATUS_LABELS).map(([v, l]) => (
                     <option key={v} value={v}>
@@ -136,7 +133,7 @@ export function BookingsView() {
                 <textarea
                   defaultValue={b.admin_notes ?? ""}
                   rows={2}
-                  className="w-full rounded-xl border border-border px-3 py-2 text-sm"
+                  className="admin-input min-h-20"
                   onBlur={(e) => {
                     if (e.target.value !== (b.admin_notes ?? "")) {
                       update(b.id, { admin_notes: e.target.value });

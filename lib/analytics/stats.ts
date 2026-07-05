@@ -1,5 +1,6 @@
 import { unstable_noStore as noStore } from "next/cache";
 import { berlinTodayStartIso } from "@/lib/analytics/berlin-time";
+import { fetchCrmDashboardStats } from "@/lib/crm/events";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import type { AdminAnalyticsDashboard, DailyStat, TopPage } from "./types";
 
@@ -24,6 +25,7 @@ function emptyDashboard(): AdminAnalyticsDashboard {
     faqsCount: 0,
     trackingEnabled: false,
     trackingTableReady: false,
+    crm: { customersCount: 0, openQuotesCount: 0, openInvoicesCount: 0, revenueCents: 0 },
   };
 }
 
@@ -236,6 +238,7 @@ export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDash
       postsCount,
       servicesCount,
       faqsCount,
+      crm,
     ] = await Promise.all([
       distinctSessions(),
       distinctSessions(todayStart),
@@ -258,6 +261,12 @@ export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDash
       supabase.from("cms_posts").select("id", { count: "exact", head: true }),
       supabase.from("cms_services").select("id", { count: "exact", head: true }),
       supabase.from("cms_faqs").select("id", { count: "exact", head: true }),
+      fetchCrmDashboardStats().catch(() => ({
+        customersCount: 0,
+        openQuotesCount: 0,
+        openInvoicesCount: 0,
+        revenueCents: 0,
+      })),
     ]);
 
     return {
@@ -292,6 +301,7 @@ export async function fetchAdminAnalyticsDashboard(): Promise<AdminAnalyticsDash
       faqsCount: faqsCount.count ?? 0,
       trackingEnabled: true,
       trackingTableReady: tableReady,
+      crm,
     };
   } catch (err) {
     console.error("fetchAdminAnalyticsDashboard:", err);

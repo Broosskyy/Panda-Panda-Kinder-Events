@@ -1,15 +1,18 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  FileText,
   HelpCircle,
   Home,
   Image,
   Inbox,
   Layout,
   Newspaper,
+  Receipt,
   Settings,
   Sparkles,
   Star,
+  Users,
 } from "lucide-react";
 
 export interface AdminNavItem {
@@ -23,6 +26,9 @@ export const ADMIN_NAV: AdminNavItem[] = [
   { href: "/admin", label: "Dashboard", icon: Home },
   { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/admin/anfragen", label: "Anfragen", icon: Inbox },
+  { href: "/admin/kunden", label: "Kunden", icon: Users, mobileLabel: "Kunden" },
+  { href: "/admin/angebote", label: "Angebote", icon: FileText },
+  { href: "/admin/rechnungen", label: "Rechnungen", icon: Receipt },
   { href: "/admin/bewertungen", label: "Bewertungen", icon: Star },
   { href: "/admin/galerie", label: "Galerie", icon: Image },
   { href: "/admin/beitraege", label: "Beiträge", icon: Newspaper },

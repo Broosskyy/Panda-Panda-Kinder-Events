@@ -1,10 +1,12 @@
-import type { ButtonHTMLAttributes, ReactNode } from "react";
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
 
 type AdminButtonVariant = "primary" | "secondary" | "danger" | "ghost";
 
 interface AdminButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: AdminButtonVariant;
   href?: string;
+  target?: AnchorHTMLAttributes<HTMLAnchorElement>["target"];
+  rel?: AnchorHTMLAttributes<HTMLAnchorElement>["rel"];
   icon?: ReactNode;
   children: ReactNode;
 }
@@ -19,6 +21,8 @@ const variantClass: Record<AdminButtonVariant, string> = {
 export function AdminButton({
   variant = "primary",
   href,
+  target,
+  rel,
   icon,
   className = "",
   children,
@@ -28,7 +32,12 @@ export function AdminButton({
 
   if (href) {
     return (
-      <a href={href} className={classes}>
+      <a
+        href={href}
+        className={classes}
+        target={target}
+        rel={rel ?? (target === "_blank" ? "noopener noreferrer" : undefined)}
+      >
         {icon}
         {children}
       </a>

@@ -67,6 +67,8 @@ export interface ReferrerRow {
   views: number;
 }
 
+import type { CrmDashboardStats } from "@/lib/crm/types";
+
 export interface AdminAnalyticsDashboard {
   visitors: VisitorStats;
   pageViews: PageViewStats;
@@ -81,6 +83,7 @@ export interface AdminAnalyticsDashboard {
   faqsCount: number;
   trackingEnabled: boolean;
   trackingTableReady: boolean;
+  crm: CrmDashboardStats;
 }
 
 export interface FullAnalyticsDashboard extends AdminAnalyticsDashboard {

@@ -2,6 +2,22 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.5] — 2026-07-05
+
+### Sprint 3 — Business CRM
+
+- Schlankes CRM für kleine Unternehmen: Kunden, Angebote, Rechnungen
+- Navigation: Kunden, Angebote, Rechnungen im Admin
+- Kundenstamm mit Historie (Anfragen, Angebote, Rechnungen, Events)
+- Anfragen: „Kunde erstellen" mit einem Klick aus Kontaktformular
+- Angebote: Positionen, MwSt., Rabatt, PDF (Corporate Design), E-Mail-Versand
+- Rechnungen: aus Angebot erzeugen, Nummernkreis (ANG-/RE-), PDF, Versand
+- Status: Entwurf, Gesendet, Bestätigt, Bezahlt, Offen, Storniert
+- Dashboard-KPIs: Kunden, offene Angebote/Rechnungen, Umsatz
+- Migration `20260707_crm_business.sql`
+- Tests: `npm run test:crm`, Build, Lint
+- Dokumentation: `docs/05_ROADMAP/CRM_REPORT.md`
+
 ## [0.9.0-rc.4] — 2026-07-05
 
 ### Sprint 1 — Admin Dashboard UX 2.0

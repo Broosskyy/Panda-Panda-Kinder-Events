@@ -2,6 +2,15 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.7] — 2026-07-05
+
+### Stable Project Checkpoint
+
+- Verifizierter stabiler Arbeitsstand nach Live-Cleanup-Sprint (PR #18 gemerged)
+- `npm run lint` und `npm run build` bestanden
+- Checkpoint-Dokumentation: `docs/05_ROADMAP/STABLE_CHECKPOINT.md`
+- Nächster Sprint vorbereitet: Branch `feature/pixel-perfect-p1`
+
 ## [0.8.6] — 2026-07-05
 
 ### Live Website Cleanup — CMS-Konsistenz

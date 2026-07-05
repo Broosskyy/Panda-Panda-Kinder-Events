@@ -15,6 +15,7 @@ const SECTION_LABELS: Record<keyof SiteSettingsBundle["sections"], string> = {
   gallery: "Galerie",
   testimonials: "Bewertungen",
   about: "Über uns",
+  team: "Team",
   news: "Aktuelles",
   faq: "FAQ",
   contact: "Kontakt",

@@ -14,6 +14,9 @@ export interface Service {
   icon: LucideIcon;
   title: string;
   description: string;
+  detailText?: string;
+  imageUrl?: string;
+  buttonLabel?: string;
 }
 
 export const services: Service[] = [
@@ -21,6 +24,9 @@ export const services: Service[] = [
     icon: Paintbrush,
     title: "Kinderschminken",
     description: "Kreative Schmink-Designs für jedes Kinderherz — von Tigern bis zu Prinzessinnen.",
+    detailText:
+      "Unsere Betreuerinnen verwandeln Kinder in ihre Lieblingsfiguren — mit hautfreundlichen Farben, liebevoll und altersgerecht. Ideal für Geburtstage, Hochzeiten und Feste.",
+    buttonLabel: "Mehr erfahren",
   },
   {
     icon: Heart,

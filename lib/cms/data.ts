@@ -148,6 +148,12 @@ function buildSettingsFromRows(
       byKey.has("business"),
     ),
     email: cmsSection("email", DEFAULT_SITE_SETTINGS.email, byKey.get("email"), byKey.has("email")),
+    publicTeam: cmsSection(
+      "publicTeam",
+      DEFAULT_SITE_SETTINGS.publicTeam,
+      byKey.get("publicTeam"),
+      byKey.has("publicTeam"),
+    ),
   };
 }
 
@@ -218,6 +224,9 @@ async function queryCmsServices(): Promise<Service[]> {
       icon: resolveServiceIcon(s.icon_key),
       title: s.title.trim(),
       description: s.description.trim(),
+      detailText: s.detail_text?.trim() || s.description.trim(),
+      imageUrl: s.image_url?.trim() || undefined,
+      buttonLabel: s.button_label?.trim() || "Mehr erfahren",
     }));
 }
 
@@ -279,7 +288,7 @@ export async function fetchCmsFaqs(): Promise<{ question: string; answer: string
   }
 }
 
-async function queryGalleryImages(): Promise<{ src: string; alt: string }[]> {
+async function queryGalleryImages(): Promise<{ src: string; alt: string; category: string }[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("gallery_images")
@@ -292,18 +301,22 @@ async function queryGalleryImages(): Promise<{ src: string; alt: string }[]> {
   return (data as GalleryImageRecord[])
     .map((img) => ({
       src: resolveImageUrl("gallery", img.storage_path) ?? "",
-      alt: img.alt_text?.trim() || img.title?.trim() || "Galeriebild",
+      alt: img.alt_text?.trim() || img.title?.trim() || "Galeriebild Panda-Bande",
+      category: img.category?.trim() || "Sonstiges",
     }))
     .filter((img) => img.src);
 }
 
-export async function fetchGalleryImages(): Promise<{ src: string; alt: string }[]> {
+export async function fetchGalleryImages(): Promise<{ src: string; alt: string; category: string }[]> {
   noStore();
-  if (!isSupabaseConfigured()) return staticGallery;
+  const withCategory = (images: { src: string; alt: string; category?: string }[]) =>
+    images.map((img) => ({ ...img, category: img.category ?? "Sonstiges" }));
+
+  if (!isSupabaseConfigured()) return withCategory(staticGallery);
 
   try {
     const hasCms = await tableHasRows("gallery_images");
-    if (!hasCms) return staticGallery;
+    if (!hasCms) return withCategory(staticGallery);
 
     try {
       return await queryGalleryImages();
@@ -314,7 +327,7 @@ export async function fetchGalleryImages(): Promise<{ src: string; alt: string }
   } catch (err) {
     console.error("fetchGalleryImages:", err);
     const hasCms = await tableHasRows("gallery_images").catch(() => false);
-    return hasCms ? [] : staticGallery;
+    return hasCms ? [] : withCategory(staticGallery);
   }
 }
 

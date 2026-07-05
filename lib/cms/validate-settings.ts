@@ -23,6 +23,7 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   usps: ["title", "subtitle"],
   process: ["title", "subtitle", "speechBubble"],
   sections: [],
+  publicTeam: ["title", "subtitle"],
   business: ["companyName", "email"],
   email: ["senderName", "senderEmail", "replyTo"],
 };
@@ -106,6 +107,23 @@ function validateArraySection(
     return { ok: true, value: value as SiteSettingsBundle["process"] };
   }
 
+  if (section === "publicTeam") {
+    const items = obj.items;
+    if (!hasNonEmptyItems(items)) {
+      return { ok: false, error: "Mindestens ein Teammitglied erforderlich." };
+    }
+    const missing = REQUIRED_FIELDS.publicTeam.filter((field) => !String(obj[field] ?? "").trim());
+    if (missing.length > 0) {
+      return { ok: false, error: `Pflichtfelder fehlen: ${missing.join(", ")}` };
+    }
+    for (const member of items as { name?: string; role?: string; description?: string }[]) {
+      if (!String(member.name ?? "").trim() || !String(member.role ?? "").trim()) {
+        return { ok: false, error: "Alle Teammitglieder brauchen Name und Rolle." };
+      }
+    }
+    return { ok: true, value: value as SiteSettingsBundle["publicTeam"] };
+  }
+
   if (section === "sections") {
     const sections = obj as unknown as SiteSettingsBundle["sections"];
     for (const [key, heading] of Object.entries(sections)) {
@@ -130,7 +148,7 @@ export function validateSiteSettingsSection(
     return { ok: false, error: "Ungültige Daten." };
   }
 
-  if (["navigation", "trustBadges", "usps", "process", "sections"].includes(section)) {
+  if (["navigation", "trustBadges", "usps", "process", "sections", "publicTeam"].includes(section)) {
     return validateArraySection(section, value);
   }
 

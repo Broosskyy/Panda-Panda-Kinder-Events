@@ -83,6 +83,7 @@ export interface SiteSectionsSettings {
   about: SiteSectionHeading;
   news: SiteSectionHeading;
   faq: SiteSectionHeading;
+  team: SiteSectionHeading;
   contact: SiteSectionHeading;
 }
 
@@ -92,7 +93,22 @@ export interface SiteContactSettings {
   whatsapp: string;
   instagram: string;
   instagramHandle: string;
+  facebook: string;
   location: string;
+  mapsUrl: string;
+}
+
+export interface PublicTeamMemberItem {
+  name: string;
+  role: string;
+  description: string;
+  imageUrl: string;
+}
+
+export interface SitePublicTeamSettings {
+  title: string;
+  subtitle: string;
+  items: PublicTeamMemberItem[];
 }
 
 export interface SiteAboutSettings {
@@ -181,6 +197,7 @@ export interface SiteSettingsBundle {
   usps: SiteUspsSettings;
   process: SiteProcessSettings;
   sections: SiteSectionsSettings;
+  publicTeam: SitePublicTeamSettings;
   business: SiteBusinessSettings;
   email: SiteEmailSettings;
 }
@@ -190,6 +207,9 @@ export interface CmsService {
   icon_key: string;
   title: string;
   description: string;
+  detail_text?: string;
+  image_url?: string;
+  button_label?: string;
   sort_order: number;
   visible: boolean;
 }

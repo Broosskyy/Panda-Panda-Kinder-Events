@@ -11,20 +11,42 @@ interface FooterProps {
   branding?: SiteBrandingSettings;
 }
 
+const FOOTER_NAV = [
+  { label: "Leistungen", href: "#leistungen" },
+  { label: "Galerie", href: "#galerie" },
+  { label: "Bewertungen", href: "#bewertungen" },
+  { label: "FAQ", href: "#faq" },
+  { label: "Aktuelles", href: "/aktuelles" },
+  { label: "Kontakt", href: "#kontakt" },
+] as const;
+
 export function Footer({
   contact = DEFAULT_SITE_SETTINGS.contact,
   footer = DEFAULT_SITE_SETTINGS.footer,
   branding = DEFAULT_SITE_SETTINGS.branding,
 }: FooterProps) {
+  const mapsHref = contact.mapsUrl?.trim() || `https://maps.google.com/?q=${encodeURIComponent(contact.location)}`;
+
   return (
     <footer className="footer-premium text-text-inverse">
       <Container className="relative py-12 sm:py-16 md:py-20">
-        <div className="grid gap-12 sm:gap-14 md:grid-cols-[1.2fr_1fr_1fr] md:gap-12">
-          <div className="flex flex-col items-center md:items-start">
+        <div className="grid gap-12 sm:gap-14 md:grid-cols-2 lg:grid-cols-4 md:gap-10">
+          <div className="flex flex-col items-center md:items-start lg:col-span-1">
             <Logo variant="inverse" size="large" branding={branding} className="md:[&_img]:max-h-14" />
             <p className="font-accent mt-5 max-w-xs text-center text-lg leading-snug text-white/90 sm:mt-6 sm:text-xl md:max-w-none md:text-left md:text-2xl">
               {footer.tagline}
             </p>
+          </div>
+
+          <div className="text-center md:text-left">
+            <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">Navigation</p>
+            <nav className="flex flex-col gap-3 text-base" aria-label="Footer Navigation">
+              {FOOTER_NAV.map((item) => (
+                <a key={item.href} href={item.href} className="transition-opacity duration-300 hover:opacity-85">
+                  {item.label}
+                </a>
+              ))}
+            </nav>
           </div>
 
           <div className="text-center md:text-left">
@@ -37,6 +59,15 @@ export function Footer({
                 >
                   <Phone className="h-5 w-5" strokeWidth={ICON_STROKE} />
                   {contact.phone}
+                </a>
+              </li>
+              <li>
+                <a
+                  href={`mailto:${contact.email}`}
+                  className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
+                >
+                  <Mail className="h-5 w-5" strokeWidth={ICON_STROKE} />
+                  {contact.email}
                 </a>
               </li>
               <li>
@@ -61,18 +92,28 @@ export function Footer({
                   {contact.instagramHandle}
                 </a>
               </li>
+              {contact.facebook ? (
+                <li>
+                  <a
+                    href={contact.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
+                  >
+                    Facebook
+                  </a>
+                </li>
+              ) : null}
               <li>
                 <a
-                  href={`mailto:${contact.email}`}
+                  href={mapsHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
                 >
-                  <Mail className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                  {contact.email}
+                  <MapPin className="h-5 w-5" strokeWidth={ICON_STROKE} />
+                  {contact.location}
                 </a>
-              </li>
-              <li className="inline-flex items-center gap-3 text-white/85">
-                <MapPin className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                {contact.location}
               </li>
             </ul>
           </div>
@@ -91,22 +132,10 @@ export function Footer({
               </a>
             </nav>
             <div className="mt-10 flex items-center justify-center gap-4 md:justify-end">
-              <a
-                href={contact.instagram}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="social-pill"
-                aria-label="Instagram"
-              >
+              <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="social-pill" aria-label="Instagram">
                 <Instagram className="h-5 w-5" strokeWidth={ICON_STROKE} />
               </a>
-              <a
-                href={`https://wa.me/${contact.whatsapp}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="social-pill"
-                aria-label="WhatsApp"
-              >
+              <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="social-pill" aria-label="WhatsApp">
                 <MessageCircle className="h-5 w-5" strokeWidth={ICON_STROKE} />
               </a>
             </div>

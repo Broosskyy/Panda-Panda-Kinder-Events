@@ -2,6 +2,17 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.10] — 2026-07-05
+
+### Public Website Final Sprint
+
+- Conversion: Sticky CTA, Telefon/WhatsApp-Floats, vereinfachtes Anfrageformular, Section-CTAs
+- Vertrauen: 6 USP-Karten, Team-Bereich (CMS), Ablauf aktualisiert
+- Inhalte: Leistungs-Detail-Modal, Galerie-Filter, Beitrags-Karten
+- SEO: sitemap.xml, robots.txt, Manifest, Open Graph, Twitter, Structured Data
+- Bonus: Cookie-Banner, erweiterter Footer, Maps-Link
+- Dokumentation: `docs/05_ROADMAP/PUBLIC_WEBSITE_FINAL_REPORT.md`
+
 ## [0.9.0-rc.9] — 2026-07-05
 
 ### Admin + CRM Final Control Sprint

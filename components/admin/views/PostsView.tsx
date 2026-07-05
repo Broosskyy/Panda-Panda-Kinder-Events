@@ -1,8 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Save, Trash2 } from "lucide-react";
+import { Newspaper, Save, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminButton, AdminEmptyState, AdminSearchInput, AdminStatusBadge, postStatusVariant } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 import type { CmsPost } from "@/lib/cms/types";
 
@@ -143,30 +144,41 @@ export function PostsView() {
           <img src={draft.hero_image_url} alt="" className="mt-4 h-32 w-full rounded-xl object-cover" />
         ) : null}
         <div className="mt-4 flex gap-2">
-          <button type="button" className="admin-btn-primary" onClick={() => void save()}>
-            <Save className="h-4 w-4" /> Speichern
-          </button>
+          <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void save()}>
+            Speichern
+          </AdminButton>
           {editingId ? (
-            <button type="button" className="admin-btn-secondary" onClick={() => { setEditingId(null); setDraft(emptyPost()); }}>
+            <AdminButton variant="secondary" onClick={() => { setEditingId(null); setDraft(emptyPost()); }}>
               Abbrechen
-            </button>
+            </AdminButton>
           ) : null}
         </div>
       </AdminCard>
 
       <AdminCard title="Alle Beiträge">
-        <input className="admin-input mb-4" placeholder="Suchen…" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <AdminSearchInput value={search} onChange={setSearch} placeholder="Beiträge suchen…" className="mb-4" />
+        {filtered.length === 0 ? (
+          <AdminEmptyState
+            icon={Newspaper}
+            title="Noch keine Beiträge veröffentlicht."
+            description={posts.length === 0 ? "Erstelle deinen ersten Beitrag für die Aktuelles-Seite." : "Passe die Suche an."}
+            actionLabel={posts.length === 0 ? "Beitrag erstellen" : undefined}
+            onAction={posts.length === 0 ? () => window.scrollTo({ top: 0, behavior: "smooth" }) : undefined}
+          />
+        ) : (
         <div className="space-y-3">
           {filtered.map((p) => (
-            <div key={p.id} className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border p-4">
+            <div key={p.id} className="admin-list-card">
               <div>
                 <p className="font-semibold text-text-primary">{p.title}</p>
-                <p className="text-sm text-text-muted">{p.published ? "Veröffentlicht" : "Entwurf"} · /aktuelles/{p.slug}</p>
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <AdminStatusBadge label={p.published ? "Veröffentlicht" : "Entwurf"} variant={postStatusVariant(p.published)} />
+                  <span className="text-sm text-text-muted">/aktuelles/{p.slug}</span>
+                </div>
               </div>
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  className="admin-btn-secondary"
+                <AdminButton
+                  variant="secondary"
                   onClick={() => {
                     setEditingId(p.id);
                     setDraft({
@@ -180,17 +192,19 @@ export function PostsView() {
                       published: p.published,
                       slug: p.slug,
                     });
+                    window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                 >
                   Bearbeiten
-                </button>
-                <button type="button" className="admin-btn-danger" onClick={() => void remove(p.id)}>
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                </AdminButton>
+                <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove(p.id)}>
+                  Löschen
+                </AdminButton>
               </div>
             </div>
           ))}
         </div>
+        )}
       </AdminCard>
     </div>
   );

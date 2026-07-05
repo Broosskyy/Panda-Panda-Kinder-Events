@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Plus, UserPlus, Users } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
+import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput, AdminStatusBadge } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 import { CRM_CUSTOMER_STATUS_LABELS, type CrmCustomer, type CrmCustomerStatus } from "@/lib/crm/types";
 
@@ -110,7 +110,7 @@ export function CustomersView() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           {customers.length === 0 ? (
-            <AdminEmptyState icon={Users} title="Noch keine Kunden" description="Lege Kunden manuell an oder erstelle sie aus einer Anfrage." actionLabel="Kunde anlegen" onAction={() => setShowForm(true)} />
+            <AdminEmptyState icon={Users} title="Noch keine Kunden angelegt." description="Lege Kunden manuell an oder erstelle sie aus einer Anfrage." actionLabel="Kunde anlegen" onAction={() => setShowForm(true)} />
           ) : (
             customers.map((c) => (
               <button
@@ -121,7 +121,7 @@ export function CustomersView() {
               >
                 <p className="font-semibold text-text-primary">{c.name}</p>
                 <p className="text-sm text-text-muted">{c.email || c.phone || "—"}</p>
-                <span className="mt-2 inline-block rounded-full bg-bg-secondary px-2 py-0.5 text-xs">{CRM_CUSTOMER_STATUS_LABELS[c.status]}</span>
+                <AdminStatusBadge label={CRM_CUSTOMER_STATUS_LABELS[c.status]} variant={c.status === "active" ? "success" : c.status === "lead" ? "warning" : "muted"} />
               </button>
             ))
           )}

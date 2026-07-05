@@ -3,19 +3,19 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  BarChart3,
   FileText,
   Image,
   Inbox,
   Newspaper,
-  Plus,
-  Receipt,
   Star,
   Users,
 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminEmptyState } from "@/components/admin/ui";
 import type { AdminActivityItem } from "@/lib/admin/activity";
+import { DASHBOARD_QUICK_ACTIONS } from "@/lib/admin/quickActions";
 import type { AdminAnalyticsDashboard } from "@/lib/analytics/types";
-import { formatCents } from "@/lib/crm/money";
 
 function formatRelativeTime(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -36,11 +36,13 @@ function StatCard({
   value,
   href,
   icon: Icon,
+  sublabel,
 }: {
   label: string;
   value: number | string;
   href?: string;
   icon: React.ComponentType<{ className?: string }>;
+  sublabel?: string;
 }) {
   const inner = (
     <div className={`admin-stat-card h-full ${href ? "admin-stat-card-link" : ""}`}>
@@ -51,18 +53,12 @@ function StatCard({
         <span className="font-heading text-2xl font-bold text-text-primary sm:text-3xl">{value}</span>
       </div>
       <p className="mt-2 text-sm font-medium text-text-secondary">{label}</p>
+      {sublabel ? <p className="mt-0.5 text-xs text-text-muted">{sublabel}</p> : null}
     </div>
   );
 
   return href ? <Link href={href}>{inner}</Link> : inner;
 }
-
-const QUICK_ACTIONS = [
-  { href: "/admin/kunden", label: "Neuer Kunde", icon: Users },
-  { href: "/admin/angebote", label: "Neues Angebot", icon: FileText },
-  { href: "/admin/anfragen", label: "Neue Anfrage", icon: Inbox },
-  { href: "/admin/bewertungen", label: "Neue Bewertung", icon: Star },
-] as const;
 
 const ACTIVITY_ICONS = {
   booking: Inbox,
@@ -71,10 +67,15 @@ const ACTIVITY_ICONS = {
   gallery: Image,
 } as const;
 
+function analyticsUnavailable(stats: AdminAnalyticsDashboard | null): boolean {
+  return Boolean(stats && (!stats.trackingEnabled || stats.trackingTableReady === false));
+}
+
 export function DashboardView() {
   const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -86,15 +87,20 @@ export function DashboardView() {
         setStats(dashboardData);
         setActivity(activityData.activity ?? []);
       })
-      .catch((err) => setError(err instanceof Error ? err.message : "Laden fehlgeschlagen"));
+      .catch((err) => setError(err instanceof Error ? err.message : "Laden fehlgeschlagen"))
+      .finally(() => setLoading(false));
   }, []);
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
+  const statsMissing = analyticsUnavailable(stats);
 
   return (
     <div className="space-y-8">
-      <AdminPageHeader title={`${greeting}!`} description="Willkommen im Panda-Bande CMS — hier ist dein Überblick." />
+      <AdminPageHeader
+        title={`${greeting}!`}
+        description="Willkommen im Panda-Bande Admin — hier verwaltest du Website, Anfragen und CRM an einem Ort."
+      />
 
       {error ? (
         <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
@@ -102,11 +108,15 @@ export function DashboardView() {
         </p>
       ) : null}
 
+      {loading ? (
+        <p className="text-sm text-text-muted">Dashboard wird geladen…</p>
+      ) : null}
+
       <section>
         <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-text-muted">Schnellaktionen</h2>
         <div className="admin-quick-actions">
-          {QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
-            <Link key={href} href={href} className="admin-quick-action">
+          {DASHBOARD_QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
+            <Link key={href + label} href={href} className="admin-quick-action">
               <Icon className="h-5 w-5 text-primary" aria-hidden />
               {label}
             </Link>
@@ -117,28 +127,32 @@ export function DashboardView() {
       <section>
         <h2 className="mb-4 font-heading text-lg font-semibold text-text-primary">Kennzahlen</h2>
         <div className="admin-stat-grid">
-          <StatCard label="Kunden" value={stats?.crm.customersCount ?? "—"} href="/admin/kunden" icon={Users} />
-          <StatCard label="Offene Angebote" value={stats?.crm.openQuotesCount ?? "—"} href="/admin/angebote" icon={FileText} />
-          <StatCard label="Offene Rechnungen" value={stats?.crm.openInvoicesCount ?? "—"} href="/admin/rechnungen" icon={Receipt} />
           <StatCard
-            label="Umsatz (bezahlt)"
-            value={stats ? formatCents(stats.crm.revenueCents) : "—"}
-            href="/admin/rechnungen"
-            icon={Receipt}
+            label="Besucher gesamt"
+            value={statsMissing ? "—" : (stats?.visitors.total ?? "—")}
+            href="/admin/analytics"
+            icon={Users}
+            sublabel={statsMissing ? "Statistik nicht aktiv" : undefined}
+          />
+          <StatCard
+            label="Besucher heute"
+            value={statsMissing ? "—" : (stats?.visitors.today ?? "—")}
+            href="/admin/analytics"
+            icon={BarChart3}
+          />
+          <StatCard
+            label="Letzte 7 Tage"
+            value={statsMissing ? "—" : (stats?.visitors.last7Days ?? "—")}
+            href="/admin/analytics"
+            icon={BarChart3}
           />
           <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} />
           <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} />
-          <StatCard
-            label="Besucher heute"
-            value={
-              stats?.trackingEnabled && stats.trackingTableReady === false
-                ? "—"
-                : (stats?.visitors.today ?? "—")
-            }
-            href="/admin/analytics"
-            icon={Users}
-          />
+          <StatCard label="Kunden" value={stats?.crm.customersCount ?? "—"} href="/admin/kunden" icon={Users} />
+          <StatCard label="Offene Angebote" value={stats?.crm.openQuotesCount ?? "—"} href="/admin/angebote" icon={FileText} />
+          <StatCard label="Offene Rechnungen" value={stats?.crm.openInvoicesCount ?? "—"} href="/admin/rechnungen" icon={FileText} />
           <StatCard label="Beiträge" value={stats?.postsCount ?? "—"} href="/admin/beitraege" icon={Newspaper} />
+          <StatCard label="Galerie-Bilder" value={stats?.galleryCount ?? "—"} href="/admin/galerie" icon={Image} />
         </div>
       </section>
 
@@ -150,15 +164,18 @@ export function DashboardView() {
 
       {stats?.trackingEnabled && stats.trackingTableReady === false ? (
         <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
-          <strong>Statistik noch nicht eingerichtet.</strong> Migration{" "}
-          <code className="font-mono">20260703_page_views_analytics.sql</code> in Supabase ausführen.
+          <strong>Statistik noch nicht eingerichtet – page_views Migration ausführen.</strong>
         </p>
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-2">
         <AdminCard title="Letzte Aktivitäten">
           {activity.length === 0 ? (
-            <div className="py-6 text-center text-sm text-text-muted">Noch keine Aktivitäten vorhanden.</div>
+            <AdminEmptyState
+              icon={Inbox}
+              title="Noch keine Aktivitäten"
+              description="Sobald Anfragen, Beiträge oder Galerie-Uploads eingehen, erscheinen sie hier."
+            />
           ) : (
             <ul className="space-y-1">
               {activity.map((item) => {
@@ -182,20 +199,19 @@ export function DashboardView() {
           )}
         </AdminCard>
 
-        <AdminCard title="CMS Kurzlinks">
+        <AdminCard title="Module">
           <div className="grid gap-3 sm:grid-cols-2">
             {[
-              { href: "/admin/kunden", label: "Kunden verwalten" },
-              { href: "/admin/angebote", label: "Angebote erstellen" },
-              { href: "/admin/analytics", label: "Analytics öffnen" },
-              { href: "/admin/einstellungen", label: "Einstellungen" },
+              { href: "/admin/kunden", label: "Kunden & CRM" },
+              { href: "/admin/angebote", label: "Angebote" },
+              { href: "/admin/inhalte", label: "Website-Inhalte" },
+              { href: "/admin/analytics", label: "Analytics" },
             ].map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-medium text-text-primary transition-colors hover:border-primary/30 hover:bg-primary/5"
               >
-                <Plus className="h-4 w-4 text-primary" aria-hidden />
                 {link.label}
               </Link>
             ))}

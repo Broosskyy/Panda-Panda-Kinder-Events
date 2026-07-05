@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { FileText, Plus, Send } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
+import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput, AdminStatusBadge, crmDocumentStatusVariant } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 import { formatCents, parseEuroToCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmCustomer, type CrmDocumentStatus } from "@/lib/crm/types";
@@ -136,7 +136,7 @@ export function QuotesView() {
                 <div>
                   <p className="font-semibold text-text-primary">{q.quote_number} — {q.title}</p>
                   <p className="text-sm text-text-muted">{q.customer?.name} · {formatCents(q.total_cents)}</p>
-                  <span className="mt-1 inline-block rounded-full bg-bg-secondary px-2 py-0.5 text-xs">{CRM_STATUS_LABELS[q.status]}</span>
+                  <AdminStatusBadge label={CRM_STATUS_LABELS[q.status]} variant={crmDocumentStatusVariant(q.status)} />
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <AdminButton variant="secondary" href={`/api/admin/quotes/${q.id}/pdf`} target="_blank">PDF</AdminButton>

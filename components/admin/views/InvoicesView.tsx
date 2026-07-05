@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Receipt, Send } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
+import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput, AdminStatusBadge, crmDocumentStatusVariant } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmDocumentStatus } from "@/lib/crm/types";
@@ -71,6 +71,9 @@ export function InvoicesView() {
                 <div>
                   <p className="font-semibold text-text-primary">{inv.invoice_number} — {inv.title}</p>
                   <p className="text-sm text-text-muted">{inv.customer?.name} · {formatCents(inv.total_cents)}</p>
+                  <div className="mt-1">
+                    <AdminStatusBadge label={CRM_STATUS_LABELS[inv.status]} variant={crmDocumentStatusVariant(inv.status)} />
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <AdminFilterSelect value={inv.status} onChange={(v) => setStatus(inv.id, v)} options={STATUS_OPTIONS} />

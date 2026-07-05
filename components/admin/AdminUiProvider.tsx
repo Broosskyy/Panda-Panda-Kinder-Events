@@ -41,7 +41,7 @@ export function AdminUiProvider({ children }: { children: ReactNode }) {
   return (
     <AdminUiContext.Provider value={{ toast, loading, setLoading, withLoading }}>
       {children}
-      <div className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2" aria-live="polite">
+      <div className="admin-toast-stack" aria-live="polite">
         {toasts.map((t) => (
           <div
             key={t.id}

@@ -1,15 +1,10 @@
 import { NextResponse } from "next/server";
-import { isAdminAuthenticated } from "@/lib/admin-auth";
-import { getSupabaseAdmin, isSupabaseConfigured, type BookingStatus } from "@/lib/supabase/admin";
+import { requireAdmin } from "@/lib/admin-route";
+import { getSupabaseAdmin, type BookingStatus } from "@/lib/supabase/admin";
 
 export async function GET() {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
-  }
-
-  if (!isSupabaseConfigured()) {
-    return NextResponse.json({ error: "Supabase nicht konfiguriert." }, { status: 503 });
-  }
+  const authError = await requireAdmin();
+  if (authError) return authError;
 
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -25,9 +20,8 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  if (!(await isAdminAuthenticated())) {
-    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
-  }
+  const authError = await requireAdmin();
+  if (authError) return authError;
 
   const { id, status, admin_notes } = await request.json();
 

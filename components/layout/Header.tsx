@@ -60,8 +60,11 @@ export function Header() {
             : "bg-bg-primary/50 backdrop-blur-md"
         }`}
       >
-        <div className="mx-auto flex min-h-16 items-center justify-between px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:px-12 md:py-3">
-          <Logo size="large" className="sm:[&_img]:max-h-11 md:[&_img]:max-h-14" />
+        <div className="mx-auto flex min-h-16 items-center justify-between gap-2 px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:gap-4 md:px-12 md:py-3">
+          <Logo
+            size="large"
+            className={`shrink-0 sm:[&_img]:max-h-11 md:[&_img]:max-h-14 ${isMenuOpen ? "invisible" : ""}`}
+          />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
             {navigation.map((item) => {
@@ -75,12 +78,12 @@ export function Header() {
             })}
           </nav>
 
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Button
               href="#kontakt"
               size="default"
-              className="hidden shadow-lg md:inline-flex"
-              icon={<Calendar className="h-4 w-4" aria-hidden />}
+              className="hidden shrink-0 px-4 text-sm shadow-lg sm:inline-flex sm:px-5 sm:text-[0.9375rem] lg:px-8"
+              icon={<Calendar className="h-4 w-4 shrink-0" aria-hidden />}
             >
               Jetzt anfragen
             </Button>

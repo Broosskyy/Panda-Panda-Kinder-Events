@@ -2,6 +2,23 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.1] — 2026-07-05
+
+### Release Candidate RC1 — Final Stabilization
+
+- CMS-Settings: Validierung aller Pflichtfelder beim Speichern (`validate-settings.ts`)
+- CMS-Settings: Unvollständige DB-Sektionen fallen auf vollständige Defaults (kein Partial-Mix)
+- Leistungen/Galerie: Query-Retry, konsistente Fehlerbehandlung
+- Statistik: `isPageViewsTableReady()` korrigiert, Berlin-Zeitzone-Fallback
+- Tracking-API: `tableMissing`-Hinweis bei fehlender `page_views`-Migration
+- Revalidation: alter Beitrags-Slug + Impressum/Datenschutz
+- Hero/Header: Safe-Area-Padding, CTA ab `sm`, Logo im Menü ausgeblendet
+- Button: kein erzwungenes `min-w` (Mobile nicht gequetscht)
+- About/Hero: Bild-Fallback bei leerer CMS-URL
+- Admin Reviews/Bookings: einheitlich `requireAdmin()`
+- Beitragsseite: eindeutige React-Keys
+- `docs/05_ROADMAP/RC1-Release-Report.md`
+
 ## [0.8.7] — 2026-07-05
 
 ### Stable Project Checkpoint

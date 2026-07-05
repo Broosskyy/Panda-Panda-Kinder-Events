@@ -42,10 +42,13 @@ function LisaBadge({
 }
 
 export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_SETTINGS.about }: HeroProps) {
+  const founderImage =
+    about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
+
   return (
     <section
       id="startseite"
-      className="hero-section relative scroll-mt-20 section-padding-lg pt-[max(7rem,calc(5.5rem+env(safe-area-inset-top,0px)))] sm:scroll-mt-24 sm:pt-[max(8.5rem,calc(6.5rem+env(safe-area-inset-top,0px)))] md:pt-[max(10rem,calc(7rem+env(safe-area-inset-top,0px)))] lg:pt-[max(12rem,calc(8rem+env(safe-area-inset-top,0px)))]"
+      className="hero-section relative scroll-mt-20 section-padding-lg pt-[max(7.5rem,calc(6rem+env(safe-area-inset-top,0px)))] sm:scroll-mt-24 sm:pt-[max(9rem,calc(7rem+env(safe-area-inset-top,0px)))] md:pt-[max(10rem,calc(7rem+env(safe-area-inset-top,0px)))] lg:pt-[max(12rem,calc(8rem+env(safe-area-inset-top,0px)))]"
     >
       <FlowerOrnament className="pointer-events-none absolute left-0 top-20 h-20 w-20 opacity-35 sm:-left-4 sm:top-24 sm:h-28 sm:w-28 sm:opacity-50 md:h-40 md:w-40" />
       <FlowerOrnament
@@ -56,7 +59,7 @@ export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_S
       <Container>
         <div className="grid items-center gap-10 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
           <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:py-4">
-            <p className="font-accent text-xl leading-snug text-primary sm:text-[1.75rem] md:text-[2rem] md:leading-tight">
+            <p className="font-accent break-words text-xl leading-snug text-primary sm:text-[1.75rem] md:text-[2rem] md:leading-tight">
               {hero.tagline}{" "}
               <span className="text-accent-heart" aria-hidden>
                 ♡
@@ -114,7 +117,11 @@ export function Hero({ hero = DEFAULT_SITE_SETTINGS.hero, about = DEFAULT_SITE_S
             </div>
 
             <div className="hero-badge relative z-10 mt-5 max-w-full bg-bg-card/95 p-1 backdrop-blur-md lg:absolute lg:-bottom-8 lg:left-8 lg:mt-0 lg:max-w-[300px]">
-              <LisaBadge className="!bg-transparent !p-0" founderName={about.founderName} imageUrl={about.imageUrl} />
+              <LisaBadge
+                className="!bg-transparent !p-0"
+                founderName={about.founderName}
+                imageUrl={founderImage}
+              />
             </div>
           </ScrollReveal>
         </div>

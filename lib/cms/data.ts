@@ -6,6 +6,7 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { resolveImageUrl } from "./resolve-image";
 import { resolveServiceIcon } from "./icons";
+import { hasNonEmptyCmsValue, validateSiteSettingsSection } from "./validate-settings";
 import type {
   CmsFaq,
   CmsPost,
@@ -16,18 +17,23 @@ import type {
 } from "./types";
 import type { Service } from "@/lib/services";
 
-function cmsSection<T extends object>(defaults: T, cmsValue: unknown, hasKey: boolean): T {
-  if (!hasKey) return defaults;
-  if (cmsValue && typeof cmsValue === "object") return cmsValue as T;
-  return defaults;
+function cmsSection<T extends keyof SiteSettingsBundle>(
+  section: T,
+  defaults: SiteSettingsBundle[T],
+  cmsValue: unknown,
+  hasKey: boolean,
+): SiteSettingsBundle[T] {
+  if (!hasKey || !hasNonEmptyCmsValue(cmsValue)) return defaults;
+  const validated = validateSiteSettingsSection(section, cmsValue);
+  if (!validated.ok) return defaults;
+  return validated.value as SiteSettingsBundle[T];
 }
 
 function normalizeAboutSettings(about: SiteAboutSettings): SiteAboutSettings {
   const resolved = resolveImageUrl("site-assets", about.imageUrl);
-  return {
-    ...about,
-    imageUrl: resolved ?? about.imageUrl?.trim() ?? "",
-  };
+  const imageUrl =
+    (resolved ?? about.imageUrl?.trim()) || DEFAULT_SITE_SETTINGS.about.imageUrl;
+  return { ...about, imageUrl };
 }
 
 function buildSettingsFromRows(
@@ -35,21 +41,24 @@ function buildSettingsFromRows(
 ): SiteSettingsBundle {
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
 
-  const about = cmsSection(
+  const aboutRaw = cmsSection(
+    "about",
     DEFAULT_SITE_SETTINGS.about,
     byKey.get("about"),
     byKey.has("about"),
   );
 
   return {
-    hero: cmsSection(DEFAULT_SITE_SETTINGS.hero, byKey.get("hero"), byKey.has("hero")),
+    hero: cmsSection("hero", DEFAULT_SITE_SETTINGS.hero, byKey.get("hero"), byKey.has("hero")),
     contact: cmsSection(
+      "contact",
       DEFAULT_SITE_SETTINGS.contact,
       byKey.get("contact"),
       byKey.has("contact"),
     ),
-    about: normalizeAboutSettings(about),
+    about: normalizeAboutSettings(aboutRaw),
     footer: cmsSection(
+      "footer",
       DEFAULT_SITE_SETTINGS.footer,
       byKey.get("footer"),
       byKey.has("footer"),
@@ -108,6 +117,25 @@ async function tableHasRows(table: string): Promise<boolean> {
   return (count ?? 0) > 0;
 }
 
+async function queryCmsServices(): Promise<Service[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("cms_services")
+    .select("*")
+    .eq("visible", true)
+    .order("sort_order", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data as CmsService[])
+    .filter((s) => s.title?.trim() && s.description?.trim())
+    .map((s) => ({
+      icon: resolveServiceIcon(s.icon_key),
+      title: s.title.trim(),
+      description: s.description.trim(),
+    }));
+}
+
 export async function fetchCmsServices(): Promise<Service[]> {
   noStore();
   if (!isSupabaseConfigured()) return staticServices;
@@ -116,28 +144,16 @@ export async function fetchCmsServices(): Promise<Service[]> {
     const hasCms = await tableHasRows("cms_services");
     if (!hasCms) return staticServices;
 
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("cms_services")
-      .select("*")
-      .eq("visible", true)
-      .order("sort_order", { ascending: true });
-
-    if (error) {
-      console.error("fetchCmsServices:", error.message);
-      return [];
+    try {
+      return await queryCmsServices();
+    } catch (firstError) {
+      console.error("fetchCmsServices (retry):", firstError);
+      return await queryCmsServices();
     }
-
-    return (data as CmsService[])
-      .filter((s) => s.title?.trim() && s.description?.trim())
-      .map((s) => ({
-        icon: resolveServiceIcon(s.icon_key),
-        title: s.title.trim(),
-        description: s.description.trim(),
-      }));
   } catch (err) {
     console.error("fetchCmsServices:", err);
-    return staticServices;
+    const hasCms = await tableHasRows("cms_services").catch(() => false);
+    return hasCms ? [] : staticServices;
   }
 }
 
@@ -170,6 +186,24 @@ export async function fetchCmsFaqs(): Promise<{ question: string; answer: string
   }
 }
 
+async function queryGalleryImages(): Promise<{ src: string; alt: string }[]> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("gallery_images")
+    .select("*")
+    .eq("visible", true)
+    .order("sort_order", { ascending: true });
+
+  if (error) throw new Error(error.message);
+
+  return (data as GalleryImageRecord[])
+    .map((img) => ({
+      src: resolveImageUrl("gallery", img.storage_path) ?? "",
+      alt: img.alt_text?.trim() || img.title?.trim() || "Galeriebild",
+    }))
+    .filter((img) => img.src);
+}
+
 export async function fetchGalleryImages(): Promise<{ src: string; alt: string }[]> {
   noStore();
   if (!isSupabaseConfigured()) return staticGallery;
@@ -178,27 +212,16 @@ export async function fetchGalleryImages(): Promise<{ src: string; alt: string }
     const hasCms = await tableHasRows("gallery_images");
     if (!hasCms) return staticGallery;
 
-    const supabase = getSupabaseAdmin();
-    const { data, error } = await supabase
-      .from("gallery_images")
-      .select("*")
-      .eq("visible", true)
-      .order("sort_order", { ascending: true });
-
-    if (error) {
-      console.error("fetchGalleryImages:", error.message);
-      return [];
+    try {
+      return await queryGalleryImages();
+    } catch (firstError) {
+      console.error("fetchGalleryImages (retry):", firstError);
+      return await queryGalleryImages();
     }
-
-    return (data as GalleryImageRecord[])
-      .map((img) => ({
-        src: resolveImageUrl("gallery", img.storage_path) ?? "",
-        alt: img.alt_text?.trim() || img.title?.trim() || "Galeriebild",
-      }))
-      .filter((img) => img.src);
   } catch (err) {
     console.error("fetchGalleryImages:", err);
-    return [];
+    const hasCms = await tableHasRows("gallery_images").catch(() => false);
+    return hasCms ? [] : staticGallery;
   }
 }
 

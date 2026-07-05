@@ -11,20 +11,23 @@ import type {
   CmsPost,
   CmsService,
   GalleryImageRecord,
+  SiteAboutSettings,
   SiteSettingsBundle,
 } from "./types";
 import type { Service } from "@/lib/services";
 
-function mergeSection<T extends object>(defaults: T, cmsValue: unknown): T {
-  if (!cmsValue || typeof cmsValue !== "object") return defaults;
-  return { ...defaults, ...(cmsValue as T) };
+function cmsSection<T extends object>(defaults: T, cmsValue: unknown, hasKey: boolean): T {
+  if (!hasKey) return defaults;
+  if (cmsValue && typeof cmsValue === "object") return cmsValue as T;
+  return defaults;
 }
 
-function normalizeAboutSettings(about: SiteSettingsBundle["about"]): SiteSettingsBundle["about"] {
-  const resolved =
-    resolveImageUrl("site-assets", about.imageUrl) ??
-    (about.imageUrl?.trim() ? about.imageUrl.trim() : DEFAULT_SITE_SETTINGS.about.imageUrl);
-  return { ...about, imageUrl: resolved };
+function normalizeAboutSettings(about: SiteAboutSettings): SiteAboutSettings {
+  const resolved = resolveImageUrl("site-assets", about.imageUrl);
+  return {
+    ...about,
+    imageUrl: resolved ?? about.imageUrl?.trim() ?? "",
+  };
 }
 
 function buildSettingsFromRows(
@@ -32,21 +35,25 @@ function buildSettingsFromRows(
 ): SiteSettingsBundle {
   const byKey = new Map(rows.map((r) => [r.key, r.value]));
 
-  const about = byKey.has("about")
-    ? mergeSection(DEFAULT_SITE_SETTINGS.about, byKey.get("about"))
-    : DEFAULT_SITE_SETTINGS.about;
+  const about = cmsSection(
+    DEFAULT_SITE_SETTINGS.about,
+    byKey.get("about"),
+    byKey.has("about"),
+  );
 
   return {
-    hero: byKey.has("hero")
-      ? mergeSection(DEFAULT_SITE_SETTINGS.hero, byKey.get("hero"))
-      : DEFAULT_SITE_SETTINGS.hero,
-    contact: byKey.has("contact")
-      ? mergeSection(DEFAULT_SITE_SETTINGS.contact, byKey.get("contact"))
-      : DEFAULT_SITE_SETTINGS.contact,
+    hero: cmsSection(DEFAULT_SITE_SETTINGS.hero, byKey.get("hero"), byKey.has("hero")),
+    contact: cmsSection(
+      DEFAULT_SITE_SETTINGS.contact,
+      byKey.get("contact"),
+      byKey.has("contact"),
+    ),
     about: normalizeAboutSettings(about),
-    footer: byKey.has("footer")
-      ? mergeSection(DEFAULT_SITE_SETTINGS.footer, byKey.get("footer"))
-      : DEFAULT_SITE_SETTINGS.footer,
+    footer: cmsSection(
+      DEFAULT_SITE_SETTINGS.footer,
+      byKey.get("footer"),
+      byKey.has("footer"),
+    ),
   };
 }
 
@@ -121,11 +128,13 @@ export async function fetchCmsServices(): Promise<Service[]> {
       return [];
     }
 
-    return (data as CmsService[]).map((s) => ({
-      icon: resolveServiceIcon(s.icon_key),
-      title: s.title,
-      description: s.description,
-    }));
+    return (data as CmsService[])
+      .filter((s) => s.title?.trim() && s.description?.trim())
+      .map((s) => ({
+        icon: resolveServiceIcon(s.icon_key),
+        title: s.title.trim(),
+        description: s.description.trim(),
+      }));
   } catch (err) {
     console.error("fetchCmsServices:", err);
     return staticServices;
@@ -149,10 +158,12 @@ export async function fetchCmsFaqs(): Promise<{ question: string; answer: string
 
     if (error) {
       console.error("fetchCmsFaqs:", error.message);
-      return [];
+      return staticFaqs;
     }
 
-    return (data as CmsFaq[]).map((f) => ({ question: f.question, answer: f.answer }));
+    return (data as CmsFaq[])
+      .filter((f) => f.question?.trim() && f.answer?.trim())
+      .map((f) => ({ question: f.question.trim(), answer: f.answer.trim() }));
   } catch (err) {
     console.error("fetchCmsFaqs:", err);
     return staticFaqs;
@@ -179,14 +190,15 @@ export async function fetchGalleryImages(): Promise<{ src: string; alt: string }
       return [];
     }
 
-    return (data as GalleryImageRecord[]).map((img) => ({
-      src: resolveImageUrl("gallery", img.storage_path) ?? "",
-      alt: img.alt_text || img.title || "Galeriebild",
-    })).filter((img) => img.src);
+    return (data as GalleryImageRecord[])
+      .map((img) => ({
+        src: resolveImageUrl("gallery", img.storage_path) ?? "",
+        alt: img.alt_text?.trim() || img.title?.trim() || "Galeriebild",
+      }))
+      .filter((img) => img.src);
   } catch (err) {
     console.error("fetchGalleryImages:", err);
-    const hasCms = await tableHasRows("gallery_images").catch(() => false);
-    return hasCms ? [] : staticGallery;
+    return [];
   }
 }
 

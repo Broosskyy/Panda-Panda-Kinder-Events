@@ -2,13 +2,28 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.8.6] — 2026-07-05
+
+### Live Website Cleanup — CMS-Konsistenz
+
+- CMS-Sektionen ohne Merge mit `config/site.ts`: vorhandene CMS-Keys ersetzen Fallbacks vollständig
+- Über-uns: fehlerhafte `founderName`-Injection in `introText` entfernt (Admin + Anzeige)
+- Kontakt/Footer: Telefon, E-Mail, WhatsApp, Instagram, Einsatzgebiet ausschließlich aus CMS-Settings
+- Footer-Tagline aus CMS in Kontakt, Über uns und Footer (keine hardcodierten Platzhalter)
+- Hero-Badge und Footer-Logo: je ein DOM-Element mit responsive CSS
+- Leistungen/Galerie: nur CMS wenn vorhanden, kein statischer Mix, leere Sektionen ausgeblendet
+- Header: ein Logo-Element statt Mobile/Desktop-Duplikat
+- Hero Portrait: mehr Safe-Area-Padding, Overflow-Fixes für Tagline
+- Impressum/Datenschutz: Kontaktdaten aus CMS
+- `live:verify` erweitert (Platzhalter-E-Mail, doppeltes Hero-Badge, Footer-Telefon)
+
 ## [0.8.5] — 2026-07-04
 
 ### Final Stabilization — Reviews & Über-uns
 
 - Bewertungsbilder: einheitlich `profile_image_url` / `event_image_url` als Storage-Pfad in DB
 - Öffentliche und Admin-Anzeige via `resolveImageUrl()` (kein `avatar_url`-Alias mehr)
-- Über-uns: `founderName`-Änderung synchronisiert `introText`; About-Bild speichert Pfad
+- Über-uns: About-Bild speichert Pfad
 - `scripts/live-verify.mjs` für Live-Smoke-Tests (`npm run live:verify`)
 
 ## [0.8.4] — 2026-07-04

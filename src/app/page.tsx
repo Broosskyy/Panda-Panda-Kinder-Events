@@ -71,10 +71,10 @@ export default async function HomePage() {
         <Process />
         <Gallery images={galleryImages} contact={settings.contact} />
         <Testimonials reviews={reviews} />
-        <About about={settings.about} />
+        <About about={settings.about} footer={settings.footer} />
         <News posts={posts} />
         <Faq items={faqs} />
-        <Contact contact={settings.contact} />
+        <Contact contact={settings.contact} footer={settings.footer} />
       </main>
       <Footer contact={settings.contact} footer={settings.footer} />
       <WhatsAppFab contact={settings.contact} />

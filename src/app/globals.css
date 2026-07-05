@@ -216,10 +216,12 @@ img {
 }
 
 /* Above-the-fold hero text must never be clipped or hidden by reveal animation */
+/* Above-the-fold hero text must never be clipped or hidden by reveal animation */
 .hero-section .hero-content,
 .hero-section .hero-content .reveal {
   opacity: 1;
   transform: none;
+  overflow: visible;
 }
 
 .hero-image-wrap {

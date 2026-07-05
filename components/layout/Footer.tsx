@@ -1,4 +1,4 @@
-import { Instagram, Mail, MapPin, MessageCircle } from "lucide-react";
+import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { SiteContactSettings, SiteFooterSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { ICON_STROKE } from "@/lib/design";
@@ -19,8 +19,7 @@ export function Footer({
       <Container className="relative py-12 sm:py-16 md:py-20">
         <div className="grid gap-12 sm:gap-14 md:grid-cols-[1.2fr_1fr_1fr] md:gap-12">
           <div className="flex flex-col items-center md:items-start">
-            <Logo variant="inverse" size="large" className="md:hidden" />
-            <Logo variant="inverse" size="xl" className="hidden md:block" />
+            <Logo variant="inverse" size="large" className="md:[&_img]:max-h-14" />
             <p className="font-accent mt-5 max-w-xs text-center text-lg leading-snug text-white/90 sm:mt-6 sm:text-xl md:max-w-none md:text-left md:text-2xl">
               {footer.tagline}
             </p>
@@ -29,6 +28,15 @@ export function Footer({
           <div className="text-center md:text-left">
             <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">Kontakt</p>
             <ul className="space-y-4 text-base">
+              <li>
+                <a
+                  href={`tel:${contact.phone.replace(/\s/g, "")}`}
+                  className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
+                >
+                  <Phone className="h-5 w-5" strokeWidth={ICON_STROKE} />
+                  {contact.phone}
+                </a>
+              </li>
               <li>
                 <a
                   href={`https://wa.me/${contact.whatsapp}`}

@@ -1,0 +1,16 @@
+{
+  "_comment": "Vorlage — Struktur eines CMS-Exports. Keine echten Produktionsdaten.",
+  "exportedAt": "2026-07-06T00:00:00.000Z",
+  "version": "1.0-checkpoint",
+  "siteSettings": {
+    "hero": { "headline": "Beispiel-Überschrift", "subtitle": "..." },
+    "contact": { "email": "kontakt@beispiel.de", "phone": "+49 ..." },
+    "publicTeam": { "title": "Unser Team", "subtitle": "", "items": [] }
+  },
+  "services": [],
+  "faqs": [],
+  "gallery": [],
+  "posts": [],
+  "reviews": [],
+  "teamMembers": []
+}

@@ -1,6 +1,6 @@
 {
   "name": "panda-bande-kinderevents",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0-checkpoint",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,8 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:crm": "node scripts/crm-test.mjs",
+    "export:cms": "node scripts/export-cms.mjs",
+    "export:crm": "node scripts/export-crm.mjs",
     "live:verify": "node scripts/live-verify.mjs",
     "sprint-report:pdf": "node scripts/generate-sprint-report-pdf.mjs"
   },

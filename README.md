@@ -4,7 +4,7 @@ Unvergessliche Kinderfeiern und Familien-Events — digital präsentiert, persö
 
 ## Projektstatus
 
-🟢 **Sprint 2 gestartet** — Formular, Bewertungen, Admin; Vercel-ready nach ENV-Setup.
+🟢 **v1.0-checkpoint** — Vollständige Website, Admin (CMS + CRM), Sicherheit (Benutzer, Rollen, 2FA, Audit). Dokumentation und Backup-Guides vorhanden. Siehe [Checkpoint Report](PROJECT_CHECKPOINT_REPORT.md).
 
 ## Entwicklung
 
@@ -38,7 +38,20 @@ Originales Logo nach `public/assets/logo.png` legen (siehe `public/assets/README
 └── docs/              # Projektdokumentation
 ```
 
-## Dokumentation
+## Checkpoint-Dokumentation (v1.0)
+
+| Dokument | Beschreibung |
+|----------|--------------|
+| [PROJECT_MASTER_GUIDE](PROJECT_MASTER_GUIDE.md) | Einstieg für alle — Was ist Panda-Bande? |
+| [PROJECT_STRUCTURE](PROJECT_STRUCTURE.md) | Ordnerstruktur und Code-Orientierung |
+| [FEATURE_OVERVIEW](FEATURE_OVERVIEW.md) | Feature-Status und Risiken |
+| [ADMIN_USER_MANUAL](ADMIN_USER_MANUAL.md) | Admin-Handbuch für Nicht-Techniker |
+| [TECHNICAL_RUNBOOK](TECHNICAL_RUNBOOK.md) | Technisches Handbuch für Entwickler |
+| [CHECKPOINT_V1_SUMMARY](CHECKPOINT_V1_SUMMARY.md) | Checkpoint-Zusammenfassung |
+| [PROJECT_CHECKPOINT_REPORT](PROJECT_CHECKPOINT_REPORT.md) | Abschlussreport |
+| [Backups](backups/checkpoint-v1/README.md) | Backup- und Restore-Guides |
+
+## Projektdokumentation (Legacy)
 
 | Dokument | Beschreibung |
 |----------|--------------|
@@ -53,11 +66,8 @@ Originales Logo nach `public/assets/logo.png` legen (siehe `public/assets/README
 | [Sprint Reports (Download)](docs/05_ROADMAP/Sprint-Reports.md) | Direkt-Download aller Sprint-Berichte |
 | [V1 To-do-Liste](docs/05_ROADMAP/V1-Todo-Liste.md) | Konkrete Aufgaben für Version 1 |
 
-## Nächste Schritte (Sprint 2)
+## Nächste Schritte
 
-- E-Mail-Versand für Anfrageformular (Resend/SendGrid)
-- Echte Fotos und finale Texte von Panda-Bande einpflegen
-- Rechtstexte durch Anwalt prüfen lassen
-- Vercel Deployment mit Custom Domain
+Siehe [NEXT_STEPS_ROADMAP.md](NEXT_STEPS_ROADMAP.md) — Domain, Resend, SEO, Livegang.
 
-Siehe [Roadmap](docs/05_ROADMAP/Roadmap.md) und [CHANGELOG.md](CHANGELOG.md).
+Siehe auch [CHANGELOG.md](CHANGELOG.md) und [RELEASE_STATUS.md](RELEASE_STATUS.md).

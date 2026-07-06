@@ -1,6 +1,6 @@
 /**
  * Panda-Bande — Branding-Konstanten
- * Bildmarke: /assets/logo.png
+ * Bildmarke: /assets/Logo.png
  * Textmarke: Panda-Bande / Kinderevents (aus CMS)
  */
 export const BRAND = {
@@ -14,35 +14,55 @@ export const BRAND = {
   backgroundColor: "#f4f1ea",
   alt: "Panda-Bande KinderEvents",
 
-  /** Standard-Bildmarke */
-  master: "/assets/logo.png",
+  /** Standard-Bildmarke (kann breites Kombi-Logo sein — UI croppt die linke Bildmarke) */
+  master: "/assets/Logo.png",
+
+  /** Cache-Busting für Favicon/PWA nach Icon-Update */
+  iconVersion: "2",
+
+  /** Extrahierte quadratische Bildmarke (für PDF/E-Mail/Favicon) */
+  markOnly: "/icons/panda-mark.png",
 
   /** Generierte Icon-Assets (npm run generate:brand-assets) */
   assets: {
-    favicon16: "/branding/favicon-16.png",
-    favicon32: "/branding/favicon-32.png",
-    favicon48: "/branding/favicon-48.png",
-    favicon64: "/branding/favicon-64.png",
-    faviconIco: "/branding/favicon.ico",
-    appleTouchIcon: "/branding/apple-touch-icon.png",
-    icon192: "/branding/icon-192.png",
-    icon512: "/branding/icon-512.png",
-    iconMaskable512: "/branding/icon-maskable-512.png",
+    favicon16: "/icons/panda-icon-16.png",
+    favicon32: "/icons/panda-icon-32.png",
+    favicon48: "/icons/panda-icon-48.png",
+    favicon64: "/icons/panda-icon-64.png",
+    faviconIco: "/icons/favicon.ico",
+    appleTouchIcon: "/icons/panda-apple-touch-icon.png",
+    icon192: "/icons/panda-icon-192.png",
+    icon512: "/icons/panda-icon-512.png",
+    iconMaskable512: "/icons/panda-icon-maskable-512.png",
     ogImage: "/branding/og-image.png",
   },
 
-  /** Bildmarke — typisch quadratisch / kompakt */
+  /** Kombi-Logo 640×160 — linke Bildmarke ist quadratisch */
+  combinedWidth: 640,
+  combinedHeight: 160,
   markWidth: 160,
   markHeight: 160,
 } as const;
 
+/** Breites Kombi-Logo (Bildmarke + eingebetteter Text) */
+export const LOGO_COMBINED_ASPECT = BRAND.combinedWidth / BRAND.combinedHeight;
+
+/** Quadratische Bildmarke (Panda-Kopf) */
 export const LOGO_MARK_ASPECT = BRAND.markWidth / BRAND.markHeight;
 
+/** Anteil der Kombi-Logo-Breite, den die Bildmarke einnimmt */
+export const LOGO_MARK_WIDTH_RATIO = BRAND.markWidth / BRAND.combinedWidth;
+
+export function withIconVersion(path: string): string {
+  const v = BRAND.iconVersion;
+  return path.includes("?") ? path : `${path}?v=${v}`;
+}
+
 export const LOGO_SIZE_PX = {
-  headerDesktop: 48,
-  headerMobile: 40,
-  footer: 44,
-  adminSidebar: 36,
+  headerDesktop: 52,
+  headerMobile: 38,
+  footer: 52,
+  adminSidebar: 40,
   login: 72,
   splash: 100,
   decorative: 64,

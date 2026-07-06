@@ -317,11 +317,11 @@ export function SettingsView() {
       {tab === "branding" && branding ? (
         <AdminCard title="Logo & Branding">
           <p className="mb-4 text-sm text-text-muted">
-            Bildmarke: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/assets/logo.png</code> — Textmarke bleibt „Panda-Bande / Kinderevents“.
+            Bildmarke: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/assets/Logo.png</code> — Textmarke bleibt „Panda-Bande / Kinderevents“.
           </p>
           <div className="mb-6 flex flex-wrap items-center gap-6 rounded-xl border border-border bg-bg-secondary/40 p-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={branding.logoUrl || "/assets/logo.png"} alt="Logo Vorschau" className="h-14 w-auto object-contain" />
+            <img src={branding.logoUrl || "/assets/Logo.png"} alt="Logo Vorschau" className="h-16 w-auto max-w-[10rem] object-contain object-left" />
             <div>
               <p className="font-bold tracking-widest">{branding.logoTextPrimary}</p>
               <p className="text-sm tracking-widest text-text-muted">{branding.logoTextSecondary}</p>
@@ -329,7 +329,7 @@ export function SettingsView() {
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <AdminFormField label="Hauptlogo (Bildmarke)" className="md:col-span-2">
-              <input className="admin-input" value={branding.logoUrl} onChange={(e) => setBrandingField("logoUrl", e.target.value)} placeholder="/assets/logo.png" />
+              <input className="admin-input" value={branding.logoUrl} onChange={(e) => setBrandingField("logoUrl", e.target.value)} placeholder="/assets/Logo.png" />
             </AdminFormField>
             <AdminFormField label="Markenname">
               <input className="admin-input" value={branding.brandName} onChange={(e) => setBrandingField("brandName", e.target.value)} />

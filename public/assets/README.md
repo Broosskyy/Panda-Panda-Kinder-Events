@@ -1,12 +1,6 @@
-# Assets — Panda-Bande
+# Assets
 
-**Bildmarke (Standard):** `/assets/logo.png`  
-**Textmarke:** Panda-Bande / Kinderevents (aus CMS, neben dem Bild)
+**Bildmarke (Standard):** `/assets/Logo.png`  
+**Textmarke:** Panda-Bande / Kinderevents (aus CMS, neben dem Logo)
 
-Icons und OG-Bilder werden generiert:
-
-```bash
-npm run generate:brand-assets
-```
-
-CMS: Admin → Einstellungen → Branding
+Favicon/PWA-Icons werden daraus generiert: `npm run generate:brand-assets` → `public/icons/`

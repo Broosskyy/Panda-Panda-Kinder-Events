@@ -103,7 +103,7 @@ export function ContentView() {
           <a href="/admin/einstellungen?tab=branding" className="font-medium text-primary underline">
             Einstellungen → Branding
           </a>
-          . Master-Logo: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/branding/logo.png</code>
+          . Master-Logo: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/assets/Logo.png</code>
         </p>
       </AdminCard>
 

@@ -1,7 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import { LOGO_MARK_ASPECT, LOGO_SIZE_PX, type LogoContext } from "@/lib/brand";
+import {
+  BRAND,
+  LOGO_COMBINED_ASPECT,
+  LOGO_MARK_ASPECT,
+  LOGO_MARK_WIDTH_RATIO,
+  LOGO_SIZE_PX,
+  type LogoContext,
+} from "@/lib/brand";
 import { resolveBrandAlt, resolveBrandLogo } from "@/lib/brand/resolve";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteBrandingSettings } from "@/lib/cms/types";
@@ -42,13 +49,13 @@ function markHeightForContext(context: LogoContext): number {
 function markHeightClass(context: LogoContext): string {
   switch (context) {
     case "header":
-      return "h-10 sm:h-11 md:h-12";
+      return "h-[38px] min-h-[32px] sm:h-11 md:h-12 lg:h-14";
     case "footer":
-      return "h-11";
+      return "h-12 sm:h-14";
     case "splash":
       return "h-24 sm:h-28 md:h-32";
     case "admin":
-      return "h-9";
+      return "h-10";
     case "login":
       return "h-[72px]";
     case "decorative":
@@ -65,6 +72,8 @@ function textSizeClass(context: LogoContext): string {
       return "text-base sm:text-lg";
     case "footer":
       return "text-sm sm:text-base";
+    case "header":
+      return "text-[0.7rem] sm:text-xs md:text-sm";
     default:
       return "text-xs sm:text-sm";
   }
@@ -82,7 +91,6 @@ export function Logo({
   const logoSrc = resolveBrandLogo(branding, context);
   const logoAlt = resolveBrandAlt(branding);
   const markH = markHeightForContext(context);
-  const markW = Math.round(markH * LOGO_MARK_ASPECT);
   const markClass = markHeightClass(context);
   const shouldPreload = priority ?? (context === "header" || context === "splash");
   const displayText = showText ?? branding.showTextMark !== false;
@@ -92,22 +100,44 @@ export function Logo({
   const textPrimaryClass = isInverse ? "text-white" : "text-text-primary";
   const textSecondaryClass = isInverse ? "text-white/85" : "text-text-muted";
 
+  const customLogo = branding.logoUrl?.trim();
+  const isCombinedMaster = !customLogo || customLogo === BRAND.master;
+  const imageAspect = isCombinedMaster ? LOGO_COMBINED_ASPECT : LOGO_MARK_ASPECT;
+  const markImageWidth = Math.round(markH * imageAspect);
+  const markImageHeight = markH;
+
   const inner = (
-    <span className={`inline-flex max-w-full items-center gap-2 sm:gap-2.5 ${className}`}>
-      <span className={`relative inline-flex shrink-0 items-center ${markClass}`} style={{ aspectRatio: LOGO_MARK_ASPECT }}>
+    <span className={`inline-flex max-w-full min-w-0 items-center gap-2 sm:gap-2.5 ${className}`}>
+      <span
+        className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden ${markClass}`}
+        style={{ width: markH, aspectRatio: LOGO_MARK_ASPECT }}
+      >
         <Image
           src={logoSrc}
           alt={logoAlt}
-          width={markW}
-          height={markH}
-          className={`${markClass} w-auto max-w-none object-contain object-left`}
+          width={markImageWidth}
+          height={markImageHeight}
+          className={
+            isCombinedMaster
+              ? "absolute left-0 top-1/2 h-full w-auto max-w-none -translate-y-1/2 object-contain object-left"
+              : "h-full w-full object-contain object-center"
+          }
+          style={
+            isCombinedMaster
+              ? { width: `${100 / LOGO_MARK_WIDTH_RATIO}%`, maxWidth: "none" }
+              : undefined
+          }
           priority={shouldPreload}
         />
       </span>
       {displayText ? (
         <span className={`min-w-0 leading-tight ${textSizeClass(context)}`}>
-          <span className={`block font-bold tracking-[0.14em] ${textPrimaryClass}`}>{primary}</span>
-          <span className={`mt-0.5 block font-heading text-[0.65em] tracking-[0.28em] sm:text-[0.7em] ${textSecondaryClass}`}>
+          <span className={`block font-bold tracking-[0.12em] sm:tracking-[0.14em] ${textPrimaryClass}`}>
+            {primary}
+          </span>
+          <span
+            className={`mt-0.5 block font-heading text-[0.62em] tracking-[0.22em] sm:text-[0.68em] sm:tracking-[0.28em] ${textSecondaryClass}`}
+          >
             {secondary}
           </span>
         </span>

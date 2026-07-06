@@ -121,14 +121,18 @@ export default async function HomePage() {
         <Services items={services} heading={settings.sections.services} />
         <Process process={settings.process} heading={settings.sections.process} />
         <Gallery images={galleryImages} contact={settings.contact} heading={settings.sections.gallery} />
-        <Testimonials reviews={reviews} heading={settings.sections.testimonials} />
+        <Testimonials reviews={reviews} heading={settings.sections.testimonials} privacyHint={settings.legal.reviewPrivacyHint} />
         <About about={settings.about} team={settings.publicTeam} heading={settings.sections.about} />
         <News posts={posts} heading={settings.sections.news} />
         <Faq items={faqs} heading={settings.sections.faq} />
-        <Contact contact={settings.contact} heading={settings.sections.contact} />
+        <Contact contact={settings.contact} heading={settings.sections.contact} privacyHint={settings.legal.inquiryPrivacyHint} />
       </main>
       <Footer contact={settings.contact} footer={settings.footer} branding={settings.branding} />
-      <PublicChrome contact={settings.contact} ctaLabel={settings.navigation.ctaLabel} />
+      <PublicChrome
+        contact={settings.contact}
+        ctaLabel={settings.navigation.ctaLabel}
+        cookieNoticeText={settings.legal.cookieNoticeText}
+      />
     </>
   );
 }

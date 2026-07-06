@@ -89,11 +89,15 @@ export interface SiteSectionsSettings {
 
 export interface SiteContactSettings {
   phone: string;
+  mobile: string;
   email: string;
+  contactEmail: string;
   whatsapp: string;
+  whatsappLabel: string;
   instagram: string;
   instagramHandle: string;
   facebook: string;
+  tiktok: string;
   location: string;
   mapsUrl: string;
   responseTime: string;
@@ -144,31 +148,133 @@ export interface SiteEmailSettings {
   quoteCopyTo: string;
   invoiceCopyTo: string;
   inquiryRecipient: string;
+  inquiryCopyTo: string;
+  adminNotificationEmail: string;
+  inquiryAutoReplyEnabled: boolean;
+  inquiryAutoReplySubject: string;
+  inquiryAutoReplyText: string;
+  quoteSenderEmail: string;
+  quoteReplyTo: string;
+  quoteSubjectTemplate: string;
+  quoteEmailBody: string;
+  invoiceSenderEmail: string;
+  invoiceReplyTo: string;
+  invoiceSubjectTemplate: string;
+  invoiceEmailBody: string;
+  passwordResetSenderEmail: string;
+  securityNotificationSender: string;
+  loginAlertRecipient: string;
+  applicationEmail: string;
+  applicationCopyTo: string;
   customAddresses: SiteEmailCustomAddresses;
   /** @deprecated use inquiryRecipient */
   notificationEmail?: string;
 }
 
+export interface SiteBankSettings {
+  bankName: string;
+  accountHolder: string;
+  iban: string;
+  bic: string;
+  taxNumber: string;
+  vatId: string;
+  smallBusinessRule: boolean;
+  smallBusinessNotice: string;
+  paymentTerms: string;
+  dunningNotice: string;
+}
+
+export interface SiteInvoiceSettings {
+  quotePrefix: string;
+  invoicePrefix: string;
+  quoteStartNumber: number;
+  invoiceStartNumber: number;
+  yearInNumber: boolean;
+  defaultQuoteDateToday: boolean;
+  defaultInvoiceDateToday: boolean;
+  defaultDueDays: number;
+  defaultPaymentDays: number;
+  showServiceDate: boolean;
+  showEventDate: boolean;
+  defaultTaxRate: number;
+  smallBusinessRule: boolean;
+  taxNoticeText: string;
+  discountFieldEnabled: boolean;
+  quoteIntroText: string;
+  quoteClosingText: string;
+  invoiceIntroText: string;
+  invoiceClosingText: string;
+  paymentInfoText: string;
+  paymentReferenceText: string;
+  pdfFooterText: string;
+  legalNoticeText: string;
+}
+
+export interface SiteSeoSettings {
+  primaryDomain: string;
+  wwwDomain: string;
+  canonicalBaseUrl: string;
+  metaTitle: string;
+  metaDescription: string;
+  ogImageUrl: string;
+  socialPreviewText: string;
+  googleSiteVerification: string;
+  googleAnalyticsId: string;
+  microsoftClarityId: string;
+  robotsIndex: boolean;
+  sitemapEnabled: boolean;
+}
+
+export interface SiteLegalSettings {
+  impressumResponsible: string;
+  impressumDisclaimer: string;
+  privacyContactEmail: string;
+  privacyCustomText: string;
+  agbTitle: string;
+  agbContent: string;
+  cookieNoticeText: string;
+  inquiryPrivacyHint: string;
+  reviewPrivacyHint: string;
+  bookingPrivacyHint: string;
+  invoiceLegalNotice: string;
+  placeholderNotice: string;
+}
+
 export interface SiteBusinessSettings {
   companyName: string;
+  shortName: string;
+  slogan: string;
   logoUrl: string;
+  faviconUrl: string;
   street: string;
   zip: string;
   city: string;
+  state: string;
+  country: string;
   /** Legacy combined address — derived from street/zip/city when empty */
   address: string;
+  managingDirector: string;
+  description: string;
+  website: string;
   phone: string;
   email: string;
-  website: string;
+  /** @deprecated use bank settings — kept for backward compatibility */
   iban: string;
+  /** @deprecated use bank settings */
   bic: string;
+  /** @deprecated use bank settings */
   bankName: string;
+  /** @deprecated use bank settings */
   taxNumber: string;
+  /** @deprecated use bank settings */
   vatId: string;
-  managingDirector: string;
+  /** @deprecated use invoice settings */
   defaultPaymentDays: number;
+  /** @deprecated use invoice settings */
   defaultQuoteText: string;
+  /** @deprecated use invoice settings */
   defaultInvoiceText: string;
+  /** @deprecated use invoice settings */
   defaultPaymentText: string;
   /** @deprecated use email settings */
   senderName: string;
@@ -218,6 +324,10 @@ export interface SiteSettingsBundle {
   publicTeam: SitePublicTeamSettings;
   business: SiteBusinessSettings;
   email: SiteEmailSettings;
+  bank: SiteBankSettings;
+  invoice: SiteInvoiceSettings;
+  seo: SiteSeoSettings;
+  legal: SiteLegalSettings;
 }
 
 export interface CmsService {

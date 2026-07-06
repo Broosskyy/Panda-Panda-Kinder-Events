@@ -149,6 +149,10 @@ function buildSettingsFromRows(
       byKey.has("business"),
     ),
     email: cmsSection("email", DEFAULT_SITE_SETTINGS.email, byKey.get("email"), byKey.has("email")),
+    bank: cmsSection("bank", DEFAULT_SITE_SETTINGS.bank, byKey.get("bank"), byKey.has("bank")),
+    invoice: cmsSection("invoice", DEFAULT_SITE_SETTINGS.invoice, byKey.get("invoice"), byKey.has("invoice")),
+    seo: cmsSection("seo", DEFAULT_SITE_SETTINGS.seo, byKey.get("seo"), byKey.has("seo")),
+    legal: cmsSection("legal", DEFAULT_SITE_SETTINGS.legal, byKey.get("legal"), byKey.has("legal")),
     publicTeam: cmsSection(
       "publicTeam",
       DEFAULT_SITE_SETTINGS.publicTeam,

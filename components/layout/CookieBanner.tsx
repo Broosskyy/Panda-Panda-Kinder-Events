@@ -5,7 +5,11 @@ import Link from "next/link";
 
 const CONSENT_KEY = "panda-bande-cookie-consent";
 
-export function CookieBanner() {
+interface CookieBannerProps {
+  noticeText?: string;
+}
+
+export function CookieBanner({ noticeText }: CookieBannerProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -29,11 +33,15 @@ export function CookieBanner() {
     <div className="cookie-banner" role="dialog" aria-label="Cookie-Hinweis">
       <div className="cookie-banner-inner">
         <p className="cookie-banner-text">
-          Wir verwenden nur technisch notwendige Speicherung für die Website-Funktion. Details in der{" "}
-          <Link href="/datenschutz" className="underline hover:no-underline">
-            Datenschutzerklärung
-          </Link>
-          .
+          {noticeText || (
+            <>
+              Wir verwenden nur technisch notwendige Speicherung für die Website-Funktion. Details in der{" "}
+              <Link href="/datenschutz" className="underline hover:no-underline">
+                Datenschutzerklärung
+              </Link>
+              .
+            </>
+          )}
         </p>
         <button type="button" className="cookie-banner-btn" onClick={accept}>
           Verstanden

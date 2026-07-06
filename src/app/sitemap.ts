@@ -1,11 +1,14 @@
 import type { MetadataRoute } from "next";
-import { fetchPublishedPosts } from "@/lib/cms/data";
-import { getSiteUrl } from "@/lib/site-url";
+import { fetchPublishedPosts, fetchSiteSettings } from "@/lib/cms/data";
+import { resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const settings = await fetchSiteSettings();
+  if (!settings.seo.sitemapEnabled) return [];
+
   const posts = await fetchPublishedPosts(100);
   const now = new Date();
-  const base = getSiteUrl();
+  const base = resolvePublicSiteUrl(settings);
 
   return [
     { url: base, lastModified: now, changeFrequency: "weekly", priority: 1 },

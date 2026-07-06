@@ -1,4 +1,5 @@
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
+import { mergeBankFromLegacy, mergeInvoiceFromLegacy, syncLegacyBusinessFields } from "./settings-compat";
 import type {
   SiteSectionHeading,
   SiteSectionsSettings,
@@ -45,20 +46,30 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
   const defaults = DEFAULT_SITE_SETTINGS;
 
   const publicTeam = mergeRecord(defaults.publicTeam, base.publicTeam);
-  const teamItems = publicTeam.items?.filter(
-    (m) => m?.name?.trim() && m?.role?.trim(),
-  );
+  const teamItems = publicTeam.items?.filter((m) => m?.name?.trim() && m?.role?.trim());
   publicTeam.items =
-    teamItems?.length ? teamItems.map((m) => ({
-      name: m.name.trim(),
-      role: m.role.trim(),
-      description: m.description?.trim() || "",
-      imageUrl: m.imageUrl?.trim() || defaults.publicTeam.items[0]?.imageUrl || defaults.hero.imageUrl,
-    })) : defaults.publicTeam.items;
+    teamItems?.length
+      ? teamItems.map((m) => ({
+          name: m.name.trim(),
+          role: m.role.trim(),
+          description: m.description?.trim() || "",
+          imageUrl: m.imageUrl?.trim() || defaults.publicTeam.items[0]?.imageUrl || defaults.hero.imageUrl,
+        }))
+      : defaults.publicTeam.items;
+
+  const business = mergeRecord(defaults.business, base.business);
+  const bank = mergeBankFromLegacy(business, mergeRecord(defaults.bank, base.bank));
+  const invoice = mergeInvoiceFromLegacy(business, mergeRecord(defaults.invoice, base.invoice));
+  const syncedBusiness = syncLegacyBusinessFields(business, bank, invoice);
+
+  const contact = mergeRecord(defaults.contact, base.contact);
+  if (!contact.contactEmail?.trim()) contact.contactEmail = contact.email;
+  if (!contact.mobile?.trim()) contact.mobile = contact.phone;
+  if (!contact.whatsappLabel?.trim()) contact.whatsappLabel = "WhatsApp";
 
   return {
     hero: mergeRecord(defaults.hero, base.hero),
-    contact: mergeRecord(defaults.contact, base.contact),
+    contact,
     about: mergeRecord(defaults.about, base.about),
     footer: mergeRecord(defaults.footer, base.footer),
     navigation: {
@@ -93,7 +104,20 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
           : defaults.process.steps,
     },
     sections: mergeSectionHeadings(base.sections),
-    business: mergeRecord(defaults.business, base.business),
+    business: syncedBusiness,
+    bank,
+    invoice,
+    seo: mergeRecord(defaults.seo, base.seo),
+    legal: {
+      ...defaults.legal,
+      ...(base.legal ?? {}),
+      privacyContactEmail:
+        base.legal?.privacyContactEmail?.trim() || contact.email || defaults.legal.privacyContactEmail,
+      impressumResponsible:
+        base.legal?.impressumResponsible?.trim() ||
+        business.managingDirector?.trim() ||
+        defaults.legal.impressumResponsible,
+    },
     email: {
       ...defaults.email,
       ...(base.email ?? {}),
@@ -101,6 +125,11 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
         ...defaults.email.customAddresses,
         ...(base.email?.customAddresses ?? {}),
       },
+      inquiryCopyTo: base.email?.inquiryCopyTo ?? defaults.email.inquiryCopyTo,
+      adminNotificationEmail:
+        base.email?.adminNotificationEmail?.trim() ||
+        base.email?.copyToEmail?.trim() ||
+        defaults.email.adminNotificationEmail,
     },
     publicTeam,
   };

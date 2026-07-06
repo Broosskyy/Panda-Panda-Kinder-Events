@@ -31,30 +31,24 @@ function isResendTestDomain(email: string): boolean {
 
 function mergeEmailSettings(raw: SiteEmailSettings, contactEmail: string): SiteEmailSettings {
   const defaults = DEFAULT_SITE_SETTINGS.email;
-  const customAddresses = {
-    ...defaults.customAddresses,
-    ...(raw.customAddresses ?? {}),
-  };
+  const merged = { ...defaults, ...raw, customAddresses: { ...defaults.customAddresses, ...(raw.customAddresses ?? {}) } };
 
   const inquiryRecipient =
-    raw.inquiryRecipient ||
-    raw.notificationEmail ||
+    merged.inquiryRecipient ||
+    merged.notificationEmail ||
     process.env.INQUIRY_NOTIFICATION_EMAIL ||
-    raw.copyToEmail ||
-    raw.replyTo ||
+    merged.copyToEmail ||
+    merged.replyTo ||
     contactEmail;
 
   return {
-    companyName: raw.companyName || defaults.companyName,
-    senderName: raw.senderName || defaults.senderName,
-    senderEmail: raw.senderEmail || defaults.senderEmail,
-    replyTo: raw.replyTo || raw.senderEmail || contactEmail,
-    copyToEmail: raw.copyToEmail || inquiryRecipient,
-    quoteCopyTo: raw.quoteCopyTo || raw.copyToEmail || inquiryRecipient,
-    invoiceCopyTo: raw.invoiceCopyTo || raw.copyToEmail || inquiryRecipient,
+    ...merged,
+    replyTo: merged.replyTo || merged.senderEmail || contactEmail,
+    copyToEmail: merged.copyToEmail || inquiryRecipient,
+    quoteCopyTo: merged.quoteCopyTo || merged.copyToEmail || inquiryRecipient,
+    invoiceCopyTo: merged.invoiceCopyTo || merged.copyToEmail || inquiryRecipient,
     inquiryRecipient,
-    customAddresses,
-    notificationEmail: raw.notificationEmail,
+    adminNotificationEmail: merged.adminNotificationEmail || merged.copyToEmail || inquiryRecipient,
   };
 }
 
@@ -196,6 +190,56 @@ export function getCopyEmailForDocument(settings: SiteEmailSettings, type: "quot
   if (type === "quote" && settings.quoteCopyTo?.trim()) return settings.quoteCopyTo.trim();
   if (type === "invoice" && settings.invoiceCopyTo?.trim()) return settings.invoiceCopyTo.trim();
   return settings.copyToEmail?.trim() || getInquiryRecipient(settings);
+}
+
+export function applyEmailTemplate(
+  template: string,
+  vars: Record<string, string>,
+): string {
+  let result = template;
+  for (const [key, value] of Object.entries(vars)) {
+    result = result.replaceAll(`{${key}}`, value);
+  }
+  return result;
+}
+
+export async function resolveFlowEmailSender(
+  flow: "general" | "quote" | "invoice" | "security",
+  settings?: SiteEmailSettings,
+): Promise<ResolvedEmailSender> {
+  const email = settings ?? (await getEmailSettings());
+  const base = await resolveEmailSender(email);
+
+  const flowSender =
+    flow === "quote"
+      ? email.quoteSenderEmail?.trim()
+      : flow === "invoice"
+        ? email.invoiceSenderEmail?.trim()
+        : flow === "security"
+          ? email.passwordResetSenderEmail?.trim() || email.securityNotificationSender?.trim()
+          : "";
+
+  const flowReply =
+    flow === "quote"
+      ? email.quoteReplyTo?.trim()
+      : flow === "invoice"
+        ? email.invoiceReplyTo?.trim()
+        : "";
+
+  if (!flowSender) return base;
+
+  const domainCheck = await checkResendDomainStatus(flowSender);
+  if (domainCheck.status === "verified" && !isResendTestDomain(flowSender)) {
+    const senderName = email.senderName || email.companyName;
+    return {
+      ...base,
+      from: `${senderName} <${flowSender}>`,
+      replyTo: flowReply || base.replyTo,
+      displayFrom: `${senderName} <${flowSender}>`,
+    };
+  }
+
+  return { ...base, replyTo: flowReply || base.replyTo };
 }
 
 /** @deprecated use getInquiryRecipient or getCopyEmailForDocument */

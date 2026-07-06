@@ -13,7 +13,11 @@ import { PandaMascot } from "@/components/ui/PandaMascot";
 
 const TRUST_POINTS = ["Kostenlos", "Unverbindlich", "Schnelle Rückmeldung"] as const;
 
-export function InquiryForm() {
+interface InquiryFormProps {
+  privacyHint?: string;
+}
+
+export function InquiryForm({ privacyHint }: InquiryFormProps) {
   const [formLoadedAt] = useState(() => Date.now());
   const [errors, setErrors] = useState<Partial<Record<keyof InquirySimpleFormData, string>>>({});
   const [isSuccess, setIsSuccess] = useState(false);
@@ -200,11 +204,15 @@ export function InquiryForm() {
           {...fieldProps("privacy")}
         />
         <label htmlFor="privacy" className="text-base leading-relaxed text-text-secondary">
-          Ich stimme der{" "}
-          <Link href="/datenschutz" className="text-primary underline hover:no-underline">
-            Datenschutzerklärung
-          </Link>{" "}
-          zu. *
+          {privacyHint || (
+            <>
+              Ich stimme der{" "}
+              <Link href="/datenschutz" className="text-primary underline hover:no-underline">
+                Datenschutzerklärung
+              </Link>{" "}
+              zu. *
+            </>
+          )}
         </label>
       </div>
       {errors.privacy ? (

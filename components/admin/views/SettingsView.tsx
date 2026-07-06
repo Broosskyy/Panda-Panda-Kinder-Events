@@ -318,6 +318,7 @@ export function SettingsView() {
         <AdminCard title="Logo & Branding">
           <p className="mb-4 text-sm text-text-muted">
             Bildmarke: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/assets/Logo.png</code> — Textmarke bleibt „Panda-Bande / Kinderevents“.
+            Tab-Icon/Favicon: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/assets/AppIcon.svg</code> (Zwei-Panda).
           </p>
           <div className="mb-6 flex flex-wrap items-center gap-6 rounded-xl border border-border bg-bg-secondary/40 p-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -326,6 +327,8 @@ export function SettingsView() {
               <p className="font-bold tracking-widest">{branding.logoTextPrimary}</p>
               <p className="text-sm tracking-widest text-text-muted">{branding.logoTextSecondary}</p>
             </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={branding.faviconUrl || "/favicon.png?v=4"} alt="Tab-Icon Vorschau" className="h-12 w-12 rounded-lg border border-border object-contain" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <AdminFormField label="Hauptlogo (Bildmarke)" className="md:col-span-2">

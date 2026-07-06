@@ -6,6 +6,7 @@ import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput, AdminStatusBadge, crmDocumentStatusVariant } from "@/components/admin/ui";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { openAdminPdf } from "@/lib/admin/open-pdf";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmDocumentStatus } from "@/lib/crm/types";
 
@@ -27,6 +28,7 @@ export function InvoicesView() {
   const [sendToCustomer, setSendToCustomer] = useState(true);
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
   const { toast } = useAdminUi();
 
   const load = () => {
@@ -42,6 +44,7 @@ export function InvoicesView() {
   const confirmSend = async () => {
     if (!sendTarget || !sendToCustomer) return;
     setSending(true);
+    setSendError(null);
     try {
       const res = await fetch(`/api/admin/invoices/${sendTarget.id}/send`, {
         method: "POST",
@@ -49,15 +52,31 @@ export function InvoicesView() {
         body: JSON.stringify({ copyToBusiness }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
+      if (!res.ok) {
+        setSendError({
+          message: data.error ?? "Versand fehlgeschlagen",
+          detail: data.detail,
+          code: data.code,
+        });
+        return;
+      }
       toast("Rechnung versendet");
       setSendTarget(null);
       load();
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Versand fehlgeschlagen", "error");
+      const message = err instanceof Error ? err.message : "Versand fehlgeschlagen";
+      setSendError({ message });
+      toast(message, "error");
     } finally {
       setSending(false);
     }
+  };
+
+  const openPdf = (invoiceId: string) => {
+    void openAdminPdf(`/api/admin/invoices/${invoiceId}/pdf`, (err) => {
+      toast(err.message, "error");
+      if (err.detail) console.error("PDF error:", err.detail);
+    });
   };
 
   const setStatus = async (id: string, status: string) => {
@@ -96,7 +115,7 @@ export function InvoicesView() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <AdminFilterSelect value={inv.status} onChange={(v) => setStatus(inv.id, v)} options={STATUS_OPTIONS} />
-                  <AdminButton variant="secondary" href={`/api/admin/invoices/${inv.id}/pdf`} target="_blank">PDF</AdminButton>
+                  <AdminButton variant="secondary" onClick={() => openPdf(inv.id)}>PDF</AdminButton>
                   <AdminButton
                     variant="primary"
                     icon={<Send className="h-4 w-4" />}
@@ -104,6 +123,7 @@ export function InvoicesView() {
                       setSendTarget(inv);
                       setSendToCustomer(true);
                       setCopyToBusiness(true);
+                      setSendError(null);
                     }}
                   >
                     Senden
@@ -122,6 +142,7 @@ export function InvoicesView() {
         sendToCustomer={sendToCustomer}
         copyToBusiness={copyToBusiness}
         loading={sending}
+        error={sendError}
         onChangeSendToCustomer={setSendToCustomer}
         onChangeCopyToBusiness={setCopyToBusiness}
         onClose={() => setSendTarget(null)}

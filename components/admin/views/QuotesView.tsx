@@ -21,6 +21,7 @@ import {
 } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { openAdminPdf } from "@/lib/admin/open-pdf";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmCustomer, type CrmDocumentStatus } from "@/lib/crm/types";
 
@@ -64,6 +65,7 @@ export function QuotesView() {
   const [sendToCustomer, setSendToCustomer] = useState(true);
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
+  const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
   const { toast, withLoading } = useAdminUi();
 
   const load = () => {
@@ -138,6 +140,7 @@ export function QuotesView() {
   const confirmSend = async () => {
     if (!sendTarget || !sendToCustomer) return;
     setSending(true);
+    setSendError(null);
     try {
       const res = await fetch(`/api/admin/quotes/${sendTarget.id}/send`, {
         method: "POST",
@@ -145,15 +148,31 @@ export function QuotesView() {
         body: JSON.stringify({ copyToBusiness }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
+      if (!res.ok) {
+        setSendError({
+          message: data.error ?? "Versand fehlgeschlagen",
+          detail: data.detail,
+          code: data.code,
+        });
+        return;
+      }
       toast("Angebot versendet");
       setSendTarget(null);
       load();
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Versand fehlgeschlagen", "error");
+      const message = err instanceof Error ? err.message : "Versand fehlgeschlagen";
+      setSendError({ message });
+      toast(message, "error");
     } finally {
       setSending(false);
     }
+  };
+
+  const openPdf = (quoteId: string) => {
+    void openAdminPdf(`/api/admin/quotes/${quoteId}/pdf`, (err) => {
+      toast(err.message, "error");
+      if (err.detail) console.error("PDF error:", err.detail);
+    });
   };
 
   const toInvoice = async (quoteId: string) => {
@@ -289,7 +308,7 @@ export function QuotesView() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <AdminButton variant="secondary" href={`/api/admin/quotes/${q.id}/pdf`} target="_blank">
+                  <AdminButton variant="secondary" onClick={() => openPdf(q.id)}>
                     PDF
                   </AdminButton>
                   <AdminButton
@@ -299,6 +318,7 @@ export function QuotesView() {
                       setSendTarget(q);
                       setSendToCustomer(true);
                       setCopyToBusiness(true);
+                      setSendError(null);
                     }}
                   >
                     Senden
@@ -320,6 +340,7 @@ export function QuotesView() {
         sendToCustomer={sendToCustomer}
         copyToBusiness={copyToBusiness}
         loading={sending}
+        error={sendError}
         onChangeSendToCustomer={setSendToCustomer}
         onChangeCopyToBusiness={setCopyToBusiness}
         onClose={() => setSendTarget(null)}

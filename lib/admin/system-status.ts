@@ -1,4 +1,5 @@
-import { checkResendDomainStatus, getEmailSettings } from "@/lib/email/sender";
+import { getEmailSettings } from "@/lib/email/sender";
+import { getResendSendingSetup } from "@/lib/email/resend-status";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
 import { getSiteUrl } from "@/lib/site-url";
@@ -47,19 +48,30 @@ export async function getSystemStatus(): Promise<{
     action: resendOk ? undefined : "RESEND_API_KEY in Vercel setzen.",
   });
 
-  let domainVerified = false;
   if (resendOk) {
     try {
       const email = await getEmailSettings();
-      const check = await checkResendDomainStatus(email.senderEmail);
-      domainVerified = check.status === "verified";
-      items.push({
-        id: "resend_domain",
-        label: "Resend Domain verifiziert",
-        level: domainVerified ? "ok" : "warn",
-        message: check.message,
-        action: domainVerified ? undefined : "Domain in Resend verifizieren (DOMAIN_EMAIL_SETUP_GUIDE.md).",
-      });
+      const sendingSetup = await getResendSendingSetup(email.senderEmail);
+      for (const item of sendingSetup.sending) {
+        items.push({
+          id: `resend_${item.id}`,
+          label: item.label,
+          level: item.level === "optional" ? "warn" : item.level === "ok" ? "ok" : item.level === "warn" ? "warn" : "error",
+          message: item.message,
+          action:
+            item.level === "error" && item.id === "from_address"
+              ? "Domain in Resend verifizieren (DOMAIN_EMAIL_SETUP_GUIDE.md)."
+              : undefined,
+        });
+      }
+      for (const item of sendingSetup.receiving) {
+        items.push({
+          id: `resend_${item.id}`,
+          label: item.label,
+          level: "ok",
+          message: item.message,
+        });
+      }
     } catch {
       items.push({
         id: "resend_domain",

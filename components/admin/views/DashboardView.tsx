@@ -15,6 +15,7 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminEmptyState } from "@/components/admin/ui";
 import type { AdminActivityItem } from "@/lib/admin/activity";
 import { DASHBOARD_QUICK_ACTIONS } from "@/lib/admin/quickActions";
+import { resolveAdminIcon } from "@/lib/admin/icons";
 import type { AdminAnalyticsDashboard } from "@/lib/analytics/types";
 
 function formatRelativeTime(dateStr: string) {
@@ -115,12 +116,15 @@ export function DashboardView() {
       <section className="admin-dashboard-section">
         <h2 className="admin-dashboard-section-title">Schnellaktionen</h2>
         <div className="admin-quick-actions">
-          {DASHBOARD_QUICK_ACTIONS.map(({ href, label, icon: Icon }) => (
+          {DASHBOARD_QUICK_ACTIONS.map(({ href, label, iconKey }) => {
+            const Icon = resolveAdminIcon(iconKey);
+            return (
             <Link key={href + label} href={href} className="admin-quick-action">
               <Icon className="h-5 w-5 text-primary" aria-hidden />
               {label}
             </Link>
-          ))}
+            );
+          })}
         </div>
       </section>
 

@@ -33,7 +33,10 @@ export function CustomersView() {
   };
 
   useEffect(() => {
-    load();
+    const q = search ? `?q=${encodeURIComponent(search)}` : "";
+    fetch(`/api/admin/customers${q}`)
+      .then((r) => r.json())
+      .then((d) => setCustomers(d.customers ?? []));
   }, [search]);
 
   useEffect(() => {

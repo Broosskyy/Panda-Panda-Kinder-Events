@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
 import { ADMIN_GLOBAL_QUICK_ACTIONS } from "@/lib/admin/quickActions";
+import { resolveAdminIcon } from "@/lib/admin/icons";
 
 export function AdminQuickActions() {
   const [open, setOpen] = useState(false);
@@ -26,7 +27,9 @@ export function AdminQuickActions() {
               </button>
             </div>
             <ul className="p-2">
-              {ADMIN_GLOBAL_QUICK_ACTIONS.map(({ href, label, icon: Icon, description }) => (
+              {ADMIN_GLOBAL_QUICK_ACTIONS.map(({ href, label, iconKey, description }) => {
+                const Icon = resolveAdminIcon(iconKey);
+                return (
                 <li key={href}>
                   <Link href={href} className="admin-quick-actions-item" role="menuitem" onClick={() => setOpen(false)}>
                     <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden />
@@ -36,7 +39,8 @@ export function AdminQuickActions() {
                     </span>
                   </Link>
                 </li>
-              ))}
+                );
+              })}
             </ul>
           </div>
         </>

@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
-import { createQuote, listQuotes, updateQuote } from "@/lib/crm/db";
+import { getAdminContext, requireAdmin } from "@/lib/admin-route";
+import {
+  archiveQuote,
+  createQuote,
+  deleteQuote,
+  listQuotes,
+  restoreQuote,
+  updateQuote,
+  type CrmListView,
+} from "@/lib/crm/db";
 import { crmQuoteSchema, crmStatusUpdateSchema } from "@/lib/crm/schemas";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+
+function parseView(value: string | null): CrmListView {
+  if (value === "archived" || value === "all") return value;
+  return "active";
+}
 
 export async function GET(request: Request) {
   const authError = await requireAdmin();
@@ -10,9 +23,10 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("q") ?? undefined;
+  const view = parseView(searchParams.get("view"));
 
   try {
-    const quotes = await listQuotes(search);
+    const quotes = await listQuotes(search, view);
     return NextResponse.json({ quotes });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Laden fehlgeschlagen.";
@@ -43,10 +57,37 @@ export async function PATCH(request: Request) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
+  const ctx = await getAdminContext();
   const body = await request.json();
-  const { id, items, ...rest } = body as { id?: string; items?: unknown[] };
+  const { id, items, action, ...rest } = body as {
+    id?: string;
+    items?: unknown[];
+    action?: string;
+  };
 
-  if (body.status && id && !items) {
+  if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+
+  if (action === "archive") {
+    try {
+      await archiveQuote(id, ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Archivieren fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "restore") {
+    try {
+      await restoreQuote(id, ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Wiederherstellen fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (body.status && !items && !action) {
     const statusParsed = crmStatusUpdateSchema.safeParse(body);
     if (!statusParsed.success) {
       return NextResponse.json({ error: "Ungültiger Status." }, { status: 400 });
@@ -59,8 +100,6 @@ export async function PATCH(request: Request) {
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
     return NextResponse.json({ success: true });
   }
-
-  if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
 
   try {
     const quote = await updateQuote(id, { ...rest, items: items as never });
@@ -75,11 +114,15 @@ export async function DELETE(request: Request) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
+  const ctx = await getAdminContext();
   const { id } = await request.json();
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
 
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from("crm_quotes").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+  try {
+    await deleteQuote(id, ctx);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

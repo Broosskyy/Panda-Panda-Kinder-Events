@@ -41,6 +41,10 @@ export interface CrmQuote {
   total_cents: number;
   valid_until: string | null;
   sent_at: string | null;
+  deleted_at?: string | null;
+  archived_at?: string | null;
+  cancelled_at?: string | null;
+  cancelled_reason?: string | null;
   items?: CrmLineItem[];
   customer?: CrmCustomer;
 }
@@ -65,6 +69,10 @@ export interface CrmInvoice {
   due_date: string | null;
   sent_at: string | null;
   paid_at: string | null;
+  deleted_at?: string | null;
+  archived_at?: string | null;
+  cancelled_at?: string | null;
+  cancelled_reason?: string | null;
   items?: CrmLineItem[];
   customer?: CrmCustomer;
 }

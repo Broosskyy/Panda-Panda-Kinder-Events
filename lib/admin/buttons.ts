@@ -6,6 +6,8 @@ export const ADMIN_BTN = {
   delete: "Löschen",
   preview: "Vorschau",
   pdf: "PDF",
+  pdfOpen: "PDF öffnen",
+  pdfDownload: "PDF herunterladen",
   send: "Versenden",
   edit: "Bearbeiten",
   duplicate: "Duplizieren",

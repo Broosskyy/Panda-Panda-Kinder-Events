@@ -77,9 +77,9 @@ export const ADMIN_NAV: AdminNavItem[] = ADMIN_NAV_GROUPS.flatMap((group) => gro
 
 export const MOBILE_BOTTOM_NAV_HREFS = [
   "/admin",
-  "/admin/kunden",
   "/admin/galerie",
   "/admin/anfragen",
+  "/admin/kunden",
 ] as const;
 
 export function isAdminNavActive(pathname: string, href: string): boolean {

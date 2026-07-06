@@ -48,7 +48,7 @@ function markHeightForContext(context: LogoContext): number {
 function markHeightClass(context: LogoContext): string {
   switch (context) {
     case "header":
-      return "h-[38px] min-h-[32px] sm:h-11 md:h-12 lg:h-14";
+      return "h-[40px] min-h-[36px] sm:h-11 md:h-12 lg:h-14";
     case "footer":
       return "h-12 sm:h-14";
     case "splash":
@@ -72,7 +72,7 @@ function textSizeClass(context: LogoContext): string {
     case "footer":
       return "text-sm sm:text-base";
     case "header":
-      return "text-[0.7rem] sm:text-xs md:text-sm";
+      return "text-[0.72rem] sm:text-xs md:text-sm";
     default:
       return "text-xs sm:text-sm";
   }

@@ -1,7 +1,8 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { LOGO_MARK_ASPECT, LOGO_SIZE_PX } from "@/lib/brand";
+import { LOGO_SIZE_PX } from "@/lib/brand";
 import type { BusinessProfile } from "./company";
-import { getSiteUrl } from "@/lib/site-url";
+import { loadLogoBytes } from "./load-logo";
+import { pdfSafeDate, pdfSafeText } from "./pdf-text";
 import { formatCents } from "./money";
 import type { CrmCustomer, CrmDocumentStatus, CrmInvoice, CrmQuote } from "./types";
 import { CRM_STATUS_LABELS } from "./types";
@@ -16,8 +17,8 @@ const WHITE = rgb(1, 1, 1);
 const PAGE = { width: 595.28, height: 841.89 };
 const MARGIN = 48;
 const CONTENT_WIDTH = PAGE.width - MARGIN * 2;
-const PDF_LOGO_WIDTH = LOGO_SIZE_PX.pdfWidth;
-const PDF_LOGO_HEIGHT = PDF_LOGO_WIDTH / LOGO_MARK_ASPECT;
+const PDF_LOGO_MAX_WIDTH = LOGO_SIZE_PX.pdfWidth;
+const PDF_LOGO_MAX_HEIGHT = 72;
 
 interface PdfLineItem {
   description: string;
@@ -46,31 +47,17 @@ export interface PdfDocumentData {
   company: BusinessProfile;
 }
 
-function formatDateDE(iso: string | null | undefined): string {
-  if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
-async function fetchLogoBytes(logoUrl: string): Promise<{ bytes: Uint8Array; kind: "png" | "jpg" } | null> {
-  try {
-    const base = getSiteUrl();
-    const url = logoUrl.startsWith("http") ? logoUrl : `${base}${logoUrl}`;
-    const res = await fetch(url);
-    if (!res.ok) return null;
-    const bytes = new Uint8Array(await res.arrayBuffer());
-    const kind = url.toLowerCase().includes(".png") ? "png" : "jpg";
-    return { bytes, kind };
-  } catch {
-    return null;
-  }
+function safeDraw(
+  page: PDFPage,
+  text: string | null | undefined,
+  options: Parameters<PDFPage["drawText"]>[1],
+) {
+  page.drawText(pdfSafeText(text), options);
 }
 
 function wrapText(text: string, maxLen: number): string[] {
-  const words = text.split(/\s+/);
+  const safe = pdfSafeText(text);
+  const words = safe.split(/\s+/);
   const lines: string[] = [];
   let line = "";
   for (const word of words) {
@@ -87,7 +74,7 @@ function wrapText(text: string, maxLen: number): string[] {
 }
 
 function splitDescription(description: string): { title: string; details: string | null } {
-  const parts = description.split("\n");
+  const parts = pdfSafeText(description).split("\n");
   return { title: parts[0] ?? description, details: parts[1]?.trim() || null };
 }
 
@@ -114,7 +101,7 @@ function drawFooter(page: PDFPage, font: PDFFont, company: BusinessProfile) {
   let y = footerY;
   for (const part of parts) {
     for (const line of wrapText(String(part), 110)) {
-      page.drawText(line, { x: MARGIN, y, size: 7, font, color: MUTED });
+      safeDraw(page, line, { x: MARGIN, y, size: 7, font, color: MUTED });
       y -= 9;
     }
   }
@@ -127,12 +114,13 @@ function drawHeader(
   company: BusinessProfile,
   data: PdfDocumentData,
   hasLogo: boolean,
+  logoWidth: number,
 ) {
   const headerH = 88;
   page.drawRectangle({ x: 0, y: PAGE.height - headerH, width: PAGE.width, height: headerH, color: BRAND_COLOR });
 
-  const textX = hasLogo ? MARGIN + PDF_LOGO_WIDTH + 14 : MARGIN;
-  page.drawText(company.companyName, {
+  const textX = hasLogo ? MARGIN + logoWidth + 14 : MARGIN;
+  safeDraw(page, company.companyName, {
     x: textX,
     y: PAGE.height - 28,
     size: 14,
@@ -140,188 +128,227 @@ function drawHeader(
     color: WHITE,
   });
 
-  const addressLines = (company.formattedAddress || company.address || "").split("\n").filter(Boolean);
+  const addressLines = pdfSafeText(company.formattedAddress || company.address || "")
+    .split("\n")
+    .filter(Boolean);
   let leftY = PAGE.height - 44;
   for (const line of [...addressLines.slice(0, 2), company.phone, company.email].filter(Boolean).slice(0, 3)) {
-    page.drawText(String(line), { x: textX, y: leftY, size: 8, font, color: rgb(0.94, 0.94, 0.9) });
+    safeDraw(page, String(line), { x: textX, y: leftY, size: 8, font, color: rgb(0.94, 0.94, 0.9) });
     leftY -= 10;
   }
 
   const docLabel = data.type === "quote" ? "ANGEBOT" : "RECHNUNG";
-  page.drawText(docLabel, { x: 380, y: PAGE.height - 30, size: 16, font: fontBold, color: WHITE });
-  page.drawText(`Nr. ${data.number}`, { x: 380, y: PAGE.height - 46, size: 9, font, color: rgb(0.92, 0.92, 0.88) });
-  page.drawText(`Datum: ${formatDateDE(data.date)}`, { x: 380, y: PAGE.height - 58, size: 8, font, color: rgb(0.92, 0.92, 0.88) });
+  safeDraw(page, docLabel, { x: 380, y: PAGE.height - 30, size: 16, font: fontBold, color: WHITE });
+  safeDraw(page, `Nr. ${data.number}`, { x: 380, y: PAGE.height - 46, size: 9, font, color: rgb(0.92, 0.92, 0.88) });
+  safeDraw(page, `Datum: ${pdfSafeDate(data.date)}`, { x: 380, y: PAGE.height - 58, size: 8, font, color: rgb(0.92, 0.92, 0.88) });
 
   if (data.type === "quote" && data.validUntil) {
-    page.drawText(`Gültig bis: ${formatDateDE(data.validUntil)}`, { x: 380, y: PAGE.height - 68, size: 8, font, color: rgb(0.92, 0.92, 0.88) });
+    safeDraw(page, `Gueltig bis: ${pdfSafeDate(data.validUntil)}`, {
+      x: 380,
+      y: PAGE.height - 68,
+      size: 8,
+      font,
+      color: rgb(0.92, 0.92, 0.88),
+    });
   }
   if (data.type === "invoice" && data.dueDate) {
-    page.drawText(`Fällig: ${formatDateDE(data.dueDate)}`, { x: 380, y: PAGE.height - 68, size: 8, font, color: rgb(0.92, 0.92, 0.88) });
+    safeDraw(page, `Faellig: ${pdfSafeDate(data.dueDate)}`, {
+      x: 380,
+      y: PAGE.height - 68,
+      size: 8,
+      font,
+      color: rgb(0.92, 0.92, 0.88),
+    });
   }
   if (data.status) {
-    page.drawText(`Status: ${CRM_STATUS_LABELS[data.status]}`, { x: 380, y: PAGE.height - (data.validUntil || data.dueDate ? 78 : 68), size: 7, font, color: rgb(0.92, 0.92, 0.88) });
+    safeDraw(page, `Status: ${CRM_STATUS_LABELS[data.status]}`, {
+      x: 380,
+      y: PAGE.height - (data.validUntil || data.dueDate ? 78 : 68),
+      size: 7,
+      font,
+      color: rgb(0.92, 0.92, 0.88),
+    });
   }
 }
 
 export async function generateCrmPdf(data: PdfDocumentData): Promise<Uint8Array> {
-  const pdf = await PDFDocument.create();
-  let page = pdf.addPage([PAGE.width, PAGE.height]);
-  const font = await pdf.embedFont(StandardFonts.Helvetica);
-  const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
+  try {
+    const pdf = await PDFDocument.create();
+    let page = pdf.addPage([PAGE.width, PAGE.height]);
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    const fontBold = await pdf.embedFont(StandardFonts.HelveticaBold);
 
-  const logo = await fetchLogoBytes(data.company.logoUrl);
-  const hasLogo = Boolean(logo);
-  if (logo) {
-    const image = logo.kind === "png" ? await pdf.embedPng(logo.bytes) : await pdf.embedJpg(logo.bytes);
-    page.drawImage(image, {
+    let hasLogo = false;
+    let logoWidth = 0;
+    let logoHeight = 0;
+
+    const logo = await loadLogoBytes(data.company.logoUrl);
+    if (logo) {
+      try {
+        const image = logo.kind === "png" ? await pdf.embedPng(logo.bytes) : await pdf.embedJpg(logo.bytes);
+        const aspect = image.width / image.height;
+        logoHeight = Math.min(PDF_LOGO_MAX_HEIGHT, 64);
+        logoWidth = logoHeight * aspect;
+        if (logoWidth > PDF_LOGO_MAX_WIDTH) {
+          logoWidth = PDF_LOGO_MAX_WIDTH;
+          logoHeight = logoWidth / aspect;
+        }
+        page.drawImage(image, {
+          x: MARGIN,
+          y: PAGE.height - MARGIN - logoHeight + 8,
+          width: logoWidth,
+          height: logoHeight,
+        });
+        hasLogo = true;
+      } catch (logoErr) {
+        console.warn("PDF logo embed failed:", logoErr);
+      }
+    }
+
+    drawHeader(page, font, fontBold, data.company, data, hasLogo, logoWidth);
+
+    let y = PAGE.height - 108;
+
+    const customerBlockH = 56;
+    page.drawRectangle({
       x: MARGIN,
-      y: PAGE.height - MARGIN - PDF_LOGO_HEIGHT + 8,
-      width: PDF_LOGO_WIDTH,
-      height: PDF_LOGO_HEIGHT,
+      y: y - customerBlockH,
+      width: CONTENT_WIDTH,
+      height: customerBlockH,
+      color: LIGHT,
+      borderColor: BORDER,
+      borderWidth: 0.5,
     });
-  }
-
-  drawHeader(page, font, fontBold, data.company, data, hasLogo);
-
-  let y = PAGE.height - 108;
-
-  // Customer block
-  const customerBlockH = 56;
-  page.drawRectangle({
-    x: MARGIN,
-    y: y - customerBlockH,
-    width: CONTENT_WIDTH,
-    height: customerBlockH,
-    color: LIGHT,
-    borderColor: BORDER,
-    borderWidth: 0.5,
-  });
-  page.drawText("Empfänger", { x: MARGIN + 10, y: y - 14, size: 8, font: fontBold, color: MUTED });
-  page.drawText(data.customer.name, { x: MARGIN + 10, y: y - 28, size: 11, font: fontBold, color: TEXT });
-  let cy = y - 40;
-  for (const line of [data.customer.address, data.customer.email, data.customer.phone].filter(Boolean)) {
-    page.drawText(String(line), { x: MARGIN + 10, y: cy, size: 9, font, color: TEXT });
-    cy -= 11;
-  }
-
-  y = y - customerBlockH - 16;
-  page.drawText(data.title, { x: MARGIN, y, size: 12, font: fontBold, color: TEXT });
-  y -= 18;
-
-  // Table header
-  const colDesc = MARGIN + 8;
-  const colQty = 330;
-  const colUnit = 385;
-  const colTotal = 475;
-  const rowH = 18;
-
-  page.drawRectangle({ x: MARGIN, y: y - 4, width: CONTENT_WIDTH, height: rowH, color: BRAND_COLOR });
-  page.drawText("Bezeichnung", { x: colDesc, y: y, size: 9, font: fontBold, color: WHITE });
-  page.drawText("Menge", { x: colQty, y: y, size: 9, font: fontBold, color: WHITE });
-  page.drawText("Einzelpreis", { x: colUnit, y: y, size: 9, font: fontBold, color: WHITE });
-  page.drawText("Gesamt", { x: colTotal, y: y, size: 9, font: fontBold, color: WHITE });
-  y -= rowH + 4;
-
-  for (let i = 0; i < data.items.length; i++) {
-    if (y < 200) {
-      drawFooter(page, font, data.company);
-      page = pdf.addPage([PAGE.width, PAGE.height]);
-      y = PAGE.height - 64;
+    safeDraw(page, "Empfaenger", { x: MARGIN + 10, y: y - 14, size: 8, font: fontBold, color: MUTED });
+    safeDraw(page, data.customer.name, { x: MARGIN + 10, y: y - 28, size: 11, font: fontBold, color: TEXT });
+    let cy = y - 40;
+    for (const line of [data.customer.address, data.customer.email, data.customer.phone].filter(Boolean)) {
+      safeDraw(page, String(line), { x: MARGIN + 10, y: cy, size: 9, font, color: TEXT });
+      cy -= 11;
     }
 
-    const item = data.items[i];
-    const { title, details } = splitDescription(item.description);
-    const bg = i % 2 === 0 ? WHITE : LIGHT;
-    page.drawRectangle({ x: MARGIN, y: y - rowH + 2, width: CONTENT_WIDTH, height: rowH + (details ? 10 : 0), color: bg });
+    y = y - customerBlockH - 16;
+    safeDraw(page, data.title, { x: MARGIN, y, size: 12, font: fontBold, color: TEXT });
+    y -= 18;
 
-    page.drawText(title.slice(0, 48), { x: colDesc, y, size: 10, font: fontBold, color: TEXT });
-    if (details) {
-      page.drawText(details.slice(0, 60), { x: colDesc, y: y - 11, size: 8, font, color: MUTED });
+    const colDesc = MARGIN + 8;
+    const colQty = 330;
+    const colUnit = 385;
+    const colTotal = 475;
+    const rowH = 18;
+
+    page.drawRectangle({ x: MARGIN, y: y - 4, width: CONTENT_WIDTH, height: rowH, color: BRAND_COLOR });
+    safeDraw(page, "Bezeichnung", { x: colDesc, y, size: 9, font: fontBold, color: WHITE });
+    safeDraw(page, "Menge", { x: colQty, y, size: 9, font: fontBold, color: WHITE });
+    safeDraw(page, "Einzelpreis", { x: colUnit, y, size: 9, font: fontBold, color: WHITE });
+    safeDraw(page, "Gesamt", { x: colTotal, y, size: 9, font: fontBold, color: WHITE });
+    y -= rowH + 4;
+
+    for (let i = 0; i < data.items.length; i++) {
+      if (y < 200) {
+        drawFooter(page, font, data.company);
+        page = pdf.addPage([PAGE.width, PAGE.height]);
+        y = PAGE.height - 64;
+      }
+
+      const item = data.items[i];
+      const { title, details } = splitDescription(item.description);
+      const bg = i % 2 === 0 ? WHITE : LIGHT;
+      page.drawRectangle({ x: MARGIN, y: y - rowH + 2, width: CONTENT_WIDTH, height: rowH + (details ? 10 : 0), color: bg });
+
+      safeDraw(page, title.slice(0, 48), { x: colDesc, y, size: 10, font: fontBold, color: TEXT });
+      if (details) {
+        safeDraw(page, details.slice(0, 60), { x: colDesc, y: y - 11, size: 8, font, color: MUTED });
+      }
+      safeDraw(page, String(item.quantity), { x: colQty, y, size: 10, font, color: TEXT });
+      safeDraw(page, formatCents(item.unit_price_cents), { x: colUnit, y, size: 10, font, color: TEXT });
+      safeDraw(page, formatCents(item.line_total_cents), { x: colTotal, y, size: 10, font: fontBold, color: TEXT });
+      y -= rowH + (details ? 12 : 6);
     }
-    page.drawText(String(item.quantity), { x: colQty, y, size: 10, font, color: TEXT });
-    page.drawText(formatCents(item.unit_price_cents), { x: colUnit, y, size: 10, font, color: TEXT });
-    page.drawText(formatCents(item.line_total_cents), { x: colTotal, y, size: 10, font: fontBold, color: TEXT });
-    y -= rowH + (details ? 12 : 6);
-  }
 
-  y -= 8;
-  const totalsW = 200;
-  const totalsX = PAGE.width - MARGIN - totalsW;
-  const totalsH = data.discount_cents > 0 ? 78 : 64;
-  page.drawRectangle({ x: totalsX, y: y - totalsH, width: totalsW, height: totalsH, color: LIGHT, borderColor: BORDER, borderWidth: 0.5 });
+    y -= 8;
+    const totalsW = 200;
+    const totalsX = PAGE.width - MARGIN - totalsW;
+    const totalsH = data.discount_cents > 0 ? 78 : 64;
+    page.drawRectangle({ x: totalsX, y: y - totalsH, width: totalsW, height: totalsH, color: LIGHT, borderColor: BORDER, borderWidth: 0.5 });
 
-  let ty = y - 14;
-  page.drawText("Zwischensumme", { x: totalsX + 10, y: ty, size: 9, font, color: MUTED });
-  page.drawText(formatCents(data.subtotal_cents), { x: colTotal, y: ty, size: 9, font, color: TEXT });
-  ty -= 14;
-  if (data.discount_cents > 0) {
-    page.drawText(`Rabatt (${data.discount_percent} %)`, { x: totalsX + 10, y: ty, size: 9, font, color: MUTED });
-    page.drawText(`-${formatCents(data.discount_cents)}`, { x: colTotal, y: ty, size: 9, font, color: TEXT });
+    let ty = y - 14;
+    safeDraw(page, "Zwischensumme", { x: totalsX + 10, y: ty, size: 9, font, color: MUTED });
+    safeDraw(page, formatCents(data.subtotal_cents), { x: colTotal, y: ty, size: 9, font, color: TEXT });
     ty -= 14;
-  }
-  page.drawText(`MwSt. (${data.tax_rate} %)`, { x: totalsX + 10, y: ty, size: 9, font, color: MUTED });
-  page.drawText(formatCents(data.tax_cents), { x: colTotal, y: ty, size: 9, font, color: TEXT });
-  ty -= 16;
-  page.drawText("Gesamtbetrag", { x: totalsX + 10, y: ty, size: 11, font: fontBold, color: BRAND_COLOR });
-  page.drawText(formatCents(data.total_cents), { x: colTotal, y: ty, size: 11, font: fontBold, color: BRAND_COLOR });
+    if (data.discount_cents > 0) {
+      safeDraw(page, `Rabatt (${data.discount_percent} %)`, { x: totalsX + 10, y: ty, size: 9, font, color: MUTED });
+      safeDraw(page, `-${formatCents(data.discount_cents)}`, { x: colTotal, y: ty, size: 9, font, color: TEXT });
+      ty -= 14;
+    }
+    safeDraw(page, `MwSt. (${data.tax_rate} %)`, { x: totalsX + 10, y: ty, size: 9, font, color: MUTED });
+    safeDraw(page, formatCents(data.tax_cents), { x: colTotal, y: ty, size: 9, font, color: TEXT });
+    ty -= 16;
+    safeDraw(page, "Gesamtbetrag", { x: totalsX + 10, y: ty, size: 11, font: fontBold, color: BRAND_COLOR });
+    safeDraw(page, formatCents(data.total_cents), { x: colTotal, y: ty, size: 11, font: fontBold, color: BRAND_COLOR });
 
-  y = ty - 24;
-  const inv = data.company.invoiceSettings;
-  const closing =
-    data.type === "invoice"
-      ? inv.invoiceClosingText || inv.invoiceIntroText || data.company.defaultInvoiceText
-      : inv.quoteClosingText || inv.quoteIntroText || data.company.defaultQuoteText;
+    y = ty - 24;
+    const inv = data.company.invoiceSettings;
+    const closing =
+      data.type === "invoice"
+        ? inv.invoiceClosingText || inv.invoiceIntroText || data.company.defaultInvoiceText
+        : inv.quoteClosingText || inv.quoteIntroText || data.company.defaultQuoteText;
 
-  for (const line of wrapText(closing, 95)) {
-    if (y < 120) break;
-    page.drawText(line, { x: MARGIN, y, size: 9, font, color: TEXT });
-    y -= 12;
-  }
-
-  const paymentText = inv.paymentInfoText || data.company.defaultPaymentText;
-  if (data.type === "invoice" && paymentText) {
-    y -= 4;
-    for (const line of wrapText(paymentText, 95)) {
+    for (const line of wrapText(closing, 95)) {
       if (y < 120) break;
-      page.drawText(line, { x: MARGIN, y, size: 9, font, color: TEXT });
+      safeDraw(page, line, { x: MARGIN, y, size: 9, font, color: TEXT });
       y -= 12;
     }
-  }
 
-  if (data.remarks) {
-    y -= 6;
-    page.drawText("Bemerkung", { x: MARGIN, y, size: 9, font: fontBold, color: MUTED });
-    for (const line of wrapText(data.remarks, 95).slice(0, 3)) {
-      y -= 12;
-      if (y < 120) break;
-      page.drawText(line, { x: MARGIN, y, size: 9, font, color: TEXT });
+    const paymentText = inv.paymentInfoText || data.company.defaultPaymentText;
+    if (data.type === "invoice" && paymentText) {
+      y -= 4;
+      for (const line of wrapText(paymentText, 95)) {
+        if (y < 120) break;
+        safeDraw(page, line, { x: MARGIN, y, size: 9, font, color: TEXT });
+        y -= 12;
+      }
     }
-  }
 
-  if (data.type === "invoice" && data.company.iban) {
-    y -= 10;
-    page.drawRectangle({ x: MARGIN, y: y - 52, width: CONTENT_WIDTH * 0.55, height: 52, color: LIGHT, borderColor: BORDER, borderWidth: 0.5 });
-    page.drawText("Zahlungsinformationen", { x: MARGIN + 10, y: y - 2, size: 9, font: fontBold, color: MUTED });
-    let py = y - 16;
-    page.drawText(`IBAN: ${data.company.iban}`, { x: MARGIN + 10, y: py, size: 9, font, color: TEXT });
-    py -= 12;
-    if (data.company.bic) {
-      page.drawText(`BIC: ${data.company.bic}`, { x: MARGIN + 10, y: py, size: 9, font, color: TEXT });
+    if (data.remarks) {
+      y -= 6;
+      safeDraw(page, "Bemerkung", { x: MARGIN, y, size: 9, font: fontBold, color: MUTED });
+      for (const line of wrapText(data.remarks, 95).slice(0, 3)) {
+        y -= 12;
+        if (y < 120) break;
+        safeDraw(page, line, { x: MARGIN, y, size: 9, font, color: TEXT });
+      }
+    }
+
+    if (data.type === "invoice" && data.company.iban) {
+      y -= 10;
+      page.drawRectangle({ x: MARGIN, y: y - 52, width: CONTENT_WIDTH * 0.55, height: 52, color: LIGHT, borderColor: BORDER, borderWidth: 0.5 });
+      safeDraw(page, "Zahlungsinformationen", { x: MARGIN + 10, y: y - 2, size: 9, font: fontBold, color: MUTED });
+      let py = y - 16;
+      safeDraw(page, `IBAN: ${data.company.iban}`, { x: MARGIN + 10, y: py, size: 9, font, color: TEXT });
       py -= 12;
+      if (data.company.bic) {
+        safeDraw(page, `BIC: ${data.company.bic}`, { x: MARGIN + 10, y: py, size: 9, font, color: TEXT });
+        py -= 12;
+      }
+      if (data.company.bankName) {
+        safeDraw(page, `Bank: ${data.company.bankName}`, { x: MARGIN + 10, y: py, size: 9, font, color: TEXT });
+        py -= 12;
+      }
+      safeDraw(page, `Verwendungszweck: ${data.number}`, { x: MARGIN + 10, y: py, size: 9, font: fontBold, color: TEXT });
     }
-    if (data.company.bankName) {
-      page.drawText(`Bank: ${data.company.bankName}`, { x: MARGIN + 10, y: py, size: 9, font, color: TEXT });
-      py -= 12;
-    }
-    page.drawText(`Verwendungszweck: ${data.number}`, { x: MARGIN + 10, y: py, size: 9, font: fontBold, color: TEXT });
+
+    safeDraw(page, "Mit freundlichen Gruessen", { x: MARGIN, y: 88, size: 9, font, color: TEXT });
+    safeDraw(page, data.company.companyName, { x: MARGIN, y: 74, size: 10, font: fontBold, color: BRAND_COLOR });
+
+    drawFooter(page, font, data.company);
+
+    return pdf.save();
+  } catch (err) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error("generateCrmPdf failed:", detail, err);
+    throw new Error(`PDF-Erstellung fehlgeschlagen: ${detail}`);
   }
-
-  page.drawText("Mit freundlichen Grüßen", { x: MARGIN, y: 88, size: 9, font, color: TEXT });
-  page.drawText(data.company.companyName, { x: MARGIN, y: 74, size: 10, font: fontBold, color: BRAND_COLOR });
-
-  drawFooter(page, font, data.company);
-
-  return pdf.save();
 }
 
 export function quoteToPdfData(

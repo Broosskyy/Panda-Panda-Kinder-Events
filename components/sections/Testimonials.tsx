@@ -12,6 +12,7 @@ import { StarRating } from "@/components/ui/StarRating";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { BrandMark } from "@/components/ui/Logo";
+import { Lightbox, type LightboxItem } from "@/components/ui/Lightbox";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -31,8 +32,39 @@ function getInitials(name: string) {
     .toUpperCase();
 }
 
-function ReviewCard({ review }: { review: PublicReview }) {
+function ReviewCard({
+  review,
+  onOpenImage,
+}: {
+  review: PublicReview;
+  onOpenImage?: (item: LightboxItem) => void;
+}) {
   const avatarUrl = review.profile_image_url;
+  const eventImageUrl = review.event_image_url;
+
+  const openEventImage = () => {
+    if (!eventImageUrl || !onOpenImage) return;
+    onOpenImage({
+      src: eventImageUrl,
+      alt: `Eventfoto von ${review.name}`,
+      name: review.name,
+      rating: review.rating,
+      reviewText: review.text,
+      category: review.event_type,
+    });
+  };
+
+  const openAvatarImage = () => {
+    if (!avatarUrl || !onOpenImage) return;
+    onOpenImage({
+      src: avatarUrl,
+      alt: review.name,
+      name: review.name,
+      rating: review.rating,
+      reviewText: review.text,
+      category: review.event_type,
+    });
+  };
 
   return (
     <Card className="review-card flex h-full flex-col" padding="md" hover>
@@ -42,17 +74,22 @@ function ReviewCard({ review }: { review: PublicReview }) {
         &ldquo;{review.text}&rdquo;
       </blockquote>
 
-      {review.event_image_url ? (
-        <div className="relative mt-6 aspect-[16/10] w-full overflow-hidden rounded-xl">
+      {eventImageUrl ? (
+        <button
+          type="button"
+          className="relative mt-6 aspect-[16/10] w-full overflow-hidden rounded-xl"
+          onClick={openEventImage}
+          aria-label={`Eventfoto von ${review.name} vergrößern`}
+        >
           <Image
-            src={review.event_image_url}
+            src={eventImageUrl}
             alt={`Eventfoto von ${review.name}`}
             fill
-            className="object-cover"
+            className="object-cover transition-transform duration-500 hover:scale-[1.02]"
             sizes="(max-width: 768px) 90vw, 320px"
-            unoptimized={review.event_image_url.includes("supabase.co")}
+            unoptimized={eventImageUrl.includes("supabase.co")}
           />
-        </div>
+        </button>
       ) : null}
 
       {review.admin_reply ? (
@@ -65,7 +102,12 @@ function ReviewCard({ review }: { review: PublicReview }) {
       <div className="mt-7 flex items-center justify-between gap-3 border-t border-border/40 pt-6 sm:mt-9 sm:gap-4 sm:pt-7">
         <div className="flex items-center gap-3 sm:gap-4">
           {avatarUrl ? (
-            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-sm sm:h-14 sm:w-14">
+            <button
+              type="button"
+              className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full shadow-sm sm:h-14 sm:w-14"
+              onClick={openAvatarImage}
+              aria-label={`Profilbild von ${review.name} vergrößern`}
+            >
               <Image
                 src={avatarUrl}
                 alt={review.name}
@@ -74,7 +116,7 @@ function ReviewCard({ review }: { review: PublicReview }) {
                 sizes="56px"
                 unoptimized={avatarUrl.includes("supabase.co")}
               />
-            </div>
+            </button>
           ) : (
             <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-bg-secondary text-sm font-semibold text-primary shadow-sm sm:h-14 sm:w-14 sm:text-base">
               {getInitials(review.name)}
@@ -133,7 +175,29 @@ export function Testimonials({
 }: TestimonialsProps) {
   const safeHeading = resolveSectionHeading(heading, "testimonials");
   const [desktopIndex, setDesktopIndex] = useState(0);
+  const [lightboxItems, setLightboxItems] = useState<LightboxItem[]>([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
+
+  const openLightbox = (item: LightboxItem) => {
+    const galleryItems = reviews.flatMap((review) => {
+      const items: LightboxItem[] = [];
+      if (review.event_image_url) {
+        items.push({
+          src: review.event_image_url,
+          alt: `Eventfoto von ${review.name}`,
+          name: review.name,
+          rating: review.rating,
+          reviewText: review.text,
+          category: review.event_type,
+        });
+      }
+      return items;
+    });
+    const idx = galleryItems.findIndex((i) => i.src === item.src && i.name === item.name);
+    setLightboxItems(galleryItems.length > 0 ? galleryItems : [item]);
+    setLightboxIndex(idx >= 0 ? idx : 0);
+  };
 
   const total = reviews.length;
   const scrollToForm = () => {
@@ -211,7 +275,7 @@ export function Testimonials({
                         hiddenOnDesktop ? "lg:hidden" : ""
                       }`}
                     >
-                      <ReviewCard review={review} />
+                      <ReviewCard review={review} onOpenImage={openLightbox} />
                     </li>
                   );
                 })}
@@ -226,6 +290,15 @@ export function Testimonials({
           </ScrollReveal>
         </div>
       </Container>
+
+      {lightboxItems.length > 0 ? (
+        <Lightbox
+          items={lightboxItems}
+          index={lightboxIndex}
+          onClose={() => setLightboxItems([])}
+          onIndexChange={setLightboxIndex}
+        />
+      ) : null}
     </section>
   );
 }

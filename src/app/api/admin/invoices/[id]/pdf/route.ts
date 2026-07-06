@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
+import { jsonApiError } from "@/lib/crm/api-errors";
 import { getInvoiceWithDetails } from "@/lib/crm/db";
 import { getBusinessProfile } from "@/lib/crm/company";
 import { generateCrmPdf, invoiceToPdfData } from "@/lib/crm/pdf";
@@ -26,7 +27,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "PDF konnte nicht erstellt werden.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(`[invoices/${id}/pdf]`, err);
+    const { body, status } = jsonApiError(err, "PDF konnte nicht erstellt werden.");
+    return NextResponse.json({ ...body, code: body.code ?? "pdf_generation_failed" }, { status });
   }
 }

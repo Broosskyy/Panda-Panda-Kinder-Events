@@ -30,6 +30,12 @@ import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-sta
 interface EmailStatusResponse {
   resendConfigured: boolean;
   domain: { status: string; domain: string | null; message: string };
+  sendingSetup?: {
+    canSend: boolean;
+    blockReason?: string;
+    sending: Array<{ id: string; label: string; level: string; message: string }>;
+    receiving: Array<{ id: string; label: string; level: string; message: string }>;
+  };
   resolved: { from: string; replyTo: string; usesTestDomain: boolean; domainStatus: string };
 }
 
@@ -54,6 +60,13 @@ const CUSTOM_ADDRESS_LABELS: { key: keyof SiteEmailCustomAddresses; label: strin
   { key: "rechnung", label: "rechnung@" },
   { key: "angebote", label: "angebote@" },
 ];
+
+const RESEND_LEVEL_VARIANT: Record<string, "success" | "warning" | "danger" | "muted"> = {
+  ok: "success",
+  warn: "warning",
+  error: "danger",
+  optional: "muted",
+};
 
 const SYSTEM_LEVEL_VARIANT: Record<SystemStatusLevel, "success" | "warning" | "danger"> = {
   ok: "success",
@@ -473,21 +486,55 @@ export function SettingsView() {
             </p>
           ) : null}
 
-          <div className="mb-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
-            <p className="font-semibold text-text-primary">Resend Domain Status</p>
-            <p className="mt-1 text-text-secondary">
-              {DOMAIN_STATUS_LABELS[emailStatus?.domain.status ?? "not_configured"] ?? "Unbekannt"}
-              {emailStatus?.domain.domain ? ` — ${emailStatus.domain.domain}` : ""}
-            </p>
-            <p className="mt-1 text-text-muted">{emailStatus?.domain.message ?? "Status wird geladen…"}</p>
-            <p className="mt-2 text-text-secondary">
+          <div className="mb-4 space-y-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
+            <div>
+              <p className="font-semibold text-text-primary">E-Mail Versand (Sending)</p>
+              <p className="mt-1 text-text-muted">
+                {emailStatus?.sendingSetup?.canSend
+                  ? "Versand ist konfiguriert."
+                  : emailStatus?.sendingSetup?.blockReason ?? "Versand-Status wird geladen…"}
+              </p>
+              <p className="mt-1 text-text-secondary">
+                Domain: {DOMAIN_STATUS_LABELS[emailStatus?.domain.status ?? "not_configured"] ?? "Unbekannt"}
+                {emailStatus?.domain.domain ? ` — ${emailStatus.domain.domain}` : ""}
+              </p>
+              {emailStatus?.domain.message ? (
+                <p className="mt-1 text-text-muted">{emailStatus.domain.message}</p>
+              ) : null}
+            </div>
+
+            <ul className="space-y-2">
+              {(emailStatus?.sendingSetup?.sending ?? []).map((item) => (
+                <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
+                  <span className="text-text-secondary">{item.label}</span>
+                  <AdminStatusBadge
+                    label={item.level === "ok" ? "OK" : item.level === "optional" ? "Optional" : item.level === "warn" ? "Hinweis" : "Fehler"}
+                    variant={RESEND_LEVEL_VARIANT[item.level] ?? "muted"}
+                  />
+                </li>
+              ))}
+            </ul>
+
+            <div className="border-t border-border pt-4">
+              <p className="font-semibold text-text-primary">Empfang (Receiving, optional)</p>
+              <ul className="mt-2 space-y-2">
+                {(emailStatus?.sendingSetup?.receiving ?? []).map((item) => (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
+                    <span className="text-text-secondary">{item.message}</span>
+                    <AdminStatusBadge label="Optional" variant="muted" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p className="text-text-secondary">
               Aktueller Absender: <strong>{emailStatus?.resolved.from ?? "—"}</strong>
             </p>
             <p className="text-text-secondary">
               Reply-To: <strong>{emailStatus?.resolved.replyTo ?? "—"}</strong>
             </p>
-            <AdminButton variant="secondary" className="mt-3" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadEmailStatus()}>
-              Domain-Status prüfen
+            <AdminButton variant="secondary" className="mt-1" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadEmailStatus()}>
+              Status prüfen
             </AdminButton>
           </div>
 

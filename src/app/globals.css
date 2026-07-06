@@ -758,7 +758,7 @@ img {
 }
 
 .admin-main {
-  padding: 1rem 1rem calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  padding: 1rem 1rem calc(7.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (min-width: 640px) {
@@ -1106,8 +1106,8 @@ img {
 
 .admin-sticky-save {
   position: sticky;
-  bottom: 4.5rem;
-  z-index: 40;
+  bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 60;
   margin-top: 1.5rem;
   padding-top: 0.5rem;
 }
@@ -1696,18 +1696,22 @@ img {
 
 @media (max-width: 767px) {
   .floating-contact-stack {
-    bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .cookie-banner {
-    bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .footer-premium {
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
 /* ── Public website polish ── */
 
 .public-main {
-  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
 }
 
 .sticky-cta-bar {
@@ -1745,7 +1749,7 @@ img {
 .floating-contact-stack {
   position: fixed;
   right: max(1rem, env(safe-area-inset-right, 0px));
-  bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+  bottom: calc(6.25rem + env(safe-area-inset-bottom, 0px));
   z-index: 44;
   display: flex;
   flex-direction: column;

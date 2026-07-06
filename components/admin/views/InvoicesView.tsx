@@ -10,6 +10,7 @@ import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
+import { openAdminPdf } from "@/lib/admin/open-pdf";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmDocumentStatus } from "@/lib/crm/types";
 
@@ -31,7 +32,7 @@ export function InvoicesView() {
   const [sendToCustomer, setSendToCustomer] = useState(true);
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<{ message: string; detail?: string } | null>(null);
+  const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
   const { toast, invoiceSent, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("rechnungen");
   const empty = ADMIN_EMPTY_STATES.invoices;
@@ -61,6 +62,7 @@ export function InvoicesView() {
         setSendError({
           message: data.error ?? ADMIN_MSG.sendFailed,
           detail: data.detail,
+          code: data.code,
         });
         return;
       }
@@ -68,14 +70,23 @@ export function InvoicesView() {
       setSendTarget(null);
       load();
     } catch (err) {
+      const message = err instanceof Error ? err.message : ADMIN_MSG.sendFailed;
+      setSendError({ message });
       showError(
         "Die E-Mail konnte nicht versendet werden.",
-        err instanceof Error ? err.message : undefined,
+        message,
         "Bitte E-Mail-Einstellungen und Empfänger-Adresse prüfen.",
       );
     } finally {
       setSending(false);
     }
+  };
+
+  const openPdf = (invoiceId: string) => {
+    void openAdminPdf(`/api/admin/invoices/${invoiceId}/pdf`, (err) => {
+      toast(err.message, "error");
+      if (err.detail) console.error("PDF error:", err.detail);
+    });
   };
 
   const setStatus = async (id: string, status: string) => {
@@ -122,7 +133,9 @@ export function InvoicesView() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <AdminFilterSelect value={inv.status} onChange={(v) => setStatus(inv.id, v)} options={STATUS_OPTIONS} />
-                  <AdminButton variant="secondary" href={`/api/admin/invoices/${inv.id}/pdf`} target="_blank">{ADMIN_BTN.pdf}</AdminButton>
+                  <AdminButton variant="secondary" onClick={() => openPdf(inv.id)}>
+                    {ADMIN_BTN.pdf}
+                  </AdminButton>
                   <AdminButton
                     variant="primary"
                     icon={<Send className="h-4 w-4" />}

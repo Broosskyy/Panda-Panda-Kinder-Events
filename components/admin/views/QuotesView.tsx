@@ -25,6 +25,7 @@ import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
+import { openAdminPdf } from "@/lib/admin/open-pdf";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmCustomer, type CrmDocumentStatus } from "@/lib/crm/types";
 
@@ -68,8 +69,8 @@ export function QuotesView() {
   const [sendToCustomer, setSendToCustomer] = useState(true);
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
-  const [sendError, setSendError] = useState<{ message: string; detail?: string } | null>(null);
-  const { withLoading, quoteCreated, quoteSent, invoiceCreated, error: showError } = useAdminMessages();
+  const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
+  const { toast, withLoading, quoteCreated, quoteSent, invoiceCreated, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("angebote");
   const empty = ADMIN_EMPTY_STATES.quotes;
 
@@ -154,17 +155,34 @@ export function QuotesView() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setSendError({ message: data.error ?? ADMIN_MSG.sendFailed, detail: data.detail });
+        setSendError({
+          message: data.error ?? ADMIN_MSG.sendFailed,
+          detail: data.detail,
+          code: data.code,
+        });
         return;
       }
       quoteSent();
       setSendTarget(null);
       load();
     } catch (err) {
-      showError("Die E-Mail konnte nicht versendet werden.", err instanceof Error ? err.message : undefined);
+      const message = err instanceof Error ? err.message : ADMIN_MSG.sendFailed;
+      setSendError({ message });
+      showError(
+        "Die E-Mail konnte nicht versendet werden.",
+        message,
+        "Bitte E-Mail-Einstellungen und Empfänger-Adresse prüfen.",
+      );
     } finally {
       setSending(false);
     }
+  };
+
+  const openPdf = (quoteId: string) => {
+    void openAdminPdf(`/api/admin/quotes/${quoteId}/pdf`, (err) => {
+      toast(err.message, "error");
+      if (err.detail) console.error("PDF error:", err.detail);
+    });
   };
 
   const toInvoice = async (quoteId: string) => {
@@ -300,7 +318,7 @@ export function QuotesView() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <AdminButton variant="secondary" href={`/api/admin/quotes/${q.id}/pdf`} target="_blank">
+                  <AdminButton variant="secondary" onClick={() => openPdf(q.id)}>
                     {ADMIN_BTN.pdf}
                   </AdminButton>
                   <AdminButton

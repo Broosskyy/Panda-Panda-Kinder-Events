@@ -312,6 +312,7 @@ async function queryGalleryImages(): Promise<{ src: string; alt: string; categor
     .map((img) => ({
       src: resolveImageUrl("gallery", img.storage_path) ?? "",
       alt: img.alt_text?.trim() || img.title?.trim() || "Galeriebild Panda-Bande",
+      title: img.title?.trim() || undefined,
       category: img.category?.trim() || "Sonstiges",
     }))
     .filter((img) => img.src);

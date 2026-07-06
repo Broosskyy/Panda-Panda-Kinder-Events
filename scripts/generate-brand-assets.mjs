@@ -1,6 +1,6 @@
 /**
- * Generiert Favicon/PWA-Icons aus /public/assets/Logo.png
- * Extrahiert die quadratische Panda-Bildmarke (linke Spalte bei Kombi-Logo)
+ * Generiert Favicon/PWA-Icons aus /public/assets/AppIcon.svg (Zwei-Panda-Icon)
+ * Header/Splash nutzen weiterhin /public/assets/Logo.png
  * Ausführen: npm run generate:brand-assets
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -12,47 +12,26 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const iconsDir = join(root, "public/icons");
 const brandingDir = join(root, "public/branding");
 const appDir = join(root, "src/app");
+const iconSource = join(root, "public/assets/AppIcon.svg");
 const masterLogo = join(root, "public/assets/Logo.png");
 const BG = "#f4f1ea";
-const ICON_VERSION = "3";
+const ICON_VERSION = "4";
 
-async function extractMark(sharp, logoBuffer) {
-  const meta = await sharp(logoBuffer).metadata();
-  const width = meta.width ?? 640;
-  const height = meta.height ?? 160;
-  console.log(`Master-Logo: ${width}×${height}`);
-
-  if (width <= height * 1.2) {
-    return sharp(logoBuffer).ensureAlpha();
-  }
-
-  const markSize = height;
-  return sharp(logoBuffer).extract({ left: 0, top: 0, width: markSize, height: markSize }).ensureAlpha();
-}
-
-async function squareIcon(sharp, markPipeline, size, { maskable = false, padding = 0.12 } = {}) {
+async function renderSquare(sharp, input, size, { maskable = false, padding = 0.08 } = {}) {
   const inner = Math.round(size * (1 - padding * 2));
-  const markPng = await markPipeline
-    .clone()
+  const rendered = await sharp(input)
     .resize(inner, inner, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png()
     .toBuffer();
 
-  const canvas = size;
-
   return sharp({
     create: {
-      width: canvas,
-      height: canvas,
+      width: size,
+      height: size,
       channels: 4,
       background: maskable ? BG : { r: 244, g: 241, b: 234, alpha: 1 },
     },
-  }).composite([
-    {
-      input: markPng,
-      gravity: "centre",
-    },
-  ]);
+  }).composite([{ input: rendered, gravity: "centre" }]);
 }
 
 async function main() {
@@ -68,11 +47,8 @@ async function main() {
   mkdirSync(brandingDir, { recursive: true });
   mkdirSync(appDir, { recursive: true });
 
-  const logo = readFileSync(masterLogo);
-  const mark = await extractMark(sharp, logo);
-
-  await mark.clone().png().toFile(join(iconsDir, "panda-mark.png"));
-  console.log("✓ public/icons/panda-mark.png");
+  const svg = readFileSync(iconSource);
+  console.log(`Icon-Quelle: public/assets/AppIcon.svg (Zwei-Panda)`);
 
   const faviconSizes = [
     { file: "panda-icon-16.png", size: 16 },
@@ -84,8 +60,7 @@ async function main() {
   const icoBuffers = [];
 
   for (const { file, size } of faviconSizes) {
-    const pipeline = await squareIcon(sharp, mark, size, { padding: 0.08 });
-    const buf = await pipeline.png().toBuffer();
+    const buf = await (await renderSquare(sharp, svg, size, { padding: 0.06 })).png().toBuffer();
     writeFileSync(join(iconsDir, file), buf);
     if (size <= 48) icoBuffers.push(buf);
     console.log(`✓ public/icons/${file}`);
@@ -94,17 +69,15 @@ async function main() {
   const faviconIco = await toIco(icoBuffers);
   writeFileSync(join(iconsDir, "favicon.ico"), faviconIco);
   writeFileSync(join(root, "public/favicon.ico"), faviconIco);
-  console.log("✓ public/favicon.ico (echtes ICO aus Logo.png)");
+  console.log("✓ public/favicon.ico");
 
-  const applePipeline = await squareIcon(sharp, mark, 180, { padding: 0.1 });
-  const appleBuf = await applePipeline.png().toBuffer();
+  const appleBuf = await (await renderSquare(sharp, svg, 180, { padding: 0.08 })).png().toBuffer();
   writeFileSync(join(iconsDir, "panda-apple-touch-icon.png"), appleBuf);
   console.log("✓ public/icons/panda-apple-touch-icon.png");
 
-  const favicon512Pipeline = await squareIcon(sharp, mark, 512, { padding: 0.1 });
-  const favicon512Buf = await favicon512Pipeline.png().toBuffer();
+  const favicon512Buf = await (await renderSquare(sharp, svg, 512, { padding: 0.08 })).png().toBuffer();
   writeFileSync(join(root, "public/favicon.png"), favicon512Buf);
-  console.log("✓ public/favicon.png (512×512 aus Logo.png)");
+  console.log("✓ public/favicon.png");
 
   const pwaSizes = [
     { file: "panda-icon-192.png", size: 192, maskable: false },
@@ -113,7 +86,7 @@ async function main() {
   ];
 
   for (const { file, size, maskable } of pwaSizes) {
-    await (await squareIcon(sharp, mark, size, { maskable, padding: maskable ? 0.18 : 0.12 }))
+    await (await renderSquare(sharp, svg, size, { maskable, padding: maskable ? 0.14 : 0.08 }))
       .png()
       .toFile(join(iconsDir, file));
     console.log(`✓ public/icons/${file}`);
@@ -125,20 +98,34 @@ async function main() {
   writeFileSync(join(appDir, "apple-icon.png"), appleBuf);
   console.log("✓ src/app/icon.png, favicon.ico, apple-icon.png");
 
-  const ogWidth = 1200;
-  const ogHeight = 630;
-  const combinedBuffer = await sharp(logo)
-    .resize(720, 180, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
-    .png()
-    .toBuffer();
+  if (readFileSync(masterLogo, { flag: "r" })) {
+    const logo = readFileSync(masterLogo);
+    const meta = await sharp(logo).metadata();
+    const width = meta.width ?? 640;
+    const height = meta.height ?? 160;
+    if (width > height * 1.2) {
+      await sharp(logo)
+        .extract({ left: 0, top: 0, width: height, height })
+        .png()
+        .toFile(join(iconsDir, "panda-mark.png"));
+      console.log("✓ public/icons/panda-mark.png (aus Logo.png für PDF/E-Mail)");
+    }
 
-  await sharp({
-    create: { width: ogWidth, height: ogHeight, channels: 3, background: BG },
-  })
-    .composite([{ input: combinedBuffer, gravity: "centre" }])
-    .png()
-    .toFile(join(brandingDir, "og-image.png"));
-  console.log("✓ public/branding/og-image.png");
+    const ogWidth = 1200;
+    const ogHeight = 630;
+    const combinedBuffer = await sharp(readFileSync(masterLogo))
+      .resize(720, 180, { fit: "contain", background: { r: 0, g: 0, b: 0, alpha: 0 } })
+      .png()
+      .toBuffer();
+
+    await sharp({
+      create: { width: ogWidth, height: ogHeight, channels: 3, background: BG },
+    })
+      .composite([{ input: combinedBuffer, gravity: "centre" }])
+      .png()
+      .toFile(join(brandingDir, "og-image.png"));
+    console.log("✓ public/branding/og-image.png");
+  }
 
   const browserConfig = `<?xml version="1.0" encoding="utf-8"?>
 <browserconfig>
@@ -152,7 +139,7 @@ async function main() {
   writeFileSync(join(brandingDir, "browserconfig.xml"), browserConfig);
   console.log("✓ public/branding/browserconfig.xml");
 
-  console.log("\nFertig — Tab-Icon & Favicon aus /assets/Logo.png generiert.");
+  console.log("\nFertig — Tab/Favicon/PWA aus AppIcon.svg (Zwei-Panda), Header weiter Logo.png");
 }
 
 main().catch((err) => {

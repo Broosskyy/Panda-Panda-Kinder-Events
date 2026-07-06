@@ -4,6 +4,7 @@ Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert
 
 ### Fixed
 - **Tab-Icon/Favicon:** Echtes `favicon.ico` + `favicon.png` (512×512) aus `/assets/Logo.png` generiert; explizite `<link>`-Tags in `layout.tsx`; Cache-Bust `?v=3`
+- **Zwei-Panda Icons:** Favicon/PWA/Tab nutzen jetzt `/assets/AppIcon.svg` (Zwei-Panda auf Kreis) — getrennt vom Header-Logo `Logo.png`; Cache-Bust `?v=4`
 
 ## [1.0.5] — 2026-07-06
 

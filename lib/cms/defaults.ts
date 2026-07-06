@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
 import { SITE_URL_PLACEHOLDER } from "@/lib/site-url";
 import { navigation } from "@/lib/navigation";
@@ -54,10 +55,17 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     ctaLabelShort: "Anfragen",
   },
   branding: {
-    logoUrl: siteConfig.assets.logo,
-    logoAlt: siteConfig.assets.logoAlt,
+    logoUrl: BRAND.master,
+    logoDarkUrl: BRAND.master,
+    logoLightUrl: BRAND.master,
+    logoAlt: BRAND.alt,
     logoTextPrimary: "PANDA-BANDE",
     logoTextSecondary: "KINDEREVENTS",
+    faviconUrl: BRAND.assets.favicon32,
+    appleTouchIconUrl: BRAND.assets.appleTouchIcon,
+    pdfLogoUrl: BRAND.master,
+    emailLogoUrl: BRAND.master,
+    loginLogoUrl: BRAND.master,
   },
   trustBadges: {
     items: [
@@ -156,8 +164,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     companyName: siteConfig.name,
     shortName: "Panda-Bande",
     slogan: siteConfig.tagline,
-    logoUrl: siteConfig.assets.logoPng,
-    faviconUrl: "/favicon.png",
+    logoUrl: BRAND.master,
+    faviconUrl: BRAND.assets.favicon32,
     street: "",
     zip: "",
     city: "",
@@ -226,7 +234,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     canonicalBaseUrl: "",
     metaTitle: `${siteConfig.name} — Liebevolle Kinderbetreuung für euer Event`,
     metaDescription: siteConfig.description,
-    ogImageUrl: "/og-image.png",
+    ogImageUrl: BRAND.assets.ogImage,
     socialPreviewText: siteConfig.tagline,
     googleSiteVerification: "",
     googleAnalyticsId: "",

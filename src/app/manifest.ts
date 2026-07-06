@@ -17,27 +17,27 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["business", "lifestyle"],
     icons: [
       {
-        src: "/icons/icon-192.png",
+        src: BRAND.assets.icon192,
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-512.png",
+        src: BRAND.assets.icon512,
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/icons/icon-maskable-512.png",
+        src: BRAND.assets.iconMaskable512,
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
       },
       {
-        src: BRAND.logo.svg,
-        sizes: "any",
-        type: "image/svg+xml",
+        src: BRAND.master,
+        sizes: "640x160",
+        type: "image/png",
         purpose: "any",
       },
     ],

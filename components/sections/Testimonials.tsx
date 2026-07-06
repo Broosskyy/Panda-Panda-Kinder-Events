@@ -11,7 +11,7 @@ import { ReviewForm } from "@/components/ui/ReviewForm";
 import { StarRating } from "@/components/ui/StarRating";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
-import { PandaMascot } from "@/components/ui/PandaMascot";
+import { BrandMark } from "@/components/ui/Logo";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -156,7 +156,7 @@ export function Testimonials({
         {total === 0 ? (
           <ScrollReveal>
             <Card padding="lg" hover={false} className="review-card mx-auto max-w-xl text-center">
-              <PandaMascot size={100} className="mx-auto mb-6 opacity-90" />
+              <BrandMark className="mx-auto mb-6 opacity-90" />
               <p className="font-heading text-xl font-bold tracking-tight text-text-primary sm:text-2xl">
                 Noch keine öffentlichen Bewertungen
               </p>

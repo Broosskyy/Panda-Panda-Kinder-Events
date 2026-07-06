@@ -12,6 +12,7 @@ import { CONTROL_CENTER_TABS, type ControlCenterTab } from "@/lib/cms/settings-c
 import { formatDocumentNumberPreview, resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
 import type {
   SiteBankSettings,
+  SiteBrandingSettings,
   SiteBusinessSettings,
   SiteContactSettings,
   SiteEmailCustomAddresses,
@@ -87,6 +88,7 @@ export function SettingsView() {
   const tab: ControlCenterTab = VALID_TABS.has(rawTab) ? (rawTab as ControlCenterTab) : "business";
 
   const [business, setBusiness] = useState<SiteBusinessSettings | null>(null);
+  const [branding, setBranding] = useState<SiteBrandingSettings | null>(null);
   const [contact, setContact] = useState<SiteContactSettings | null>(null);
   const [email, setEmail] = useState<SiteEmailSettings | null>(null);
   const [invoice, setInvoice] = useState<SiteInvoiceSettings | null>(null);
@@ -105,6 +107,7 @@ export function SettingsView() {
     if (res.ok) {
       const settings = data.settings as SiteSettingsBundle;
       setBusiness(settings.business);
+      setBranding(settings.branding);
       setContact(settings.contact);
       setEmail(settings.email);
       setInvoice(settings.invoice);
@@ -180,6 +183,11 @@ export function SettingsView() {
   const setBusinessField = <K extends keyof SiteBusinessSettings>(key: K, value: SiteBusinessSettings[K]) => {
     if (!business) return;
     setBusiness({ ...business, [key]: value });
+  };
+
+  const setBrandingField = <K extends keyof SiteBrandingSettings>(key: K, value: SiteBrandingSettings[K]) => {
+    if (!branding) return;
+    setBranding({ ...branding, [key]: value });
   };
 
   const setContactField = <K extends keyof SiteContactSettings>(key: K, value: SiteContactSettings[K]) => {
@@ -271,12 +279,6 @@ export function SettingsView() {
             <AdminFormField label="Slogan">
               <input className="admin-input" value={business.slogan} onChange={(e) => setBusinessField("slogan", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Logo" hint="URL zum Firmenlogo (PDF-Kopf)" className="md:col-span-2">
-              <input className="admin-input" value={business.logoUrl} onChange={(e) => setBusinessField("logoUrl", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Favicon" hint="URL zum Favicon">
-              <input className="admin-input" value={business.faviconUrl} onChange={(e) => setBusinessField("faviconUrl", e.target.value)} />
-            </AdminFormField>
             <AdminFormField label="Geschäftsführer/in" hint="Für Impressum und Rechnungen">
               <input className="admin-input" value={business.managingDirector} onChange={(e) => setBusinessField("managingDirector", e.target.value)} />
             </AdminFormField>
@@ -309,6 +311,44 @@ export function SettingsView() {
             </AdminFormField>
           </div>
           <StickySaveBar label="Unternehmensdaten speichern" onSave={() => void saveSection("business", business)} />
+        </AdminCard>
+      ) : null}
+
+      {tab === "branding" && branding ? (
+        <AdminCard title="Logo & Branding">
+          <p className="mb-4 text-sm text-text-muted">
+            Standard: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/branding/logo.png</code> — leer lassen für Master-Logo.
+          </p>
+          <div className="grid gap-4 md:grid-cols-2">
+            <AdminFormField label="Hauptlogo" hint="Header, Splash, allgemein" className="md:col-span-2">
+              <input className="admin-input" value={branding.logoUrl} onChange={(e) => setBrandingField("logoUrl", e.target.value)} placeholder="/branding/logo.png" />
+            </AdminFormField>
+            <AdminFormField label="Helles Logo" hint="Footer auf dunklem Hintergrund">
+              <input className="admin-input" value={branding.logoLightUrl} onChange={(e) => setBrandingField("logoLightUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Dunkles Logo" hint="Alternative Variante">
+              <input className="admin-input" value={branding.logoDarkUrl} onChange={(e) => setBrandingField("logoDarkUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="PDF-Logo" hint="Angebote & Rechnungen">
+              <input className="admin-input" value={branding.pdfLogoUrl} onChange={(e) => setBrandingField("pdfLogoUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="E-Mail-Logo" hint="HTML-E-Mails">
+              <input className="admin-input" value={branding.emailLogoUrl} onChange={(e) => setBrandingField("emailLogoUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Login-Logo" hint="Admin-Anmeldung">
+              <input className="admin-input" value={branding.loginLogoUrl} onChange={(e) => setBrandingField("loginLogoUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Favicon">
+              <input className="admin-input" value={branding.faviconUrl} onChange={(e) => setBrandingField("faviconUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Apple Touch Icon">
+              <input className="admin-input" value={branding.appleTouchIconUrl} onChange={(e) => setBrandingField("appleTouchIconUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Alt-Text" hint="Barrierefreiheit" className="md:col-span-2">
+              <input className="admin-input" value={branding.logoAlt} onChange={(e) => setBrandingField("logoAlt", e.target.value)} />
+            </AdminFormField>
+          </div>
+          <StickySaveBar label="Branding speichern" onSave={() => void saveSection("branding", branding)} />
         </AdminCard>
       ) : null}
 

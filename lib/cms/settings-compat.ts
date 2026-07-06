@@ -49,6 +49,7 @@ export function syncLegacyBusinessFields(
 
 export type ControlCenterSection =
   | "business"
+  | "branding"
   | "contact"
   | "email"
   | "invoice"
@@ -64,6 +65,7 @@ export const CONTROL_CENTER_TABS: {
   auditArea: string;
 }[] = [
   { id: "business", label: "Unternehmensdaten", auditArea: "settings_business" },
+  { id: "branding", label: "Branding", auditArea: "settings_branding" },
   { id: "contact", label: "Kontakt & Social Media", auditArea: "settings_contact" },
   { id: "email", label: "E-Mail & Versand", auditArea: "settings_email" },
   { id: "invoice", label: "Rechnungen & Angebote", auditArea: "settings_invoice" },

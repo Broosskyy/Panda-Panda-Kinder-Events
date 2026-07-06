@@ -4,7 +4,7 @@ import { siteConfig } from "@/config/site";
 import { getSiteUrl } from "@/lib/site-url";
 
 export function getSeoDefaultImage(): string {
-  return `${getSiteUrl()}${BRAND.ogImage}`;
+  return `${getSiteUrl()}${BRAND.assets.ogImage}`;
 }
 
 export function buildPageMetadata(opts: {
@@ -51,7 +51,7 @@ export function organizationJsonLd(opts: { email: string; phone: string; locatio
     email: opts.email,
     telephone: opts.phone,
     areaServed: opts.location,
-    logo: `${base}${siteConfig.assets.logo}`,
+    logo: `${base}${BRAND.master}`,
   };
 }
 
@@ -109,7 +109,7 @@ export function articleJsonLd(opts: {
       name: siteConfig.name,
       logo: {
         "@type": "ImageObject",
-        url: `${base}${siteConfig.assets.logo}`,
+        url: `${base}${BRAND.master}`,
       },
     },
   };

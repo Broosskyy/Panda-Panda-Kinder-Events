@@ -3,6 +3,7 @@ import { Playfair_Display, Montserrat, Caveat } from "next/font/google";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { resolveSeoMeta } from "@/lib/cms/resolve-settings";
 import { BRAND } from "@/lib/brand";
+import { resolveFaviconUrl, resolveAppleTouchIconUrl } from "@/lib/brand/resolve";
 import { siteConfig } from "@/config/site";
 import { getSiteUrl } from "@/lib/site-url";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
@@ -29,22 +30,27 @@ const caveat = Caveat({
 
 export async function generateMetadata(): Promise<Metadata> {
   let seo: ReturnType<typeof resolveSeoMeta>;
+  let branding = null;
 
   try {
     const settings = await fetchSiteSettings();
     seo = resolveSeoMeta(settings);
+    branding = settings.branding;
   } catch {
     seo = {
       baseUrl: getSiteUrl(),
       title: `${siteConfig.name} — Liebevolle Kinderbetreuung für euer Event`,
       description: siteConfig.description,
-      ogImage: `${getSiteUrl()}${BRAND.ogImage}`,
+      ogImage: `${getSiteUrl()}${BRAND.assets.ogImage}`,
       robotsIndex: true,
       googleSiteVerification: undefined,
       googleAnalyticsId: undefined,
       microsoftClarityId: undefined,
     };
   }
+
+  const favicon = resolveFaviconUrl(branding ?? undefined);
+  const appleIcon = resolveAppleTouchIconUrl(branding ?? undefined);
 
   return {
     metadataBase: new URL(seo.baseUrl),
@@ -87,16 +93,18 @@ export async function generateMetadata(): Promise<Metadata> {
       : undefined,
     icons: {
       icon: [
-        { url: "/favicon.png", type: "image/png", sizes: "32x32" },
-        { url: BRAND.logo.svg, type: "image/svg+xml" },
+        { url: BRAND.assets.faviconIco, sizes: "any" },
+        { url: favicon, type: "image/png", sizes: "32x32" },
+        { url: BRAND.assets.favicon16, type: "image/png", sizes: "16x16" },
+        { url: BRAND.assets.favicon48, type: "image/png", sizes: "48x48" },
       ],
-      apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
+      apple: [{ url: appleIcon, type: "image/png", sizes: "180x180" }],
     },
   };
 }
 
 export const viewport: Viewport = {
-  themeColor: "#52563e",
+  themeColor: BRAND.themeColor,
   width: "device-width",
   initialScale: 1,
 };
@@ -104,6 +112,10 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="de" className={`${playfair.variable} ${montserrat.variable} ${caveat.variable}`}>
+      <head>
+        <link rel="preload" href={BRAND.master} as="image" type="image/png" />
+        <meta name="msapplication-config" content="/branding/browserconfig.xml" />
+      </head>
       <body className="antialiased">
         <AnalyticsScripts />
         <AnalyticsProvider>{children}</AnalyticsProvider>

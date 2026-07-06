@@ -1,6 +1,6 @@
 /**
- * Zentrale Marken-Konstanten — einheitliche Logo-Nutzung überall.
- * SVG bevorzugt, PNG als Fallback (PDF, E-Mail-Clients).
+ * Panda-Bande — eine einzige Logoquelle für das gesamte Projekt.
+ * Master: /branding/logo.png (640×160, Seitenverhältnis 4:1)
  */
 export const BRAND = {
   name: "Panda-Bande Kinderevents",
@@ -8,30 +8,51 @@ export const BRAND = {
   splashTagline: "Mit Herz für kleine Abenteuer.",
   themeColor: "#52563e",
   backgroundColor: "#f4f1ea",
+  alt: "Panda-Bande KinderEvents",
 
-  logo: {
-    svg: "/assets/logo.svg",
-    svgInverse: "/assets/logo-inverse.svg",
-    png: "/assets/logo.png",
-    alt: "Panda-Bande Kinderevents Logo",
-    /** Natürliches Seitenverhältnis — nie verzerren */
-    width: 320,
-    height: 80,
+  /** Einzige Master-Logoquelle */
+  master: "/branding/logo.png",
+
+  /** Generierte Assets (aus Master via npm run generate:brand-assets) */
+  assets: {
+    favicon16: "/branding/favicon-16.png",
+    favicon32: "/branding/favicon-32.png",
+    favicon48: "/branding/favicon-48.png",
+    favicon64: "/branding/favicon-64.png",
+    faviconIco: "/branding/favicon.ico",
+    appleTouchIcon: "/branding/apple-touch-icon.png",
+    icon192: "/branding/icon-192.png",
+    icon512: "/branding/icon-512.png",
+    iconMaskable512: "/branding/icon-maskable-512.png",
+    ogImage: "/branding/og-image.png",
   },
 
-  ogImage: "/og-image.png",
-  mascot: "/panda-illustration.svg",
+  /** Natürliche Pixelmaße des Master-Logos — nie verzerren */
+  width: 640,
+  height: 160,
 } as const;
 
-export const LOGO_ASPECT_RATIO = BRAND.logo.width / BRAND.logo.height;
+export const LOGO_ASPECT_RATIO = BRAND.width / BRAND.height;
 
-/** Einheitliche Logo-Höhen (Tailwind max-h) pro Kontext */
-export const LOGO_HEIGHT = {
-  header: "max-h-9 sm:max-h-10 md:max-h-12",
-  headerDesktop: "md:max-h-14",
-  footer: "max-h-10 sm:max-h-11 md:max-h-12",
-  splash: "max-h-16 sm:max-h-20",
-  admin: "max-h-12",
+/** Pixel-Höhen pro Kontext (Spezifikation v1.0) */
+export const LOGO_SIZE_PX = {
+  headerDesktop: 60,
+  headerMobile: 46,
+  footer: 48,
+  adminSidebar: 38,
+  login: 90,
+  splash: 140,
+  decorative: 80,
   email: 48,
-  pdf: 56,
+  pdfWidth: 200,
 } as const;
+
+export type LogoContext =
+  | "header"
+  | "footer"
+  | "splash"
+  | "admin"
+  | "login"
+  | "decorative"
+  | "email"
+  | "pdf";

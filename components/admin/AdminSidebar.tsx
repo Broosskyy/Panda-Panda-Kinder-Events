@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
+import { Logo } from "@/components/ui/Logo";
 import {
   ADMIN_NAV_GROUPS,
   MOBILE_BOTTOM_NAV_HREFS,
@@ -105,8 +106,8 @@ export function AdminSidebar() {
       {/* Desktop sidebar */}
       <aside className="admin-sidebar-desktop" aria-label="Admin Navigation">
         <div className="admin-sidebar-brand">
-          <p className="font-heading text-lg font-bold text-text-primary">Panda-Bande</p>
-          <p className="text-xs text-text-muted">CMS Admin</p>
+          <Logo context="admin" linked={false} />
+          <p className="mt-2 text-xs text-text-muted">CMS Admin</p>
         </div>
         <nav className="admin-sidebar-nav">
           <NavContent />
@@ -130,9 +131,9 @@ export function AdminSidebar() {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="text-center">
-          <p className="font-heading text-base font-bold text-text-primary">Panda-Bande</p>
-          <p className="text-[10px] uppercase tracking-wider text-text-muted">CMS</p>
+        <div className="flex flex-col items-center">
+          <Logo context="admin" linked={false} />
+          <p className="mt-1 text-[10px] uppercase tracking-wider text-text-muted">CMS</p>
         </div>
         <button type="button" onClick={logout} className="admin-icon-btn text-text-muted" aria-label="Abmelden">
           <LogOut className="h-4 w-4" />

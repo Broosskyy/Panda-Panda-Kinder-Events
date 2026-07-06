@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { BRAND } from "@/lib/brand";
+import { BRAND, LOGO_ASPECT_RATIO, LOGO_SIZE_PX } from "@/lib/brand";
+import { resolveBrandAlt } from "@/lib/brand/resolve";
 
 const SPLASH_DURATION_MS = 1200;
 const FADE_DURATION_MS = 450;
@@ -30,6 +31,8 @@ function shouldSkipSplash(): boolean {
 export function SplashScreen({ tagline = BRAND.splashTagline }: SplashScreenProps) {
   const [visible, setVisible] = useState(false);
   const [fadeOut, setFadeOut] = useState(false);
+  const heightPx = LOGO_SIZE_PX.splash;
+  const widthPx = Math.round(heightPx * LOGO_ASPECT_RATIO);
 
   useEffect(() => {
     if (shouldSkipSplash()) return;
@@ -66,10 +69,10 @@ export function SplashScreen({ tagline = BRAND.splashTagline }: SplashScreenProp
       <div className="splash-screen-content">
         <div className="splash-logo-wrap">
           <Image
-            src={BRAND.logo.svg}
-            alt=""
-            width={BRAND.logo.width}
-            height={BRAND.logo.height}
+            src={BRAND.master}
+            alt={resolveBrandAlt()}
+            width={widthPx}
+            height={heightPx}
             className="splash-logo"
             priority
           />

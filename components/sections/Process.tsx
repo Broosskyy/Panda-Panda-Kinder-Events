@@ -6,7 +6,6 @@ import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { resolveContentIcon } from "@/lib/cms/icons";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface ProcessProps {
@@ -93,10 +92,6 @@ export function Process({
             </div>
           </ScrollReveal>
         </div>
-
-        <ScrollReveal>
-          <SectionCta className="mt-12 sm:mt-16" />
-        </ScrollReveal>
       </Container>
     </section>
   );

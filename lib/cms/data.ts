@@ -235,6 +235,8 @@ async function queryCmsServices(): Promise<Service[]> {
       detailText: s.detail_text?.trim() || s.description.trim(),
       imageUrl: s.image_url?.trim() || undefined,
       buttonLabel: s.button_label?.trim() || "Mehr erfahren",
+      priceFrom: s.price_from?.trim() || undefined,
+      highlights: Array.isArray(s.highlights) ? s.highlights.filter((h) => String(h).trim()) : undefined,
     }));
 }
 

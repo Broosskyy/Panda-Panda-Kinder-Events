@@ -3,17 +3,17 @@
 import Image from "next/image";
 import { useState } from "react";
 import { X } from "lucide-react";
-import { resolveServiceIcon } from "@/lib/cms/icons";
 import type { Service } from "@/lib/services";
-import { ICON_STROKE } from "@/lib/design";
 import type { SiteSectionHeading } from "@/lib/cms/types";
 import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+
+const SERVICE_IMAGE_FALLBACK =
+  "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&h=500&fit=crop&q=85";
 
 interface ServicesProps {
   items?: Service[];
@@ -43,35 +43,34 @@ export function Services({
             aria-label="Leistungen"
           >
             {items.map((service, i) => {
-              const Icon = resolveServiceIcon(service.iconKey);
               return (
               <li key={service.title} className="swipe-item w-[min(88vw,20rem)] sm:w-[min(85vw,22rem)] md:w-auto">
                 <ScrollReveal delay={i * 60}>
-                  <Card className="card-equal flex h-full flex-col" padding="md">
-                    {service.imageUrl ? (
-                      <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-2xl">
-                        <Image
-                          src={service.imageUrl}
-                          alt={service.title}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 88vw, 33vw"
-                          loading="lazy"
-                        />
-                      </div>
-                    ) : (
-                      <div className="icon-wrap mb-5 h-14 w-14 md:mb-6 md:h-16 md:w-16">
-                        <Icon
-                          className="h-7 w-7 text-primary md:h-8 md:w-8"
-                          strokeWidth={ICON_STROKE}
-                          aria-hidden
-                        />
-                      </div>
-                    )}
+                  <Card className="card-equal service-card flex h-full flex-col" padding="md">
+                    <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-bg-secondary">
+                      <Image
+                        src={service.imageUrl?.trim() || SERVICE_IMAGE_FALLBACK}
+                        alt={service.title}
+                        fill
+                        className="object-cover"
+                        sizes="(max-width: 768px) 88vw, 33vw"
+                        loading="lazy"
+                      />
+                    </div>
                     <h3 className="text-lg font-semibold tracking-tight text-text-primary sm:text-xl">{service.title}</h3>
+                    {service.priceFrom ? (
+                      <p className="mt-2 text-sm font-semibold text-primary">ab {service.priceFrom}</p>
+                    ) : null}
                     <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-text-secondary sm:text-base">
                       {service.description}
                     </p>
+                    {service.highlights?.length ? (
+                      <ul className="mt-3 space-y-1 text-sm text-text-muted" aria-label="Highlights">
+                        {service.highlights.slice(0, 3).map((h) => (
+                          <li key={h}>• {h}</li>
+                        ))}
+                      </ul>
+                    ) : null}
                     <Button
                       variant="secondary"
                       className="btn-equal mt-5 w-full"
@@ -86,10 +85,6 @@ export function Services({
             })}
           </ul>
         </div>
-
-        <ScrollReveal>
-          <SectionCta className="mt-12 sm:mt-16" />
-        </ScrollReveal>
       </Container>
 
       {active ? (

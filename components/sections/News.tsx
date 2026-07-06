@@ -6,7 +6,6 @@ import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface NewsProps {
@@ -78,8 +77,7 @@ export function News({
             ))}
           </ul>
         </div>
-        <ScrollReveal>
-          <div className="mt-10 text-center sm:mt-12">
+        <div className="mt-10 text-center sm:mt-12">
             <Link
               href="/aktuelles"
               className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-primary/25 bg-bg-card px-6 py-3 text-sm font-semibold text-primary transition hover:bg-bg-secondary"
@@ -87,8 +85,6 @@ export function News({
               Alle Beiträge ansehen
             </Link>
           </div>
-          <SectionCta className="mt-10" label="Jetzt Termin anfragen" />
-        </ScrollReveal>
       </Container>
     </section>
   );

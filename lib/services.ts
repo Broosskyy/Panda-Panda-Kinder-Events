@@ -5,6 +5,8 @@ export interface Service {
   detailText?: string;
   imageUrl?: string;
   buttonLabel?: string;
+  priceFrom?: string;
+  highlights?: string[];
 }
 
 export const services: Service[] = [

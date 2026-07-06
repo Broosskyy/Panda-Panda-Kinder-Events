@@ -1539,6 +1539,40 @@ img {
   color: var(--color-accent-heart);
 }
 
+.faq-panel {
+  grid-template-rows: 0fr;
+}
+
+.faq-panel-open {
+  grid-template-rows: 1fr;
+}
+
+.faq-panel-closed {
+  grid-template-rows: 0fr;
+}
+
+.team-card-image {
+  border-radius: var(--radius-card) var(--radius-card) 0 0;
+}
+
+.service-card {
+  min-height: 100%;
+}
+
+.hero-rating-pill {
+  max-width: 100%;
+}
+
+@media (max-width: 767px) {
+  .floating-contact-stack {
+    bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .cookie-banner {
+    bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 /* ── Public website polish ── */
 
 .public-main {

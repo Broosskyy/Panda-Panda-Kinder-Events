@@ -1,6 +1,6 @@
-import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
+import { Instagram, Mail, MapPin, MessageCircle, Phone, Clock } from "lucide-react";
 import { ICON_STROKE } from "@/lib/design";
-import type { SiteContactSettings, SiteFooterSettings, SiteSectionHeading } from "@/lib/cms/types";
+import type { SiteContactSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Card } from "@/components/ui/Card";
@@ -12,7 +12,6 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface ContactProps {
   contact?: SiteContactSettings;
-  footer?: SiteFooterSettings;
   heading?: SiteSectionHeading;
 }
 
@@ -58,7 +57,6 @@ function buildContactLinks(contact: SiteContactSettings) {
 
 export function Contact({
   contact = DEFAULT_SITE_SETTINGS.contact,
-  footer = DEFAULT_SITE_SETTINGS.footer,
   heading,
 }: ContactProps) {
   const safeHeading = resolveSectionHeading(heading, "contact");
@@ -82,6 +80,24 @@ export function Contact({
 
           <ScrollReveal delay={100}>
             <div className="flex flex-col gap-4 sm:gap-5">
+              {(contact.responseTime || contact.openingHours) ? (
+                <Card className="border-primary/15 bg-primary/5" padding="md" hover={false}>
+                  <div className="flex items-start gap-4">
+                    <div className="icon-wrap h-12 w-12 shrink-0">
+                      <Clock className="h-5 w-5 text-primary sm:h-6 sm:w-6" strokeWidth={ICON_STROKE} />
+                    </div>
+                    <div>
+                      {contact.responseTime ? (
+                        <p className="text-base font-semibold text-text-primary">{contact.responseTime}</p>
+                      ) : null}
+                      {contact.openingHours ? (
+                        <p className="mt-1 text-[0.9375rem] text-text-secondary sm:text-base">{contact.openingHours}</p>
+                      ) : null}
+                    </div>
+                  </div>
+                </Card>
+              ) : null}
+
               {contactLinks.map((link) => {
                 const Icon = link.icon;
                 const content = (
@@ -112,13 +128,6 @@ export function Contact({
 
                 return <div key={link.label}>{content}</div>;
               })}
-
-              {footer.tagline ? (
-                <div className="relative mt-6 hidden text-center lg:block">
-                  <p className="font-accent text-3xl text-primary">{footer.tagline}</p>
-                  <FlowerOrnament className="absolute -bottom-4 left-0 h-20 w-20 opacity-20" />
-                </div>
-              ) : null}
             </div>
           </ScrollReveal>
         </div>

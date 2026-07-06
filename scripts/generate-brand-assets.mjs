@@ -6,12 +6,15 @@
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import toIco from "to-ico";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const iconsDir = join(root, "public/icons");
 const brandingDir = join(root, "public/branding");
+const appDir = join(root, "src/app");
 const masterLogo = join(root, "public/assets/Logo.png");
 const BG = "#f4f1ea";
+const ICON_VERSION = "3";
 
 async function extractMark(sharp, logoBuffer) {
   const meta = await sharp(logoBuffer).metadata();
@@ -63,12 +66,10 @@ async function main() {
 
   mkdirSync(iconsDir, { recursive: true });
   mkdirSync(brandingDir, { recursive: true });
+  mkdirSync(appDir, { recursive: true });
 
   const logo = readFileSync(masterLogo);
   const mark = await extractMark(sharp, logo);
-
-  const markMeta = await mark.metadata();
-  console.log(`Bildmarke: ${markMeta.width}×${markMeta.height}`);
 
   await mark.clone().png().toFile(join(iconsDir, "panda-mark.png"));
   console.log("✓ public/icons/panda-mark.png");
@@ -80,25 +81,30 @@ async function main() {
     { file: "panda-icon-64.png", size: 64 },
   ];
 
+  const icoBuffers = [];
+
   for (const { file, size } of faviconSizes) {
-    await (await squareIcon(sharp, mark, size, { padding: 0.08 }))
-      .png()
-      .toFile(join(iconsDir, file));
+    const pipeline = await squareIcon(sharp, mark, size, { padding: 0.08 });
+    const buf = await pipeline.png().toBuffer();
+    writeFileSync(join(iconsDir, file), buf);
+    if (size <= 48) icoBuffers.push(buf);
     console.log(`✓ public/icons/${file}`);
   }
 
-  await (await squareIcon(sharp, mark, 32, { padding: 0.08 }))
-    .png()
-    .toFile(join(iconsDir, "favicon-32.png"));
+  const faviconIco = await toIco(icoBuffers);
+  writeFileSync(join(iconsDir, "favicon.ico"), faviconIco);
+  writeFileSync(join(root, "public/favicon.ico"), faviconIco);
+  console.log("✓ public/favicon.ico (echtes ICO aus Logo.png)");
 
-  const favicon32 = readFileSync(join(iconsDir, "favicon-32.png"));
-  writeFileSync(join(iconsDir, "favicon.ico"), favicon32);
-  console.log("✓ public/icons/favicon.ico");
-
-  await (await squareIcon(sharp, mark, 180, { padding: 0.1 }))
-    .png()
-    .toFile(join(iconsDir, "panda-apple-touch-icon.png"));
+  const applePipeline = await squareIcon(sharp, mark, 180, { padding: 0.1 });
+  const appleBuf = await applePipeline.png().toBuffer();
+  writeFileSync(join(iconsDir, "panda-apple-touch-icon.png"), appleBuf);
   console.log("✓ public/icons/panda-apple-touch-icon.png");
+
+  const favicon512Pipeline = await squareIcon(sharp, mark, 512, { padding: 0.1 });
+  const favicon512Buf = await favicon512Pipeline.png().toBuffer();
+  writeFileSync(join(root, "public/favicon.png"), favicon512Buf);
+  console.log("✓ public/favicon.png (512×512 aus Logo.png)");
 
   const pwaSizes = [
     { file: "panda-icon-192.png", size: 192, maskable: false },
@@ -112,6 +118,12 @@ async function main() {
       .toFile(join(iconsDir, file));
     console.log(`✓ public/icons/${file}`);
   }
+
+  const icon32 = readFileSync(join(iconsDir, "panda-icon-32.png"));
+  writeFileSync(join(appDir, "icon.png"), icon32);
+  writeFileSync(join(appDir, "favicon.ico"), faviconIco);
+  writeFileSync(join(appDir, "apple-icon.png"), appleBuf);
+  console.log("✓ src/app/icon.png, favicon.ico, apple-icon.png");
 
   const ogWidth = 1200;
   const ogHeight = 630;
@@ -132,7 +144,7 @@ async function main() {
 <browserconfig>
   <msapplication>
     <tile>
-      <square150x150logo src="/icons/panda-icon-192.png?v=2"/>
+      <square150x150logo src="/icons/panda-icon-192.png?v=${ICON_VERSION}"/>
       <TileColor>#52563e</TileColor>
     </tile>
   </msapplication>
@@ -140,11 +152,7 @@ async function main() {
   writeFileSync(join(brandingDir, "browserconfig.xml"), browserConfig);
   console.log("✓ public/branding/browserconfig.xml");
 
-  const rootFavicon = join(root, "public/favicon.ico");
-  writeFileSync(rootFavicon, readFileSync(join(iconsDir, "favicon.ico")));
-  console.log("✓ public/favicon.ico");
-
-  console.log("\nFertig — Panda-Bildmarke als quadratische Icons generiert.");
+  console.log("\nFertig — Tab-Icon & Favicon aus /assets/Logo.png generiert.");
 }
 
 main().catch((err) => {

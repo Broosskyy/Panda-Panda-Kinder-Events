@@ -33,7 +33,7 @@ export function resolveBrandLogo(
 }
 
 export function resolveFaviconUrl(branding?: SiteBrandingSettings): string {
-  return pickUrl(branding?.faviconUrl, BRAND.assets.favicon32);
+  return pickUrl(branding?.faviconUrl, BRAND.assets.faviconPng);
 }
 
 export function resolveAppleTouchIconUrl(branding?: SiteBrandingSettings): string {

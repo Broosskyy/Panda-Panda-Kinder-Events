@@ -2,6 +2,9 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+### Fixed
+- **Tab-Icon/Favicon:** Echtes `favicon.ico` + `favicon.png` (512×512) aus `/assets/Logo.png` generiert; explizite `<link>`-Tags in `layout.tsx`; Cache-Bust `?v=3`
+
 ## [1.0.5] — 2026-07-06
 
 ### Fixed

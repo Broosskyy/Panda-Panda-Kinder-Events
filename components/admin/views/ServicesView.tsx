@@ -5,7 +5,11 @@ import { SERVICE_ICON_KEYS } from "@/lib/cms/icons";
 import { Plus, Sparkles } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_CONFIRM, confirmDanger } from "@/lib/admin/messages";
 
 interface ServiceRow {
   id: string;
@@ -18,7 +22,9 @@ interface ServiceRow {
 
 export function ServicesView() {
   const [services, setServices] = useState<ServiceRow[]>([]);
-  const { toast } = useAdminUi();
+  const { saved, saveFailed } = useAdminMessages();
+  const page = adminPageHeaderProps("leistungen");
+  const empty = ADMIN_EMPTY_STATES.services;
 
   const load = () =>
     fetch("/api/admin/services")
@@ -36,9 +42,9 @@ export function ServicesView() {
       body: JSON.stringify(body),
     });
     if (res.ok) {
-      toast("Gespeichert");
+      saved();
       load();
-    } else toast("Fehler", "error");
+    } else saveFailed();
   };
 
   const addNew = () =>
@@ -55,7 +61,7 @@ export function ServicesView() {
 
   return (
     <div>
-      <AdminPageHeader title="Leistungen" description="Services auf der Website verwalten">
+      <AdminPageHeader {...page}>
         <AdminButton variant="primary" onClick={addNew} icon={<Plus className="h-4 w-4" />}>
           Neue Leistung
         </AdminButton>
@@ -64,9 +70,9 @@ export function ServicesView() {
         {services.length === 0 ? (
           <AdminEmptyState
             icon={Sparkles}
-            title="Noch keine CMS-Leistungen"
-            description="Die Website zeigt Standard-Leistungen. Lege eigene Leistungen an, um sie zu überschreiben."
-            actionLabel="Erste Leistung anlegen"
+            title={empty.title}
+            description={empty.description}
+            actionLabel={empty.actionLabel}
             onAction={addNew}
           />
         ) : null}
@@ -117,10 +123,10 @@ export function ServicesView() {
                 />
                 <button
                   type="button"
-                  onClick={() => confirm("Löschen?") && save({ id: s.id }, "DELETE")}
+                  onClick={() => confirmDanger(ADMIN_CONFIRM.deleteService) && save({ id: s.id }, "DELETE")}
                   className="admin-btn-danger text-xs"
                 >
-                  Löschen
+                  {ADMIN_BTN.delete}
                 </button>
               </div>
             </div>

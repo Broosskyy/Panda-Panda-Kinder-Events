@@ -12,7 +12,11 @@ import {
   AdminStatusBadge,
   reviewStatusVariant,
 } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
 
 interface Review {
   id: string;
@@ -31,7 +35,9 @@ interface Review {
 export function ReviewsView() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, saved, saveFailed, success } = useAdminMessages();
+  const page = adminPageHeaderProps("bewertungen");
+  const empty = ADMIN_EMPTY_STATES.reviews;
 
   const load = () =>
     fetch("/api/admin/reviews")
@@ -49,9 +55,9 @@ export function ReviewsView() {
       body: JSON.stringify({ id, ...body }),
     });
     if (res.ok) {
-      toast("Gespeichert");
+      saved();
       load();
-    } else toast("Fehler beim Speichern", "error");
+    } else saveFailed();
   };
 
   const uploadReviewImage = async (id: string, file: File, type: "profile" | "event") => {
@@ -76,7 +82,7 @@ export function ReviewsView() {
           });
           if (!res.ok) throw new Error("Speichern fehlgeschlagen");
 
-          toast(type === "profile" ? "Profilbild hochgeladen" : "Eventfoto hochgeladen");
+          toast(ADMIN_MSG.imageUploaded);
           await load();
         })(),
       );
@@ -86,16 +92,16 @@ export function ReviewsView() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Bewertung wirklich löschen?")) return;
+    if (!confirmDanger(ADMIN_CONFIRM.deleteReview)) return;
     const res = await fetch("/api/admin/reviews", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
     if (res.ok) {
-      toast("Gelöscht");
+      success("Bewertung gelöscht.");
       load();
-    } else toast("Löschen fehlgeschlagen", "error");
+    } else toast(ADMIN_MSG.deleteFailed, "error");
   };
 
   const filtered = reviews.filter((r) => {
@@ -106,7 +112,7 @@ export function ReviewsView() {
 
   return (
     <div>
-      <AdminPageHeader title="Bewertungen" description="Freigeben, beantworten und verwalten" />
+      <AdminPageHeader {...page} />
 
       <AdminFilterBar>
         <AdminFilterSelect
@@ -124,8 +130,10 @@ export function ReviewsView() {
       {filtered.length === 0 ? (
         <AdminEmptyState
           icon={Star}
-          title="Keine Bewertungen gefunden"
-          description={reviews.length === 0 ? "Sobald Kunden Bewertungen einreichen, erscheinen sie hier." : "Passe den Filter an."}
+          title={reviews.length === 0 ? empty.title : "Keine Bewertungen gefunden"}
+          description={reviews.length === 0 ? empty.description : "Passe den Filter an."}
+          actionLabel={reviews.length === 0 ? empty.actionLabel : undefined}
+          actionHref={reviews.length === 0 ? empty.actionHref : undefined}
         />
       ) : (
         <div className="space-y-4">
@@ -215,7 +223,7 @@ export function ReviewsView() {
                       {r.verified ? "Verifizierung entfernen" : "Als verifiziert markieren"}
                     </AdminButton>
                     <AdminButton variant="danger" onClick={() => void remove(r.id)}>
-                      Löschen
+                      {ADMIN_BTN.delete}
                     </AdminButton>
                   </div>
                 </div>

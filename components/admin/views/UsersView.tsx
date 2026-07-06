@@ -6,7 +6,11 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
 import { AdminButton, AdminEmptyState, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 import { ADMIN_ROLE_DESCRIPTIONS, ADMIN_ROLE_SHORT } from "@/lib/admin/role-descriptions";
 import type { AdminUserPublic, AdminRoleSlug } from "@/lib/auth/types";
 
@@ -43,7 +47,9 @@ export function UsersView() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, fromApi } = useAdminMessages();
+  const page = adminPageHeaderProps("benutzer");
+  const empty = ADMIN_EMPTY_STATES.users;
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/users");
@@ -56,7 +62,7 @@ export function UsersView() {
         setForm((f) => ({ ...f, roleId: data.roles[0].id }));
       }
     } else {
-      toast(data.error ?? "Laden fehlgeschlagen", "error");
+      toast(data.error ?? ADMIN_MSG.loadFailed, "error");
     }
   }, [form.roleId, toast]);
 
@@ -105,7 +111,7 @@ export function UsersView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(data.message ?? "Gespeichert");
+        toast(ADMIN_MSG.userSaved);
         setShowForm(false);
         setEditingId(null);
         await load();
@@ -120,16 +126,13 @@ export function UsersView() {
       body: JSON.stringify({ id: user.id, active: !user.active }),
     });
     const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Fehler", "error");
+    if (!res.ok) return fromApi(data, "Status konnte nicht geändert werden.");
     await load();
   };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Benutzer & Rollen"
-        description="Admin-Accounts für Login und Dashboard. Keine öffentlichen Teamkarten — dafür gibt es Website → Team."
-      >
+      <AdminPageHeader {...page}>
         <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
           Benutzer anlegen
         </AdminButton>
@@ -189,8 +192,8 @@ export function UsersView() {
             </AdminFormField>
           </div>
           <div className="mt-6 flex gap-2">
-            <AdminButton variant="primary" onClick={() => void save()}>Speichern</AdminButton>
-            <AdminButton variant="secondary" onClick={() => setShowForm(false)}>Abbrechen</AdminButton>
+            <AdminButton variant="primary" onClick={() => void save()}>{ADMIN_BTN.save}</AdminButton>
+            <AdminButton variant="secondary" onClick={() => setShowForm(false)}>{ADMIN_BTN.cancel}</AdminButton>
           </div>
         </AdminCard>
       ) : null}
@@ -198,9 +201,9 @@ export function UsersView() {
       {users.length === 0 ? (
         <AdminEmptyState
           icon={UserPlus}
-          title="Noch keine Admin-Benutzer"
-          description="Lege Benutzer für den Dashboard-Login an. Das globale Passwort gilt nur, bis der erste Benutzer existiert."
-          actionLabel="Benutzer anlegen"
+          title={empty.title}
+          description={empty.description}
+          actionLabel={empty.actionLabel}
           onAction={openCreate}
         />
       ) : (

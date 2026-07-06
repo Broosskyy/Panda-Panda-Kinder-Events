@@ -4,7 +4,11 @@ import { useCallback, useEffect, useState } from "react";
 import { Newspaper, Save, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminSearchInput, AdminStatusBadge, postStatusVariant } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
 import type { CmsPost } from "@/lib/cms/types";
 
 type PostDraft = {
@@ -32,7 +36,9 @@ const emptyPost = (): PostDraft => ({
 });
 
 export function PostsView() {
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, postCreated, postUpdated } = useAdminMessages();
+  const page = adminPageHeaderProps("beitraege");
+  const empty = ADMIN_EMPTY_STATES.posts;
   const [posts, setPosts] = useState<CmsPost[]>([]);
   const [draft, setDraft] = useState<PostDraft>(emptyPost());
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -74,7 +80,8 @@ export function PostsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(data.message ?? (editingId ? "Beitrag aktualisiert" : "Beitrag erstellt"));
+        if (editingId) postUpdated();
+        else postCreated();
         setDraft(emptyPost());
         setEditingId(null);
         await load();
@@ -83,7 +90,7 @@ export function PostsView() {
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Beitrag wirklich löschen?")) return;
+    if (!confirmDanger(ADMIN_CONFIRM.deletePost)) return;
     await withLoading(
       (async () => {
         const res = await fetch("/api/admin/posts", {
@@ -92,7 +99,7 @@ export function PostsView() {
           body: JSON.stringify({ id }),
         });
         if (!res.ok) throw new Error("Löschen fehlgeschlagen");
-        toast("Beitrag gelöscht");
+        toast(ADMIN_MSG.postDeleted);
         await load();
       })(),
     );
@@ -106,12 +113,12 @@ export function PostsView() {
     const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
     const data = await res.json();
     if (!res.ok) {
-      toast(data.error ?? "Upload fehlgeschlagen", "error");
+      toast(data.error ?? ADMIN_MSG.uploadFailed, "error");
       console.error("uploadHero:", data);
       return;
     }
     setDraft((d) => ({ ...d, hero_image_path: data.path, hero_image_url: data.url }));
-    toast("Hero-Bild hochgeladen — bitte Beitrag speichern.");
+    toast("✓ Hero-Bild hochgeladen — bitte Beitrag speichern.");
   };
 
   const filtered = posts.filter((p) =>
@@ -120,7 +127,7 @@ export function PostsView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Beiträge" description="Aktuelles auf der Website veröffentlichen." />
+      <AdminPageHeader {...page} />
 
       <AdminCard title={editingId ? "Beitrag bearbeiten" : "Neuer Beitrag"}>
         <div className="grid gap-4 md:grid-cols-2">
@@ -145,11 +152,11 @@ export function PostsView() {
         ) : null}
         <div className="mt-4 flex gap-2">
           <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void save()}>
-            Speichern
+            {ADMIN_BTN.save}
           </AdminButton>
           {editingId ? (
             <AdminButton variant="secondary" onClick={() => { setEditingId(null); setDraft(emptyPost()); }}>
-              Abbrechen
+              {ADMIN_BTN.cancel}
             </AdminButton>
           ) : null}
         </div>
@@ -160,9 +167,9 @@ export function PostsView() {
         {filtered.length === 0 ? (
           <AdminEmptyState
             icon={Newspaper}
-            title="Noch keine Beiträge veröffentlicht."
-            description={posts.length === 0 ? "Erstelle deinen ersten Beitrag für die Aktuelles-Seite." : "Passe die Suche an."}
-            actionLabel={posts.length === 0 ? "Beitrag erstellen" : undefined}
+            title={posts.length === 0 ? empty.title : "Keine Beiträge gefunden"}
+            description={posts.length === 0 ? empty.description : "Passe die Suche an."}
+            actionLabel={posts.length === 0 ? empty.actionLabel : undefined}
             onAction={posts.length === 0 ? () => window.scrollTo({ top: 0, behavior: "smooth" }) : undefined}
           />
         ) : (
@@ -198,7 +205,7 @@ export function PostsView() {
                   Bearbeiten
                 </AdminButton>
                 <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove(p.id)}>
-                  Löschen
+                  {ADMIN_BTN.delete}
                 </AdminButton>
               </div>
             </div>

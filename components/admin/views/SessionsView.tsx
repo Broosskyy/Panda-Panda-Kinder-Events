@@ -4,12 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
 import { AdminButton } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
 
 export function SessionsView() {
   const [sessions, setSessions] = useState<Array<Record<string, unknown>>>([]);
   const [legacy, setLegacy] = useState(false);
-  const { toast } = useAdminUi();
+  const { toast, fromApi } = useAdminMessages();
+  const page = adminPageHeaderProps("sitzungen");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/security/sessions");
@@ -25,23 +28,25 @@ export function SessionsView() {
   }, [load]);
 
   const sessionAction = async (action: string) => {
+    if (action === "revoke_others" && !confirmDanger(ADMIN_CONFIRM.revokeAllSessions)) return;
+    if (action === "revoke_all" && !confirmDanger(ADMIN_CONFIRM.revokeAllSessions)) return;
     const res = await fetch("/api/admin/security/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action }),
     });
     if (res.ok) {
-      toast("Aktion ausgeführt");
+      toast(ADMIN_MSG.sessionRevoked);
       await load();
     } else {
       const data = await res.json();
-      toast(data.error ?? "Fehler", "error");
+      fromApi(data, "Aktion fehlgeschlagen.");
     }
   };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Aktive Sitzungen" description="Geräte, die aktuell angemeldet sind." />
+      <AdminPageHeader {...page} />
       <SecuritySubNav />
       {legacy ? (
         <AdminCard><p className="text-sm text-text-muted">Sitzungsverwaltung ist im Multi-User-Modus verfügbar.</p></AdminCard>

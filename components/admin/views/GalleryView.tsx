@@ -5,7 +5,11 @@ import { useEffect, useRef, useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_CONFIRM, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
 
 interface GalleryItem {
   id: string;
@@ -21,7 +25,9 @@ interface GalleryItem {
 export function GalleryView() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, gallerySaved, imageUploaded, uploading, saveFailed } = useAdminMessages();
+  const page = adminPageHeaderProps("galerie");
+  const empty = ADMIN_EMPTY_STATES.gallery;
 
   const load = () =>
     fetch("/api/admin/gallery")
@@ -33,7 +39,7 @@ export function GalleryView() {
   }, []);
 
   const upload = async (file: File) => {
-    toast("Wird hochgeladen…", "info");
+    uploading();
     try {
       await withLoading(
         (async () => {
@@ -56,12 +62,12 @@ export function GalleryView() {
             }),
           });
           if (!res.ok) throw new Error("DB Fehler");
-          toast("Bild hochgeladen");
+          imageUploaded();
           await load();
         })(),
       );
     } catch (e) {
-      toast(e instanceof Error ? e.message : "Upload fehlgeschlagen", "error");
+      toast(e instanceof Error ? e.message : "❌ Upload fehlgeschlagen.", "error");
     }
   };
 
@@ -72,29 +78,29 @@ export function GalleryView() {
       body: JSON.stringify({ id, ...updates }),
     });
     if (res.ok) {
-      toast("Gespeichert");
+      gallerySaved();
       load();
-    } else toast("Fehler beim Speichern", "error");
+    } else saveFailed();
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Bild wirklich löschen?")) return;
+    if (!confirmDanger(ADMIN_CONFIRM.deleteImage)) return;
     const res = await fetch("/api/admin/gallery", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
     if (res.ok) {
-      toast("Gelöscht");
+      toast("✓ Bild gelöscht.");
       load();
-    } else toast("Löschen fehlgeschlagen", "error");
+    } else toast("❌ Löschen fehlgeschlagen.", "error");
   };
 
   return (
     <div>
-      <AdminPageHeader title="Galerie" description="Bilder hochladen und verwalten">
+      <AdminPageHeader {...page}>
         <AdminButton variant="primary" onClick={() => fileRef.current?.click()}>
-          Bild hochladen
+          {ADMIN_BTN.upload}
         </AdminButton>
         <input
           ref={fileRef}
@@ -112,9 +118,9 @@ export function GalleryView() {
       {images.length === 0 ? (
         <AdminEmptyState
           icon={ImageIcon}
-          title="Noch keine Bilder hochgeladen."
-          description="Lade Bilder hoch, die auf der Website in der Galerie erscheinen."
-          actionLabel="Bild hochladen"
+          title={empty.title}
+          description={empty.description}
+          actionLabel={empty.actionLabel}
           onAction={() => fileRef.current?.click()}
         />
       ) : (

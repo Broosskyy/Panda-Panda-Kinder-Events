@@ -5,7 +5,11 @@ import { Receipt, Send } from "lucide-react";
 import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput, AdminStatusBadge, crmDocumentStatusVariant } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmDocumentStatus } from "@/lib/crm/types";
 
@@ -27,7 +31,10 @@ export function InvoicesView() {
   const [sendToCustomer, setSendToCustomer] = useState(true);
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
-  const { toast } = useAdminUi();
+  const [sendError, setSendError] = useState<{ message: string; detail?: string } | null>(null);
+  const { toast, invoiceSent, error: showError } = useAdminMessages();
+  const page = adminPageHeaderProps("rechnungen");
+  const empty = ADMIN_EMPTY_STATES.invoices;
 
   const load = () => {
     const q = search ? `?q=${encodeURIComponent(search)}` : "";
@@ -42,6 +49,7 @@ export function InvoicesView() {
   const confirmSend = async () => {
     if (!sendTarget || !sendToCustomer) return;
     setSending(true);
+    setSendError(null);
     try {
       const res = await fetch(`/api/admin/invoices/${sendTarget.id}/send`, {
         method: "POST",
@@ -49,12 +57,22 @@ export function InvoicesView() {
         body: JSON.stringify({ copyToBusiness }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
-      toast("Rechnung versendet");
+      if (!res.ok) {
+        setSendError({
+          message: data.error ?? ADMIN_MSG.sendFailed,
+          detail: data.detail,
+        });
+        return;
+      }
+      invoiceSent();
       setSendTarget(null);
       load();
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Versand fehlgeschlagen", "error");
+      showError(
+        "Die E-Mail konnte nicht versendet werden.",
+        err instanceof Error ? err.message : undefined,
+        "Bitte E-Mail-Einstellungen und Empfänger-Adresse prüfen.",
+      );
     } finally {
       setSending(false);
     }
@@ -67,21 +85,29 @@ export function InvoicesView() {
       body: JSON.stringify({ id, status }),
     });
     if (res.ok) {
-      toast("Status aktualisiert");
+      toast(ADMIN_MSG.statusUpdated);
       load();
-    } else toast("Fehler", "error");
+    } else {
+      showError("Status konnte nicht aktualisiert werden.", undefined, "Bitte erneut versuchen.");
+    }
   };
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Rechnungen" description="Rechnungen aus Angeboten — PDF, Versand und Statusverwaltung." />
+      <AdminPageHeader {...page} />
 
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Rechnungen suchen…" />
       </AdminFilterBar>
 
       {invoices.length === 0 ? (
-        <AdminEmptyState icon={Receipt} title="Noch keine Rechnungen" description="Erstelle Rechnungen aus bestätigten Angeboten." actionHref="/admin/angebote" actionLabel="Zu Angeboten" />
+        <AdminEmptyState
+          icon={Receipt}
+          title={empty.title}
+          description={empty.description}
+          actionHref={empty.actionHref}
+          actionLabel={empty.actionLabel}
+        />
       ) : (
         <div className="space-y-3">
           {invoices.map((inv) => (
@@ -96,7 +122,7 @@ export function InvoicesView() {
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <AdminFilterSelect value={inv.status} onChange={(v) => setStatus(inv.id, v)} options={STATUS_OPTIONS} />
-                  <AdminButton variant="secondary" href={`/api/admin/invoices/${inv.id}/pdf`} target="_blank">PDF</AdminButton>
+                  <AdminButton variant="secondary" href={`/api/admin/invoices/${inv.id}/pdf`} target="_blank">{ADMIN_BTN.pdf}</AdminButton>
                   <AdminButton
                     variant="primary"
                     icon={<Send className="h-4 w-4" />}
@@ -104,9 +130,10 @@ export function InvoicesView() {
                       setSendTarget(inv);
                       setSendToCustomer(true);
                       setCopyToBusiness(true);
+                      setSendError(null);
                     }}
                   >
-                    Senden
+                    {ADMIN_BTN.send}
                   </AdminButton>
                 </div>
               </div>
@@ -122,6 +149,7 @@ export function InvoicesView() {
         sendToCustomer={sendToCustomer}
         copyToBusiness={copyToBusiness}
         loading={sending}
+        error={sendError}
         onChangeSendToCustomer={setSendToCustomer}
         onChangeCopyToBusiness={setCopyToBusiness}
         onClose={() => setSendTarget(null)}

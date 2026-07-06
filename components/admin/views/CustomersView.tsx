@@ -4,7 +4,10 @@ import { useEffect, useState } from "react";
 import { Plus, UserPlus, Users } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput, AdminStatusBadge } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { CRM_CUSTOMER_STATUS_LABELS, type CrmCustomer, type CrmCustomerStatus } from "@/lib/crm/types";
 
 interface CustomerHistory {
@@ -23,7 +26,9 @@ export function CustomersView() {
   const [history, setHistory] = useState<CustomerHistory | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [showForm, setShowForm] = useState(false);
-  const { toast } = useAdminUi();
+  const { customerSaved, saved, saveFailed, fromApi } = useAdminMessages();
+  const page = adminPageHeaderProps("kunden");
+  const empty = ADMIN_EMPTY_STATES.customers;
 
   const load = () => {
     const q = search ? `?q=${encodeURIComponent(search)}` : "";
@@ -56,8 +61,8 @@ export function CustomersView() {
       body: JSON.stringify(form),
     });
     const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Fehler", "error");
-    toast("Kunde gespeichert");
+    if (!res.ok) return fromApi(data, "Kunde konnte nicht angelegt werden.");
+    customerSaved();
     setShowForm(false);
     setForm(emptyForm);
     load();
@@ -70,16 +75,16 @@ export function CustomersView() {
       body: JSON.stringify({ id, [field]: value }),
     });
     if (res.ok) {
-      toast("Gespeichert");
+      saved();
       load();
-    } else toast("Fehler", "error");
+    } else saveFailed();
   };
 
   const selected = customers.find((c) => c.id === selectedId);
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Kunden" description="Kundenstamm verwalten — Anfragen, Angebote und Rechnungen verknüpfen.">
+      <AdminPageHeader {...page}>
         <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setShowForm(true)}>
           Neuer Kunde
         </AdminButton>
@@ -104,8 +109,8 @@ export function CustomersView() {
             <textarea className="admin-input md:col-span-2 min-h-20" placeholder="Notizen" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
           <div className="mt-4 flex gap-2">
-            <AdminButton variant="primary" onClick={save}>Speichern</AdminButton>
-            <AdminButton variant="secondary" onClick={() => setShowForm(false)}>Abbrechen</AdminButton>
+            <AdminButton variant="primary" onClick={save}>{ADMIN_BTN.save}</AdminButton>
+            <AdminButton variant="secondary" onClick={() => setShowForm(false)}>{ADMIN_BTN.cancel}</AdminButton>
           </div>
         </AdminCard>
       ) : null}
@@ -113,7 +118,7 @@ export function CustomersView() {
       <div className="grid gap-6 lg:grid-cols-2">
         <div className="space-y-3">
           {customers.length === 0 ? (
-            <AdminEmptyState icon={Users} title="Noch keine Kunden angelegt." description="Lege Kunden manuell an oder erstelle sie aus einer Anfrage." actionLabel="Kunde anlegen" onAction={() => setShowForm(true)} />
+            <AdminEmptyState icon={Users} title={empty.title} description={empty.description} actionLabel={empty.actionLabel} onAction={() => setShowForm(true)} />
           ) : (
             customers.map((c) => (
               <button

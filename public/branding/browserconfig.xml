@@ -2,7 +2,7 @@
 <browserconfig>
   <msapplication>
     <tile>
-      <square150x150logo src="/icons/panda-icon-192.png?v=4"/>
+      <square150x150logo src="/icons/panda-icon-192.png?v=5"/>
       <TileColor>#52563e</TileColor>
     </tile>
   </msapplication>

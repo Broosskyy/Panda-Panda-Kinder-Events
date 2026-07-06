@@ -1,10 +1,7 @@
 # Assets
 
-| Datei | Verwendung |
-|-------|------------|
-| `/assets/Logo.png` | Header, Splash, Footer — Kombi-Logo + Textmarke |
-| `/assets/AppIcon.svg` | **Favicon, Tab-Icon, PWA** — Zwei-Panda auf Kreis |
+**Logo (eine Quelle für alles):** `/assets/Logo.png`
 
-**Textmarke:** Panda-Bande / Kinderevents (aus CMS, neben dem Logo)
+- Header, Splash, Footer, Favicon, PWA, Tab-Icon
 
-Icons generieren: `npm run generate:brand-assets` → `public/icons/`, `public/favicon.png`
+Icons generieren: `npm run generate:brand-assets` → skaliert `Logo.png` proportional in alle Icon-Größen.

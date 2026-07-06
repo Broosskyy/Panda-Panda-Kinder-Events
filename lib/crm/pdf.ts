@@ -1,5 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { BusinessProfile } from "./company";
+import { getSiteUrl } from "@/lib/site-url";
 import { formatCents } from "./money";
 import type { CrmCustomer, CrmDocumentStatus, CrmInvoice, CrmQuote } from "./types";
 import { CRM_STATUS_LABELS } from "./types";
@@ -53,7 +54,7 @@ function formatDateDE(iso: string | null | undefined): string {
 
 async function fetchLogoBytes(logoUrl: string): Promise<{ bytes: Uint8Array; kind: "png" | "jpg" } | null> {
   try {
-    const base = process.env.NEXT_PUBLIC_SITE_URL ?? "https://panda-bande-events.de";
+    const base = getSiteUrl();
     const url = logoUrl.startsWith("http") ? logoUrl : `${base}${logoUrl}`;
     const res = await fetch(url);
     if (!res.ok) return null;

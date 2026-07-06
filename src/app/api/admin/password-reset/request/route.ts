@@ -25,9 +25,9 @@ export async function POST(request: Request) {
   const user = await findUserByIdentifier(parsed.data.email);
   if (user?.active) {
     const { token } = await createPasswordResetToken(user.id);
-    const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : "http://localhost:3000";
+    const baseUrl =
+      process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ||
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     const resetUrl = `${baseUrl}/admin/passwort-reset?token=${token}`;
 
     try {

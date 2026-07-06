@@ -4,7 +4,7 @@ Unvergessliche Kinderfeiern und Familien-Events — digital präsentiert, persö
 
 ## Projektstatus
 
-🟢 **v1.0-checkpoint** — Vollständige Website, Admin (CMS + CRM), Sicherheit (Benutzer, Rollen, 2FA, Audit). Dokumentation und Backup-Guides vorhanden. Siehe [Checkpoint Report](PROJECT_CHECKPOINT_REPORT.md).
+🟢 **v1.0.0** — Produktionsreif nach Domain/E-Mail-Setup und manueller Checkliste. Siehe [Livegang-Anleitung](LIVEGOING_GUIDE.md).
 
 ## Entwicklung
 
@@ -49,6 +49,10 @@ Originales Logo nach `public/assets/logo.png` legen (siehe `public/assets/README
 | [TECHNICAL_RUNBOOK](TECHNICAL_RUNBOOK.md) | Technisches Handbuch für Entwickler |
 | [CHECKPOINT_V1_SUMMARY](CHECKPOINT_V1_SUMMARY.md) | Checkpoint-Zusammenfassung |
 | [PROJECT_CHECKPOINT_REPORT](PROJECT_CHECKPOINT_REPORT.md) | Abschlussreport |
+| [RELEASE_CHECKLIST](RELEASE_CHECKLIST.md) | Go-Live Checkliste |
+| [LIVEGOING_GUIDE](LIVEGOING_GUIDE.md) | Livegang Schritt für Schritt |
+| [DOMAIN_EMAIL_SETUP_GUIDE](DOMAIN_EMAIL_SETUP_GUIDE.md) | Domain & E-Mail |
+| [PWA_INSTALL_GUIDE](PWA_INSTALL_GUIDE.md) | Web-App installieren |
 | [Backups](backups/checkpoint-v1/README.md) | Backup- und Restore-Guides |
 
 ## Projektdokumentation (Legacy)

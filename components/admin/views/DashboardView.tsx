@@ -76,6 +76,7 @@ function analyticsUnavailable(stats: AdminAnalyticsDashboard | null): boolean {
 export function DashboardView() {
   const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
+  const [emailUsesTestDomain, setEmailUsesTestDomain] = useState<boolean | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -83,11 +84,15 @@ export function DashboardView() {
     Promise.all([
       fetch("/api/admin/dashboard").then((r) => r.json()),
       fetch("/api/admin/activity").then((r) => r.json()),
+      fetch("/api/admin/email/status").then((r) => r.json()),
     ])
-      .then(([dashboardData, activityData]) => {
+      .then(([dashboardData, activityData, emailData]) => {
         if (dashboardData.error) throw new Error(dashboardData.error);
         setStats(dashboardData);
         setActivity(activityData.activity ?? []);
+        if (emailData.resolved) {
+          setEmailUsesTestDomain(Boolean(emailData.resolved.usesTestDomain));
+        }
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Laden fehlgeschlagen"))
       .finally(() => setLoading(false));
@@ -108,6 +113,18 @@ export function DashboardView() {
         <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
           {error}
         </p>
+      ) : null}
+
+      {emailUsesTestDomain ? (
+        <div className="rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>E-Mail: Resend-Testdomain aktiv.</strong> Versand läuft über{" "}
+          <code className="rounded bg-white/60 px-1">onboarding@resend.dev</code> — für den Livegang Domain in Resend
+          verifizieren und unter{" "}
+          <Link href="/admin/einstellungen?tab=email" className="font-semibold underline">
+            Einstellungen → E-Mail
+          </Link>{" "}
+          prüfen.
+        </div>
       ) : null}
 
       {loading ? (

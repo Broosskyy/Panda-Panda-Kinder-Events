@@ -183,8 +183,10 @@ export function SettingsView() {
         <AdminCard title="E-Mail">
           {usesTestDomain ? (
             <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <strong>Resend-Testdomain aktiv.</strong> Eigene Absenderadresse erst nach Resend-Domain-Verifizierung möglich.
-              Momentan wird <code className="rounded bg-white/60 px-1">onboarding@resend.dev</code> als Fallback verwendet.
+              <strong>Resend-Testdomain aktiv — noch nicht produktionsreif.</strong> E-Mails werden über{" "}
+              <code className="rounded bg-white/60 px-1">onboarding@resend.dev</code> versendet. Empfänger sind auf
+              verifizierte Adressen beschränkt. Nach Domain-Verifizierung in Resend wird automatisch die konfigurierte
+              Absenderadresse verwendet.
             </div>
           ) : (
             <div className="mb-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-text-primary">
@@ -316,8 +318,8 @@ export function SettingsView() {
             <AdminFormField label="E-Mail" required>
               <input className="admin-input" type="email" value={business.email} onChange={(e) => setBusinessField("email", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Website" className="md:col-span-2">
-              <input className="admin-input" value={business.website} onChange={(e) => setBusinessField("website", e.target.value)} />
+            <AdminFormField label="Website" hint="Wird in PDFs und E-Mails verwendet. Öffentliche Domain: NEXT_PUBLIC_SITE_URL in Vercel">
+              <input className="admin-input" value={business.website} onChange={(e) => setBusinessField("website", e.target.value)} placeholder="https://ihre-domain.de" />
             </AdminFormField>
             <AdminFormField label="IBAN">
               <input className="admin-input" value={business.iban} onChange={(e) => setBusinessField("iban", e.target.value)} />
@@ -362,6 +364,17 @@ export function SettingsView() {
           Admin-Benutzer und 2FA verwaltest du unter{" "}
           <Link href="/admin/sicherheit/benutzer" className="text-primary underline">Sicherheit → Benutzer & Rollen</Link>.
           Legacy-Zugang per <code className="rounded bg-bg-secondary px-1">ADMIN_PASSWORD</code>, solange kein Benutzer existiert.
+        </p>
+      </AdminCard>
+
+      <AdminCard title="Domain & URL">
+        <p className="text-sm text-text-secondary">
+          Die öffentliche Website-URL wird über die Umgebungsvariable{" "}
+          <code className="rounded bg-bg-secondary px-1">NEXT_PUBLIC_SITE_URL</code> gesteuert (z. B. in Vercel).
+          Sie beeinflusst Canonical URLs, Sitemap, OpenGraph und E-Mail-Links. Nach Domain-Wechsel neu deployen.
+        </p>
+        <p className="mt-2 text-sm text-text-muted">
+          Anleitung: <code className="rounded bg-bg-secondary px-1">DOMAIN_EMAIL_SETUP_GUIDE.md</code>
         </p>
       </AdminCard>
 

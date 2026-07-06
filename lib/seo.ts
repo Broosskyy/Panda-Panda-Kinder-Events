@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import { siteConfig } from "@/config/site";
+import { getSiteUrl } from "@/lib/site-url";
 
-export const SEO_DEFAULT_IMAGE = `${siteConfig.url}/panda-illustration.svg`;
+export function getSeoDefaultImage(): string {
+  return `${getSiteUrl()}/panda-illustration.svg`;
+}
 
 export function buildPageMetadata(opts: {
   title: string;
@@ -10,8 +13,9 @@ export function buildPageMetadata(opts: {
   noIndex?: boolean;
   image?: string;
 }): Metadata {
-  const url = opts.path ? `${siteConfig.url}${opts.path}` : siteConfig.url;
-  const image = opts.image ?? SEO_DEFAULT_IMAGE;
+  const base = getSiteUrl();
+  const url = opts.path ? `${base}${opts.path}` : base;
+  const image = opts.image ?? getSeoDefaultImage();
 
   return {
     title: opts.title,
@@ -37,15 +41,16 @@ export function buildPageMetadata(opts: {
 }
 
 export function organizationJsonLd(opts: { email: string; phone: string; location: string }) {
+  const base = getSiteUrl();
   return {
     "@context": "https://schema.org",
     "@type": "Organization",
     name: siteConfig.name,
-    url: siteConfig.url,
+    url: base,
     email: opts.email,
     telephone: opts.phone,
     areaServed: opts.location,
-    logo: `${siteConfig.url}${siteConfig.assets.logo}`,
+    logo: `${base}${siteConfig.assets.logo}`,
   };
 }
 
@@ -63,6 +68,7 @@ export function breadcrumbJsonLd(items: { name: string; url: string }[]) {
 }
 
 export function serviceJsonLd(services: { title: string; description: string }[]) {
+  const base = getSiteUrl();
   return services.map((service) => ({
     "@context": "https://schema.org",
     "@type": "Service",
@@ -71,8 +77,42 @@ export function serviceJsonLd(services: { title: string; description: string }[]
     provider: {
       "@type": "Organization",
       name: siteConfig.name,
-      url: siteConfig.url,
+      url: base,
     },
     areaServed: "DE",
   }));
 }
+
+export function articleJsonLd(opts: {
+  title: string;
+  description: string;
+  path: string;
+  publishedAt?: string | null;
+  image?: string | null;
+}) {
+  const base = getSiteUrl();
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: opts.title,
+    description: opts.description,
+    url: `${base}${opts.path}`,
+    datePublished: opts.publishedAt ?? undefined,
+    image: opts.image ?? getSeoDefaultImage(),
+    author: {
+      "@type": "Organization",
+      name: siteConfig.name,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      logo: {
+        "@type": "ImageObject",
+        url: `${base}${siteConfig.assets.logo}`,
+      },
+    },
+  };
+}
+
+/** @deprecated use getSeoDefaultImage() */
+export const SEO_DEFAULT_IMAGE = getSeoDefaultImage();

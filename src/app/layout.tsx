@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Montserrat, Caveat } from "next/font/google";
 import { siteConfig } from "@/config/site";
+import { getSeoDefaultImage } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/site-url";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
-import { SEO_DEFAULT_IMAGE } from "@/lib/seo";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -24,7 +25,7 @@ const caveat = Caveat({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(siteConfig.url),
+  metadataBase: new URL(getSiteUrl()),
   title: {
     default: `${siteConfig.name} — Liebevolle Kinderbetreuung für euer Event`,
     template: `%s | ${siteConfig.name}`,
@@ -44,24 +45,27 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "de_DE",
-    url: siteConfig.url,
+    url: getSiteUrl(),
     siteName: siteConfig.name,
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [{ url: SEO_DEFAULT_IMAGE, width: 1200, height: 630, alt: siteConfig.name }],
+    images: [{ url: getSeoDefaultImage(), width: 1200, height: 630, alt: siteConfig.name }],
   },
   twitter: {
     card: "summary_large_image",
     title: siteConfig.name,
     description: siteConfig.description,
-    images: [SEO_DEFAULT_IMAGE],
+    images: [getSeoDefaultImage()],
   },
-  alternates: { canonical: siteConfig.url },
+  alternates: { canonical: getSiteUrl() },
   robots: { index: true, follow: true },
   manifest: "/manifest.webmanifest",
   icons: {
-    icon: [{ url: "/panda-illustration.svg", type: "image/svg+xml" }],
-    apple: [{ url: "/panda-illustration.svg", type: "image/svg+xml" }],
+    icon: [
+      { url: "/favicon.png", type: "image/png", sizes: "32x32" },
+      { url: "/panda-illustration.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
   },
 };
 

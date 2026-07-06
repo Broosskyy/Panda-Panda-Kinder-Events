@@ -99,16 +99,36 @@ export async function sendInquiryNotification(data: InquiryEmailData) {
   }
 
   if (emailSettings.inquiryAutoReplyEnabled && data.email) {
-    const autoText = applyEmailTemplate(emailSettings.inquiryAutoReplyText, {
+    const vars = {
       name: data.name,
       company: companyName,
-    });
+      customer_name: data.name,
+      company_name: companyName,
+    };
+    const { renderEmailFromTemplate } = await import("@/lib/email/render");
+    const rendered = await renderEmailFromTemplate("inquiry-auto-reply", vars);
+    const autoText = rendered?.text
+      ?? applyEmailTemplate(emailSettings.inquiryAutoReplyText, vars);
+    const autoHtml = rendered?.html;
+    const autoSubject = rendered?.subject
+      ?? applyEmailTemplate(emailSettings.inquiryAutoReplySubject, vars);
+
     await resend.emails.send({
       from: sender.from,
       to: data.email,
       replyTo: sender.replyTo,
-      subject: applyEmailTemplate(emailSettings.inquiryAutoReplySubject, { name: data.name, company: companyName }),
+      subject: autoSubject,
       text: autoText,
+      html: autoHtml,
+    });
+
+    const { logEmailSend } = await import("@/lib/email/log");
+    await logEmailSend({
+      recipient: data.email,
+      subject: autoSubject,
+      templateSlug: "inquiry-auto-reply",
+      area: "inquiry",
+      status: "sent",
     });
   }
 }
@@ -213,6 +233,15 @@ ${opts.company?.website ?? ""}`.trim();
     attachments: [attachment],
   });
 
+  const { logEmailSend } = await import("@/lib/email/log");
+  await logEmailSend({
+    recipient: opts.to,
+    subject,
+    templateSlug: opts.documentType === "quote" ? "quote-send" : "invoice-send",
+    area: opts.documentType,
+    status: "sent",
+  });
+
   if (opts.copyToBusiness) {
     const copyTo = getCopyEmailForDocument(emailSettings, opts.documentType);
     await resend.emails.send({
@@ -264,6 +293,7 @@ Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
     baseUrl: getSiteUrl(),
     logoUrl: BRAND.master,
     companyName,
+    primaryColor: BRAND.themeColor,
     bodyHtml: `<p>Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
     <table style="background:#f8f7f4;border-radius:12px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
       <tr><td><strong>Absender:</strong> ${sender.displayFrom}</td></tr>

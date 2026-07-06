@@ -30,6 +30,7 @@ const VALID_SECTIONS: (keyof SiteSettingsBundle)[] = [
 
 const AUDIT_SECTIONS = new Set([
   "business",
+  "branding",
   "contact",
   "email",
   "bank",

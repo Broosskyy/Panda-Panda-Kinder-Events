@@ -317,26 +317,58 @@ export function SettingsView() {
       {tab === "branding" && branding ? (
         <AdminCard title="Logo & Branding">
           <p className="mb-4 text-sm text-text-muted">
-            Standard: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/branding/logo.png</code> — leer lassen für Master-Logo.
+            Bildmarke: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/assets/logo.png</code> — Textmarke bleibt „Panda-Bande / Kinderevents“.
           </p>
+          <div className="mb-6 flex flex-wrap items-center gap-6 rounded-xl border border-border bg-bg-secondary/40 p-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={branding.logoUrl || "/assets/logo.png"} alt="Logo Vorschau" className="h-14 w-auto object-contain" />
+            <div>
+              <p className="font-bold tracking-widest">{branding.logoTextPrimary}</p>
+              <p className="text-sm tracking-widest text-text-muted">{branding.logoTextSecondary}</p>
+            </div>
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Hauptlogo" hint="Header, Splash, allgemein" className="md:col-span-2">
-              <input className="admin-input" value={branding.logoUrl} onChange={(e) => setBrandingField("logoUrl", e.target.value)} placeholder="/branding/logo.png" />
+            <AdminFormField label="Hauptlogo (Bildmarke)" className="md:col-span-2">
+              <input className="admin-input" value={branding.logoUrl} onChange={(e) => setBrandingField("logoUrl", e.target.value)} placeholder="/assets/logo.png" />
             </AdminFormField>
-            <AdminFormField label="Helles Logo" hint="Footer auf dunklem Hintergrund">
+            <AdminFormField label="Markenname">
+              <input className="admin-input" value={branding.brandName} onChange={(e) => setBrandingField("brandName", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Unterzeile">
+              <input className="admin-input" value={branding.tagline} onChange={(e) => setBrandingField("tagline", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Text Zeile 1 (Header)">
+              <input className="admin-input" value={branding.logoTextPrimary} onChange={(e) => setBrandingField("logoTextPrimary", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Text Zeile 2 (Header)">
+              <input className="admin-input" value={branding.logoTextSecondary} onChange={(e) => setBrandingField("logoTextSecondary", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Slogan" className="md:col-span-2">
+              <input className="admin-input" value={branding.slogan} onChange={(e) => setBrandingField("slogan", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Primärfarbe">
+              <input className="admin-input" type="color" value={branding.primaryColor} onChange={(e) => setBrandingField("primaryColor", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Akzentfarbe">
+              <input className="admin-input" type="color" value={branding.accentColor} onChange={(e) => setBrandingField("accentColor", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Helles Logo" hint="Footer">
               <input className="admin-input" value={branding.logoLightUrl} onChange={(e) => setBrandingField("logoLightUrl", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Dunkles Logo" hint="Alternative Variante">
+            <AdminFormField label="Dunkles Logo">
               <input className="admin-input" value={branding.logoDarkUrl} onChange={(e) => setBrandingField("logoDarkUrl", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="PDF-Logo" hint="Angebote & Rechnungen">
+            <AdminFormField label="PDF-Logo">
               <input className="admin-input" value={branding.pdfLogoUrl} onChange={(e) => setBrandingField("pdfLogoUrl", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="E-Mail-Logo" hint="HTML-E-Mails">
+            <AdminFormField label="E-Mail-Logo">
               <input className="admin-input" value={branding.emailLogoUrl} onChange={(e) => setBrandingField("emailLogoUrl", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Login-Logo" hint="Admin-Anmeldung">
+            <AdminFormField label="Login-Logo">
               <input className="admin-input" value={branding.loginLogoUrl} onChange={(e) => setBrandingField("loginLogoUrl", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="OpenGraph Bild">
+              <input className="admin-input" value={branding.ogImageUrl} onChange={(e) => setBrandingField("ogImageUrl", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Favicon">
               <input className="admin-input" value={branding.faviconUrl} onChange={(e) => setBrandingField("faviconUrl", e.target.value)} />
@@ -344,9 +376,23 @@ export function SettingsView() {
             <AdminFormField label="Apple Touch Icon">
               <input className="admin-input" value={branding.appleTouchIconUrl} onChange={(e) => setBrandingField("appleTouchIconUrl", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Alt-Text" hint="Barrierefreiheit" className="md:col-span-2">
+            <AdminFormField label="PWA Icon 192">
+              <input className="admin-input" value={branding.pwaIcon192Url} onChange={(e) => setBrandingField("pwaIcon192Url", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="PWA Icon 512">
+              <input className="admin-input" value={branding.pwaIcon512Url} onChange={(e) => setBrandingField("pwaIcon512Url", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Alt-Text" className="md:col-span-2">
               <input className="admin-input" value={branding.logoAlt} onChange={(e) => setBrandingField("logoAlt", e.target.value)} />
             </AdminFormField>
+            <label className="flex items-center gap-2 text-sm md:col-span-2">
+              <input
+                type="checkbox"
+                checked={branding.showTextMark !== false}
+                onChange={(e) => setBrandingField("showTextMark", e.target.checked)}
+              />
+              Textmarke neben Logo anzeigen (Panda-Bande / Kinderevents)
+            </label>
           </div>
           <StickySaveBar label="Branding speichern" onSave={() => void saveSection("branding", branding)} />
         </AdminCard>

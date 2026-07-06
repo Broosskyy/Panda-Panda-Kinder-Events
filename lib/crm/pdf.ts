@@ -1,5 +1,5 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
-import { LOGO_ASPECT_RATIO, LOGO_SIZE_PX } from "@/lib/brand";
+import { LOGO_MARK_ASPECT, LOGO_SIZE_PX } from "@/lib/brand";
 import type { BusinessProfile } from "./company";
 import { getSiteUrl } from "@/lib/site-url";
 import { formatCents } from "./money";
@@ -17,7 +17,7 @@ const PAGE = { width: 595.28, height: 841.89 };
 const MARGIN = 48;
 const CONTENT_WIDTH = PAGE.width - MARGIN * 2;
 const PDF_LOGO_WIDTH = LOGO_SIZE_PX.pdfWidth;
-const PDF_LOGO_HEIGHT = PDF_LOGO_WIDTH / LOGO_ASPECT_RATIO;
+const PDF_LOGO_HEIGHT = PDF_LOGO_WIDTH / LOGO_MARK_ASPECT;
 
 interface PdfLineItem {
   description: string;

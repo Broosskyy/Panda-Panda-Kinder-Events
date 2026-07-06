@@ -192,15 +192,13 @@ export function getCopyEmailForDocument(settings: SiteEmailSettings, type: "quot
   return settings.copyToEmail?.trim() || getInquiryRecipient(settings);
 }
 
+import { applyTemplateVariables } from "@/lib/email/variables";
+
 export function applyEmailTemplate(
   template: string,
   vars: Record<string, string>,
 ): string {
-  let result = template;
-  for (const [key, value] of Object.entries(vars)) {
-    result = result.replaceAll(`{${key}}`, value);
-  }
-  return result;
+  return applyTemplateVariables(template, vars);
 }
 
 export async function resolveFlowEmailSender(

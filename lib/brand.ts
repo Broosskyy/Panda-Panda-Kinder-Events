@@ -1,19 +1,23 @@
 /**
- * Panda-Bande — eine einzige Logoquelle für das gesamte Projekt.
- * Master: /branding/logo.png (640×160, Seitenverhältnis 4:1)
+ * Panda-Bande — Branding-Konstanten
+ * Bildmarke: /assets/logo.png
+ * Textmarke: Panda-Bande / Kinderevents (aus CMS)
  */
 export const BRAND = {
   name: "Panda-Bande Kinderevents",
   shortName: "Panda-Bande",
+  textPrimary: "PANDA-BANDE",
+  textSecondary: "KINDEREVENTS",
   splashTagline: "Mit Herz für kleine Abenteuer.",
   themeColor: "#52563e",
+  accentColor: "#c45c5c",
   backgroundColor: "#f4f1ea",
   alt: "Panda-Bande KinderEvents",
 
-  /** Einzige Master-Logoquelle */
-  master: "/branding/logo.png",
+  /** Standard-Bildmarke */
+  master: "/assets/logo.png",
 
-  /** Generierte Assets (aus Master via npm run generate:brand-assets) */
+  /** Generierte Icon-Assets (npm run generate:brand-assets) */
   assets: {
     favicon16: "/branding/favicon-16.png",
     favicon32: "/branding/favicon-32.png",
@@ -27,24 +31,23 @@ export const BRAND = {
     ogImage: "/branding/og-image.png",
   },
 
-  /** Natürliche Pixelmaße des Master-Logos — nie verzerren */
-  width: 640,
-  height: 160,
+  /** Bildmarke — typisch quadratisch / kompakt */
+  markWidth: 160,
+  markHeight: 160,
 } as const;
 
-export const LOGO_ASPECT_RATIO = BRAND.width / BRAND.height;
+export const LOGO_MARK_ASPECT = BRAND.markWidth / BRAND.markHeight;
 
-/** Pixel-Höhen pro Kontext (Spezifikation v1.0) */
 export const LOGO_SIZE_PX = {
-  headerDesktop: 60,
-  headerMobile: 46,
-  footer: 48,
-  adminSidebar: 38,
-  login: 90,
-  splash: 140,
-  decorative: 80,
+  headerDesktop: 48,
+  headerMobile: 40,
+  footer: 44,
+  adminSidebar: 36,
+  login: 72,
+  splash: 100,
+  decorative: 64,
   email: 48,
-  pdfWidth: 200,
+  pdfWidth: 120,
 } as const;
 
 export type LogoContext =

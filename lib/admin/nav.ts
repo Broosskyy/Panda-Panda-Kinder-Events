@@ -37,6 +37,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/anfragen", label: "Anfragen", iconKey: "Inbox" },
       { href: "/admin/bewertungen", label: "Bewertungen", iconKey: "Star" },
+      { href: "/admin/emails", label: "E-Mails", iconKey: "Mail" },
     ],
   },
   {
@@ -64,6 +65,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Einstellungen",
     items: [
       { href: "/admin/einstellungen", label: "Unternehmensdaten", iconKey: "Settings" },
+      { href: "/admin/einstellungen?tab=branding", label: "Branding", iconKey: "Image" },
       { href: "/admin/einstellungen?tab=email", label: "E-Mail", iconKey: "Mail" },
       { href: "/admin/einstellungen?tab=system", label: "System", iconKey: "Cpu" },
     ],

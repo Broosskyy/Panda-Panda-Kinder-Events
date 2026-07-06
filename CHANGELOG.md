@@ -2,6 +2,32 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.4] — 2026-07-06 — Branding + CMS E-Mail Control
+
+### Branding
+- Bildmarke `/assets/logo.png` + Textmarke „PANDA-BANDE / KINDEREVENTS“ kombiniert
+- CMS Branding: Markenname, Slogan, Farben, OG, PWA-Icons, alle Logo-Varianten
+- Admin → Einstellungen → Branding mit Vorschau
+
+### E-Mail CMS
+- `email_templates`, `email_logs`, `email_drafts` Tabellen (Migration)
+- Admin → Kommunikation → E-Mails: Verfassen, Vorlagen, Protokoll
+- `{{variable}}` Syntax für alle Vorlagen
+- HTML-E-Mails mit Logo-Header aus CMS-Branding
+- Versand-Logging für manuelle, CRM- und Auto-Reply E-Mails
+
+### Report
+- `FINAL_BRANDING_EMAIL_CMS_REPORT.md`
+
+## [1.0.3] — 2026-07-06 — Final Branding Integration
+
+- Einheitliche Logoquelle `/branding/logo.png` (vorheriger Sprint)
+- Siehe `FINAL_BRANDING_REPORT.md`
+
+## [1.0.2] — 2026-07-06 — Public Website Polish
+
+- Siehe `FINAL_PUBLIC_WEBSITE_POLISH_REPORT.md`
+
 ## [1.0.1] — 2026-07-06 — Admin Control Center Final Sprint
 
 ### Einstellungen (8 Bereiche)

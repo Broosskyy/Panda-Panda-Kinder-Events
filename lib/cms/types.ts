@@ -28,20 +28,26 @@ export interface SiteNavigationSettings {
 }
 
 export interface SiteBrandingSettings {
-  /** Hauptlogo — Fallback: /branding/logo.png */
   logoUrl: string;
-  /** Logo für dunkle Hintergründe (z. B. Footer) */
   logoDarkUrl: string;
-  /** Logo für helle Hintergründe */
   logoLightUrl: string;
   logoAlt: string;
   logoTextPrimary: string;
   logoTextSecondary: string;
+  brandName: string;
+  tagline: string;
+  slogan: string;
+  primaryColor: string;
+  accentColor: string;
   faviconUrl: string;
   appleTouchIconUrl: string;
+  pwaIcon192Url: string;
+  pwaIcon512Url: string;
   pdfLogoUrl: string;
   emailLogoUrl: string;
   loginLogoUrl: string;
+  ogImageUrl: string;
+  showTextMark: boolean;
 }
 
 export interface CmsIconTextItem {
@@ -135,6 +141,58 @@ export interface SiteAboutSettings {
   paragraph2: string;
   missionText: string;
   valuesText: string;
+}
+
+export interface EmailTemplateRecord {
+  id: string;
+  slug: string;
+  name: string;
+  subject: string;
+  body_html: string;
+  body_text: string | null;
+  area: EmailTemplateArea;
+  is_active: boolean;
+  is_default: boolean;
+  variables: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+export type EmailTemplateArea =
+  | "general"
+  | "inquiry"
+  | "quote"
+  | "invoice"
+  | "payment_reminder"
+  | "review"
+  | "password_reset"
+  | "security"
+  | "appointment"
+  | "inquiry_reply";
+
+export interface EmailLogRecord {
+  id: string;
+  recipient: string;
+  subject: string;
+  template_slug: string | null;
+  area: string | null;
+  status: "sent" | "failed";
+  error_message: string | null;
+  sent_by_admin_id: string | null;
+  related_customer_id: string | null;
+  related_quote_id: string | null;
+  related_invoice_id: string | null;
+  created_at: string;
+}
+
+export interface EmailDraftRecord {
+  id: string;
+  recipient: string | null;
+  subject: string | null;
+  body_html: string | null;
+  template_slug: string | null;
+  created_by_admin_id: string | null;
+  updated_at: string;
 }
 
 export interface SiteFooterSettings {

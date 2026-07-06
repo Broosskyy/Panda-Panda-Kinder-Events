@@ -6,7 +6,9 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
 import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 
 type Step = "idle" | "setup" | "enabled";
 
@@ -22,7 +24,8 @@ export function TwoFactorView() {
   const [disablePassword, setDisablePassword] = useState("");
   const [disableCode, setDisableCode] = useState("");
   const [regenCode, setRegenCode] = useState("");
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, error: showError } = useAdminMessages();
+  const page = adminPageHeaderProps("twoFa");
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/security/2fa");
@@ -51,7 +54,7 @@ export function TwoFactorView() {
       setSecret(data.secret);
       setStep("setup");
     } else {
-      toast(data.error ?? "Einrichtung fehlgeschlagen", "error");
+      showError("Einrichtung fehlgeschlagen.", data.error);
       if (data.legacy) setLegacy(true);
     }
   };
@@ -72,7 +75,7 @@ export function TwoFactorView() {
         setBackupCodes(data.backupCodes ?? []);
         setEnabled(true);
         setStep("enabled");
-        toast("2FA erfolgreich aktiviert");
+        toast(ADMIN_MSG.twoFaEnabled);
         await load();
       })(),
     );
@@ -93,7 +96,7 @@ export function TwoFactorView() {
         setStep("idle");
         setDisablePassword("");
         setDisableCode("");
-        toast("2FA deaktiviert");
+        toast(ADMIN_MSG.twoFaDisabled);
         await load();
       })(),
     );
@@ -133,10 +136,7 @@ export function TwoFactorView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Zwei-Faktor-Authentifizierung (2FA)"
-        description="Schütze deinen Admin-Account mit Google Authenticator, Microsoft Authenticator oder Authy."
-      />
+      <AdminPageHeader {...page} />
 
       <SecuritySubNav />
 

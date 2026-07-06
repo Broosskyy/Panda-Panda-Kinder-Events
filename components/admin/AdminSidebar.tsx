@@ -199,19 +199,41 @@ export function AdminSidebar() {
 export function AdminPageHeader({
   title,
   description,
+  whereVisible,
+  helpItems,
   children,
 }: {
   title: string;
   description?: string;
+  whereVisible?: string;
+  helpItems?: string[];
   children?: React.ReactNode;
 }) {
   return (
-    <div className="admin-page-header">
-      <div>
-        <h1 className="admin-page-title">{title}</h1>
-        {description ? <p className="admin-page-description">{description}</p> : null}
+    <div className="admin-page-header-block space-y-4">
+      <div className="admin-page-header">
+        <div>
+          <h1 className="admin-page-title">{title}</h1>
+          {description ? <p className="admin-page-description">{description}</p> : null}
+          {whereVisible ? (
+            <p className="admin-page-where-visible">
+              <span className="font-medium">Sichtbar:</span> {whereVisible}
+            </p>
+          ) : null}
+        </div>
+        {children ? <div className="admin-page-actions">{children}</div> : null}
       </div>
-      {children ? <div className="admin-page-actions">{children}</div> : null}
+      {helpItems?.length ? (
+        <div className="admin-page-help-wrap">
+          {/* AdminPageHelp imported in views to avoid circular deps — optional inline */}
+          <ul className="admin-page-help-list" aria-label="Was kann ich hier machen?">
+            <li className="admin-page-help-label">Was kann ich hier machen?</li>
+            {helpItems.slice(0, 3).map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </div>
   );
 }

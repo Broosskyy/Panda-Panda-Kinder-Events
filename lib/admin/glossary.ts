@@ -1,0 +1,37 @@
+/** Einfache Erklärungen für technische Begriffe (Tooltips) */
+
+export const ADMIN_GLOSSARY = {
+  dkim: "DKIM bestätigt, dass E-Mails wirklich von deiner Domain kommen. Wird in Resend nach Domain-Verifizierung eingerichtet.",
+  spf: "SPF legt fest, welche Server E-Mails für deine Domain versenden dürfen. Schützt vor Spam und verbessert Zustellbarkeit.",
+  mx: "MX-Einträge steuern, wohin eingehende E-Mails gehen. Für Versand über Resend optional — Empfang kann extern laufen.",
+  dmarc: "DMARC sagt Empfängern, wie sie mit E-Mails umgehen sollen, die SPF oder DKIM nicht bestehen.",
+  apiKey: "Geheimer Schlüssel für den Zugriff auf einen Dienst (z. B. Resend). Nie öffentlich teilen.",
+  webhook: "Automatische Benachrichtigung an dein System, wenn ein externer Dienst ein Ereignis meldet.",
+  canonical: "Die bevorzugte URL einer Seite für Suchmaschinen — verhindert doppelte Inhalte.",
+  robots: "Anweisungen für Suchmaschinen-Crawler, welche Seiten indexiert werden dürfen.",
+  sitemap: "Übersicht aller öffentlichen Seiten für Google & Co. Wird automatisch generiert.",
+  slug: "Der URL-Teil eines Beitrags, z. B. „sommerfest-2026“ in /aktuelles/sommerfest-2026.",
+  seo: "Suchmaschinenoptimierung — Titel, Beschreibung und Struktur für bessere Auffindbarkeit.",
+  json: "Datenformat für technische Austausch — hier für Einstellungen und API-Antworten.",
+  csv: "Tabellenformat zum Export (z. B. Kundenliste). Öffnet sich in Excel.",
+  backup: "Sicherungskopie deiner Daten. Regelmäßige Backups schützen vor Datenverlust.",
+  restore: "Wiederherstellung aus einer Sicherungskopie.",
+  cache: "Zwischenspeicher für schnellere Ladezeiten. Nach Änderungen kann ein kurzer Verzug normal sein.",
+  deployment: "Veröffentlichung einer neuen Version der Website auf dem Server.",
+  build: "Zusammenbau der Website aus Quellcode — läuft automatisch bei Veröffentlichung.",
+  version: "Aktuelle Software- bzw. Asset-Version.",
+  auditLog: "Protokoll wer wann was im Admin geändert hat — für Nachvollziehbarkeit.",
+  analytics: "Besucherstatistiken der Website — hier datenschutzfreundlich ohne Google-Zwang.",
+  iban: "Internationale Bankkontonummer — erscheint auf Rechnungen und in PDFs.",
+  bic: "Bank-Identifikationscode für internationale Überweisungen.",
+  vatId: "Umsatzsteuer-Identifikationsnummer deines Unternehmens.",
+  taxNumber: "Steuernummer beim Finanzamt.",
+  resendDomain: "E-Mail-Domain, die bei Resend verifiziert sein muss, damit Absender-Adressen funktionieren.",
+  replyTo: "Adresse, an die Antworten der Empfänger gehen.",
+  metaDescription: "Kurztext für Google-Suchergebnisse — ca. 150 Zeichen, prägnant formulieren.",
+  heroHeadline: "Die große Überschrift ganz oben auf der Startseite — erster Eindruck für Besucher.",
+  logo: "Hauptlogo — erscheint auf Website, Login, CMS, PDFs, E-Mails und als App-Icon.",
+  favicon: "Kleines Symbol im Browser-Tab und auf dem Homescreen (PWA).",
+} as const;
+
+export type AdminGlossaryKey = keyof typeof ADMIN_GLOSSARY;

@@ -8,7 +8,9 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { CONTROL_CENTER_TABS, type ControlCenterTab } from "@/lib/cms/settings-compat";
 import { formatDocumentNumberPreview, resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
 import type {
@@ -43,6 +45,14 @@ interface SystemStatusResponse {
 }
 
 const VALID_TABS = new Set<string>(CONTROL_CENTER_TABS.map((t) => t.id));
+
+const DOMAIN_STATUS_LABELS: Record<string, string> = {
+  test: "Resend-Testdomain",
+  verified: "Domain verifiziert",
+  pending: "Verifizierung ausstehend",
+  failed: "Verifizierung fehlgeschlagen",
+  not_configured: "Nicht konfiguriert",
+};
 
 const CUSTOM_ADDRESS_LABELS: { key: keyof SiteEmailCustomAddresses; label: string }[] = [
   { key: "info", label: "info@" },
@@ -95,7 +105,8 @@ export function SettingsView() {
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
   const [testTo, setTestTo] = useState("");
-  const { toast, withLoading } = useAdminUi();
+  const { withLoading, saved, testEmailSent, error: showError } = useAdminMessages();
+  const settingsPage = adminPageHeaderProps("einstellungen");
 
   const loadSettings = useCallback(async () => {
     const res = await fetch("/api/admin/settings");
@@ -143,7 +154,6 @@ export function SettingsView() {
   const saveSection = async <S extends keyof SiteSettingsBundle>(
     section: S,
     value: SiteSettingsBundle[S],
-    successMessage?: string,
   ) => {
     await withLoading(
       (async () => {
@@ -154,14 +164,14 @@ export function SettingsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(successMessage ?? data.message ?? "Gespeichert");
+        saved();
         if (section === "email") await loadEmailStatus();
       })(),
     );
   };
 
   const sendTest = async () => {
-    if (!testTo.trim()) return toast("Bitte Empfänger-Adresse eingeben", "error");
+    if (!testTo.trim()) return showError("Test-E-Mail konnte nicht gesendet werden.", "Bitte Empfänger-Adresse eingeben.");
     await withLoading(
       (async () => {
         const res = await fetch("/api/admin/email/test", {
@@ -171,7 +181,7 @@ export function SettingsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
-        toast(data.message ?? "Test-E-Mail gesendet");
+        testEmailSent();
       })(),
     );
   };
@@ -242,8 +252,10 @@ export function SettingsView() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Einstellungen"
-        description="Zentrale Steuerung für Website, E-Mail, CRM und Rechtliches."
+        title={settingsPage.title}
+        description={settingsPage.description}
+        whereVisible={settingsPage.whereVisible}
+        helpItems={settingsPage.helpItems}
       />
 
       <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">
@@ -263,7 +275,7 @@ export function SettingsView() {
       {tab === "business" && business ? (
         <AdminCard title="Unternehmensdaten">
           <p className="mb-4 text-sm text-text-muted">
-            Diese Daten werden in PDFs, E-Mails und Admin-Anzeigen verwendet.
+            Diese Daten erscheinen auf Rechnungen, Angeboten (PDF), E-Mails und im Impressum.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
             <AdminFormField label="Firmenname" required className="md:col-span-2">
@@ -306,14 +318,14 @@ export function SettingsView() {
               <textarea className="admin-input min-h-20" value={business.description} onChange={(e) => setBusinessField("description", e.target.value)} />
             </AdminFormField>
           </div>
-          <AdminStickySave label="Unternehmensdaten speichern" onSave={() => void saveSection("business", business)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — Unternehmensdaten`} onSave={() => void saveSection("business", business)} />
         </AdminCard>
       ) : null}
 
       {tab === "branding" && branding ? (
-        <AdminCard title="Logo & Branding">
+        <AdminCard title="Branding">
           <p className="mb-4 text-sm text-text-muted">
-            Bildmarke: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/assets/Logo.png</code> — Textmarke „Panda-Bande / Kinderevents“. Tab-Icon = dasselbe Logo verkleinert.
+            Verwalte Logo, Markenname, Farben und Favicons. Änderungen wirken auf Website, CMS, PDFs und E-Mails.
           </p>
           <div className="mb-6 flex flex-wrap items-center gap-6 rounded-xl border border-border bg-bg-secondary/40 p-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -326,7 +338,12 @@ export function SettingsView() {
             <img src={branding.faviconUrl || "/favicon.png?v=6"} alt="Tab-Icon Vorschau" className="h-12 w-12 rounded-lg border border-border object-contain bg-[#f4f1ea]" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Hauptlogo (Bildmarke)" className="md:col-span-2">
+            <AdminFormField
+              label="Hauptlogo"
+              tooltip="logo"
+              hint="Erscheint auf Website, Login, CMS, PDFs, E-Mails und als App-Icon."
+              className="md:col-span-2"
+            >
               <input className="admin-input" value={branding.logoUrl} onChange={(e) => setBrandingField("logoUrl", e.target.value)} placeholder="/assets/Logo.png" />
             </AdminFormField>
             <AdminFormField label="Markenname">
@@ -368,7 +385,7 @@ export function SettingsView() {
             <AdminFormField label="OpenGraph Bild">
               <input className="admin-input" value={branding.ogImageUrl} onChange={(e) => setBrandingField("ogImageUrl", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Favicon">
+            <AdminFormField label="Favicon" tooltip="favicon" hint="Kleines Symbol im Browser-Tab.">
               <input className="admin-input" value={branding.faviconUrl} onChange={(e) => setBrandingField("faviconUrl", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Apple Touch Icon">
@@ -392,7 +409,7 @@ export function SettingsView() {
               Textmarke neben Logo anzeigen (Panda-Bande / Kinderevents)
             </label>
           </div>
-          <AdminStickySave label="Branding speichern" onSave={() => void saveSection("branding", branding)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — Branding`} onSave={() => void saveSection("branding", branding)} />
         </AdminCard>
       ) : null}
 
@@ -443,7 +460,7 @@ export function SettingsView() {
               <input className="admin-input" value={contact.openingHours} onChange={(e) => setContactField("openingHours", e.target.value)} />
             </AdminFormField>
           </div>
-          <AdminStickySave label="Kontaktdaten speichern" onSave={() => void saveSection("contact", contact)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — Kontakt`} onSave={() => void saveSection("contact", contact)} />
         </AdminCard>
       ) : null}
 
@@ -477,6 +494,13 @@ export function SettingsView() {
                   ? "Versand ist konfiguriert."
                   : emailStatus?.sendingSetup?.blockReason ?? "Versand-Status wird geladen…"}
               </p>
+              <p className="mt-1 text-text-secondary">
+                Domain: {DOMAIN_STATUS_LABELS[emailStatus?.domain.status ?? "not_configured"] ?? "Unbekannt"}
+                {emailStatus?.domain.domain ? ` — ${emailStatus.domain.domain}` : ""}
+              </p>
+              {emailStatus?.domain.message ? (
+                <p className="mt-1 text-text-muted">{emailStatus.domain.message}</p>
+              ) : null}
             </div>
 
             <ul className="space-y-2">
@@ -522,10 +546,10 @@ export function SettingsView() {
             <AdminFormField label="Absendername" required hint="Wird im From-Feld angezeigt">
               <input className="admin-input" value={email.senderName} onChange={(e) => setEmailField("senderName", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Absender-E-Mail" required hint="z. B. info@panda-bande-events.de">
+            <AdminFormField label="Absender-E-Mail" tooltip="resendDomain" required hint="z. B. info@panda-bande-events.de — muss in Resend verifiziert sein.">
               <input className="admin-input" type="email" value={email.senderEmail} onChange={(e) => setEmailField("senderEmail", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Reply-To-Adresse" required>
+            <AdminFormField label="Reply-To-Adresse" tooltip="replyTo" required hint="Adresse für Antworten der Empfänger.">
               <input className="admin-input" type="email" value={email.replyTo} onChange={(e) => setEmailField("replyTo", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Kopie-an-Adresse" hint="Allgemeine Kopie bei CRM-Versand">
@@ -653,7 +677,7 @@ export function SettingsView() {
             </div>
           </div>
 
-          <AdminStickySave label="E-Mail-Einstellungen speichern" onSave={() => void saveSection("email", email)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — E-Mail`} onSave={() => void saveSection("email", email)} />
         </AdminCard>
       ) : null}
 
@@ -760,7 +784,7 @@ export function SettingsView() {
               <textarea className="admin-input min-h-16" value={invoice.legalNoticeText} onChange={(e) => setInvoiceField("legalNoticeText", e.target.value)} />
             </AdminFormField>
           </div>
-          <AdminStickySave label="Rechnungseinstellungen speichern" onSave={() => void saveSection("invoice", invoice)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — Rechnungen`} onSave={() => void saveSection("invoice", invoice)} />
         </AdminCard>
       ) : null}
 
@@ -774,10 +798,10 @@ export function SettingsView() {
             <AdminFormField label="Kontoinhaber/in">
               <input className="admin-input" value={bank.accountHolder} onChange={(e) => setBankField("accountHolder", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="IBAN">
+            <AdminFormField label="IBAN" tooltip="iban" hint="Erscheint auf Rechnungs-PDFs.">
               <input className="admin-input" value={bank.iban} onChange={(e) => setBankField("iban", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="BIC">
+            <AdminFormField label="BIC" tooltip="bic" optional>
               <input className="admin-input" value={bank.bic} onChange={(e) => setBankField("bic", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Steuernummer">
@@ -802,7 +826,7 @@ export function SettingsView() {
               <textarea className="admin-input min-h-16" value={bank.dunningNotice} onChange={(e) => setBankField("dunningNotice", e.target.value)} />
             </AdminFormField>
           </div>
-          <AdminStickySave label="Bankdaten speichern" onSave={() => void saveSection("bank", bank)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — Bank`} onSave={() => void saveSection("bank", bank)} />
         </AdminCard>
       ) : null}
 
@@ -830,13 +854,13 @@ export function SettingsView() {
             <AdminFormField label="WWW-Domain" hint="Optional, z. B. www.panda-bande-events.de">
               <input className="admin-input" value={seo.wwwDomain} onChange={(e) => setSeoField("wwwDomain", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Canonical Base URL" hint="Vollständige URL mit https://" className="md:col-span-2">
+            <AdminFormField label="Canonical Base URL" tooltip="canonical" hint="Vollständige URL mit https://" className="md:col-span-2">
               <input className="admin-input" value={seo.canonicalBaseUrl} onChange={(e) => setSeoField("canonicalBaseUrl", e.target.value)} placeholder="https://ihre-domain.de" />
             </AdminFormField>
             <AdminFormField label="Meta-Titel" required>
               <input className="admin-input" value={seo.metaTitle} onChange={(e) => setSeoField("metaTitle", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Meta-Beschreibung" required>
+            <AdminFormField label="Meta-Beschreibung" tooltip="metaDescription" required hint="Ca. 150 Zeichen — erscheint in Google-Suchergebnissen.">
               <textarea className="admin-input min-h-16" value={seo.metaDescription} onChange={(e) => setSeoField("metaDescription", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="OG-Bild URL" hint="Social-Media-Vorschaubild">
@@ -848,26 +872,26 @@ export function SettingsView() {
             <AdminFormField label="Google Site Verification">
               <input className="admin-input" value={seo.googleSiteVerification} onChange={(e) => setSeoField("googleSiteVerification", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Google Analytics ID" hint="z. B. G-XXXXXXXXXX">
+            <AdminFormField label="Google Analytics ID" tooltip="analytics" hint="z. B. G-XXXXXXXXXX" optional>
               <input className="admin-input" value={seo.googleAnalyticsId} onChange={(e) => setSeoField("googleAnalyticsId", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Microsoft Clarity ID">
               <input className="admin-input" value={seo.microsoftClarityId} onChange={(e) => setSeoField("microsoftClarityId", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Suchmaschinen-Indexierung">
+            <AdminFormField label="Suchmaschinen-Indexierung" tooltip="robots">
               <label className="admin-checkbox-row">
                 <input type="checkbox" checked={seo.robotsIndex} onChange={(e) => setSeoField("robotsIndex", e.target.checked)} />
                 <span>Website von Suchmaschinen indexieren lassen</span>
               </label>
             </AdminFormField>
-            <AdminFormField label="Sitemap aktiv">
+            <AdminFormField label="Sitemap aktiv" tooltip="sitemap">
               <label className="admin-checkbox-row">
                 <input type="checkbox" checked={seo.sitemapEnabled} onChange={(e) => setSeoField("sitemapEnabled", e.target.checked)} />
                 <span>Sitemap unter /sitemap.xml bereitstellen</span>
               </label>
             </AdminFormField>
           </div>
-          <AdminStickySave label="SEO-Einstellungen speichern" onSave={() => void saveSection("seo", seo)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — SEO`} onSave={() => void saveSection("seo", seo)} />
         </AdminCard>
       ) : null}
 
@@ -918,7 +942,7 @@ export function SettingsView() {
               <textarea className="admin-input min-h-16" value={legal.placeholderNotice} onChange={(e) => setLegalField("placeholderNotice", e.target.value)} />
             </AdminFormField>
           </div>
-          <AdminStickySave label="Rechtliche Texte speichern" onSave={() => void saveSection("legal", legal)} />
+          <AdminStickySave label={`${ADMIN_BTN.save} — Rechtliches`} onSave={() => void saveSection("legal", legal)} />
         </AdminCard>
       ) : null}
 

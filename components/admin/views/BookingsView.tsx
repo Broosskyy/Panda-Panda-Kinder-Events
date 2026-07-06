@@ -6,7 +6,10 @@ import type { BookingStatus } from "@/lib/supabase/admin";
 import { Inbox, UserPlus } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
   new: "Neu",
@@ -39,7 +42,9 @@ export function BookingsView() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
-  const { toast } = useAdminUi();
+  const { toast, saved, saveFailed, fromApi } = useAdminMessages();
+  const page = adminPageHeaderProps("anfragen");
+  const empty = ADMIN_EMPTY_STATES.bookings;
 
   const load = () =>
     fetch("/api/admin/bookings")
@@ -57,9 +62,9 @@ export function BookingsView() {
       body: JSON.stringify({ id, ...updates }),
     });
     if (res.ok) {
-      toast("Gespeichert");
+      toast(ADMIN_MSG.bookingSaved);
       load();
-    } else toast("Fehler beim Speichern", "error");
+    } else saveFailed();
   };
 
   const createCustomer = async (bookingId: string) => {
@@ -69,8 +74,8 @@ export function BookingsView() {
       body: JSON.stringify({ booking_id: bookingId }),
     });
     const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Kunde konnte nicht angelegt werden", "error");
-    toast(`Kunde „${data.customer?.name}" angelegt`);
+    if (!res.ok) return fromApi(data, "Kunde konnte nicht angelegt werden.");
+    toast(ADMIN_MSG.customerCreated);
     load();
   };
 
@@ -89,7 +94,7 @@ export function BookingsView() {
 
   return (
     <div>
-      <AdminPageHeader title="Anfragen" description="Alle Buchungsanfragen verwalten" />
+      <AdminPageHeader {...page} />
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Name, E-Mail oder Event suchen…" />
         <AdminFilterSelect
@@ -106,8 +111,10 @@ export function BookingsView() {
         {filtered.length === 0 ? (
           <AdminEmptyState
             icon={Inbox}
-            title="Keine Anfragen gefunden"
-            description={bookings.length === 0 ? "Sobald jemand das Kontaktformular nutzt, erscheinen Anfragen hier." : "Passe Suche oder Filter an."}
+            title={bookings.length === 0 ? empty.title : "Keine Anfragen gefunden"}
+            description={bookings.length === 0 ? empty.description : "Passe Suche oder Filter an."}
+            actionLabel={bookings.length === 0 ? empty.actionLabel : undefined}
+            actionHref={bookings.length === 0 ? empty.actionHref : undefined}
           />
         ) : (
           filtered.map((b) => (

@@ -17,6 +17,8 @@ import { AdminEmptyState } from "@/components/admin/ui";
 import type { AdminActivityItem } from "@/lib/admin/activity";
 import { DASHBOARD_QUICK_ACTIONS } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import type { AdminAnalyticsDashboard } from "@/lib/analytics/types";
 
 function formatRelativeTime(dateStr: string) {
@@ -98,6 +100,8 @@ export function DashboardView() {
       .finally(() => setLoading(false));
   }, []);
 
+  const dashboardHelp = adminPageHeaderProps("dashboard");
+  const activityEmpty = ADMIN_EMPTY_STATES.activity;
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
   const statsMissing = analyticsUnavailable(stats);
@@ -107,6 +111,7 @@ export function DashboardView() {
       <AdminPageHeader
         title={`${greeting}!`}
         description="Willkommen im Panda-Bande Admin — hier verwaltest du Website, Anfragen und CRM an einem Ort."
+        helpItems={dashboardHelp.helpItems}
       />
 
       {error ? (
@@ -237,8 +242,8 @@ export function DashboardView() {
           {activity.length === 0 ? (
             <AdminEmptyState
               icon={Inbox}
-              title="Noch keine Aktivitäten"
-              description="Sobald Anfragen, Beiträge oder Galerie-Uploads eingehen, erscheinen sie hier."
+              title={activityEmpty.title}
+              description={activityEmpty.description}
             />
           ) : (
             <ul className="space-y-1">

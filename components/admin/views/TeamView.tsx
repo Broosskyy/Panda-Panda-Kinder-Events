@@ -6,7 +6,11 @@ import Link from "next/link";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
 import type { TeamMember, TeamSocialLinks } from "@/lib/cms/types";
 
 const emptyForm = () => ({
@@ -28,7 +32,9 @@ export function TeamView() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, saved, fromApi } = useAdminMessages();
+  const page = adminPageHeaderProps("team");
+  const empty = ADMIN_EMPTY_STATES.team;
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/team");
@@ -38,7 +44,7 @@ export function TeamView() {
       setConfigured(data.configured !== false);
       if (data.section) setSection(data.section);
     } else {
-      toast(data.error ?? "Laden fehlgeschlagen", "error");
+      toast(data.error ?? ADMIN_MSG.loadFailed, "error");
     }
   }, [toast]);
 
@@ -56,7 +62,7 @@ export function TeamView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(data.message ?? "Überschrift gespeichert");
+        saved();
       })(),
     );
   };
@@ -100,7 +106,7 @@ export function TeamView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(data.message ?? "Gespeichert");
+        saved();
         setShowForm(false);
         setEditingId(null);
         setForm(emptyForm());
@@ -116,13 +122,13 @@ export function TeamView() {
       body: JSON.stringify({ id: member.id, active: !member.active }),
     });
     const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Fehler", "error");
+    if (!res.ok) return fromApi(data, "Status konnte nicht geändert werden.");
     toast(member.active ? "Auf Website ausgeblendet" : "Auf Website sichtbar");
     await load();
   };
 
   const archive = async (id: string) => {
-    if (!confirm("Teammitglied archivieren?")) return;
+    if (!confirmDanger(ADMIN_CONFIRM.archiveTeam)) return;
     const res = await fetch("/api/admin/team", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -130,14 +136,14 @@ export function TeamView() {
     });
     if (!res.ok) {
       const data = await res.json();
-      return toast(data.error ?? "Fehler", "error");
+      return fromApi(data, "Archivieren fehlgeschlagen.");
     }
-    toast("Archiviert");
+    toast(ADMIN_MSG.teamArchived);
     await load();
   };
 
   const remove = async (id: string) => {
-    if (!confirm("Teammitglied endgültig löschen?")) return;
+    if (!confirmDanger(ADMIN_CONFIRM.removeTeam)) return;
     const res = await fetch("/api/admin/team", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -145,9 +151,9 @@ export function TeamView() {
     });
     if (!res.ok) {
       const data = await res.json();
-      return toast(data.error ?? "Fehler", "error");
+      return fromApi(data, "Entfernen fehlgeschlagen.");
     }
-    toast("Entfernt");
+    toast(ADMIN_MSG.teamRemoved);
     await load();
   };
 
@@ -156,10 +162,7 @@ export function TeamView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Öffentliches Team"
-        description="Personen, die auf der Website sichtbar sind. Keine Login-Rechte — dafür gibt es Admin-Benutzer unter Sicherheit."
-      >
+      <AdminPageHeader {...page}>
         <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
           Teammitglied anlegen
         </AdminButton>
@@ -227,8 +230,8 @@ export function TeamView() {
             </AdminFormField>
           </div>
           <div className="mt-6 flex flex-wrap gap-2">
-            <AdminButton variant="primary" onClick={() => void save()}>Speichern</AdminButton>
-            <AdminButton variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); }}>Abbrechen</AdminButton>
+            <AdminButton variant="primary" onClick={() => void save()}>{ADMIN_BTN.save}</AdminButton>
+            <AdminButton variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); }}>{ADMIN_BTN.cancel}</AdminButton>
           </div>
         </AdminCard>
       ) : null}
@@ -236,9 +239,9 @@ export function TeamView() {
       {activeMembers.length === 0 && !showForm ? (
         <AdminEmptyState
           icon={Users}
-          title="Noch keine Teammitglieder"
-          description="Lege öffentliche Teammitglieder an — sie erscheinen auf der Website, wenn sichtbar."
-          actionLabel="Teammitglied anlegen"
+          title={empty.title}
+          description={empty.description}
+          actionLabel={empty.actionLabel}
           onAction={openCreate}
         />
       ) : (
@@ -268,7 +271,7 @@ export function TeamView() {
                     {m.active ? "Ausblenden" : "Sichtbar machen"}
                   </AdminButton>
                   <AdminButton variant="secondary" icon={<Archive className="h-4 w-4" />} onClick={() => void archive(m.id)}>Archivieren</AdminButton>
-                  <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove(m.id)}>Löschen</AdminButton>
+                  <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove(m.id)}>{ADMIN_BTN.delete}</AdminButton>
                 </div>
               </div>
             </AdminCard>
@@ -282,7 +285,7 @@ export function TeamView() {
             {archivedMembers.map((m) => (
               <div key={m.id} className="flex items-center justify-between text-sm">
                 <span>{m.name}</span>
-                <AdminButton variant="secondary" onClick={() => void remove(m.id)}>Löschen</AdminButton>
+                <AdminButton variant="secondary" onClick={() => void remove(m.id)}>{ADMIN_BTN.delete}</AdminButton>
               </div>
             ))}
           </div>

@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 import { SERVICE_ICON_KEYS } from "@/lib/cms/icons";
 import type { SiteSectionHeading, SiteSettingsBundle } from "@/lib/cms/types";
-import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 
 const SECTION_LABELS: Record<keyof SiteSettingsBundle["sections"], string> = {
   usps: "USP-Bereich",
@@ -22,7 +23,8 @@ const SECTION_LABELS: Record<keyof SiteSettingsBundle["sections"], string> = {
 };
 
 export function ContentView() {
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, savedCms, imageUploaded, saveFailed } = useAdminMessages();
+  const page = adminPageHeaderProps("inhalte");
   const [settings, setSettings] = useState<SiteSettingsBundle | null>(null);
 
   const load = useCallback(async () => {
@@ -53,11 +55,11 @@ export function ContentView() {
           });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-          toast(data.message ?? CMS_SAVE_SUCCESS_MESSAGE);
+          savedCms();
         })(),
       );
     } catch (err) {
-      toast(err instanceof Error ? err.message : "Speichern fehlgeschlagen", "error");
+      saveFailed(err instanceof Error ? err.message : undefined);
     }
   };
 
@@ -70,7 +72,7 @@ export function ContentView() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen");
     onPath(data.path);
-    toast("Bild hochgeladen.");
+    imageUploaded();
   };
 
   const updateSectionHeading = (
@@ -92,10 +94,7 @@ export function ContentView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader
-        title="Website-Inhalte"
-        description="Alle sichtbaren Startseiten-Inhalte bearbeiten — Navigation, Hero, Sektionen und Footer."
-      />
+      <AdminPageHeader {...page} />
 
       <AdminCard title="Logo & Branding">
         <p className="text-sm text-text-muted">
@@ -202,7 +201,7 @@ export function ContentView() {
                 if (!file) return;
                 void uploadImage(file, "hero", (path) =>
                   setSettings((s) => (s ? { ...s, hero: { ...s.hero, imageUrl: path } } : s)),
-                ).catch((err) => toast(err instanceof Error ? err.message : "Upload fehlgeschlagen", "error"));
+                ).catch((err) => saveFailed(err instanceof Error ? err.message : undefined));
               }}
             />
           </label>
@@ -526,7 +525,7 @@ export function ContentView() {
                   setSettings({ ...settings, about: newAbout });
                   await saveSection("about", newAbout);
                   await load();
-                }).catch((err) => toast(err instanceof Error ? err.message : "Upload fehlgeschlagen", "error"));
+                }).catch((err) => saveFailed(err instanceof Error ? err.message : undefined));
               }}
             />
           </label>

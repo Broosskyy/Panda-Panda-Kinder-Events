@@ -3,8 +3,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 
 export function AuditView() {
+  const page = adminPageHeaderProps("audit");
   const [audit, setAudit] = useState<Array<Record<string, unknown>>>([]);
 
   const load = useCallback(async () => {
@@ -19,7 +21,7 @@ export function AuditView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Aktivitätsprotokoll" description="Änderungen an Team, Benutzern, 2FA und Logins." />
+      <AdminPageHeader {...page} />
       <SecuritySubNav />
       <AdminCard>
         <ul className="space-y-2 text-sm">

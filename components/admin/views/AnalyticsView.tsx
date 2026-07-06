@@ -4,6 +4,7 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { Download, Eye, Radio, Users } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import type { DailyStat, FullAnalyticsDashboard } from "@/lib/analytics/types";
 
 function MiniBarChart({
@@ -97,6 +98,7 @@ function StatPill({ label, value, icon: Icon }: { label: string; value: number |
 }
 
 export function AnalyticsView() {
+  const page = adminPageHeaderProps("analytics");
   const [data, setData] = useState<FullAnalyticsDashboard | null>(null);
   const [error, setError] = useState("");
 
@@ -127,7 +129,7 @@ export function AnalyticsView() {
 
   return (
     <div className="space-y-8">
-      <AdminPageHeader title="Analytics" description="Besucherstatistiken — DSGVO-freundlich, ohne externe Dienste.">
+      <AdminPageHeader {...page}>
         <AdminButton variant="secondary" href="/api/admin/analytics/export" icon={<Download className="h-4 w-4" />}>
           CSV Export
         </AdminButton>

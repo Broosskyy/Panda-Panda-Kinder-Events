@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
 
 export interface CrmSendError {
   message: string;
@@ -47,12 +48,16 @@ export function CrmSendModal({
       <div className="admin-modal-panel">
         <h2 className="font-heading text-lg font-semibold text-text-primary">{title}</h2>
         <p className="mt-2 text-sm text-text-muted">
-          PDF wird als Anhang versendet{customerEmail ? ` an ${customerEmail}` : ""}.
+          Das PDF wird automatisch erstellt und als Anhang versendet
+          {customerEmail ? ` an ${customerEmail}` : ""}.
         </p>
 
         {error ? (
-          <div className="mt-4 rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-text-primary">
+          <div className="mt-4 rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-text-primary" role="alert">
             <p className="font-semibold">{error.message}</p>
+            <p className="mt-1 text-text-muted">
+              Lösung: E-Mail-Einstellungen, Domain-Status und Empfänger-Adresse prüfen.
+            </p>
             {error.detail ? (
               <div className="mt-2">
                 <button
@@ -88,16 +93,16 @@ export function CrmSendModal({
               checked={copyToBusiness}
               onChange={(e) => onChangeCopyToBusiness(e.target.checked)}
             />
-            <span>Kopie an uns</span>
+            <span>Kopie an uns (interne E-Mail-Adresse)</span>
           </label>
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
           <AdminButton variant="primary" onClick={onConfirm} disabled={loading || !sendToCustomer}>
-            {loading ? "Wird gesendet…" : "Jetzt senden"}
+            {loading ? "Wird gesendet…" : ADMIN_BTN.send}
           </AdminButton>
           <AdminButton variant="secondary" onClick={onClose} disabled={loading}>
-            Abbrechen
+            {ADMIN_BTN.cancel}
           </AdminButton>
         </div>
       </div>

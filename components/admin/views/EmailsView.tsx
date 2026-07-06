@@ -5,14 +5,20 @@ import { Eye, Mail, Save, Send } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 import { EMAIL_VARIABLE_HINTS } from "@/lib/email/variables";
 import type { EmailLogRecord, EmailTemplateRecord } from "@/lib/cms/types";
 
 type Tab = "compose" | "templates" | "log";
 
 export function EmailsView() {
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, emailSent, error: showError } = useAdminMessages();
+  const page = adminPageHeaderProps("emails");
+  const emptyLog = ADMIN_EMPTY_STATES.emailLogs;
   const [tab, setTab] = useState<Tab>("compose");
   const [templates, setTemplates] = useState<EmailTemplateRecord[]>([]);
   const [logs, setLogs] = useState<EmailLogRecord[]>([]);
@@ -47,7 +53,7 @@ export function EmailsView() {
   };
 
   const sendEmail = async (test = false) => {
-    if (!to.trim()) return toast("Bitte Empfänger eingeben.", "error");
+    if (!to.trim()) return showError("Bitte Empfänger eingeben.");
     await withLoading(
       (async () => {
         const res = await fetch("/api/admin/email/compose", {
@@ -63,8 +69,9 @@ export function EmailsView() {
           }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
-        toast(data.message ?? "E-Mail gesendet");
+        if (!res.ok) throw new Error(data.error ?? ADMIN_MSG.sendFailed);
+        if (test) toast(ADMIN_MSG.testEmailSent);
+        else emailSent();
         await load();
       })(),
     );
@@ -91,7 +98,7 @@ export function EmailsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(data.message ?? "Vorlage gespeichert");
+        toast(ADMIN_MSG.templateSaved);
         await load();
       })(),
     );
@@ -99,10 +106,7 @@ export function EmailsView() {
 
   return (
     <>
-      <AdminPageHeader
-        title="E-Mails"
-        description="E-Mails verfassen, Vorlagen bearbeiten und Versand protokollieren."
-      />
+      <AdminPageHeader {...page} />
 
       <nav className="mb-6 flex flex-wrap gap-2">
         {(
@@ -163,7 +167,7 @@ export function EmailsView() {
               </p>
               <div className="flex flex-wrap gap-2">
                 <AdminButton variant="primary" icon={<Send className="h-4 w-4" />} onClick={() => void sendEmail()}>
-                  Senden
+                  {ADMIN_BTN.send}
                 </AdminButton>
                 <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendEmail(true)}>
                   Test senden
@@ -223,7 +227,9 @@ export function EmailsView() {
       {tab === "log" ? (
         <AdminCard title="Gesendete E-Mails">
           {logs.length === 0 ? (
-            <p className="text-sm text-text-muted">Noch keine Einträge.</p>
+            <p className="text-sm text-text-muted">
+              <span className="font-medium text-text-primary">{emptyLog.title}</span> {emptyLog.description}
+            </p>
           ) : (
             <ul className="divide-y divide-border">
               {logs.map((log) => (

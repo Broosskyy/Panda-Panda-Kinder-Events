@@ -4,7 +4,11 @@ import { useEffect, useState } from "react";
 import { HelpCircle, Plus } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_CONFIRM, confirmDanger } from "@/lib/admin/messages";
 
 interface FaqRow {
   id: string;
@@ -16,7 +20,9 @@ interface FaqRow {
 
 export function FaqsView() {
   const [faqs, setFaqs] = useState<FaqRow[]>([]);
-  const { toast } = useAdminUi();
+  const { saved, saveFailed } = useAdminMessages();
+  const page = adminPageHeaderProps("faq");
+  const empty = ADMIN_EMPTY_STATES.faqs;
 
   const load = () =>
     fetch("/api/admin/faqs")
@@ -34,14 +40,14 @@ export function FaqsView() {
       body: JSON.stringify(body),
     });
     if (res.ok) {
-      toast("Gespeichert");
+      saved();
       load();
-    } else toast("Fehler", "error");
+    } else saveFailed();
   };
 
   return (
     <div>
-      <AdminPageHeader title="FAQ" description="Häufige Fragen verwalten">
+      <AdminPageHeader {...page}>
         <AdminButton
           variant="primary"
           icon={<Plus className="h-4 w-4" />}
@@ -59,9 +65,9 @@ export function FaqsView() {
         {faqs.length === 0 ? (
           <AdminEmptyState
             icon={HelpCircle}
-            title="Noch keine FAQ angelegt."
-            description="Erstelle häufig gestellte Fragen, die auf der Startseite angezeigt werden."
-            actionLabel="FAQ hinzufügen"
+            title={empty.title}
+            description={empty.description}
+            actionLabel={empty.actionLabel}
             onAction={() =>
               save(
                 { question: "Neue Frage?", answer: "Antwort...", sort_order: 0, visible: true },
@@ -98,10 +104,10 @@ export function FaqsView() {
               </label>
               <button
                 type="button"
-                onClick={() => confirm("Löschen?") && save({ id: f.id }, "DELETE")}
+                onClick={() => confirmDanger(ADMIN_CONFIRM.deleteFaq) && save({ id: f.id }, "DELETE")}
                 className="admin-btn-danger text-xs"
               >
-                Löschen
+                {ADMIN_BTN.delete}
               </button>
             </div>
           </AdminCard>

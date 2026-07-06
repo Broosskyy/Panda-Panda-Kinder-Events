@@ -20,7 +20,11 @@ import {
   crmDocumentStatusVariant,
 } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
-import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 import { openAdminPdf } from "@/lib/admin/open-pdf";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmCustomer, type CrmDocumentStatus } from "@/lib/crm/types";
@@ -66,7 +70,9 @@ export function QuotesView() {
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
-  const { toast, withLoading } = useAdminUi();
+  const { toast, withLoading, quoteCreated, quoteSent, invoiceCreated, error: showError } = useAdminMessages();
+  const page = adminPageHeaderProps("angebote");
+  const empty = ADMIN_EMPTY_STATES.quotes;
 
   const load = () => {
     const q = search ? `?q=${encodeURIComponent(search)}` : "";
@@ -108,8 +114,8 @@ export function QuotesView() {
   };
 
   const create = async () => {
-    if (!form.customer_id) return toast("Bitte Kunde wählen", "error");
-    if (!form.items.some((i) => i.title.trim())) return toast("Mindestens eine Position mit Bezeichnung erforderlich", "error");
+    if (!form.customer_id) return showError("Angebot konnte nicht erstellt werden.", "Bitte einen Kunden auswählen.");
+    if (!form.items.some((i) => i.title.trim())) return showError("Angebot konnte nicht erstellt werden.", "Mindestens eine Position mit Bezeichnung erforderlich.");
 
     const discount_percent = parsePercent(discountInput, 0);
     const tax_rate = parsePercent(taxInput, defaultTaxRate);
@@ -130,8 +136,8 @@ export function QuotesView() {
       body: JSON.stringify(payload),
     });
     const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Fehler", "error");
-    toast("Angebot erstellt");
+    if (!res.ok) return showError("Angebot konnte nicht erstellt werden.", data.error);
+    quoteCreated();
     setShowForm(false);
     resetForm();
     load();
@@ -150,19 +156,23 @@ export function QuotesView() {
       const data = await res.json();
       if (!res.ok) {
         setSendError({
-          message: data.error ?? "Versand fehlgeschlagen",
+          message: data.error ?? ADMIN_MSG.sendFailed,
           detail: data.detail,
           code: data.code,
         });
         return;
       }
-      toast("Angebot versendet");
+      quoteSent();
       setSendTarget(null);
       load();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Versand fehlgeschlagen";
+      const message = err instanceof Error ? err.message : ADMIN_MSG.sendFailed;
       setSendError({ message });
-      toast(message, "error");
+      showError(
+        "Die E-Mail konnte nicht versendet werden.",
+        message,
+        "Bitte E-Mail-Einstellungen und Empfänger-Adresse prüfen.",
+      );
     } finally {
       setSending(false);
     }
@@ -182,8 +192,8 @@ export function QuotesView() {
       body: JSON.stringify({ quote_id: quoteId }),
     });
     const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Fehler", "error");
-    toast(`Rechnung ${data.invoice?.invoice_number} erstellt`);
+    if (!res.ok) return showError("Rechnung konnte nicht erstellt werden.", data.error);
+    invoiceCreated(data.invoice?.invoice_number);
   };
 
   const customerOptions = useMemo(
@@ -196,7 +206,7 @@ export function QuotesView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Angebote" description="Angebote erstellen, als PDF versenden und in Rechnungen umwandeln.">
+      <AdminPageHeader {...page}>
         <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setShowForm(true)}>
           Neues Angebot
         </AdminButton>
@@ -278,10 +288,10 @@ export function QuotesView() {
 
           <div className="mt-6 flex flex-wrap gap-2">
             <AdminButton variant="primary" onClick={() => void withLoading(create())}>
-              Angebot speichern
+              {ADMIN_BTN.save}
             </AdminButton>
             <AdminButton variant="secondary" onClick={() => { setShowForm(false); resetForm(); }}>
-              Abbrechen
+              {ADMIN_BTN.cancel}
             </AdminButton>
           </div>
         </AdminCard>
@@ -290,9 +300,9 @@ export function QuotesView() {
       {quotes.length === 0 ? (
         <AdminEmptyState
           icon={FileText}
-          title="Noch keine Angebote"
-          description="Erstelle ein Angebot für einen Kunden."
-          actionLabel="Angebot erstellen"
+          title={empty.title}
+          description={empty.description}
+          actionLabel={empty.actionLabel}
           onAction={() => setShowForm(true)}
         />
       ) : (
@@ -309,7 +319,7 @@ export function QuotesView() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <AdminButton variant="secondary" onClick={() => openPdf(q.id)}>
-                    PDF
+                    {ADMIN_BTN.pdf}
                   </AdminButton>
                   <AdminButton
                     variant="primary"
@@ -321,7 +331,7 @@ export function QuotesView() {
                       setSendError(null);
                     }}
                   >
-                    Senden
+                    {ADMIN_BTN.send}
                   </AdminButton>
                   <AdminButton variant="secondary" onClick={() => toInvoice(q.id)}>
                     → Rechnung

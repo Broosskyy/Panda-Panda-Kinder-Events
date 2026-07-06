@@ -2,6 +2,7 @@ import Image from "next/image";
 import { ICON_STROKE } from "@/lib/design";
 import type { SiteProcessSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { resolveContentIcon } from "@/lib/cms/icons";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
@@ -15,15 +16,16 @@ interface ProcessProps {
 
 export function Process({
   process = DEFAULT_SITE_SETTINGS.process,
-  heading = DEFAULT_SITE_SETTINGS.sections.process,
+  heading,
 }: ProcessProps) {
+  const safeHeading = resolveSectionHeading(heading, "process");
   const steps = process.steps?.length ? process.steps : DEFAULT_SITE_SETTINGS.process.steps;
 
   return (
     <section id="ablauf" className="section-padding section-warm">
       <Container>
         <ScrollReveal>
-          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
+          <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
         <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-24">

@@ -2,6 +2,18 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.11] — 2026-07-05
+
+### Emergency: Production server crash fix
+
+- **Root cause:** Homepage Team section crashed when `site_settings.sections.team` was missing in production DB (`heading.title` on `undefined`).
+- `normalizeSiteSettings()` — safe deep-merge with defaults for all CMS fields.
+- `resolveSectionHeading()` — all public section components hardened against explicit `undefined`.
+- Public data layer: no uncaught Supabase throws on homepage fetches.
+- Section validation: per-key heading merge instead of full-block failure.
+- Migration: `20260710_production_crash_compat.sql`
+- Report: `docs/05_ROADMAP/EMERGENCY_CRASH_REPORT.md`
+
 ## [0.9.0-rc.10] — 2026-07-05
 
 ### Public Website Final Sprint

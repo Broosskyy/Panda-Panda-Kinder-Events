@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Instagram } from "lucide-react";
 import { GALLERY_CATEGORIES } from "@/lib/gallery";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import type { SiteContactSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -28,8 +29,9 @@ interface GalleryProps {
 export function Gallery({
   images,
   contact = DEFAULT_SITE_SETTINGS.contact,
-  heading = DEFAULT_SITE_SETTINGS.sections.gallery,
+  heading,
 }: GalleryProps) {
+  const safeHeading = resolveSectionHeading(heading, "gallery");
   const [filter, setFilter] = useState<string>("Alle");
   const [lightboxImage, setLightboxImage] = useState<GalleryImageItem | null>(null);
 
@@ -51,7 +53,7 @@ export function Gallery({
     <section id="galerie" className="section-padding bg-bg-primary">
       <Container>
         <ScrollReveal>
-          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
+          <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
         <div className="mb-8 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Galerie Filter">

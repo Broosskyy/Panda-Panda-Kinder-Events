@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { CmsPost, SiteSectionHeading } from "@/lib/cms/types";
-import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
@@ -25,15 +25,16 @@ function formatDate(dateStr: string | null) {
 
 export function News({
   posts,
-  heading = DEFAULT_SITE_SETTINGS.sections.news,
+  heading,
 }: NewsProps) {
+  const safeHeading = resolveSectionHeading(heading, "news");
   if (!posts.length) return null;
 
   return (
     <section id="aktuelles" className="section-padding bg-bg-primary">
       <Container>
         <ScrollReveal>
-          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
+          <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
         <div className="swipe-bleed md:mx-0 md:px-0">

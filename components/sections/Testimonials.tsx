@@ -5,7 +5,7 @@ import Image from "next/image";
 import { BadgeCheck, ChevronLeft, ChevronRight } from "lucide-react";
 import { focusRing } from "@/lib/a11y";
 import type { PublicReview, SiteSectionHeading } from "@/lib/cms/types";
-import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Card } from "@/components/ui/Card";
 import { ReviewForm } from "@/components/ui/ReviewForm";
 import { StarRating } from "@/components/ui/StarRating";
@@ -128,8 +128,9 @@ interface TestimonialsProps {
 
 export function Testimonials({
   reviews,
-  heading = DEFAULT_SITE_SETTINGS.sections.testimonials,
+  heading,
 }: TestimonialsProps) {
+  const safeHeading = resolveSectionHeading(heading, "testimonials");
   const [desktopIndex, setDesktopIndex] = useState(0);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -146,7 +147,7 @@ export function Testimonials({
     <section id="bewertungen" className="section-padding section-warm">
       <Container>
         <ScrollReveal>
-          <SectionHeading title={heading.title} subtitle={heading.subtitle} />
+          <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
         <RatingSummary reviews={reviews} />

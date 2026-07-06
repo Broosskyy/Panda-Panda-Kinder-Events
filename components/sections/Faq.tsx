@@ -3,7 +3,7 @@
 import { useId, useState } from "react";
 import { Plus, Minus } from "lucide-react";
 import { faqs as defaultFaqs } from "@/lib/faqs";
-import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import type { SiteSectionHeading } from "@/lib/cms/types";
 import { focusRing } from "@/lib/a11y";
 import { Container } from "@/components/ui/Container";
@@ -18,8 +18,9 @@ interface FaqProps {
 
 export function Faq({
   items = defaultFaqs,
-  heading = DEFAULT_SITE_SETTINGS.sections.faq,
+  heading,
 }: FaqProps) {
+  const safeHeading = resolveSectionHeading(heading, "faq");
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const baseId = useId();
 
@@ -29,8 +30,8 @@ export function Faq({
         <ScrollReveal>
           <SectionHeading
             id="faq-heading"
-            title={heading.title}
-            subtitle={heading.subtitle}
+            title={safeHeading.title}
+            subtitle={safeHeading.subtitle}
           />
         </ScrollReveal>
         <div className="mx-auto max-w-3xl divide-y divide-border/80" role="list">

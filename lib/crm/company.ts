@@ -1,6 +1,13 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
+import { BRAND } from "@/lib/brand";
 import type { SiteBankSettings, SiteBusinessSettings, SiteInvoiceSettings } from "@/lib/cms/types";
 import { getSiteUrl } from "@/lib/site-url";
+
+function resolvePdfLogoUrl(url: string): string {
+  if (!url) return BRAND.logo.png;
+  if (url.endsWith(".svg")) return BRAND.logo.png;
+  return url;
+}
 
 export type BusinessProfile = SiteBusinessSettings & SiteBankSettings & {
   formattedAddress: string;
@@ -32,7 +39,7 @@ export async function getBusinessProfile(): Promise<BusinessProfile> {
     ...b,
     ...bank,
     companyName: b.companyName || settings.footer.copyrightName || branding.logoTextPrimary,
-    logoUrl: b.logoUrl || branding.logoUrl,
+    logoUrl: resolvePdfLogoUrl(b.logoUrl || branding.logoUrl),
     phone: b.phone || contact.phone,
     email: b.email || contact.email,
     website: b.website || getSiteUrl(),

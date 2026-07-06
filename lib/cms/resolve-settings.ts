@@ -1,4 +1,5 @@
 import type { SiteSettingsBundle } from "./types";
+import { BRAND } from "@/lib/brand";
 import { getSiteUrl } from "@/lib/site-url";
 
 /** Resolves public site URL: SEO canonical → business website → env fallback. */
@@ -24,7 +25,7 @@ export function resolvePublicSiteUrl(settings: Pick<SiteSettingsBundle, "seo" | 
 export function resolveSeoMeta(settings: SiteSettingsBundle) {
   const base = resolvePublicSiteUrl(settings);
   const ogImage = settings.seo.ogImageUrl?.trim();
-  const ogUrl = ogImage?.startsWith("http") ? ogImage : `${base}${ogImage || "/panda-illustration.svg"}`;
+  const ogUrl = ogImage?.startsWith("http") ? ogImage : `${base}${ogImage || BRAND.ogImage}`;
 
   return {
     baseUrl: base,

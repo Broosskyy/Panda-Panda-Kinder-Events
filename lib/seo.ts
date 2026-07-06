@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import { BRAND } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
 import { getSiteUrl } from "@/lib/site-url";
 
 export function getSeoDefaultImage(): string {
-  return `${getSiteUrl()}/panda-illustration.svg`;
+  return `${getSiteUrl()}${BRAND.ogImage}`;
 }
 
 export function buildPageMetadata(opts: {

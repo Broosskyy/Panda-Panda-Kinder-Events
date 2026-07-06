@@ -9,6 +9,7 @@ import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import type { SiteContactSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
+import { PORTRAIT_BLUR_DATA_URL } from "@/lib/image-placeholder";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
@@ -95,6 +96,8 @@ export function Gallery({
                       className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
                       sizes="(max-width: 1024px) 33vw, 20vw"
                       loading="lazy"
+                      placeholder="blur"
+                      blurDataURL={PORTRAIT_BLUR_DATA_URL}
                       unoptimized={image.src.includes("supabase.co")}
                     />
                   </button>

@@ -1789,3 +1789,169 @@ img {
 .section-cta {
   text-align: center;
 }
+
+/* Splash screen — first visit only */
+body.splash-active {
+  overflow: hidden;
+}
+
+.splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-bg-secondary);
+  animation: splash-fade-in 0.5s var(--ease-premium) forwards;
+}
+
+.splash-screen-fade-out {
+  animation: splash-fade-out 0.45s var(--ease-premium) forwards;
+}
+
+.splash-screen-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 2rem;
+  text-align: center;
+}
+
+.splash-logo-wrap {
+  animation: splash-logo-in 0.9s var(--ease-premium) 0.15s both;
+}
+
+.splash-logo {
+  height: auto;
+  max-height: 5rem;
+  width: auto;
+  max-width: min(80vw, 18rem);
+  object-fit: contain;
+}
+
+@media (min-width: 640px) {
+  .splash-logo {
+    max-height: 5.5rem;
+    max-width: 20rem;
+  }
+}
+
+.splash-tagline {
+  font-family: var(--font-accent);
+  font-size: 1.25rem;
+  line-height: 1.4;
+  color: var(--color-text-secondary);
+  animation: splash-tagline-in 0.7s var(--ease-premium) 0.35s both;
+}
+
+@media (min-width: 640px) {
+  .splash-tagline {
+    font-size: 1.5rem;
+  }
+}
+
+@keyframes splash-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes splash-fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@keyframes splash-logo-in {
+  from {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes splash-tagline-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Inquiry success pulse */
+.form-success-icon {
+  display: inline-flex;
+  height: 4rem;
+  width: 4rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  animation: success-pop 0.55s var(--ease-premium);
+}
+
+@keyframes success-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+  70% {
+    transform: scale(1.08);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Review cards — premium spacing */
+.review-card {
+  transition: transform 0.45s var(--ease-premium), box-shadow 0.45s var(--ease-premium);
+}
+
+.review-card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-hover);
+}
+
+/* Team card hover */
+.team-card {
+  transition: transform 0.45s var(--ease-premium), box-shadow 0.45s var(--ease-premium);
+}
+
+.team-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Hamburger menu slide */
+@media (max-width: 1023px) {
+  #mobile-nav-panel,
+  [id$="-title"]:not(.sr-only) + nav {
+    animation: menu-slide-in 0.4s var(--ease-premium);
+  }
+}
+
+@keyframes menu-slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}

@@ -7,6 +7,7 @@
  * Öffentliche URL: NEXT_PUBLIC_SITE_URL (siehe lib/site-url.ts)
  */
 
+import { BRAND } from "@/lib/brand";
 import { SITE_URL_PLACEHOLDER } from "@/lib/site-url";
 
 export const siteConfig = {
@@ -18,9 +19,10 @@ export const siteConfig = {
   url: SITE_URL_PLACEHOLDER,
 
   assets: {
-    /** Originales Logo — Datei in public/assets/ ablegen */
-    logo: "/assets/logo.png",
-    logoAlt: "Panda-Bande Kinderevents Logo",
+    logo: BRAND.logo.svg,
+    logoPng: BRAND.logo.png,
+    logoAlt: BRAND.logo.alt,
+    ogImage: BRAND.ogImage,
   },
 
   contact: {

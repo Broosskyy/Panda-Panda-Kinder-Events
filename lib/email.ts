@@ -176,6 +176,24 @@ ${opts.company?.website ?? ""}`.trim();
   }
 }
 
+export async function sendTransactionalEmail(opts: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}) {
+  const resend = getResendClient();
+  const sender = await resolveEmailSender();
+  await resend.emails.send({
+    from: sender.from,
+    to: opts.to,
+    replyTo: sender.replyTo,
+    subject: opts.subject,
+    html: opts.html,
+    text: opts.text ?? opts.html.replace(/<[^>]+>/g, ""),
+  });
+}
+
 export async function sendTestEmail(to: string) {
   const resend = getResendClient();
   const emailSettings = await getEmailSettings();

@@ -51,7 +51,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     id: "settings",
     label: "Verwaltung",
     items: [
+      { href: "/admin/benutzer", label: "Benutzer", iconKey: "Users" },
       { href: "/admin/team", label: "Team", iconKey: "UserCog" },
+      { href: "/admin/sicherheit", label: "Sicherheit", iconKey: "Shield" },
       { href: "/admin/einstellungen", label: "Einstellungen", iconKey: "Settings" },
     ],
   },

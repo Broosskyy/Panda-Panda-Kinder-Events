@@ -8,6 +8,7 @@ import {
   Image,
   Inbox,
   Newspaper,
+  Shield,
   Star,
   Users,
 } from "lucide-react";
@@ -149,6 +150,36 @@ export function DashboardView() {
             value={statsMissing ? "—" : (stats?.visitors.last7Days ?? "—")}
             href="/admin/analytics"
             icon={BarChart3}
+          />
+        </div>
+      </section>
+
+      <section className="admin-dashboard-section">
+        <h2 className="admin-dashboard-section-title">Sicherheit & System</h2>
+        <div className="admin-stat-grid">
+          <StatCard
+            label="Aktive Benutzer"
+            value={stats?.security?.activeUsers ?? "—"}
+            href="/admin/benutzer"
+            icon={Users}
+          />
+          <StatCard
+            label="Letzte Logins"
+            value={stats?.security?.recentLogins ?? "—"}
+            href="/admin/sicherheit"
+            icon={Shield}
+          />
+          <StatCard
+            label="Systemstatus"
+            value={
+              stats?.security?.systemStatus === "legacy"
+                ? "Legacy"
+                : stats?.security?.systemStatus === "ok"
+                  ? "OK"
+                  : "—"
+            }
+            href="/admin/sicherheit"
+            icon={Shield}
           />
         </div>
       </section>

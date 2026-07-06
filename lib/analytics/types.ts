@@ -1,3 +1,6 @@
+import type { CrmDashboardStats } from "@/lib/crm/types";
+import type { AdminSecurityDashboard } from "@/lib/admin/dashboard-stats";
+
 export type DeviceType = "mobile" | "tablet" | "desktop" | "unknown";
 
 export interface PageViewPayload {
@@ -67,7 +70,6 @@ export interface ReferrerRow {
   views: number;
 }
 
-import type { CrmDashboardStats } from "@/lib/crm/types";
 
 export interface AdminAnalyticsDashboard {
   visitors: VisitorStats;
@@ -84,6 +86,7 @@ export interface AdminAnalyticsDashboard {
   trackingEnabled: boolean;
   trackingTableReady: boolean;
   crm: CrmDashboardStats;
+  security?: AdminSecurityDashboard;
 }
 
 export interface FullAnalyticsDashboard extends AdminAnalyticsDashboard {

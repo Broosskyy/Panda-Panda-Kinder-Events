@@ -14,17 +14,14 @@ export const BRAND = {
   backgroundColor: "#f4f1ea",
   alt: "Panda-Bande KinderEvents",
 
-  /** Standard-Bildmarke für Header/Splash (Kombi-Logo mit Text) */
+  /** Standard-Logo — Header, Splash, Favicon, PWA (eine Quelle) */
   master: "/assets/Logo.png",
 
-  /** Zwei-Panda-Icon für Favicon/PWA/Tab (separat vom Header-Logo) */
-  iconSource: "/assets/AppIcon.svg",
-
   /** Cache-Busting für Favicon/PWA nach Icon-Update */
-  iconVersion: "4",
+  iconVersion: "5",
 
-  /** Extrahierte quadratische Bildmarke aus Logo.png (nur PDF/E-Mail) */
-  markOnly: "/icons/panda-mark.png",
+  /** PDF/E-Mail: dasselbe Logo */
+  markOnly: "/assets/Logo.png",
 
   /** Generierte Icon-Assets (npm run generate:brand-assets) */
   assets: {

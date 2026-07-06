@@ -7,7 +7,6 @@ import { isPlaceholderContent, isValidCmsFaq, isValidCmsService } from "./conten
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { normalizeSiteSettings } from "./normalize-settings";
 import { resolveImageUrl } from "./resolve-image";
-import { resolveServiceIcon } from "./icons";
 import { hasNonEmptyCmsValue, validateSiteSettingsSection } from "./validate-settings";
 import type {
   CmsFaq,
@@ -230,7 +229,7 @@ async function queryCmsServices(): Promise<Service[]> {
   return (data as CmsService[])
     .filter((s) => isValidCmsService(s.title ?? "", s.description ?? ""))
     .map((s) => ({
-      icon: resolveServiceIcon(s.icon_key),
+      iconKey: s.icon_key?.trim() || "Star",
       title: s.title.trim(),
       description: s.description.trim(),
       detailText: s.detail_text?.trim() || s.description.trim(),

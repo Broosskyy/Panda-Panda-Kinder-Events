@@ -2,6 +2,16 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.12] — 2026-07-06
+
+### Emergency: Server/Client boundary crash (GET / 500)
+
+- **Root cause:** `fetchCmsServices()` returned Lucide icon **components** in `Service.icon`; Server Component `page.tsx` passed them to Client Component `Services` → RSC serialization error (digest 1267400528).
+- `Service` type now uses `iconKey: string`; icons resolved only inside Client Components via `resolveServiceIcon()`.
+- Admin nav/quick-actions refactored to `iconKey` + `resolveAdminIcon()` (defensive pattern).
+- CRM views: fixed `useEffect` dependency lint warnings.
+- Report: `EMERGENCY_FIX_REPORT.md`
+
 ## [0.9.0-rc.11] — 2026-07-05
 
 ### Emergency: Production server crash fix

@@ -35,7 +35,8 @@ export function InvoicesView() {
   };
 
   useEffect(() => {
-    load();
+    const q = search ? `?q=${encodeURIComponent(search)}` : "";
+    fetch(`/api/admin/invoices${q}`).then((r) => r.json()).then((d) => setInvoices(d.invoices ?? []));
   }, [search]);
 
   const confirmSend = async () => {

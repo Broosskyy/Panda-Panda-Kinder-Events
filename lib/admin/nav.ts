@@ -1,25 +1,7 @@
-import type { LucideIcon } from "lucide-react";
-import {
-  BarChart3,
-  FileText,
-  HelpCircle,
-  Home,
-  Image,
-  Inbox,
-  Layout,
-  Newspaper,
-  Receipt,
-  Settings,
-  Sparkles,
-  Star,
-  UserCog,
-  Users,
-} from "lucide-react";
-
 export interface AdminNavItem {
   href: string;
   label: string;
-  icon: LucideIcon;
+  iconKey: string;
   mobileLabel?: string;
 }
 
@@ -33,44 +15,44 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     id: "overview",
     items: [
-      { href: "/admin", label: "Dashboard", icon: Home },
-      { href: "/admin/analytics", label: "Analytics", icon: BarChart3 },
+      { href: "/admin", label: "Dashboard", iconKey: "Home" },
+      { href: "/admin/analytics", label: "Analytics", iconKey: "BarChart3" },
     ],
   },
   {
     id: "crm",
     label: "CRM",
     items: [
-      { href: "/admin/kunden", label: "Kunden", icon: Users },
-      { href: "/admin/angebote", label: "Angebote", icon: FileText },
-      { href: "/admin/rechnungen", label: "Rechnungen", icon: Receipt },
+      { href: "/admin/kunden", label: "Kunden", iconKey: "Users" },
+      { href: "/admin/angebote", label: "Angebote", iconKey: "FileText" },
+      { href: "/admin/rechnungen", label: "Rechnungen", iconKey: "Receipt" },
     ],
   },
   {
     id: "website",
     label: "Website",
     items: [
-      { href: "/admin/inhalte", label: "Inhalte", icon: Layout, mobileLabel: "Inhalte" },
-      { href: "/admin/leistungen", label: "Leistungen", icon: Sparkles },
-      { href: "/admin/galerie", label: "Galerie", icon: Image },
-      { href: "/admin/beitraege", label: "Beiträge", icon: Newspaper },
-      { href: "/admin/faq", label: "FAQ", icon: HelpCircle },
+      { href: "/admin/inhalte", label: "Inhalte", iconKey: "Layout", mobileLabel: "Inhalte" },
+      { href: "/admin/leistungen", label: "Leistungen", iconKey: "Sparkles" },
+      { href: "/admin/galerie", label: "Galerie", iconKey: "Image" },
+      { href: "/admin/beitraege", label: "Beiträge", iconKey: "Newspaper" },
+      { href: "/admin/faq", label: "FAQ", iconKey: "HelpCircle" },
     ],
   },
   {
     id: "kommunikation",
     label: "Kommunikation",
     items: [
-      { href: "/admin/anfragen", label: "Anfragen", icon: Inbox },
-      { href: "/admin/bewertungen", label: "Bewertungen", icon: Star },
+      { href: "/admin/anfragen", label: "Anfragen", iconKey: "Inbox" },
+      { href: "/admin/bewertungen", label: "Bewertungen", iconKey: "Star" },
     ],
   },
   {
     id: "settings",
     label: "Verwaltung",
     items: [
-      { href: "/admin/team", label: "Team", icon: UserCog },
-      { href: "/admin/einstellungen", label: "Einstellungen", icon: Settings },
+      { href: "/admin/team", label: "Team", iconKey: "UserCog" },
+      { href: "/admin/einstellungen", label: "Einstellungen", iconKey: "Settings" },
     ],
   },
 ];

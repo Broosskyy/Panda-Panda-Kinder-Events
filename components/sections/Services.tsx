@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { X } from "lucide-react";
+import { resolveServiceIcon } from "@/lib/cms/icons";
 import type { Service } from "@/lib/services";
 import { ICON_STROKE } from "@/lib/design";
 import type { SiteSectionHeading } from "@/lib/cms/types";
@@ -41,7 +42,9 @@ export function Services({
             role="list"
             aria-label="Leistungen"
           >
-            {items.map((service, i) => (
+            {items.map((service, i) => {
+              const Icon = resolveServiceIcon(service.iconKey);
+              return (
               <li key={service.title} className="swipe-item w-[min(88vw,20rem)] sm:w-[min(85vw,22rem)] md:w-auto">
                 <ScrollReveal delay={i * 60}>
                   <Card className="card-equal flex h-full flex-col" padding="md">
@@ -58,7 +61,7 @@ export function Services({
                       </div>
                     ) : (
                       <div className="icon-wrap mb-5 h-14 w-14 md:mb-6 md:h-16 md:w-16">
-                        <service.icon
+                        <Icon
                           className="h-7 w-7 text-primary md:h-8 md:w-8"
                           strokeWidth={ICON_STROKE}
                           aria-hidden
@@ -79,7 +82,8 @@ export function Services({
                   </Card>
                 </ScrollReveal>
               </li>
-            ))}
+              );
+            })}
           </ul>
         </div>
 

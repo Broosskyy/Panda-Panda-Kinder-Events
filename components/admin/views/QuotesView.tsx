@@ -71,7 +71,8 @@ export function QuotesView() {
   };
 
   useEffect(() => {
-    load();
+    const q = search ? `?q=${encodeURIComponent(search)}` : "";
+    fetch(`/api/admin/quotes${q}`).then((r) => r.json()).then((d) => setQuotes(d.quotes ?? []));
     fetch("/api/admin/customers").then((r) => r.json()).then((d) => setCustomers(d.customers ?? []));
   }, [search]);
 

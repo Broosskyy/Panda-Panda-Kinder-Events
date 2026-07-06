@@ -10,6 +10,7 @@ import {
   isAdminNavActive,
   type AdminNavGroup,
 } from "@/lib/admin/nav";
+import { resolveAdminIcon } from "@/lib/admin/icons";
 
 const MOBILE_BOTTOM_NAV = ADMIN_NAV_GROUPS.flatMap((g) => g.items).filter((item) =>
   (MOBILE_BOTTOM_NAV_HREFS as readonly string[]).includes(item.href),
@@ -28,7 +29,8 @@ function NavGroupSection({
     <div className="admin-nav-group">
       {group.label ? <p className="admin-nav-group-label">{group.label}</p> : null}
       <div className="admin-nav-group-items">
-        {group.items.map(({ href, label, icon: Icon, mobileLabel }) => {
+        {group.items.map(({ href, label, iconKey, mobileLabel }) => {
+          const Icon = resolveAdminIcon(iconKey);
           const active = isAdminNavActive(pathname, href);
           return (
             <Link
@@ -163,7 +165,8 @@ export function AdminSidebar() {
 
       {/* Mobile bottom navigation */}
       <nav className="admin-bottom-nav md:hidden" aria-label="Schnellnavigation">
-        {MOBILE_BOTTOM_NAV.map(({ href, label, icon: Icon, mobileLabel }) => {
+        {MOBILE_BOTTOM_NAV.map(({ href, label, iconKey, mobileLabel }) => {
+          const Icon = resolveAdminIcon(iconKey);
           const active = isAdminNavActive(pathname, href);
           const displayLabel =
             mobileLabel ??

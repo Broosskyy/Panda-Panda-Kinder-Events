@@ -1,8 +1,21 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
-import { createInvoiceFromQuote, listInvoices, updateInvoiceStatus } from "@/lib/crm/db";
+import { getAdminContext, requireAdmin } from "@/lib/admin-route";
+import {
+  archiveInvoice,
+  cancelInvoice,
+  createInvoiceFromQuote,
+  deleteInvoice,
+  listInvoices,
+  restoreInvoice,
+  updateInvoiceStatus,
+  type CrmListView,
+} from "@/lib/crm/db";
 import { crmStatusUpdateSchema } from "@/lib/crm/schemas";
-import { getSupabaseAdmin } from "@/lib/supabase/admin";
+
+function parseView(value: string | null): CrmListView {
+  if (value === "archived" || value === "all") return value;
+  return "active";
+}
 
 export async function GET(request: Request) {
   const authError = await requireAdmin();
@@ -10,9 +23,10 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("q") ?? undefined;
+  const view = parseView(searchParams.get("view"));
 
   try {
-    const invoices = await listInvoices(search);
+    const invoices = await listInvoices(search, view);
     return NextResponse.json({ invoices });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Laden fehlgeschlagen.";
@@ -43,7 +57,42 @@ export async function PATCH(request: Request) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
+  const ctx = await getAdminContext();
   const body = await request.json();
+  const { action, reason } = body as { id?: string; action?: string; reason?: string };
+
+  if (!body.id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+
+  if (action === "archive") {
+    try {
+      await archiveInvoice(body.id, ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Archivieren fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "restore") {
+    try {
+      await restoreInvoice(body.id, ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Wiederherstellen fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "cancel") {
+    try {
+      const invoice = await cancelInvoice(body.id, ctx, reason);
+      return NextResponse.json({ invoice });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Stornieren fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
   const parsed = crmStatusUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Ungültiger Status." }, { status: 400 });
@@ -62,11 +111,15 @@ export async function DELETE(request: Request) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
+  const ctx = await getAdminContext();
   const { id } = await request.json();
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
 
-  const supabase = getSupabaseAdmin();
-  const { error } = await supabase.from("crm_invoices").delete().eq("id", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+  try {
+    await deleteInvoice(id, ctx);
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
 }

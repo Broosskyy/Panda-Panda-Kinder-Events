@@ -18,6 +18,9 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     }
 
     const company = await getBusinessProfile();
+    if (!company.logoUrl?.trim()) {
+      console.warn(`[invoices/${id}/pdf] Kein Logo konfiguriert — PDF ohne Bildmarke.`);
+    }
     const pdfBytes = await generateCrmPdf(invoiceToPdfData(invoice as never, company));
 
     return new NextResponse(Buffer.from(pdfBytes), {

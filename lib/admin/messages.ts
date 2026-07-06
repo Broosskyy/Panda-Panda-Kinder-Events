@@ -7,8 +7,14 @@ export const ADMIN_MSG = {
 
   quoteCreated: "✓ Angebot erstellt.",
   quoteSent: "✓ Angebot per E-Mail versendet.",
+  quoteArchived: "✓ Angebot archiviert.",
+  quoteDeleted: "✓ Angebot gelöscht.",
+  quoteUpdated: "✓ Angebot aktualisiert.",
   invoiceCreated: "✓ Rechnung erstellt.",
   invoiceSent: "✓ Rechnung per E-Mail versendet.",
+  invoiceArchived: "✓ Rechnung archiviert.",
+  invoiceDeleted: "✓ Rechnung gelöscht.",
+  invoiceCancelled: "✓ Rechnung storniert.",
   pdfGenerated: "✓ PDF geöffnet.",
 
   customerSaved: "✓ Kunde gespeichert.",
@@ -76,6 +82,14 @@ export const ADMIN_CONFIRM = {
   replaceFavicon: "Das Favicon wird ersetzt. Browser-Tabs und PWA-Icons können kurz veraltet wirken.\n\nFortfahren?",
   revokeSession: "Diese Sitzung wird beendet. Das Gerät muss sich neu anmelden.\n\nFortfahren?",
   revokeAllSessions: "Alle anderen Sitzungen werden beendet.\n\nFortfahren?",
+  deleteQuote:
+    "Möchten Sie dieses Angebot wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
+  archiveQuote: "Dieses Angebot wird archiviert und standardmäßig ausgeblendet.\n\nFortfahren?",
+  deleteInvoiceDraft:
+    "Möchten Sie diese Rechnung (Entwurf) wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
+  archiveInvoice: "Diese Rechnung wird archiviert und standardmäßig ausgeblendet.\n\nFortfahren?",
+  cancelInvoice:
+    "Diese Rechnung wird storniert. Der Status wechselt auf „Storniert“.\n\nFortfahren?",
 } as const;
 
 export function confirmDanger(message: string): boolean {

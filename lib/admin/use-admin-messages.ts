@@ -21,9 +21,15 @@ export function useAdminMessages() {
 
     quoteCreated: () => toast(ADMIN_MSG.quoteCreated),
     quoteSent: () => toast(ADMIN_MSG.quoteSent),
+    quoteArchived: () => toast(ADMIN_MSG.quoteArchived),
+    quoteDeleted: () => toast(ADMIN_MSG.quoteDeleted),
+    quoteUpdated: () => toast(ADMIN_MSG.quoteUpdated),
     invoiceCreated: (number?: string) =>
       toast(number ? `✓ Rechnung ${number} erstellt.` : ADMIN_MSG.invoiceCreated),
     invoiceSent: () => toast(ADMIN_MSG.invoiceSent),
+    invoiceArchived: () => toast(ADMIN_MSG.invoiceArchived),
+    invoiceDeleted: () => toast(ADMIN_MSG.invoiceDeleted),
+    invoiceCancelled: () => toast(ADMIN_MSG.invoiceCancelled),
 
     customerSaved: () => toast(ADMIN_MSG.customerSaved),
     imageUploaded: () => toast(ADMIN_MSG.imageUploaded),

@@ -2,7 +2,23 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { calculateDocumentTotals } from "./money";
 import { nextDocumentNumber } from "./numbers";
 import { logCustomerEvent } from "./events";
+import { logCrmAudit } from "./audit-log";
+import type { AdminContext } from "@/lib/auth/types";
 import type { CrmCustomer, CrmInvoice, CrmLineItem, CrmQuote } from "./types";
+
+export type CrmListView = "active" | "archived" | "all";
+
+function applyDocumentView<T extends { deleted_at?: string | null; archived_at?: string | null }>(
+  rows: T[],
+  view: CrmListView,
+): T[] {
+  return rows.filter((row) => {
+    if (row.deleted_at) return false;
+    if (view === "archived") return Boolean(row.archived_at);
+    if (view === "active") return !row.archived_at;
+    return true;
+  });
+}
 
 export async function listCustomers(search?: string) {
   const supabase = getSupabaseAdmin();
@@ -103,7 +119,7 @@ export async function getQuoteWithDetails(id: string) {
   };
 }
 
-export async function listQuotes(search?: string) {
+export async function listQuotes(search?: string, view: CrmListView = "active") {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("crm_quotes")
@@ -112,7 +128,7 @@ export async function listQuotes(search?: string) {
 
   if (error) throw new Error(error.message);
 
-  let results = data ?? [];
+  let results = applyDocumentView(data ?? [], view);
   if (search?.trim()) {
     const q = search.toLowerCase();
     results = results.filter(
@@ -236,7 +252,7 @@ export async function getInvoiceWithDetails(id: string) {
   };
 }
 
-export async function listInvoices(search?: string) {
+export async function listInvoices(search?: string, view: CrmListView = "active") {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("crm_invoices")
@@ -245,7 +261,7 @@ export async function listInvoices(search?: string) {
 
   if (error) throw new Error(error.message);
 
-  let results = data ?? [];
+  let results = applyDocumentView(data ?? [], view);
   if (search?.trim()) {
     const q = search.toLowerCase();
     results = results.filter(
@@ -334,4 +350,143 @@ export async function markQuoteSent(id: string) {
     .update({ status: "sent", sent_at: new Date().toISOString(), updated_at: new Date().toISOString() })
     .eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+export async function archiveQuote(id: string, ctx: AdminContext | null) {
+  const quote = await getQuoteWithDetails(id);
+  if (!quote || quote.deleted_at) throw new Error("Angebot nicht gefunden.");
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("crm_quotes")
+    .update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await logCrmAudit(ctx, "quote_archived", id, { documentNumber: quote.quote_number });
+  await logCustomerEvent(quote.customer_id, "quote_archived", `Angebot ${quote.quote_number} archiviert`, null, {
+    id,
+    type: "quote",
+  });
+}
+
+export async function restoreQuote(id: string, ctx: AdminContext | null) {
+  const quote = await getQuoteWithDetails(id);
+  if (!quote || quote.deleted_at) throw new Error("Angebot nicht gefunden.");
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("crm_quotes")
+    .update({ archived_at: null, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await logCrmAudit(ctx, "quote_restored", id, { documentNumber: quote.quote_number });
+}
+
+export async function deleteQuote(id: string, ctx: AdminContext | null) {
+  const quote = await getQuoteWithDetails(id);
+  if (!quote || quote.deleted_at) throw new Error("Angebot nicht gefunden.");
+
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("crm_quotes")
+    .update({ deleted_at: now, updated_at: now })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await logCrmAudit(ctx, "quote_deleted", id, { documentNumber: quote.quote_number });
+  await logCustomerEvent(quote.customer_id, "quote_deleted", `Angebot ${quote.quote_number} gelöscht`, null, {
+    id,
+    type: "quote",
+  });
+}
+
+export async function archiveInvoice(id: string, ctx: AdminContext | null) {
+  const invoice = await getInvoiceWithDetails(id);
+  if (!invoice || invoice.deleted_at) throw new Error("Rechnung nicht gefunden.");
+  if (invoice.status === "paid") {
+    // paid invoices: archive only, never delete
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("crm_invoices")
+    .update({ archived_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await logCrmAudit(ctx, "invoice_archived", id, { documentNumber: invoice.invoice_number });
+  await logCustomerEvent(invoice.customer_id, "invoice_archived", `Rechnung ${invoice.invoice_number} archiviert`, null, {
+    id,
+    type: "invoice",
+  });
+}
+
+export async function restoreInvoice(id: string, ctx: AdminContext | null) {
+  const invoice = await getInvoiceWithDetails(id);
+  if (!invoice || invoice.deleted_at) throw new Error("Rechnung nicht gefunden.");
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase
+    .from("crm_invoices")
+    .update({ archived_at: null, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await logCrmAudit(ctx, "invoice_restored", id, { documentNumber: invoice.invoice_number });
+}
+
+export async function cancelInvoice(id: string, ctx: AdminContext | null, reason?: string) {
+  const invoice = await getInvoiceWithDetails(id);
+  if (!invoice || invoice.deleted_at) throw new Error("Rechnung nicht gefunden.");
+  if (invoice.status === "paid") throw new Error("Bezahlte Rechnungen können nicht storniert werden.");
+
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("crm_invoices")
+    .update({
+      status: "cancelled",
+      cancelled_at: now,
+      cancelled_reason: reason?.trim() || null,
+      updated_at: now,
+    })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await logCrmAudit(ctx, "invoice_cancelled", id, {
+    documentNumber: invoice.invoice_number,
+    note: reason,
+  });
+  await logCustomerEvent(invoice.customer_id, "invoice_cancelled", `Rechnung ${invoice.invoice_number} storniert`, reason ?? null, {
+    id,
+    type: "invoice",
+  });
+
+  return getInvoiceWithDetails(id);
+}
+
+export async function deleteInvoice(id: string, ctx: AdminContext | null) {
+  const invoice = await getInvoiceWithDetails(id);
+  if (!invoice || invoice.deleted_at) throw new Error("Rechnung nicht gefunden.");
+
+  if (invoice.status !== "draft") {
+    throw new Error("Nur Rechnungs-Entwürfe können gelöscht werden. Gesendete oder bezahlte Rechnungen bitte archivieren oder stornieren.");
+  }
+
+  const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
+  const { error } = await supabase
+    .from("crm_invoices")
+    .update({ deleted_at: now, updated_at: now })
+    .eq("id", id);
+  if (error) throw new Error(error.message);
+
+  await logCrmAudit(ctx, "invoice_deleted", id, { documentNumber: invoice.invoice_number });
+  await logCustomerEvent(invoice.customer_id, "invoice_deleted", `Rechnung ${invoice.invoice_number} gelöscht`, null, {
+    id,
+    type: "invoice",
+  });
 }

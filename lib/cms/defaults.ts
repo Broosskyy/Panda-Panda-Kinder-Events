@@ -1,4 +1,5 @@
 import { siteConfig } from "@/config/site";
+import { SITE_URL_PLACEHOLDER } from "@/lib/site-url";
 import { navigation } from "@/lib/navigation";
 import type { SiteSettingsBundle } from "./types";
 
@@ -156,7 +157,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     address: siteConfig.contact.location,
     phone: siteConfig.contact.phone,
     email: siteConfig.contact.email,
-    website: siteConfig.url,
+    website: SITE_URL_PLACEHOLDER,
     iban: "",
     bic: "",
     bankName: "",

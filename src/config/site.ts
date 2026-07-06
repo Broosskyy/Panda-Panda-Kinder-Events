@@ -3,14 +3,19 @@
  *
  * PLATZHALTER-Werte sind mit `isPlaceholder: true` markiert.
  * Vor Go-Live durch echte Daten ersetzen.
+ *
+ * Öffentliche URL: NEXT_PUBLIC_SITE_URL (siehe lib/site-url.ts)
  */
+
+import { SITE_URL_PLACEHOLDER } from "@/lib/site-url";
 
 export const siteConfig = {
   name: "Panda-Bande Kinderevents",
   tagline: "Glückliche Kinder. Entspannte Eltern.",
   description:
     "Liebevolle Kinderbetreuung für Hochzeiten, Geburtstage und Familienfeiern — bundesweit im Einsatz, mit Herz und professionellem Team.",
-  url: "https://panda-bande-events.de",
+  /** @deprecated Verwende getSiteUrl() aus lib/site-url.ts */
+  url: SITE_URL_PLACEHOLDER,
 
   assets: {
     /** Originales Logo — Datei in public/assets/ ablegen */

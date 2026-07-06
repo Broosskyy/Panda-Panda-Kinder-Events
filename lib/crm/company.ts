@@ -1,5 +1,6 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
 import type { SiteBusinessSettings } from "@/lib/cms/types";
+import { getSiteUrl } from "@/lib/site-url";
 
 export type BusinessProfile = SiteBusinessSettings & {
   formattedAddress: string;
@@ -27,7 +28,7 @@ export async function getBusinessProfile(): Promise<BusinessProfile> {
     logoUrl: b.logoUrl || branding.logoUrl,
     phone: b.phone || contact.phone,
     email: b.email || contact.email,
-    website: b.website || "https://panda-bande-events.de",
+    website: b.website || getSiteUrl(),
     address: formattedAddress,
     formattedAddress,
     senderName: email.senderName || b.senderName || b.companyName,

@@ -2,6 +2,34 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.0] — 2026-07-06 — Final Release Sprint
+
+### Domain & URL
+- `lib/site-url.ts` — zentrale Auflösung via `NEXT_PUBLIC_SITE_URL`
+- Canonical, Sitemap, Robots, OpenGraph nutzen `getSiteUrl()`
+- Passwort-Reset-URL Bugfix (Operator-Precedence)
+- Legal-Seiten aus Sitemap entfernt (noindex)
+- `.env.example` um `NEXT_PUBLIC_SITE_URL` ergänzt
+
+### E-Mail
+- Verstärkter Admin-Hinweis bei Resend-Testdomain (Dashboard + Einstellungen)
+- Domain- & URL-Hinweis unter Einstellungen → System
+
+### PWA
+- Manifest mit PNG-Icons (192, 512, maskable)
+- `apple-touch-icon.png`, `favicon.png`
+- `npm run generate:pwa-icons`
+
+### SEO
+- LocalBusiness: PostalAddress, kein doppeltes Schema
+- Blog-Beiträge: Canonical, OG, Twitter, BlogPosting JSON-LD
+- Beitrags-Hero mit Alt-Text
+
+### Dokumentation
+- `RELEASE_CHECKLIST.md`, `LIVEGOING_GUIDE.md`
+- `DOMAIN_EMAIL_SETUP_GUIDE.md`, `PWA_INSTALL_GUIDE.md`
+- `FINAL_TEST_REPORT.md`
+
 ## [1.0.0-checkpoint] — 2026-07-06 — Project Checkpoint + Backup + Analysis
 
 ### Dokumentation

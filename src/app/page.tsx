@@ -21,7 +21,8 @@ import {
   fetchSiteSettings,
 } from "@/lib/cms/data";
 import { fetchApprovedReviews } from "@/lib/cms/reviews";
-import { breadcrumbJsonLd, organizationJsonLd, serviceJsonLd } from "@/lib/seo";
+import { breadcrumbJsonLd, getSeoDefaultImage, organizationJsonLd, serviceJsonLd } from "@/lib/seo";
+import { getSiteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -29,12 +30,18 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: `${siteConfig.name} — Kinderbetreuung für Events`,
   description: siteConfig.description,
-  alternates: { canonical: siteConfig.url },
+  alternates: { canonical: getSiteUrl() },
   openGraph: {
     title: siteConfig.name,
     description: siteConfig.description,
-    url: siteConfig.url,
-    images: [{ url: `${siteConfig.url}/panda-illustration.svg`, width: 1200, height: 630 }],
+    url: getSiteUrl(),
+    images: [{ url: getSeoDefaultImage(), width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: siteConfig.name,
+    description: siteConfig.description,
+    images: [getSeoDefaultImage()],
   },
 };
 
@@ -56,19 +63,35 @@ export default async function HomePage() {
         }
       : null;
 
-  const jsonLd = [
-    {
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      name: siteConfig.name,
-      description: siteConfig.description,
-      url: siteConfig.url,
-      email: settings.contact.email,
-      telephone: settings.contact.phone,
-      address: settings.contact.location,
-      areaServed: "DE",
-      image: `${siteConfig.url}/panda-illustration.svg`,
+  const baseUrl = getSiteUrl();
+
+  const localBusiness: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: siteConfig.name,
+    description: siteConfig.description,
+    url: baseUrl,
+    email: settings.contact.email,
+    telephone: settings.contact.phone,
+    address: {
+      "@type": "PostalAddress",
+      addressLocality: settings.contact.location,
+      addressCountry: "DE",
     },
+    areaServed: "DE",
+    image: getSeoDefaultImage(),
+  };
+
+  if (reviews.length > 0) {
+    localBusiness.aggregateRating = {
+      "@type": "AggregateRating",
+      ratingValue: rating!.average.toFixed(1),
+      reviewCount: reviews.length,
+    };
+  }
+
+  const jsonLd = [
+    localBusiness,
     organizationJsonLd({
       email: settings.contact.email,
       phone: settings.contact.phone,
@@ -83,22 +106,9 @@ export default async function HomePage() {
         acceptedAnswer: { "@type": "Answer", text: faq.answer },
       })),
     },
-    breadcrumbJsonLd([{ name: "Startseite", url: siteConfig.url }]),
+    breadcrumbJsonLd([{ name: "Startseite", url: baseUrl }]),
     ...serviceJsonLd(services.map((s) => ({ title: s.title, description: s.description }))),
   ];
-
-  if (reviews.length > 0) {
-    jsonLd.push({
-      "@context": "https://schema.org",
-      "@type": "LocalBusiness",
-      name: siteConfig.name,
-      aggregateRating: {
-        "@type": "AggregateRating",
-        ratingValue: rating!.average.toFixed(1),
-        reviewCount: reviews.length,
-      },
-    } as never);
-  }
 
   return (
     <>

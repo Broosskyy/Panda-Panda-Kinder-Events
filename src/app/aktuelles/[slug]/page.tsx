@@ -8,6 +8,7 @@ import { Footer } from "@/components/layout/Footer";
 import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
 import { Container } from "@/components/ui/Container";
 import { fetchPostBySlug, fetchSiteSettings } from "@/lib/cms/data";
+import { articleJsonLd, buildPageMetadata } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +20,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const { slug } = await params;
   const post = await fetchPostBySlug(slug);
   if (!post) return { title: "Beitrag nicht gefunden" };
-  return {
+  return buildPageMetadata({
     title: post.title,
     description: post.subtitle || post.content.slice(0, 160),
-  };
+    path: `/aktuelles/${slug}`,
+    image: post.hero_image_url ?? undefined,
+  });
 }
 
 export default async function PostPage({ params }: PageProps) {
@@ -39,8 +42,17 @@ export default async function PostPage({ params }: PageProps) {
       })
     : "";
 
+  const jsonLd = articleJsonLd({
+    title: post.title,
+    description: post.subtitle || post.content.slice(0, 160),
+    path: `/aktuelles/${slug}`,
+    publishedAt: post.published_at,
+    image: post.hero_image_url,
+  });
+
   return (
     <>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Header />
       <main id="main-content" className="bg-bg-primary pt-24 sm:pt-28">
         <Container className="max-w-3xl py-10 sm:py-14">
@@ -58,7 +70,15 @@ export default async function PostPage({ params }: PageProps) {
 
           {post.hero_image_url ? (
             <div className="relative mt-8 aspect-[16/10] w-full overflow-hidden rounded-2xl">
-              <Image src={post.hero_image_url} alt="" fill className="object-cover" priority sizes="(max-width: 768px) 100vw, 768px" unoptimized={post.hero_image_url.includes("supabase.co")} />
+              <Image
+                src={post.hero_image_url}
+                alt={post.title}
+                fill
+                className="object-cover"
+                priority
+                sizes="(max-width: 768px) 100vw, 768px"
+                unoptimized={post.hero_image_url.includes("supabase.co")}
+              />
             </div>
           ) : null}
 

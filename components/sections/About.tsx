@@ -31,6 +31,7 @@ export function About({
   const safeHeading = resolveSectionHeading(heading, "about");
   const aboutImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
   const teamItems = team.items?.filter((m) => m.name?.trim() && m.role?.trim()) ?? [];
+  const teamHeading = team.title?.trim() || "Unser Team";
 
   return (
     <section id="ueber-uns" className="section-padding bg-bg-secondary/20">
@@ -69,37 +70,38 @@ export function About({
             <p className="mt-5 text-base leading-relaxed text-text-secondary sm:mt-6 sm:text-lg sm:leading-8">
               {about.paragraph2}
             </p>
-
-            <div className="mt-10 grid gap-4 sm:grid-cols-2 sm:gap-5">
-              {[
-                { label: "Unsere Mission", text: about.missionText },
-                { label: "Unsere Werte", text: about.valuesText },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-[var(--radius-card)] border border-border/50 bg-bg-card p-5 shadow-sm sm:p-6"
-                >
-                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary sm:text-sm">
-                    {item.label}
-                  </p>
-                  <p className="mt-3 text-base leading-relaxed text-text-secondary">{item.text}</p>
-                </div>
-              ))}
-            </div>
-
-            <div className="mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
-              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Ansprechpartnerin</p>
-              <p className="mt-2 font-heading text-xl font-bold text-text-primary">{about.founderName}</p>
-              <p className="mt-1 text-sm text-text-secondary">Gründerin &amp; persönliche Ansprechpartnerin für euer Event</p>
-            </div>
           </ScrollReveal>
         </div>
+
+        <div className="mt-10 grid gap-4 sm:grid-cols-2 sm:gap-5">
+          {[
+            { label: "Unsere Mission", text: about.missionText },
+            { label: "Unsere Werte", text: about.valuesText },
+          ].map((item) => (
+            <ScrollReveal key={item.label}>
+              <div className="h-full rounded-[var(--radius-card)] border border-border/50 bg-bg-card p-5 shadow-sm sm:p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary sm:text-sm">
+                  {item.label}
+                </p>
+                <p className="mt-3 text-base leading-relaxed text-text-secondary">{item.text}</p>
+              </div>
+            </ScrollReveal>
+          ))}
+        </div>
+
+        <ScrollReveal>
+          <div className="mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Ansprechpartnerin</p>
+            <p className="mt-2 font-heading text-xl font-bold text-text-primary">{about.founderName}</p>
+            <p className="mt-1 text-sm text-text-secondary">Gründerin &amp; persönliche Ansprechpartnerin für euer Event</p>
+          </div>
+        </ScrollReveal>
 
         {teamItems.length > 0 ? (
           <div className="mt-14 sm:mt-20">
             <ScrollReveal>
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
-                {team.title || "Unser Team"}
+                {teamHeading}
               </h3>
               {team.subtitle ? (
                 <p className="mx-auto mt-3 max-w-2xl text-center text-base text-text-secondary sm:text-lg">

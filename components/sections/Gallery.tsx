@@ -10,7 +10,7 @@ import type { SiteContactSettings, SiteSectionHeading } from "@/lib/cms/types";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { PORTRAIT_BLUR_DATA_URL } from "@/lib/image-placeholder";
-import { Lightbox } from "@/components/ui/Lightbox";
+import { Lightbox, type LightboxItem } from "@/components/ui/Lightbox";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
@@ -21,6 +21,7 @@ interface GalleryImageItem {
   src: string;
   alt: string;
   category?: string;
+  title?: string;
 }
 
 interface GalleryProps {
@@ -36,7 +37,7 @@ export function Gallery({
 }: GalleryProps) {
   const safeHeading = resolveSectionHeading(heading, "gallery");
   const [filter, setFilter] = useState<string>("Alle");
-  const [lightboxImage, setLightboxImage] = useState<GalleryImageItem | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   const categories = useMemo(() => {
     const fromImages = new Set((images ?? []).map((img) => img.category).filter(Boolean));
@@ -86,7 +87,7 @@ export function Gallery({
                   <button
                     type="button"
                     className="gallery-tile group relative aspect-[4/5] w-full md:aspect-[4/3]"
-                    onClick={() => setLightboxImage(image)}
+                    onClick={() => setLightboxIndex(index)}
                     aria-label={`${image.alt} vergrößern`}
                   >
                     <Image
@@ -119,8 +120,20 @@ export function Gallery({
           </div>
       </Container>
 
-      {lightboxImage ? (
-        <Lightbox src={lightboxImage.src} alt={lightboxImage.alt} onClose={() => setLightboxImage(null)} />
+      {lightboxIndex != null ? (
+        <Lightbox
+          items={filtered.map(
+            (img): LightboxItem => ({
+              src: img.src?.trim() || GALLERY_FALLBACK,
+              alt: img.alt,
+              title: img.title,
+              category: img.category,
+            }),
+          )}
+          index={lightboxIndex}
+          onClose={() => setLightboxIndex(null)}
+          onIndexChange={setLightboxIndex}
+        />
       ) : null}
     </section>
   );

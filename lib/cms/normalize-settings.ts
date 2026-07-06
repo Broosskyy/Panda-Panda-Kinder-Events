@@ -1,5 +1,6 @@
 import { BRAND } from "@/lib/brand";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
+import { resolveImageUrl } from "./resolve-image";
 import { mergeBankFromLegacy, mergeInvoiceFromLegacy, syncLegacyBusinessFields } from "./settings-compat";
 import type {
   SiteSectionHeading,
@@ -74,7 +75,11 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
           name: m.name.trim(),
           role: m.role.trim(),
           description: m.description?.trim() || "",
-          imageUrl: m.imageUrl?.trim() || defaults.publicTeam.items[0]?.imageUrl || defaults.hero.imageUrl,
+          imageUrl:
+            resolveImageUrl("site-assets", m.imageUrl?.trim()) ||
+            m.imageUrl?.trim() ||
+            defaults.publicTeam.items[0]?.imageUrl ||
+            defaults.hero.imageUrl,
         }))
       : defaults.publicTeam.items;
 

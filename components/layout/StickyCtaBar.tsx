@@ -13,6 +13,7 @@ export function StickyCtaBar({
   sublabel = "Bereit für euer Event?",
 }: StickyCtaBarProps) {
   const [visible, setVisible] = useState(false);
+  const [hideForForm, setHideForForm] = useState(false);
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY > 480);
@@ -21,7 +22,26 @@ export function StickyCtaBar({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  if (!visible) return null;
+  useEffect(() => {
+    const kontakt = document.getElementById("kontakt");
+    const bewertungForm = document.getElementById("bewertung-form");
+    const targets = [kontakt, bewertungForm].filter(Boolean) as HTMLElement[];
+
+    if (!targets.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const overlaps = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0.15);
+        setHideForForm(overlaps);
+      },
+      { threshold: [0, 0.15, 0.35] },
+    );
+
+    for (const el of targets) observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  if (!visible || hideForForm) return null;
 
   return (
     <div className="sticky-cta-bar" role="region" aria-label="Schnellanfrage">

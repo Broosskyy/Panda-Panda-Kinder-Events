@@ -1,11 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
+import { CrmApiError, classifySendError, jsonApiError } from "@/lib/crm/api-errors";
 import { getInvoiceWithDetails, updateInvoiceStatus } from "@/lib/crm/db";
 import { getBusinessProfile } from "@/lib/crm/company";
 import { formatCents } from "@/lib/crm/money";
 import { generateCrmPdf, invoiceToPdfData } from "@/lib/crm/pdf";
 import { logCustomerEvent } from "@/lib/crm/events";
-import { isResendConfigured, sendCrmDocumentEmail } from "@/lib/email";
+import { getEmailSettings, isResendConfigured, sendCrmDocumentEmail } from "@/lib/email";
+import { getResendSendingSetup } from "@/lib/email/resend-status";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const authError = await requireAdmin();
@@ -16,17 +18,46 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const copyToBusiness = Boolean(body.copyToBusiness ?? true);
 
   if (!isResendConfigured()) {
-    return NextResponse.json({ error: "E-Mail ist nicht konfiguriert (RESEND_API_KEY)." }, { status: 503 });
+    return NextResponse.json(
+      { error: "E-Mail ist nicht konfiguriert (RESEND_API_KEY).", code: "resend_not_configured" },
+      { status: 503 },
+    );
   }
 
   try {
     const invoice = await getInvoiceWithDetails(id);
-    if (!invoice?.customer?.email || !invoice.items?.length) {
-      return NextResponse.json({ error: "Rechnung oder Kunden-E-Mail fehlt." }, { status: 400 });
+    if (!invoice?.customer || !invoice.items?.length) {
+      return NextResponse.json(
+        { error: "Rechnung nicht gefunden.", code: "invoice_not_found" },
+        { status: 404 },
+      );
+    }
+
+    if (!invoice.customer.email?.trim()) {
+      return NextResponse.json({ error: "Empfänger fehlt.", code: "missing_recipient" }, { status: 400 });
+    }
+
+    const emailSettings = await getEmailSettings();
+    const sendingSetup = await getResendSendingSetup(emailSettings.senderEmail);
+    if (!sendingSetup.canSend && !sendingSetup.domain?.includes("resend.dev")) {
+      throw new CrmApiError(sendingSetup.blockReason ?? "E-Mail-Versand nicht möglich.", {
+        code: "sending_not_ready",
+        status: 503,
+        detail: sendingSetup.sending.map((s) => `${s.label}: ${s.message}`).join("\n"),
+      });
     }
 
     const company = await getBusinessProfile();
-    const pdfBytes = await generateCrmPdf(invoiceToPdfData(invoice as never, company));
+    let pdfBytes: Uint8Array;
+    try {
+      pdfBytes = await generateCrmPdf(invoiceToPdfData(invoice as never, company));
+    } catch (pdfErr) {
+      throw new CrmApiError("PDF konnte nicht erzeugt werden.", {
+        code: "pdf_generation_failed",
+        status: 500,
+        detail: pdfErr instanceof Error ? pdfErr.message : String(pdfErr),
+      });
+    }
 
     await sendCrmDocumentEmail({
       to: invoice.customer.email,
@@ -47,7 +78,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     return NextResponse.json({ success: true, message: "Rechnung versendet." });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Versand fehlgeschlagen.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error(`[invoices/${id}/send]`, err);
+    const classified = classifySendError(err);
+    const { body: errBody, status } = jsonApiError(classified, "Versand fehlgeschlagen.");
+    return NextResponse.json(errBody, { status });
   }
 }

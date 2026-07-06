@@ -56,8 +56,8 @@ export function withIconVersion(path: string): string {
 }
 
 export const LOGO_SIZE_PX = {
-  headerDesktop: 52,
-  headerMobile: 38,
+  headerDesktop: 56,
+  headerMobile: 42,
   footer: 52,
   adminSidebar: 40,
   login: 72,

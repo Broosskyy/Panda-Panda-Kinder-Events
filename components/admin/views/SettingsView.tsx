@@ -3,9 +3,10 @@
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { RefreshCw, Save, Send } from "lucide-react";
+import { RefreshCw, Send } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminStatusBadge } from "@/components/admin/ui";
+import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
 import { CONTROL_CENTER_TABS, type ControlCenterTab } from "@/lib/cms/settings-compat";
@@ -27,6 +28,12 @@ import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-sta
 interface EmailStatusResponse {
   resendConfigured: boolean;
   domain: { status: string; domain: string | null; message: string };
+  sendingSetup?: {
+    canSend: boolean;
+    blockReason?: string;
+    sending: Array<{ id: string; label: string; level: string; message: string }>;
+    receiving: Array<{ id: string; label: string; level: string; message: string }>;
+  };
   resolved: { from: string; replyTo: string; usesTestDomain: boolean; domainStatus: string };
 }
 
@@ -37,20 +44,19 @@ interface SystemStatusResponse {
 
 const VALID_TABS = new Set<string>(CONTROL_CENTER_TABS.map((t) => t.id));
 
-const DOMAIN_STATUS_LABELS: Record<string, string> = {
-  test: "Resend-Testdomain",
-  verified: "Domain verifiziert",
-  pending: "Verifizierung ausstehend",
-  failed: "Verifizierung fehlgeschlagen",
-  not_configured: "Nicht konfiguriert",
-};
-
 const CUSTOM_ADDRESS_LABELS: { key: keyof SiteEmailCustomAddresses; label: string }[] = [
   { key: "info", label: "info@" },
   { key: "kontakt", label: "kontakt@" },
   { key: "rechnung", label: "rechnung@" },
   { key: "angebote", label: "angebote@" },
 ];
+
+const RESEND_LEVEL_VARIANT: Record<string, "success" | "warning" | "danger" | "muted"> = {
+  ok: "success",
+  warn: "warning",
+  error: "danger",
+  optional: "muted",
+};
 
 const SYSTEM_LEVEL_VARIANT: Record<SystemStatusLevel, "success" | "warning" | "danger"> = {
   ok: "success",
@@ -66,16 +72,6 @@ const SYSTEM_LEVEL_LABEL: Record<SystemStatusLevel, string> = {
 
 function tabHref(id: ControlCenterTab): string {
   return id === "business" ? "/admin/einstellungen" : `/admin/einstellungen?tab=${id}`;
-}
-
-function StickySaveBar({ label, onSave }: { label: string; onSave: () => void }) {
-  return (
-    <div className="sticky bottom-0 z-10 border-t border-border bg-bg-card p-4">
-      <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={onSave}>
-        {label}
-      </AdminButton>
-    </div>
-  );
 }
 
 function SectionHeading({ children }: { children: ReactNode }) {
@@ -310,7 +306,7 @@ export function SettingsView() {
               <textarea className="admin-input min-h-20" value={business.description} onChange={(e) => setBusinessField("description", e.target.value)} />
             </AdminFormField>
           </div>
-          <StickySaveBar label="Unternehmensdaten speichern" onSave={() => void saveSection("business", business)} />
+          <AdminStickySave label="Unternehmensdaten speichern" onSave={() => void saveSection("business", business)} />
         </AdminCard>
       ) : null}
 
@@ -396,7 +392,7 @@ export function SettingsView() {
               Textmarke neben Logo anzeigen (Panda-Bande / Kinderevents)
             </label>
           </div>
-          <StickySaveBar label="Branding speichern" onSave={() => void saveSection("branding", branding)} />
+          <AdminStickySave label="Branding speichern" onSave={() => void saveSection("branding", branding)} />
         </AdminCard>
       ) : null}
 
@@ -447,7 +443,7 @@ export function SettingsView() {
               <input className="admin-input" value={contact.openingHours} onChange={(e) => setContactField("openingHours", e.target.value)} />
             </AdminFormField>
           </div>
-          <StickySaveBar label="Kontaktdaten speichern" onSave={() => void saveSection("contact", contact)} />
+          <AdminStickySave label="Kontaktdaten speichern" onSave={() => void saveSection("contact", contact)} />
         </AdminCard>
       ) : null}
 
@@ -473,21 +469,48 @@ export function SettingsView() {
             </p>
           ) : null}
 
-          <div className="mb-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
-            <p className="font-semibold text-text-primary">Resend Domain Status</p>
-            <p className="mt-1 text-text-secondary">
-              {DOMAIN_STATUS_LABELS[emailStatus?.domain.status ?? "not_configured"] ?? "Unbekannt"}
-              {emailStatus?.domain.domain ? ` — ${emailStatus.domain.domain}` : ""}
-            </p>
-            <p className="mt-1 text-text-muted">{emailStatus?.domain.message ?? "Status wird geladen…"}</p>
-            <p className="mt-2 text-text-secondary">
+          <div className="mb-4 space-y-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
+            <div>
+              <p className="font-semibold text-text-primary">E-Mail Versand (Sending)</p>
+              <p className="mt-1 text-text-muted">
+                {emailStatus?.sendingSetup?.canSend
+                  ? "Versand ist konfiguriert."
+                  : emailStatus?.sendingSetup?.blockReason ?? "Versand-Status wird geladen…"}
+              </p>
+            </div>
+
+            <ul className="space-y-2">
+              {(emailStatus?.sendingSetup?.sending ?? []).map((item) => (
+                <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
+                  <span className="text-text-secondary">{item.label}</span>
+                  <AdminStatusBadge
+                    label={item.level === "ok" ? "OK" : item.level === "optional" ? "Optional" : item.level === "warn" ? "Hinweis" : "Fehler"}
+                    variant={RESEND_LEVEL_VARIANT[item.level] ?? "muted"}
+                  />
+                </li>
+              ))}
+            </ul>
+
+            <div className="border-t border-border pt-4">
+              <p className="font-semibold text-text-primary">Empfang (Receiving, optional)</p>
+              <ul className="mt-2 space-y-2">
+                {(emailStatus?.sendingSetup?.receiving ?? []).map((item) => (
+                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
+                    <span className="text-text-secondary">{item.message}</span>
+                    <AdminStatusBadge label="Optional" variant="muted" />
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <p className="text-text-secondary">
               Aktueller Absender: <strong>{emailStatus?.resolved.from ?? "—"}</strong>
             </p>
             <p className="text-text-secondary">
               Reply-To: <strong>{emailStatus?.resolved.replyTo ?? "—"}</strong>
             </p>
-            <AdminButton variant="secondary" className="mt-3" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadEmailStatus()}>
-              Domain-Status prüfen
+            <AdminButton variant="secondary" className="mt-1" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadEmailStatus()}>
+              Status prüfen
             </AdminButton>
           </div>
 
@@ -630,7 +653,7 @@ export function SettingsView() {
             </div>
           </div>
 
-          <StickySaveBar label="E-Mail-Einstellungen speichern" onSave={() => void saveSection("email", email)} />
+          <AdminStickySave label="E-Mail-Einstellungen speichern" onSave={() => void saveSection("email", email)} />
         </AdminCard>
       ) : null}
 
@@ -737,7 +760,7 @@ export function SettingsView() {
               <textarea className="admin-input min-h-16" value={invoice.legalNoticeText} onChange={(e) => setInvoiceField("legalNoticeText", e.target.value)} />
             </AdminFormField>
           </div>
-          <StickySaveBar label="Rechnungseinstellungen speichern" onSave={() => void saveSection("invoice", invoice)} />
+          <AdminStickySave label="Rechnungseinstellungen speichern" onSave={() => void saveSection("invoice", invoice)} />
         </AdminCard>
       ) : null}
 
@@ -779,7 +802,7 @@ export function SettingsView() {
               <textarea className="admin-input min-h-16" value={bank.dunningNotice} onChange={(e) => setBankField("dunningNotice", e.target.value)} />
             </AdminFormField>
           </div>
-          <StickySaveBar label="Bankdaten speichern" onSave={() => void saveSection("bank", bank)} />
+          <AdminStickySave label="Bankdaten speichern" onSave={() => void saveSection("bank", bank)} />
         </AdminCard>
       ) : null}
 
@@ -844,7 +867,7 @@ export function SettingsView() {
               </label>
             </AdminFormField>
           </div>
-          <StickySaveBar label="SEO-Einstellungen speichern" onSave={() => void saveSection("seo", seo)} />
+          <AdminStickySave label="SEO-Einstellungen speichern" onSave={() => void saveSection("seo", seo)} />
         </AdminCard>
       ) : null}
 
@@ -895,7 +918,7 @@ export function SettingsView() {
               <textarea className="admin-input min-h-16" value={legal.placeholderNotice} onChange={(e) => setLegalField("placeholderNotice", e.target.value)} />
             </AdminFormField>
           </div>
-          <StickySaveBar label="Rechtliche Texte speichern" onSave={() => void saveSection("legal", legal)} />
+          <AdminStickySave label="Rechtliche Texte speichern" onSave={() => void saveSection("legal", legal)} />
         </AdminCard>
       ) : null}
 

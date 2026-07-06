@@ -1,13 +1,35 @@
 "use client";
 
-import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Plus, X } from "lucide-react";
+import Link from "next/link";
 import { ADMIN_GLOBAL_QUICK_ACTIONS } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 
+const HIDE_FAB_PREFIXES = [
+  "/admin/einstellungen",
+  "/admin/angebote",
+  "/admin/rechnungen",
+  "/admin/galerie",
+  "/admin/bewertungen",
+  "/admin/team",
+  "/admin/inhalte",
+  "/admin/leistungen",
+  "/admin/beitraege",
+  "/admin/faq",
+  "/admin/emails",
+  "/admin/sicherheit",
+  "/admin/kunden",
+  "/admin/anfragen",
+];
+
 export function AdminQuickActions() {
+  const pathname = usePathname();
   const [open, setOpen] = useState(false);
+
+  const hideFab = HIDE_FAB_PREFIXES.some((prefix) => pathname?.startsWith(prefix));
+  if (hideFab) return null;
 
   return (
     <div className="admin-quick-actions-global">

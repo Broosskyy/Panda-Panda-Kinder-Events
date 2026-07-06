@@ -76,7 +76,7 @@ export function Header({
       >
         <div className="mx-auto flex min-h-16 items-center justify-between gap-2 px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:gap-4 md:px-12 md:py-3">
           <Logo
-            size="lg"
+            context="header"
             branding={branding}
             className={`shrink-0 ${isMenuOpen ? "invisible" : ""}`}
           />
@@ -138,7 +138,7 @@ export function Header({
               <h2 id={`${menuId}-title`} className="sr-only">
                 Navigation
               </h2>
-            <Logo branding={branding} size="md" />
+            <Logo branding={branding} context="header" />
               <button
                 ref={closeButtonRef}
                 type="button"

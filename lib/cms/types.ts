@@ -28,10 +28,20 @@ export interface SiteNavigationSettings {
 }
 
 export interface SiteBrandingSettings {
+  /** Hauptlogo — Fallback: /branding/logo.png */
   logoUrl: string;
+  /** Logo für dunkle Hintergründe (z. B. Footer) */
+  logoDarkUrl: string;
+  /** Logo für helle Hintergründe */
+  logoLightUrl: string;
   logoAlt: string;
   logoTextPrimary: string;
   logoTextSecondary: string;
+  faviconUrl: string;
+  appleTouchIconUrl: string;
+  pdfLogoUrl: string;
+  emailLogoUrl: string;
+  loginLogoUrl: string;
 }
 
 export interface CmsIconTextItem {

@@ -98,58 +98,13 @@ export function ContentView() {
       />
 
       <AdminCard title="Logo & Branding">
-        <div className="grid gap-3 md:grid-cols-2">
-          <input
-            className="admin-input md:col-span-2"
-            placeholder="Logo-URL (oder Pfad nach Upload)"
-            value={settings.branding.logoUrl}
-            onChange={(e) =>
-              setSettings({ ...settings, branding: { ...settings.branding, logoUrl: e.target.value } })
-            }
-          />
-          <input
-            className="admin-input"
-            placeholder="Logo Alt-Text"
-            value={settings.branding.logoAlt}
-            onChange={(e) =>
-              setSettings({ ...settings, branding: { ...settings.branding, logoAlt: e.target.value } })
-            }
-          />
-          <label className="admin-btn-secondary inline-flex w-fit cursor-pointer items-center self-end">
-            Logo hochladen
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/svg+xml"
-              className="hidden"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (!file || !settings) return;
-                void uploadImage(file, "branding", (path) =>
-                  setSettings({ ...settings, branding: { ...settings.branding, logoUrl: path } }),
-                ).catch((err) => toast(err instanceof Error ? err.message : "Upload fehlgeschlagen", "error"));
-              }}
-            />
-          </label>
-          <input
-            className="admin-input"
-            placeholder="Fallback Text Zeile 1"
-            value={settings.branding.logoTextPrimary}
-            onChange={(e) =>
-              setSettings({ ...settings, branding: { ...settings.branding, logoTextPrimary: e.target.value } })
-            }
-          />
-          <input
-            className="admin-input"
-            placeholder="Fallback Text Zeile 2"
-            value={settings.branding.logoTextSecondary}
-            onChange={(e) =>
-              setSettings({ ...settings, branding: { ...settings.branding, logoTextSecondary: e.target.value } })
-            }
-          />
-        </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("branding")}>
-          <Save className="h-4 w-4" /> Branding speichern
-        </button>
+        <p className="text-sm text-text-muted">
+          Logo-Einstellungen finden Sie unter{" "}
+          <a href="/admin/einstellungen?tab=branding" className="font-medium text-primary underline">
+            Einstellungen → Branding
+          </a>
+          . Master-Logo: <code className="rounded bg-bg-secondary px-1.5 py-0.5 text-xs">/branding/logo.png</code>
+        </p>
       </AdminCard>
 
       <AdminCard title="Navigation">

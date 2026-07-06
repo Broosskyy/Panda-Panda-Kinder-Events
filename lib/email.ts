@@ -1,5 +1,8 @@
 import { Resend } from "resend";
 import type { BusinessProfile } from "@/lib/crm/company";
+import { BRAND } from "@/lib/brand";
+import { wrapEmailHtml } from "@/lib/email/html";
+import { getSiteUrl } from "@/lib/site-url";
 import {
   getCopyEmailForDocument,
   getEmailSettings,
@@ -10,7 +13,16 @@ import {
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
 
-export { RESEND_TEST_FROM, checkResendDomainStatus, getCopyEmailForDocument, getEmailSettings, getInquiryRecipient, resolveEmailSender, resolveFlowEmailSender, applyEmailTemplate } from "@/lib/email/sender";
+export {
+  RESEND_TEST_FROM,
+  checkResendDomainStatus,
+  getCopyEmailForDocument,
+  getEmailSettings,
+  getInquiryRecipient,
+  resolveEmailSender,
+  resolveFlowEmailSender,
+  applyEmailTemplate,
+} from "@/lib/email/sender";
 export type { EmailDomainCheck, EmailDomainStatus, ResolvedEmailSender } from "@/lib/email/sender";
 
 export function isResendConfigured(): boolean {
@@ -116,43 +128,33 @@ interface CrmDocumentEmailOptions {
 function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): string {
   const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
   const company = opts.company;
-  const brand = "#52563e";
+  const brand = BRAND.themeColor;
+  const baseUrl = company?.website || getSiteUrl();
+  const logoUrl = company?.logoUrl || BRAND.master;
 
-  return `<!DOCTYPE html>
-<html lang="de">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
-<body style="margin:0;padding:0;background:#f4f1ea;font-family:Helvetica,Arial,sans-serif;color:#2c2c2c;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ea;padding:24px 12px;">
-    <tr><td align="center">
-      <table width="100%" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
-        <tr><td style="background:${brand};padding:24px 28px;">
-          <p style="margin:0;font-size:20px;font-weight:700;color:#ffffff;">${companyName}</p>
-          <p style="margin:6px 0 0;font-size:12px;color:rgba(255,255,255,.85);">${label} ${opts.documentNumber}</p>
-        </td></tr>
-        <tr><td style="padding:28px;">
+  const bodyHtml = `
           <p style="margin:0 0 12px;font-size:15px;">Guten Tag ${opts.customerName},</p>
+          <p style="margin:0 0 8px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.05em;">${label} ${opts.documentNumber}</p>
           <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#555;">
             anbei erhalten Sie ${opts.documentType === "quote" ? "unser Angebot" : "Ihre Rechnung"} als PDF.
           </p>
-          <table width="100%" style="background:#f8f7f4;border-radius:12px;margin-bottom:20px;">
+          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f8f7f4;border-radius:12px;margin-bottom:20px;">
             <tr><td style="padding:16px 20px;">
               <p style="margin:0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.05em;">Gesamtbetrag</p>
               <p style="margin:6px 0 0;font-size:24px;font-weight:700;color:${brand};">${opts.totalFormatted}</p>
             </td></tr>
           </table>
           <p style="margin:0 0 8px;font-size:13px;color:#666;">PDF-Anhang: <strong>${opts.documentNumber}.pdf</strong></p>
-          <p style="margin:0;font-size:14px;line-height:1.6;">Bei Fragen melden Sie sich gerne.</p>
-        </td></tr>
-        <tr><td style="padding:20px 28px;border-top:1px solid #ece8df;background:#faf9f6;">
-          <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${brand};">Mit freundlichen Grüßen</p>
-          <p style="margin:0;font-size:13px;color:#555;">${companyName}</p>
-          ${company?.website ? `<p style="margin:8px 0 0;font-size:12px;color:#888;"><a href="${company.website}" style="color:${brand};">${company.website}</a></p>` : ""}
-          ${company?.phone || company?.email ? `<p style="margin:4px 0 0;font-size:12px;color:#888;">${[company.phone, company.email].filter(Boolean).join(" · ")}</p>` : ""}
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>`;
+          <p style="margin:0;font-size:14px;line-height:1.6;">Bei Fragen melden Sie sich gerne.</p>`;
+
+  const footerHtml = [
+    company?.website ? `<p style="margin:8px 0 0;font-size:12px;color:#888;"><a href="${company.website}" style="color:${brand};">${company.website}</a></p>` : "",
+    company?.phone || company?.email
+      ? `<p style="margin:4px 0 0;font-size:12px;color:#888;">${[company.phone, company.email].filter(Boolean).join(" · ")}</p>`
+      : "",
+  ].join("");
+
+  return wrapEmailHtml({ baseUrl, logoUrl, companyName, bodyHtml, footerHtml });
 }
 
 export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
@@ -258,17 +260,19 @@ ${sender.usesTestDomain ? "Hinweis: Es wird die Resend-Testdomain verwendet." : 
 
 Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
 
-  const html = `<!DOCTYPE html><html lang="de"><body style="font-family:Helvetica,Arial,sans-serif;padding:24px;color:#2c2c2c;">
-    <h1 style="color:#52563e;font-size:20px;">Test-E-Mail — ${companyName}</h1>
-    <p>Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
+  const html = wrapEmailHtml({
+    baseUrl: getSiteUrl(),
+    logoUrl: BRAND.master,
+    companyName,
+    bodyHtml: `<p>Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
     <table style="background:#f8f7f4;border-radius:12px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
       <tr><td><strong>Absender:</strong> ${sender.displayFrom}</td></tr>
       <tr><td><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
       <tr><td><strong>Domain-Status:</strong> ${sender.domainStatus}</td></tr>
     </table>
     ${sender.usesTestDomain ? '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:8px;">Momentan wird die Resend-Testdomain verwendet.</p>' : '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">Ihre verifizierte Domain wird verwendet.</p>'}
-    <p style="color:#888;font-size:13px;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>
-  </body></html>`;
+    <p style="color:#888;font-size:13px;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`,
+  });
 
   await resend.emails.send({
     from: sender.from,

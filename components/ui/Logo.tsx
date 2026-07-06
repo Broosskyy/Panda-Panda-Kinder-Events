@@ -1,74 +1,90 @@
 "use client";
 
-import { useState } from "react";
 import Image from "next/image";
-import { BRAND, LOGO_ASPECT_RATIO, LOGO_HEIGHT } from "@/lib/brand";
+import { LOGO_ASPECT_RATIO, LOGO_SIZE_PX, type LogoContext } from "@/lib/brand";
+import { resolveBrandAlt, resolveBrandLogo } from "@/lib/brand/resolve";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteBrandingSettings } from "@/lib/cms/types";
 
-type LogoSize = "sm" | "md" | "lg" | "xl";
+type LogoSize = LogoContext;
 
 interface LogoProps {
-  variant?: "default" | "inverse";
+  context?: LogoSize;
   className?: string;
-  size?: LogoSize;
   branding?: SiteBrandingSettings;
-  /** Link zur Startseite (false für dekoratives Logo) */
   linked?: boolean;
+  priority?: boolean;
 }
 
-const SIZE_HEIGHT: Record<LogoSize, string> = {
-  sm: "h-8 max-h-8",
-  md: LOGO_HEIGHT.header,
-  lg: `${LOGO_HEIGHT.header} ${LOGO_HEIGHT.headerDesktop}`,
-  xl: LOGO_HEIGHT.splash,
-};
-
-function resolveLogoSrc(branding: SiteBrandingSettings, variant: "default" | "inverse"): string {
-  const custom = branding.logoUrl?.trim();
-  if (custom && custom !== "/assets/logo.png" && !custom.endsWith("/assets/logo.png")) {
-    return custom;
+function heightForContext(context: LogoSize): number {
+  switch (context) {
+    case "header":
+      return LOGO_SIZE_PX.headerMobile;
+    case "footer":
+      return LOGO_SIZE_PX.footer;
+    case "splash":
+      return LOGO_SIZE_PX.splash;
+    case "admin":
+      return LOGO_SIZE_PX.adminSidebar;
+    case "login":
+      return LOGO_SIZE_PX.login;
+    case "decorative":
+      return LOGO_SIZE_PX.decorative;
+    case "email":
+      return LOGO_SIZE_PX.email;
+    case "pdf":
+      return Math.round(LOGO_SIZE_PX.pdfWidth / LOGO_ASPECT_RATIO);
+    default:
+      return LOGO_SIZE_PX.headerMobile;
   }
-  return variant === "inverse" ? BRAND.logo.svgInverse : BRAND.logo.svg;
+}
+
+function heightClassForContext(context: LogoSize): string {
+  switch (context) {
+    case "header":
+      return "h-[46px] sm:h-[48px] md:h-[60px]";
+    case "footer":
+      return "h-12";
+    case "splash":
+      return "h-[120px] sm:h-[140px] md:h-[160px]";
+    case "admin":
+      return "h-[38px]";
+    case "login":
+      return "h-[90px]";
+    case "decorative":
+      return "h-20";
+    default:
+      return "h-12";
+  }
 }
 
 export function Logo({
-  variant = "default",
+  context = "header",
   className = "",
-  size = "md",
   branding = DEFAULT_SITE_SETTINGS.branding,
   linked = true,
+  priority,
 }: LogoProps) {
-  const [imgError, setImgError] = useState(false);
-  const textColor = variant === "inverse" ? "text-text-inverse" : "text-text-primary";
-  const subColor = variant === "inverse" ? "text-white/85" : "text-text-muted";
-  const heightClass = SIZE_HEIGHT[size];
-  const logoSrc = resolveLogoSrc(branding, variant);
-  const logoAlt = branding.logoAlt?.trim() || BRAND.logo.alt;
+  const logoSrc = resolveBrandLogo(branding, context);
+  const logoAlt = resolveBrandAlt(branding);
+  const heightPx = heightForContext(context);
+  const widthPx = Math.round(heightPx * LOGO_ASPECT_RATIO);
+  const heightClass = heightClassForContext(context);
+  const shouldPreload = priority ?? (context === "header" || context === "splash");
 
-  const inner = !imgError ? (
+  const inner = (
     <span
-      className={`relative inline-flex shrink-0 items-center ${heightClass}`}
+      className={`relative inline-flex shrink-0 items-center ${heightClass} ${className}`}
       style={{ aspectRatio: LOGO_ASPECT_RATIO }}
     >
       <Image
         src={logoSrc}
         alt={logoAlt}
-        width={BRAND.logo.width}
-        height={BRAND.logo.height}
+        width={widthPx}
+        height={heightPx}
         className={`${heightClass} w-auto max-w-none object-contain object-left`}
-        priority={size === "lg" || size === "xl"}
-        onError={() => setImgError(true)}
+        priority={shouldPreload}
       />
-    </span>
-  ) : (
-    <span className="inline-block py-0.5 leading-tight">
-      <span className={`block text-sm font-bold tracking-[0.15em] ${textColor}`}>
-        {branding.logoTextPrimary}
-      </span>
-      <span className={`block font-heading text-xs tracking-widest ${subColor}`}>
-        {branding.logoTextSecondary}
-      </span>
     </span>
   );
 
@@ -76,16 +92,29 @@ export function Logo({
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2";
 
   if (!linked) {
-    return <span className={`inline-flex shrink-0 items-center ${className}`}>{inner}</span>;
+    return inner;
   }
 
   return (
     <a
       href="#startseite"
-      className={`inline-flex shrink-0 items-center overflow-visible ${focusClass} ${className}`}
+      className={`inline-flex shrink-0 items-center overflow-visible ${focusClass}`}
       aria-label={`${branding.logoTextPrimary} — Startseite`}
     >
       {inner}
     </a>
   );
+}
+
+/** Dekoratives Logo (Formulare, leere Zustände) — ersetzt PandaMascot */
+export function BrandMark({
+  className = "",
+  branding = DEFAULT_SITE_SETTINGS.branding,
+  size = "decorative" as LogoContext,
+}: {
+  className?: string;
+  branding?: SiteBrandingSettings;
+  size?: LogoContext;
+}) {
+  return <Logo context={size} branding={branding} linked={false} className={className} />;
 }

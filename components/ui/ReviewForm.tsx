@@ -9,7 +9,7 @@ import { focusRing, inputClassName, labelClassName, textareaClassName } from "@/
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
-import { PandaMascot } from "@/components/ui/PandaMascot";
+import { BrandMark } from "@/components/ui/Logo";
 
 export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
   const [formLoadedAt] = useState(() => Date.now());
@@ -87,7 +87,7 @@ export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
   if (success) {
     return (
       <Card padding="lg" hover={false} className="text-center">
-        <PandaMascot size={90} className="mx-auto mb-6" />
+        <BrandMark className="mx-auto mb-6" />
         <div role="status" aria-live="polite">
           <p className="text-xl font-medium text-text-primary">{success}</p>
         </div>

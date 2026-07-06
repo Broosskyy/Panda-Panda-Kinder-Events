@@ -25,7 +25,7 @@ export function resolvePublicSiteUrl(settings: Pick<SiteSettingsBundle, "seo" | 
 export function resolveSeoMeta(settings: SiteSettingsBundle) {
   const base = resolvePublicSiteUrl(settings);
   const ogImage = settings.seo.ogImageUrl?.trim();
-  const ogUrl = ogImage?.startsWith("http") ? ogImage : `${base}${ogImage || BRAND.ogImage}`;
+  const ogUrl = ogImage?.startsWith("http") ? ogImage : `${base}${ogImage || BRAND.assets.ogImage}`;
 
   return {
     baseUrl: base,

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import { BrandMark } from "@/components/ui/Logo";
 import { ICON_STROKE } from "@/lib/design";
 import type { SiteProcessSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
@@ -77,13 +77,7 @@ export function Process({
           </div>
 
           <ScrollReveal delay={200} className="relative mx-auto w-52 sm:w-64 xl:w-72">
-            <Image
-              src="/panda-illustration.svg"
-              alt="Panda-Maskottchen der Panda-Bande"
-              width={288}
-              height={316}
-              className="w-full drop-shadow-xl"
-            />
+            <BrandMark className="mx-auto w-full justify-center" />
             <div className="absolute -top-3 right-0 max-w-[min(100%,13rem)] rounded-[var(--radius-card)] rounded-br-md border border-white/60 bg-bg-card/95 px-5 py-4 text-sm leading-relaxed shadow-float backdrop-blur-md sm:max-w-[220px] sm:px-6 sm:py-5 sm:text-base">
               {process.speechBubble}{" "}
               <span className="text-accent-heart" aria-hidden>

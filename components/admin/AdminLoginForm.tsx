@@ -99,7 +99,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
         className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-bg-card p-8 shadow-lg"
       >
         <div className="text-center">
-          <Logo size="md" linked={false} className="mx-auto justify-center" />
+          <Logo context="login" linked={false} className="mx-auto justify-center" />
           <h1 className="font-heading mt-5 text-2xl font-bold text-text-primary">Panda-Bande CMS</h1>
           <p className="mt-2 text-sm text-text-muted">
             {step === "credentials" ? "Admin-Anmeldung" : "Zwei-Faktor-Authentifizierung"}

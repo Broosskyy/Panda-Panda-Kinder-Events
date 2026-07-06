@@ -9,7 +9,7 @@ import { inputClassName, textareaClassName } from "@/lib/a11y";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
-import { PandaMascot } from "@/components/ui/PandaMascot";
+import { BrandMark } from "@/components/ui/Logo";
 
 const TRUST_POINTS = ["Kostenlos", "Unverbindlich", "Schnelle Rückmeldung"] as const;
 
@@ -90,7 +90,7 @@ export function InquiryForm({ privacyHint }: InquiryFormProps) {
   if (isSuccess) {
     return (
       <Card padding="lg" hover={false} className="text-center">
-        <PandaMascot size={100} className="mx-auto mb-6" />
+        <BrandMark className="mx-auto mb-6" />
         <div role="status" aria-live="polite">
           <div className="form-success-icon mx-auto" aria-hidden>
             <Check className="h-8 w-8" strokeWidth={2.5} />

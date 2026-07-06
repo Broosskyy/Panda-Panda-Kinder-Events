@@ -1,16 +1,23 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
+import { LOGO_ASPECT_RATIO, LOGO_SIZE_PX } from "@/lib/brand";
 import type { BusinessProfile } from "./company";
 import { getSiteUrl } from "@/lib/site-url";
 import { formatCents } from "./money";
 import type { CrmCustomer, CrmDocumentStatus, CrmInvoice, CrmQuote } from "./types";
 import { CRM_STATUS_LABELS } from "./types";
 
-const BRAND = rgb(0.322, 0.337, 0.243);
+const BRAND_COLOR = rgb(0.322, 0.337, 0.243);
 const TEXT = rgb(0.17, 0.17, 0.17);
 const MUTED = rgb(0.45, 0.45, 0.45);
 const LIGHT = rgb(0.97, 0.96, 0.94);
 const BORDER = rgb(0.88, 0.87, 0.84);
 const WHITE = rgb(1, 1, 1);
+
+const PAGE = { width: 595.28, height: 841.89 };
+const MARGIN = 48;
+const CONTENT_WIDTH = PAGE.width - MARGIN * 2;
+const PDF_LOGO_WIDTH = LOGO_SIZE_PX.pdfWidth;
+const PDF_LOGO_HEIGHT = PDF_LOGO_WIDTH / LOGO_ASPECT_RATIO;
 
 interface PdfLineItem {
   description: string;
@@ -38,10 +45,6 @@ export interface PdfDocumentData {
   remarks?: string | null;
   company: BusinessProfile;
 }
-
-const PAGE = { width: 595.28, height: 841.89 };
-const MARGIN = 48;
-const CONTENT_WIDTH = PAGE.width - MARGIN * 2;
 
 function formatDateDE(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -125,13 +128,13 @@ function drawHeader(
   data: PdfDocumentData,
   hasLogo: boolean,
 ) {
-  const headerH = 72;
-  page.drawRectangle({ x: 0, y: PAGE.height - headerH, width: PAGE.width, height: headerH, color: BRAND });
+  const headerH = 88;
+  page.drawRectangle({ x: 0, y: PAGE.height - headerH, width: PAGE.width, height: headerH, color: BRAND_COLOR });
 
-  const textX = hasLogo ? 92 : MARGIN;
+  const textX = hasLogo ? MARGIN + PDF_LOGO_WIDTH + 14 : MARGIN;
   page.drawText(company.companyName, {
     x: textX,
-    y: PAGE.height - 30,
+    y: PAGE.height - 28,
     size: 14,
     font: fontBold,
     color: WHITE,
@@ -170,12 +173,17 @@ export async function generateCrmPdf(data: PdfDocumentData): Promise<Uint8Array>
   const hasLogo = Boolean(logo);
   if (logo) {
     const image = logo.kind === "png" ? await pdf.embedPng(logo.bytes) : await pdf.embedJpg(logo.bytes);
-    page.drawImage(image, { x: MARGIN, y: PAGE.height - 62, width: 32, height: 32 });
+    page.drawImage(image, {
+      x: MARGIN,
+      y: PAGE.height - MARGIN - PDF_LOGO_HEIGHT + 8,
+      width: PDF_LOGO_WIDTH,
+      height: PDF_LOGO_HEIGHT,
+    });
   }
 
   drawHeader(page, font, fontBold, data.company, data, hasLogo);
 
-  let y = PAGE.height - 92;
+  let y = PAGE.height - 108;
 
   // Customer block
   const customerBlockH = 56;
@@ -207,7 +215,7 @@ export async function generateCrmPdf(data: PdfDocumentData): Promise<Uint8Array>
   const colTotal = 475;
   const rowH = 18;
 
-  page.drawRectangle({ x: MARGIN, y: y - 4, width: CONTENT_WIDTH, height: rowH, color: BRAND });
+  page.drawRectangle({ x: MARGIN, y: y - 4, width: CONTENT_WIDTH, height: rowH, color: BRAND_COLOR });
   page.drawText("Bezeichnung", { x: colDesc, y: y, size: 9, font: fontBold, color: WHITE });
   page.drawText("Menge", { x: colQty, y: y, size: 9, font: fontBold, color: WHITE });
   page.drawText("Einzelpreis", { x: colUnit, y: y, size: 9, font: fontBold, color: WHITE });
@@ -254,8 +262,8 @@ export async function generateCrmPdf(data: PdfDocumentData): Promise<Uint8Array>
   page.drawText(`MwSt. (${data.tax_rate} %)`, { x: totalsX + 10, y: ty, size: 9, font, color: MUTED });
   page.drawText(formatCents(data.tax_cents), { x: colTotal, y: ty, size: 9, font, color: TEXT });
   ty -= 16;
-  page.drawText("Gesamtbetrag", { x: totalsX + 10, y: ty, size: 11, font: fontBold, color: BRAND });
-  page.drawText(formatCents(data.total_cents), { x: colTotal, y: ty, size: 11, font: fontBold, color: BRAND });
+  page.drawText("Gesamtbetrag", { x: totalsX + 10, y: ty, size: 11, font: fontBold, color: BRAND_COLOR });
+  page.drawText(formatCents(data.total_cents), { x: colTotal, y: ty, size: 11, font: fontBold, color: BRAND_COLOR });
 
   y = ty - 24;
   const inv = data.company.invoiceSettings;
@@ -309,7 +317,7 @@ export async function generateCrmPdf(data: PdfDocumentData): Promise<Uint8Array>
   }
 
   page.drawText("Mit freundlichen Grüßen", { x: MARGIN, y: 88, size: 9, font, color: TEXT });
-  page.drawText(data.company.companyName, { x: MARGIN, y: 74, size: 10, font: fontBold, color: BRAND });
+  page.drawText(data.company.companyName, { x: MARGIN, y: 74, size: 10, font: fontBold, color: BRAND_COLOR });
 
   drawFooter(page, font, data.company);
 

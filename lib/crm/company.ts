@@ -1,13 +1,8 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { BRAND } from "@/lib/brand";
+import { resolveBrandLogo } from "@/lib/brand/resolve";
 import type { SiteBankSettings, SiteBusinessSettings, SiteInvoiceSettings } from "@/lib/cms/types";
 import { getSiteUrl } from "@/lib/site-url";
-
-function resolvePdfLogoUrl(url: string): string {
-  if (!url) return BRAND.logo.png;
-  if (url.endsWith(".svg")) return BRAND.logo.png;
-  return url;
-}
 
 export type BusinessProfile = SiteBusinessSettings & SiteBankSettings & {
   formattedAddress: string;
@@ -39,7 +34,7 @@ export async function getBusinessProfile(): Promise<BusinessProfile> {
     ...b,
     ...bank,
     companyName: b.companyName || settings.footer.copyrightName || branding.logoTextPrimary,
-    logoUrl: resolvePdfLogoUrl(b.logoUrl || branding.logoUrl),
+    logoUrl: resolveBrandLogo(branding, "pdf"),
     phone: b.phone || contact.phone,
     email: b.email || contact.email,
     website: b.website || getSiteUrl(),
@@ -53,5 +48,6 @@ export async function getBusinessProfile(): Promise<BusinessProfile> {
     defaultQuoteText: invoice.quoteIntroText,
     defaultInvoiceText: invoice.invoiceIntroText,
     defaultPaymentText: invoice.paymentInfoText,
+    faviconUrl: branding.faviconUrl || BRAND.assets.favicon32,
   };
 }

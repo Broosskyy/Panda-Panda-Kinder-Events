@@ -2,6 +2,27 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.0-checkpoint] — 2026-07-06 — Project Checkpoint + Backup + Analysis
+
+### Dokumentation
+- `PROJECT_MASTER_GUIDE.md` — Einstieg für absolute Anfänger
+- `PROJECT_STRUCTURE.md`, `FEATURE_OVERVIEW.md`
+- `SUPABASE_BACKUP_AND_SCHEMA.md`, `SUPABASE_RESTORE_GUIDE.md`, `STORAGE_GUIDE.md`
+- `ADMIN_USER_MANUAL.md`, `TECHNICAL_RUNBOOK.md`
+- `FULL_TEST_CHECKLIST.md`, `RISK_ANALYSIS.md`, `RELEASE_STATUS.md`, `NEXT_STEPS_ROADMAP.md`
+- `CHECKPOINT_V1_SUMMARY.md`, `PROJECT_CHECKPOINT_REPORT.md`
+
+### Backup & Export
+- `backups/checkpoint-v1/` — Backup-Guides, ENV-Template, Restore-Checkliste
+- `scripts/export-cms.mjs` → `npm run export:cms`
+- `scripts/export-crm.mjs` → `npm run export:crm`
+
+### Validierung
+- `npm run lint`, `typecheck`, `build`, `test:crm` — bestanden
+
+### Git Tag
+- `v1.0-checkpoint` (siehe `CHECKPOINT_V1_SUMMARY.md`)
+
 ## [1.0.0-rc.2] — 2026-07-06 — Team / Users / 2FA Cleanup
 
 ### Klare Trennung

@@ -1,6 +1,5 @@
-# Branding Assets
+# Branding
 
-Generierte Open-Graph-Bilder und Browser-Konfiguration.
+**OG-Bild:** `og-image.png` (1200×630, aus Icon-Master generiert)
 
-**Master-Logo:** `/assets/Logo.png`  
-**Favicon/PWA-Icons:** `/icons/panda-icon-*.png` (via `npm run generate:brand-assets`)
+**Favicon/PWA-Icons:** Standard-Dateien in `/public/` (via `npm run generate:brand-assets` aus `/assets/logo.png`)

@@ -40,7 +40,15 @@ function mergeSectionHeadings(
 function normalizeBrandingIcons(
   branding: SiteSettingsBundle["branding"],
 ): SiteSettingsBundle["branding"] {
-  const legacy = ["/branding/favicon", "/branding/icon", "/icons/panda-mark", "/assets/logo.png", "/assets/appicon"];
+  const legacy = [
+    "/branding/favicon",
+    "/branding/icon",
+    "/icons/panda-",
+    "/icons/panda-mark",
+    "/favicon.png",
+    "/assets/logo.png",
+    "/assets/appicon",
+  ];
   const clean = (url: string | undefined, fallback: string) => {
     const t = url?.trim();
     if (!t) return fallback;

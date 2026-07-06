@@ -12,6 +12,7 @@ import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { CONTROL_CENTER_TABS, type ControlCenterTab } from "@/lib/cms/settings-compat";
+import { BRAND, withIconVersion } from "@/lib/brand";
 import { formatDocumentNumberPreview, resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
 import type {
   SiteBankSettings,
@@ -335,7 +336,7 @@ export function SettingsView() {
               <p className="text-sm tracking-widest text-text-muted">{branding.logoTextSecondary}</p>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={branding.faviconUrl || "/favicon.png?v=6"} alt="Tab-Icon Vorschau" className="h-12 w-12 rounded-lg border border-border object-contain bg-[#f4f1ea]" />
+            <img src={branding.faviconUrl || withIconVersion(BRAND.assets.faviconPng)} alt="Tab-Icon Vorschau" className="h-12 w-12 rounded-lg border border-border object-contain bg-[#f4f1ea]" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <AdminFormField

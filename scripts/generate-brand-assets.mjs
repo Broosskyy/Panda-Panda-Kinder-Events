@@ -1,6 +1,6 @@
 /**
- * Generiert Favicon/PWA-Icons direkt aus /public/assets/Logo.png
- * Exakt dasselbe Logo wie Header/Splash — nur verkleinert (object-fit: contain)
+ * Generiert Favicon/PWA-Icons aus /public/assets/logo.png (Icon-Master).
+ * Header/CMS-Logo bleibt /assets/Logo.png — nur Browser- und App-Icons.
  * Ausführen: npm run generate:brand-assets
  */
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
@@ -9,18 +9,18 @@ import { fileURLToPath } from "node:url";
 import toIco from "to-ico";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const iconsDir = join(root, "public/icons");
+const publicDir = join(root, "public");
 const brandingDir = join(root, "public/branding");
 const appDir = join(root, "src/app");
-const masterLogo = join(root, "public/assets/Logo.png");
+const masterLogo = join(root, "public/assets/logo.png");
 const BG = "#f4f1ea";
-const ICON_VERSION = "6";
+const ICON_VERSION = "7";
 
-/** Logo.png 640×160 — vollständiges Kombi-Logo proportional in Quadrat einpassen */
-async function renderLogoIcon(sharp, logoBuffer, size, { maskable = false, padding = 0.06 } = {}) {
+/** logo.png proportional in Quadrat einpassen */
+async function renderLogoIcon(sharp, logoBuffer, size, { padding = 0.06, maskable: _maskable = false } = {}) {
   const meta = await sharp(logoBuffer).metadata();
-  const logoW = meta.width ?? 640;
-  const logoH = meta.height ?? 160;
+  const logoW = meta.width ?? 1536;
+  const logoH = meta.height ?? 1024;
   const aspect = logoW / logoH;
 
   const inner = Math.round(size * (1 - padding * 2));
@@ -36,14 +36,12 @@ async function renderLogoIcon(sharp, logoBuffer, size, { maskable = false, paddi
     .png()
     .toBuffer();
 
-  const bg = BG;
-
   return sharp({
     create: {
       width: size,
       height: size,
       channels: 4,
-      background: bg,
+      background: BG,
     },
   }).composite([{ input: logoRendered, gravity: "centre" }]);
 }
@@ -57,57 +55,51 @@ async function main() {
     process.exit(1);
   }
 
-  mkdirSync(iconsDir, { recursive: true });
+  mkdirSync(publicDir, { recursive: true });
   mkdirSync(brandingDir, { recursive: true });
   mkdirSync(appDir, { recursive: true });
 
   const logo = readFileSync(masterLogo);
   const meta = await sharp(logo).metadata();
-  console.log(`Icon-Quelle: public/assets/Logo.png (${meta.width}×${meta.height})`);
+  console.log(`Icon-Quelle: public/assets/logo.png (${meta.width}×${meta.height})`);
 
   const faviconSizes = [
-    { file: "panda-icon-16.png", size: 16 },
-    { file: "panda-icon-32.png", size: 32 },
-    { file: "panda-icon-48.png", size: 48 },
-    { file: "panda-icon-64.png", size: 64 },
+    { file: "favicon-16x16.png", size: 16 },
+    { file: "favicon-32x32.png", size: 32 },
   ];
 
   const icoBuffers = [];
 
   for (const { file, size } of faviconSizes) {
     const buf = await (await renderLogoIcon(sharp, logo, size, { padding: 0.04 })).png().toBuffer();
-    writeFileSync(join(iconsDir, file), buf);
-    if (size <= 48) icoBuffers.push(buf);
-    console.log(`✓ public/icons/${file}`);
+    writeFileSync(join(publicDir, file), buf);
+    icoBuffers.push(buf);
+    console.log(`✓ public/${file}`);
   }
 
   const faviconIco = await toIco(icoBuffers);
-  writeFileSync(join(iconsDir, "favicon.ico"), faviconIco);
-  writeFileSync(join(root, "public/favicon.ico"), faviconIco);
+  writeFileSync(join(publicDir, "favicon.ico"), faviconIco);
   console.log("✓ public/favicon.ico");
 
   const appleBuf = await (await renderLogoIcon(sharp, logo, 180, { padding: 0.06 })).png().toBuffer();
-  writeFileSync(join(iconsDir, "panda-apple-touch-icon.png"), appleBuf);
-  console.log("✓ public/icons/panda-apple-touch-icon.png");
-
-  const favicon512Buf = await (await renderLogoIcon(sharp, logo, 512, { padding: 0.06 })).png().toBuffer();
-  writeFileSync(join(root, "public/favicon.png"), favicon512Buf);
-  console.log("✓ public/favicon.png");
+  writeFileSync(join(publicDir, "apple-touch-icon.png"), appleBuf);
+  console.log("✓ public/apple-touch-icon.png");
 
   const pwaSizes = [
-    { file: "panda-icon-192.png", size: 192, maskable: false },
-    { file: "panda-icon-512.png", size: 512, maskable: false },
-    { file: "panda-icon-maskable-512.png", size: 512, maskable: true },
+    { file: "android-chrome-192x192.png", size: 192, maskable: false },
+    { file: "android-chrome-512x512.png", size: 512, maskable: false },
+    { file: "android-chrome-maskable-512x512.png", size: 512, maskable: true },
+    { file: "mstile-150x150.png", size: 150, maskable: false },
   ];
 
   for (const { file, size, maskable } of pwaSizes) {
     await (await renderLogoIcon(sharp, logo, size, { maskable, padding: maskable ? 0.12 : 0.06 }))
       .png()
-      .toFile(join(iconsDir, file));
-    console.log(`✓ public/icons/${file}`);
+      .toFile(join(publicDir, file));
+    console.log(`✓ public/${file}`);
   }
 
-  const icon32 = readFileSync(join(iconsDir, "panda-icon-32.png"));
+  const icon32 = readFileSync(join(publicDir, "favicon-32x32.png"));
   writeFileSync(join(appDir, "icon.png"), icon32);
   writeFileSync(join(appDir, "favicon.ico"), faviconIco);
   writeFileSync(join(appDir, "apple-icon.png"), appleBuf);
@@ -132,7 +124,7 @@ async function main() {
 <browserconfig>
   <msapplication>
     <tile>
-      <square150x150logo src="/icons/panda-icon-192.png?v=${ICON_VERSION}"/>
+      <square150x150logo src="/mstile-150x150.png?v=${ICON_VERSION}"/>
       <TileColor>#52563e</TileColor>
     </tile>
   </msapplication>
@@ -140,7 +132,7 @@ async function main() {
   writeFileSync(join(brandingDir, "browserconfig.xml"), browserConfig);
   console.log("✓ public/branding/browserconfig.xml");
 
-  console.log("\nFertig — Tab/Favicon/PWA = Logo.png verkleinert (exakt dasselbe Logo).");
+  console.log(`\nFertig — Icons aus logo.png (v${ICON_VERSION}). Header-Logo unverändert: /assets/Logo.png`);
 }
 
 main().catch((err) => {

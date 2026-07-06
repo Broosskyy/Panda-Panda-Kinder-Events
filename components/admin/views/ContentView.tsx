@@ -585,57 +585,16 @@ export function ContentView() {
         </button>
       </AdminCard>
 
-      <AdminCard title="Öffentliches Team (Website)">
-        <div className="grid gap-3 md:grid-cols-2">
-          <input className="admin-input" placeholder="Team-Titel" value={settings.publicTeam.title} onChange={(e) => setSettings({ ...settings, publicTeam: { ...settings.publicTeam, title: e.target.value } })} />
-          <input className="admin-input" placeholder="Team-Untertitel" value={settings.publicTeam.subtitle} onChange={(e) => setSettings({ ...settings, publicTeam: { ...settings.publicTeam, subtitle: e.target.value } })} />
-        </div>
-        <div className="mt-4 space-y-4">
-          {settings.publicTeam.items.map((member, index) => (
-            <div key={index} className="rounded-xl border border-border p-3">
-              <div className="grid gap-2 md:grid-cols-2">
-                <input className="admin-input" placeholder="Name" value={member.name} onChange={(e) => {
-                  const items = [...settings.publicTeam.items];
-                  items[index] = { ...items[index], name: e.target.value };
-                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
-                }} />
-                <input className="admin-input" placeholder="Rolle" value={member.role} onChange={(e) => {
-                  const items = [...settings.publicTeam.items];
-                  items[index] = { ...items[index], role: e.target.value };
-                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
-                }} />
-                <textarea className="admin-input min-h-20 md:col-span-2" placeholder="Beschreibung" value={member.description} onChange={(e) => {
-                  const items = [...settings.publicTeam.items];
-                  items[index] = { ...items[index], description: e.target.value };
-                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
-                }} />
-                <input className="admin-input md:col-span-2" placeholder="Bild-URL" value={member.imageUrl} onChange={(e) => {
-                  const items = [...settings.publicTeam.items];
-                  items[index] = { ...items[index], imageUrl: e.target.value };
-                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
-                }} />
-              </div>
-              <button type="button" className="admin-btn-danger mt-2" onClick={() => {
-                const items = settings.publicTeam.items.filter((_, i) => i !== index);
-                setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
-              }}>
-                <Trash2 className="h-4 w-4" /> Entfernen
-              </button>
-            </div>
-          ))}
-          <button type="button" className="admin-btn-secondary" onClick={() => setSettings({
-            ...settings,
-            publicTeam: {
-              ...settings.publicTeam,
-              items: [...settings.publicTeam.items, { name: "", role: "", description: "", imageUrl: "" }],
-            },
-          })}>
-            <Plus className="h-4 w-4" /> Teammitglied hinzufügen
-          </button>
-        </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("publicTeam")}>
-          <Save className="h-4 w-4" /> Team speichern
-        </button>
+      <AdminCard title="Öffentliches Team">
+        <p className="text-sm text-text-secondary">
+          Teammitglieder für die Website werden unter{" "}
+          <a href="/admin/team" className="font-medium text-primary underline">Website → Team</a>{" "}
+          verwaltet. Dort legst du Name, Position, Foto und Sichtbarkeit fest.
+        </p>
+        <p className="mt-2 text-sm text-text-muted">
+          Aktueller Titel: <strong>{settings.publicTeam.title}</strong>
+          {settings.publicTeam.subtitle ? ` — ${settings.publicTeam.subtitle}` : ""}
+        </p>
       </AdminCard>
 
       <AdminCard title="Footer">

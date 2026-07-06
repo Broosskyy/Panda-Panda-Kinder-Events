@@ -1,4 +1,4 @@
-import type { TeamMemberRole } from "@/lib/cms/types";
+export type TeamMemberRole = "admin" | "editor" | "readonly";
 
 export const TEAM_ROLE_LABELS: Record<TeamMemberRole, string> = {
   admin: "Admin",

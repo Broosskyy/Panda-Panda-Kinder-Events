@@ -1,14 +1,19 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  Cpu,
   FileText,
   HelpCircle,
+  History,
   Home,
   Image,
   Inbox,
   Layout,
+  Mail,
+  Monitor,
   Newspaper,
   Receipt,
+  ScrollText,
   Settings,
   Shield,
   Sparkles,
@@ -33,6 +38,11 @@ export const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
   UserCog,
   Settings,
   Shield,
+  Monitor,
+  History,
+  ScrollText,
+  Mail,
+  Cpu,
 };
 
 export function resolveAdminIcon(key: string): LucideIcon {

@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { RefreshCw, Save, Send } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
@@ -30,6 +32,8 @@ const CUSTOM_ADDRESS_LABELS: { key: keyof SiteEmailCustomAddresses; label: strin
 ];
 
 export function SettingsView() {
+  const searchParams = useSearchParams();
+  const tab = searchParams.get("tab") ?? "business";
   const [debug, setDebug] = useState<{
     configured: boolean;
     fetchedAt: string;
@@ -155,9 +159,27 @@ export function SettingsView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Einstellungen" description="E-Mail, Unternehmensdaten, Admin-Zugang und Systemhinweise." />
+      <AdminPageHeader title="Einstellungen" description="Unternehmensdaten, E-Mail und System." />
 
-      {email ? (
+      <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">
+        {[
+          { id: "business", label: "Unternehmensdaten", href: "/admin/einstellungen" },
+          { id: "email", label: "E-Mail", href: "/admin/einstellungen?tab=email" },
+          { id: "system", label: "System", href: "/admin/einstellungen?tab=system" },
+        ].map((item) => (
+          <Link
+            key={item.id}
+            href={item.href}
+            className={`rounded-full px-4 py-2 text-sm font-medium ${
+              tab === item.id ? "bg-primary text-white" : "border border-border bg-bg-card text-text-secondary"
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
+      {tab === "email" && email ? (
         <AdminCard title="E-Mail">
           {usesTestDomain ? (
             <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -267,7 +289,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {business ? (
+      {tab === "business" && business ? (
         <AdminCard title="Unternehmensdaten">
           <p className="mb-4 text-sm text-text-muted">
             Diese Daten werden in PDFs, E-Mails und Admin-Anzeigen verwendet.
@@ -333,10 +355,13 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
+      {tab === "system" ? (
+      <>
       <AdminCard title="Zugang">
         <p className="text-sm text-text-secondary">
-          Der Admin-Bereich ist durch <code className="rounded bg-bg-secondary px-1">ADMIN_PASSWORD</code> geschützt.
-          E-Mail-Versand erfordert <code className="rounded bg-bg-secondary px-1">RESEND_API_KEY</code> in den Umgebungsvariablen.
+          Admin-Benutzer und 2FA verwaltest du unter{" "}
+          <Link href="/admin/sicherheit/benutzer" className="text-primary underline">Sicherheit → Benutzer & Rollen</Link>.
+          Legacy-Zugang per <code className="rounded bg-bg-secondary px-1">ADMIN_PASSWORD</code>, solange kein Benutzer existiert.
         </p>
       </AdminCard>
 
@@ -358,6 +383,8 @@ export function SettingsView() {
           </ul>
         ) : null}
       </AdminCard>
+      </>
+      ) : null}
     </div>
   );
 }

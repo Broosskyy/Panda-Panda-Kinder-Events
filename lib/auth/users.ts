@@ -53,13 +53,14 @@ export async function listUsers(): Promise<AdminUserPublic[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("admin_users")
-    .select("*, admin_roles(slug, label)")
+    .select("*, admin_roles(slug, label), team_members(name)")
     .order("display_name");
 
   if (error) throw new Error(error.message);
 
   return (data ?? []).map((row) => {
     const role = row.admin_roles as { slug: AdminRoleSlug; label: string } | null;
+    const teamMember = row.team_members as { name: string } | null;
     return {
       id: row.id,
       username: row.username,
@@ -73,6 +74,8 @@ export async function listUsers(): Promise<AdminUserPublic[]> {
       phone: row.phone,
       totp_enabled: row.totp_enabled,
       last_login: row.last_login,
+      team_member_id: row.team_member_id ?? null,
+      team_member_name: teamMember?.name ?? null,
       created_at: row.created_at,
       updated_at: row.updated_at,
     };
@@ -88,6 +91,7 @@ export async function createUser(input: {
   phone?: string;
   avatar?: string;
   createdBy?: string;
+  teamMemberId?: string | null;
 }): Promise<AdminUserPublic> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -101,6 +105,7 @@ export async function createUser(input: {
       phone: input.phone?.trim() || null,
       avatar: input.avatar || null,
       created_by: input.createdBy ?? null,
+      team_member_id: input.teamMemberId ?? null,
     })
     .select("*, admin_roles(slug, label)")
     .single();
@@ -120,6 +125,8 @@ export async function createUser(input: {
     phone: data.phone,
     totp_enabled: data.totp_enabled,
     last_login: data.last_login,
+    team_member_id: data.team_member_id ?? null,
+    team_member_name: null,
     created_at: data.created_at,
     updated_at: data.updated_at,
   };
@@ -141,6 +148,7 @@ export async function updateUser(
     failedLoginAttempts: number;
     lockedUntil: string | null;
     lastLogin: string;
+    teamMemberId: string | null;
   }>,
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -159,6 +167,7 @@ export async function updateUser(
   if (patch.failedLoginAttempts !== undefined) update.failed_login_attempts = patch.failedLoginAttempts;
   if (patch.lockedUntil !== undefined) update.locked_until = patch.lockedUntil;
   if (patch.lastLogin !== undefined) update.last_login = patch.lastLogin;
+  if (patch.teamMemberId !== undefined) update.team_member_id = patch.teamMemberId;
 
   const { error } = await supabase.from("admin_users").update(update).eq("id", id);
   if (error) throw new Error(error.message);

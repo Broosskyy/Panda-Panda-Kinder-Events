@@ -46,6 +46,8 @@ export interface AdminUserPublic {
   phone: string | null;
   totp_enabled: boolean;
   last_login: string | null;
+  team_member_id: string | null;
+  team_member_name: string | null;
   created_at: string;
   updated_at: string;
 }

@@ -176,8 +176,6 @@ export interface SiteBusinessSettings {
   senderEmail: string;
 }
 
-export type TeamMemberRole = "admin" | "editor" | "readonly";
-
 export interface TeamSocialLinks {
   linkedin?: string;
   instagram?: string;
@@ -189,13 +187,11 @@ export interface TeamSocialLinks {
 export interface TeamMember {
   id: string;
   name: string;
-  email: string;
-  role: TeamMemberRole;
+  email?: string;
   active: boolean;
+  display_name?: string;
   first_name?: string;
   last_name?: string;
-  username?: string | null;
-  display_name?: string;
   title?: string;
   position?: string;
   description?: string;

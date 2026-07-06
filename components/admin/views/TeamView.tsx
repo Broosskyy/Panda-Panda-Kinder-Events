@@ -1,39 +1,29 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Archive, Pencil, Plus, Trash2, UserCog } from "lucide-react";
+import { Archive, Pencil, Plus, Trash2, Users } from "lucide-react";
+import Link from "next/link";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
-import { TEAM_ROLE_LABELS } from "@/lib/admin/roles";
-import type { TeamMember, TeamMemberRole, TeamSocialLinks } from "@/lib/cms/types";
-
-const ROLE_OPTIONS: { value: TeamMemberRole; label: string }[] = [
-  { value: "admin", label: TEAM_ROLE_LABELS.admin },
-  { value: "editor", label: TEAM_ROLE_LABELS.editor },
-  { value: "readonly", label: TEAM_ROLE_LABELS.readonly },
-];
+import type { TeamMember, TeamSocialLinks } from "@/lib/cms/types";
 
 const emptyForm = () => ({
-  firstName: "",
-  lastName: "",
-  username: "",
-  displayName: "",
-  email: "",
-  title: "",
+  name: "",
   position: "",
   description: "",
   profileImageUrl: "",
   phone: "",
+  email: "",
   socialLinks: { linkedin: "", instagram: "", facebook: "", website: "" } as TeamSocialLinks,
   sortOrder: 0,
-  role: "editor" as TeamMemberRole,
   active: true,
 });
 
 export function TeamView() {
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [section, setSection] = useState({ title: "Unser Team", subtitle: "" });
   const [configured, setConfigured] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -46,6 +36,7 @@ export function TeamView() {
     if (res.ok) {
       setMembers(data.members ?? []);
       setConfigured(data.configured !== false);
+      if (data.section) setSection(data.section);
     } else {
       toast(data.error ?? "Laden fehlgeschlagen", "error");
     }
@@ -54,6 +45,21 @@ export function TeamView() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const saveSection = async () => {
+    await withLoading(
+      (async () => {
+        const res = await fetch("/api/admin/team", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
+        toast(data.message ?? "Überschrift gespeichert");
+      })(),
+    );
+  };
 
   const openCreate = () => {
     setEditingId(null);
@@ -64,16 +70,12 @@ export function TeamView() {
   const openEdit = (member: TeamMember) => {
     setEditingId(member.id);
     setForm({
-      firstName: member.first_name ?? "",
-      lastName: member.last_name ?? "",
-      username: member.username ?? "",
-      displayName: member.display_name ?? member.name,
-      email: member.email,
-      title: member.title ?? "",
+      name: member.name,
       position: member.position ?? "",
       description: member.description ?? "",
       profileImageUrl: member.profile_image_url ?? "",
       phone: member.phone ?? "",
+      email: member.email ?? "",
       socialLinks: {
         linkedin: member.social_links?.linkedin ?? "",
         instagram: member.social_links?.instagram ?? "",
@@ -81,37 +83,20 @@ export function TeamView() {
         website: member.social_links?.website ?? "",
       },
       sortOrder: member.sort_order ?? 0,
-      role: member.role,
       active: member.active,
     });
     setShowForm(true);
   };
 
   const save = async () => {
-    if (!form.email.trim()) return toast("E-Mail erforderlich", "error");
+    if (!form.name.trim()) return toast("Name ist ein Pflichtfeld.", "error");
+    if (!form.position.trim()) return toast("Position ist ein Pflichtfeld.", "error");
     await withLoading(
       (async () => {
-        const payload = {
-          firstName: form.firstName,
-          lastName: form.lastName,
-          username: form.username || undefined,
-          displayName: form.displayName,
-          email: form.email,
-          title: form.title,
-          position: form.position,
-          description: form.description,
-          profileImageUrl: form.profileImageUrl,
-          phone: form.phone,
-          socialLinks: form.socialLinks,
-          sortOrder: form.sortOrder,
-          role: form.role,
-          active: form.active,
-        };
-
         const res = await fetch("/api/admin/team", {
           method: editingId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editingId ? { id: editingId, ...payload } : payload),
+          body: JSON.stringify(editingId ? { id: editingId, ...form } : form),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
@@ -124,7 +109,7 @@ export function TeamView() {
     );
   };
 
-  const toggleActive = async (member: TeamMember) => {
+  const toggleVisible = async (member: TeamMember) => {
     const res = await fetch("/api/admin/team", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -132,6 +117,7 @@ export function TeamView() {
     });
     const data = await res.json();
     if (!res.ok) return toast(data.error ?? "Fehler", "error");
+    toast(member.active ? "Auf Website ausgeblendet" : "Auf Website sichtbar");
     await load();
   };
 
@@ -142,8 +128,10 @@ export function TeamView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, archived: true, active: false }),
     });
-    const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Fehler", "error");
+    if (!res.ok) {
+      const data = await res.json();
+      return toast(data.error ?? "Fehler", "error");
+    }
     toast("Archiviert");
     await load();
   };
@@ -155,8 +143,10 @@ export function TeamView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
     });
-    const data = await res.json();
-    if (!res.ok) return toast(data.error ?? "Fehler", "error");
+    if (!res.ok) {
+      const data = await res.json();
+      return toast(data.error ?? "Fehler", "error");
+    }
     toast("Entfernt");
     await load();
   };
@@ -167,76 +157,72 @@ export function TeamView() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Team"
-        description="Teammitglieder mit Profil, Kontakt und Social Links verwalten."
+        title="Öffentliches Team"
+        description="Personen, die auf der Website sichtbar sind. Keine Login-Rechte — dafür gibt es Admin-Benutzer unter Sicherheit."
       >
         <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
           Teammitglied anlegen
         </AdminButton>
       </AdminPageHeader>
 
+      <AdminCard>
+        <p className="text-sm text-text-secondary">
+          Teammitglieder erscheinen auf der Website im Bereich „Über uns“, wenn sie als <strong>sichtbar</strong> markiert sind.
+          Admin-Zugang verwaltest du unter{" "}
+          <Link href="/admin/sicherheit/benutzer" className="text-primary underline">Sicherheit → Benutzer & Rollen</Link>.
+        </p>
+      </AdminCard>
+
       {!configured ? (
         <AdminCard>
           <p className="text-sm text-accent-heart">
-            Die Tabelle <code>team_members</code> ist noch nicht migriert. Bitte Migration{" "}
-            <code>20260712_security_admin_v1.sql</code> ausführen.
+            Datenbank-Migration ausführen: <code>20260712_security_admin_v1.sql</code>
           </p>
         </AdminCard>
       ) : null}
 
+      <AdminCard title="Team-Bereich auf der Website">
+        <div className="grid gap-4 md:grid-cols-2">
+          <AdminFormField label="Überschrift" required hint="Wird über dem Team auf der Website angezeigt.">
+            <input className="admin-input" value={section.title} onChange={(e) => setSection({ ...section, title: e.target.value })} />
+          </AdminFormField>
+          <AdminFormField label="Untertitel" hint="Optionaler Text unter der Überschrift.">
+            <input className="admin-input" value={section.subtitle} onChange={(e) => setSection({ ...section, subtitle: e.target.value })} />
+          </AdminFormField>
+        </div>
+        <div className="mt-4">
+          <AdminButton variant="secondary" onClick={() => void saveSection()}>Überschrift speichern</AdminButton>
+        </div>
+      </AdminCard>
+
       {showForm ? (
         <AdminCard title={editingId ? "Teammitglied bearbeiten" : "Neues Teammitglied"}>
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Vorname">
-              <input className="admin-input" value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+            <AdminFormField label="Name" required hint="Vollständiger Name auf der Website.">
+              <input className="admin-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="Nachname">
-              <input className="admin-input" value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Benutzername">
-              <input className="admin-input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Anzeigename">
-              <input className="admin-input" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="E-Mail" required>
-              <input className="admin-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Telefon">
-              <input className="admin-input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Titel">
-              <input className="admin-input" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Position">
+            <AdminFormField label="Position" required hint="z. B. Gründerin, Event-Betreuung">
               <input className="admin-input" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="Profilbild URL" className="md:col-span-2">
+            <AdminFormField label="Foto-URL" hint="Profilbild für die Teamkarte." className="md:col-span-2">
               <input className="admin-input" value={form.profileImageUrl} onChange={(e) => setForm({ ...form, profileImageUrl: e.target.value })} />
             </AdminFormField>
             <AdminFormField label="Beschreibung" className="md:col-span-2">
               <textarea className="admin-input min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="LinkedIn">
-              <input className="admin-input" value={form.socialLinks.linkedin ?? ""} onChange={(e) => setForm({ ...form, socialLinks: { ...form.socialLinks, linkedin: e.target.value } })} />
+            <AdminFormField label="Telefon" hint="Optional, nicht öffentlich auf der Karte.">
+              <input className="admin-input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="Instagram">
-              <input className="admin-input" value={form.socialLinks.instagram ?? ""} onChange={(e) => setForm({ ...form, socialLinks: { ...form.socialLinks, instagram: e.target.value } })} />
+            <AdminFormField label="E-Mail" hint="Optional, nicht öffentlich auf der Karte.">
+              <input className="admin-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="Reihenfolge">
+            <AdminFormField label="Reihenfolge" hint="Kleinere Zahl = weiter oben.">
               <input className="admin-input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} />
             </AdminFormField>
-            <AdminFormField label="Rolle" required>
-              <select className="admin-input" value={form.role} onChange={(e) => setForm({ ...form, role: e.target.value as TeamMemberRole })}>
-                {ROLE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </AdminFormField>
-            <AdminFormField label="Status">
+            <AdminFormField label="Sichtbar auf Website" required>
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
-                Aktiv
+                Auf der Website anzeigen
               </label>
             </AdminFormField>
           </div>
@@ -249,9 +235,9 @@ export function TeamView() {
 
       {activeMembers.length === 0 && !showForm ? (
         <AdminEmptyState
-          icon={UserCog}
+          icon={Users}
           title="Noch keine Teammitglieder"
-          description="Lege Teammitglieder mit vollständigem Profil an."
+          description="Lege öffentliche Teammitglieder an — sie erscheinen auf der Website, wenn sichtbar."
           actionLabel="Teammitglied anlegen"
           onAction={openCreate}
         />
@@ -266,19 +252,20 @@ export function TeamView() {
                     <img src={m.profile_image_url} alt="" className="h-14 w-14 rounded-full object-cover" />
                   ) : null}
                   <div>
-                    <p className="font-semibold text-text-primary">{m.display_name || m.name}</p>
-                    <p className="text-sm text-text-muted">{m.position || m.title}</p>
-                    <p className="text-sm text-text-muted">{m.email}</p>
-                    <div className="mt-2 flex flex-wrap gap-2">
-                      <AdminStatusBadge label={TEAM_ROLE_LABELS[m.role]} variant="default" />
-                      <AdminStatusBadge label={m.active ? "Aktiv" : "Inaktiv"} variant={m.active ? "success" : "muted"} />
+                    <p className="font-semibold text-text-primary">{m.name}</p>
+                    <p className="text-sm text-text-muted">{m.position}</p>
+                    <div className="mt-2">
+                      <AdminStatusBadge
+                        label={m.active ? "Sichtbar" : "Ausgeblendet"}
+                        variant={m.active ? "success" : "muted"}
+                      />
                     </div>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(m)}>Bearbeiten</AdminButton>
-                  <AdminButton variant="secondary" onClick={() => void toggleActive(m)}>
-                    {m.active ? "Deaktivieren" : "Aktivieren"}
+                  <AdminButton variant="secondary" onClick={() => void toggleVisible(m)}>
+                    {m.active ? "Ausblenden" : "Sichtbar machen"}
                   </AdminButton>
                   <AdminButton variant="secondary" icon={<Archive className="h-4 w-4" />} onClick={() => void archive(m.id)}>Archivieren</AdminButton>
                   <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void remove(m.id)}>Löschen</AdminButton>
@@ -294,7 +281,7 @@ export function TeamView() {
           <div className="space-y-2">
             {archivedMembers.map((m) => (
               <div key={m.id} className="flex items-center justify-between text-sm">
-                <span>{m.display_name || m.name}</span>
+                <span>{m.name}</span>
                 <AdminButton variant="secondary" onClick={() => void remove(m.id)}>Löschen</AdminButton>
               </div>
             ))}

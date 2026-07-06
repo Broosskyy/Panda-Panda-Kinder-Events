@@ -5,10 +5,12 @@ import {
   getEmailSettings,
   getInquiryRecipient,
   resolveEmailSender,
+  resolveFlowEmailSender,
+  applyEmailTemplate,
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
 
-export { RESEND_TEST_FROM, checkResendDomainStatus, getCopyEmailForDocument, getEmailSettings, getInquiryRecipient, resolveEmailSender } from "@/lib/email/sender";
+export { RESEND_TEST_FROM, checkResendDomainStatus, getCopyEmailForDocument, getEmailSettings, getInquiryRecipient, resolveEmailSender, resolveFlowEmailSender, applyEmailTemplate } from "@/lib/email/sender";
 export type { EmailDomainCheck, EmailDomainStatus, ResolvedEmailSender } from "@/lib/email/sender";
 
 export function isResendConfigured(): boolean {
@@ -50,6 +52,8 @@ export async function sendInquiryNotification(data: InquiryEmailData) {
   const emailSettings = await getEmailSettings();
   const sender = await resolveEmailSender(emailSettings);
   const to = getInquiryRecipient(emailSettings);
+  const companyName = emailSettings.companyName;
+  const subject = `Neue Anfrage — ${data.eventType} (${data.name})`;
 
   const lines = [
     `Name: ${data.name}`,
@@ -68,9 +72,33 @@ export async function sendInquiryNotification(data: InquiryEmailData) {
     from: sender.from,
     to,
     replyTo: data.email,
-    subject: `Neue Anfrage — ${data.eventType} (${data.name})`,
+    subject,
     text: `Neue Buchungsanfrage über die Website:\n\n${lines.join("\n")}`,
   });
+
+  if (emailSettings.inquiryCopyTo?.trim()) {
+    await resend.emails.send({
+      from: sender.from,
+      to: emailSettings.inquiryCopyTo.trim(),
+      replyTo: data.email,
+      subject: `[Kopie] ${subject}`,
+      text: `Kopie der Anfrage:\n\n${lines.join("\n")}`,
+    });
+  }
+
+  if (emailSettings.inquiryAutoReplyEnabled && data.email) {
+    const autoText = applyEmailTemplate(emailSettings.inquiryAutoReplyText, {
+      name: data.name,
+      company: companyName,
+    });
+    await resend.emails.send({
+      from: sender.from,
+      to: data.email,
+      replyTo: sender.replyTo,
+      subject: applyEmailTemplate(emailSettings.inquiryAutoReplySubject, { name: data.name, company: companyName }),
+      text: autoText,
+    });
+  }
 }
 
 interface CrmDocumentEmailOptions {
@@ -130,12 +158,24 @@ function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): 
 export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
   const resend = getResendClient();
   const emailSettings = await getEmailSettings();
-  const sender = opts.sender ?? (await resolveEmailSender(emailSettings));
+  const flow = opts.documentType === "quote" ? "quote" : "invoice";
+  const sender = opts.sender ?? (await resolveFlowEmailSender(flow, emailSettings));
   const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
   const filename = `${opts.documentNumber}.pdf`;
   const companyName = opts.company?.companyName ?? emailSettings.companyName;
 
-  const text = `Guten Tag ${opts.customerName},
+  const subjectTemplate =
+    flow === "quote" ? emailSettings.quoteSubjectTemplate : emailSettings.invoiceSubjectTemplate;
+  const subject = subjectTemplate?.trim()
+    ? applyEmailTemplate(subjectTemplate, {
+        number: opts.documentNumber,
+        company: companyName,
+        customer: opts.customerName,
+      })
+    : `${label} ${opts.documentNumber} — ${companyName}`;
+
+  const bodyTemplate = flow === "quote" ? emailSettings.quoteEmailBody : emailSettings.invoiceEmailBody;
+  const defaultText = `Guten Tag ${opts.customerName},
 
 anbei erhalten Sie ${opts.documentType === "quote" ? "unser Angebot" : "Ihre Rechnung"} ${opts.documentNumber}.
 
@@ -147,6 +187,15 @@ Mit freundlichen Grüßen
 ${companyName}
 ${opts.company?.website ?? ""}`.trim();
 
+  const text = bodyTemplate?.trim()
+    ? applyEmailTemplate(bodyTemplate, {
+        number: opts.documentNumber,
+        company: companyName,
+        customer: opts.customerName,
+        total: opts.totalFormatted,
+      })
+    : defaultText;
+
   const attachment = {
     filename,
     content: Buffer.from(opts.pdfBuffer),
@@ -156,7 +205,7 @@ ${opts.company?.website ?? ""}`.trim();
     from: sender.from,
     to: opts.to,
     replyTo: sender.replyTo,
-    subject: `${label} ${opts.documentNumber} — ${companyName}`,
+    subject,
     text,
     html: buildCrmEmailHtml(opts, companyName),
     attachments: [attachment],

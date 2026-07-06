@@ -2,6 +2,26 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.1] — 2026-07-06 — Admin Control Center Final Sprint
+
+### Einstellungen (8 Bereiche)
+- Unternehmensdaten, Kontakt & Social, E-Mail & Versand, Rechnungen & Angebote
+- Bank & Steuerdaten, Domain & SEO, Rechtliches, Systemstatus
+
+### CMS-First
+- Impressum, Datenschutz, AGB aus `legal` Settings
+- SEO Meta aus `seo` Settings (Layout `generateMetadata`)
+- PDF/E-Mail Texte aus `invoice` + `bank` Settings
+- Dokumentnummern konfigurierbar (Prefix, Jahresformat)
+- E-Mail Templates mit Platzhaltern `{number}`, `{company}`, `{customer}`
+
+### API & Audit
+- Settings PUT mit Audit-Log für alle Control-Center-Sektionen
+- `/api/admin/settings/system-status` — Gesundheitschecks
+
+### Report
+- `ADMIN_CONTROL_CENTER_FINAL_REPORT.md`
+
 ## [1.0.0] — 2026-07-06 — Final Release Sprint
 
 ### Domain & URL

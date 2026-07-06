@@ -92,12 +92,21 @@ function drawFooter(page: PDFPage, font: PDFFont, company: BusinessProfile) {
   const footerY = 42;
   page.drawLine({ start: { x: MARGIN, y: 56 }, end: { x: PAGE.width - MARGIN, y: 56 }, thickness: 0.5, color: BORDER });
 
-  const parts = [
-    company.companyName,
-    company.formattedAddress?.replace(/\n/g, " · ") || company.address?.replace(/\n/g, " · "),
-    [company.phone, company.email, company.website].filter(Boolean).join(" · "),
-    [company.taxNumber && `St.-Nr. ${company.taxNumber}`, company.vatId && `USt-ID ${company.vatId}`].filter(Boolean).join(" · "),
-  ].filter(Boolean);
+  const customFooter = company.invoiceSettings?.pdfFooterText?.trim();
+  const parts = customFooter
+    ? [customFooter]
+    : [
+        company.companyName,
+        company.formattedAddress?.replace(/\n/g, " · ") || company.address?.replace(/\n/g, " · "),
+        [company.phone, company.email, company.website].filter(Boolean).join(" · "),
+        [
+          company.taxNumber && `St.-Nr. ${company.taxNumber}`,
+          company.vatId && `USt-ID ${company.vatId}`,
+          company.invoiceSettings?.legalNoticeText?.trim(),
+        ]
+          .filter(Boolean)
+          .join(" · "),
+      ].filter(Boolean);
 
   let y = footerY;
   for (const part of parts) {
@@ -249,10 +258,11 @@ export async function generateCrmPdf(data: PdfDocumentData): Promise<Uint8Array>
   page.drawText(formatCents(data.total_cents), { x: colTotal, y: ty, size: 11, font: fontBold, color: BRAND });
 
   y = ty - 24;
+  const inv = data.company.invoiceSettings;
   const closing =
     data.type === "invoice"
-      ? data.company.defaultInvoiceText || "Vielen Dank für Ihren Auftrag."
-      : data.company.defaultQuoteText || "Vielen Dank für Ihre Anfrage.";
+      ? inv.invoiceClosingText || inv.invoiceIntroText || data.company.defaultInvoiceText
+      : inv.quoteClosingText || inv.quoteIntroText || data.company.defaultQuoteText;
 
   for (const line of wrapText(closing, 95)) {
     if (y < 120) break;
@@ -260,9 +270,10 @@ export async function generateCrmPdf(data: PdfDocumentData): Promise<Uint8Array>
     y -= 12;
   }
 
-  if (data.type === "invoice" && data.company.defaultPaymentText) {
+  const paymentText = inv.paymentInfoText || data.company.defaultPaymentText;
+  if (data.type === "invoice" && paymentText) {
     y -= 4;
-    for (const line of wrapText(data.company.defaultPaymentText, 95)) {
+    for (const line of wrapText(paymentText, 95)) {
       if (y < 120) break;
       page.drawText(line, { x: MARGIN, y, size: 9, font, color: TEXT });
       y -= 12;

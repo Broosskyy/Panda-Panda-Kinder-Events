@@ -1,15 +1,16 @@
+import { fetchSiteSettings } from "@/lib/cms/data";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 type DocType = "quote" | "invoice";
 
-const PREFIX: Record<DocType, string> = {
-  quote: "ANG",
-  invoice: "RE",
-};
-
 export async function nextDocumentNumber(docType: DocType): Promise<string> {
-  const supabase = getSupabaseAdmin();
+  const settings = await fetchSiteSettings();
+  const inv = settings.invoice;
+  const prefix = docType === "quote" ? inv.quotePrefix || "ANG" : inv.invoicePrefix || "RE";
   const year = new Date().getFullYear();
+  const startNum = docType === "quote" ? inv.quoteStartNumber : inv.invoiceStartNumber;
+
+  const supabase = getSupabaseAdmin();
 
   const { data: existing } = await supabase
     .from("crm_number_sequences")
@@ -18,7 +19,7 @@ export async function nextDocumentNumber(docType: DocType): Promise<string> {
     .eq("year", year)
     .maybeSingle();
 
-  const nextNum = (existing?.last_number ?? 0) + 1;
+  const nextNum = Math.max(existing?.last_number ?? 0, startNum - 1) + 1;
 
   const { error } = await supabase.from("crm_number_sequences").upsert(
     {
@@ -31,5 +32,16 @@ export async function nextDocumentNumber(docType: DocType): Promise<string> {
 
   if (error) throw new Error(error.message);
 
-  return `${PREFIX[docType]}-${year}-${String(nextNum).padStart(4, "0")}`;
+  const padded = String(nextNum).padStart(4, "0");
+  return inv.yearInNumber ? `${prefix}-${year}-${padded}` : `${prefix}-${padded}`;
+}
+
+export async function previewDocumentNumber(docType: DocType): Promise<string> {
+  const settings = await fetchSiteSettings();
+  const inv = settings.invoice;
+  const prefix = docType === "quote" ? inv.quotePrefix || "ANG" : inv.invoicePrefix || "RE";
+  const year = new Date().getFullYear();
+  const startNum = docType === "quote" ? inv.quoteStartNumber : inv.invoiceStartNumber;
+  const padded = String(startNum).padStart(4, "0");
+  return inv.yearInNumber ? `${prefix}-${year}-${padded}` : `${prefix}-${padded}`;
 }

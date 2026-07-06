@@ -1,13 +1,18 @@
 import type { MetadataRoute } from "next";
-import { getSiteUrl } from "@/lib/site-url";
+import { fetchSiteSettings } from "@/lib/cms/data";
+import { resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
 
-export default function robots(): MetadataRoute.Robots {
+export default async function robots(): Promise<MetadataRoute.Robots> {
+  const settings = await fetchSiteSettings();
+  const base = resolvePublicSiteUrl(settings);
+  const index = settings.seo.robotsIndex !== false;
+
   return {
     rules: {
       userAgent: "*",
-      allow: "/",
+      allow: index ? "/" : [],
       disallow: ["/admin/", "/api/"],
     },
-    sitemap: `${getSiteUrl()}/sitemap.xml`,
+    sitemap: `${base}/sitemap.xml`,
   };
 }

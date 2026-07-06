@@ -8,14 +8,15 @@ import type { SiteContactSettings } from "@/lib/cms/types";
 interface PublicChromeProps {
   contact: SiteContactSettings;
   ctaLabel?: string;
+  cookieNoticeText?: string;
 }
 
-export function PublicChrome({ contact, ctaLabel }: PublicChromeProps) {
+export function PublicChrome({ contact, ctaLabel, cookieNoticeText }: PublicChromeProps) {
   return (
     <>
       <FloatingContactButtons contact={contact} />
       <StickyCtaBar label={ctaLabel} />
-      <CookieBanner />
+      <CookieBanner noticeText={cookieNoticeText} />
     </>
   );
 }

@@ -13,6 +13,7 @@ import { SectionHeading } from "@/components/ui/SectionHeading";
 interface ContactProps {
   contact?: SiteContactSettings;
   heading?: SiteSectionHeading;
+  privacyHint?: string;
 }
 
 function buildContactLinks(contact: SiteContactSettings) {
@@ -58,6 +59,7 @@ function buildContactLinks(contact: SiteContactSettings) {
 export function Contact({
   contact = DEFAULT_SITE_SETTINGS.contact,
   heading,
+  privacyHint,
 }: ContactProps) {
   const safeHeading = resolveSectionHeading(heading, "contact");
   const contactLinks = buildContactLinks(contact);
@@ -74,7 +76,7 @@ export function Contact({
         <div className="grid gap-10 sm:gap-12 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal>
             <Card padding="lg" hover={false} className="form-luxury">
-              <InquiryForm />
+              <InquiryForm privacyHint={privacyHint} />
             </Card>
           </ScrollReveal>
 

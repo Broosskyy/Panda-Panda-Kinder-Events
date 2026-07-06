@@ -28,6 +28,10 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   publicTeam: ["title", "subtitle"],
   business: ["companyName", "email"],
   email: ["senderName", "senderEmail", "replyTo"],
+  bank: [],
+  invoice: ["quotePrefix", "invoicePrefix"],
+  seo: ["metaTitle", "metaDescription"],
+  legal: [],
 };
 
 function hasNonEmptyItems(value: unknown): boolean {
@@ -191,12 +195,49 @@ export function validateSiteSettingsSection(
       email.quoteCopyTo,
       email.invoiceCopyTo,
       email.inquiryRecipient,
+      email.inquiryCopyTo,
+      email.adminNotificationEmail,
+      email.quoteSenderEmail,
+      email.quoteReplyTo,
+      email.invoiceSenderEmail,
+      email.invoiceReplyTo,
+      email.loginAlertRecipient,
+      email.applicationEmail,
+      email.applicationCopyTo,
       email.notificationEmail,
     ].filter(Boolean);
     for (const addr of optionalEmails) {
       if (addr && !emailPattern.test(addr)) {
         return { ok: false, error: `E-Mail-Adresse „${addr}" ist ungültig.` };
       }
+    }
+  }
+
+  if (section === "invoice") {
+    const inv = value as SiteSettingsBundle["invoice"];
+    if (inv.defaultTaxRate < 0 || inv.defaultTaxRate > 100) {
+      return { ok: false, error: "MwSt.-Satz muss zwischen 0 und 100 liegen." };
+    }
+    if (inv.defaultPaymentDays < 1 || inv.defaultDueDays < 1) {
+      return { ok: false, error: "Zahlungsziel muss mindestens 1 Tag sein." };
+    }
+  }
+
+  if (section === "seo") {
+    const seo = value as SiteSettingsBundle["seo"];
+    const urlFields = [seo.canonicalBaseUrl, seo.primaryDomain, seo.wwwDomain, seo.ogImageUrl].filter(Boolean);
+    for (const u of urlFields) {
+      if (u && u.startsWith("http") && !sanitizeHttpUrl(u)) {
+        return { ok: false, error: `Ungültige URL: ${u}` };
+      }
+    }
+  }
+
+  if (section === "bank") {
+    const bank = value as SiteSettingsBundle["bank"];
+    const iban = bank.iban?.replace(/\s/g, "") ?? "";
+    if (iban && !/^DE\d{20}$/i.test(iban) && iban.length > 4) {
+      return { ok: false, error: "IBAN-Format ungültig (erwartet DE + 20 Ziffern)." };
     }
   }
 

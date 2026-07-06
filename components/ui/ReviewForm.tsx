@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Star } from "lucide-react";
 import { eventTypes } from "@/lib/faqs";
 import { focusRing, inputClassName, labelClassName, textareaClassName } from "@/lib/a11y";
@@ -10,7 +11,7 @@ import { Card } from "@/components/ui/Card";
 import { FormField } from "@/components/ui/FormField";
 import { PandaMascot } from "@/components/ui/PandaMascot";
 
-export function ReviewForm() {
+export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
   const [formLoadedAt] = useState(() => Date.now());
   const [name, setName] = useState("");
   const [eventType, setEventType] = useState<string>(eventTypes[0]);
@@ -214,6 +215,20 @@ export function ReviewForm() {
               </div>
             ) : null}
           </FormField>
+        </div>
+
+        <div className="flex items-start gap-3 rounded-2xl border border-border/60 bg-bg-secondary/40 p-4">
+          <p className="text-sm leading-relaxed text-text-secondary">
+            {privacyHint || (
+              <>
+                Mit dem Absenden stimmen Sie der{" "}
+                <Link href="/datenschutz" className="text-primary underline hover:no-underline">
+                  Datenschutzerklärung
+                </Link>{" "}
+                zu. Ihre Bewertung wird nach Prüfung veröffentlicht.
+              </>
+            )}
+          </p>
         </div>
 
         {error && (

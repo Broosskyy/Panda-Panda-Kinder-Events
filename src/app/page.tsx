@@ -121,7 +121,7 @@ export default async function HomePage() {
         <Services items={services} heading={settings.sections.services} />
         <Process process={settings.process} heading={settings.sections.process} />
         <Gallery images={galleryImages} contact={settings.contact} heading={settings.sections.gallery} />
-        <Testimonials reviews={reviews} heading={settings.sections.testimonials} />
+        <Testimonials reviews={reviews} heading={settings.sections.testimonials} privacyHint={settings.legal.reviewPrivacyHint} />
         <About about={settings.about} team={settings.publicTeam} heading={settings.sections.about} />
         <News posts={posts} heading={settings.sections.news} />
         <Faq items={faqs} heading={settings.sections.faq} />

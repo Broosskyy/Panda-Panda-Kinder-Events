@@ -123,11 +123,13 @@ const DESKTOP_VISIBLE = 3;
 interface TestimonialsProps {
   reviews: PublicReview[];
   heading?: SiteSectionHeading;
+  privacyHint?: string;
 }
 
 export function Testimonials({
   reviews,
   heading,
+  privacyHint,
 }: TestimonialsProps) {
   const safeHeading = resolveSectionHeading(heading, "testimonials");
   const [desktopIndex, setDesktopIndex] = useState(0);
@@ -220,7 +222,7 @@ export function Testimonials({
 
         <div ref={formRef} id="bewertung-form" className="mx-auto mt-10 max-w-xl scroll-mt-24 sm:mt-16 sm:scroll-mt-28">
           <ScrollReveal>
-            <ReviewForm />
+            <ReviewForm privacyHint={privacyHint} />
           </ScrollReveal>
         </div>
       </Container>

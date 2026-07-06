@@ -33,12 +33,12 @@ interface QuoteRow {
   customer?: { name: string; email?: string | null };
 }
 
-const emptyForm = () => ({
+const emptyForm = (taxRate = 19) => ({
   customer_id: "",
   title: "Angebot Kinderbetreuung",
   remarks: "",
   discount_percent: 0,
-  tax_rate: 19,
+  tax_rate: taxRate,
   items: [createEmptyLineItem()] as QuoteLineItemDraft[],
 });
 
@@ -57,6 +57,7 @@ export function QuotesView() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(emptyForm);
+  const [defaultTaxRate, setDefaultTaxRate] = useState(19);
   const [discountInput, setDiscountInput] = useState("0");
   const [taxInput, setTaxInput] = useState("19");
   const [sendTarget, setSendTarget] = useState<QuoteRow | null>(null);
@@ -76,10 +77,24 @@ export function QuotesView() {
     fetch("/api/admin/customers").then((r) => r.json()).then((d) => setCustomers(d.customers ?? []));
   }, [search]);
 
+  useEffect(() => {
+    fetch("/api/admin/settings")
+      .then((r) => r.json())
+      .then((d) => {
+        const rate = d.settings?.invoice?.defaultTaxRate;
+        if (typeof rate === "number" && rate >= 0) {
+          setDefaultTaxRate(rate);
+          setTaxInput(String(rate));
+          setForm(emptyForm(rate));
+        }
+      })
+      .catch(() => undefined);
+  }, []);
+
   const resetForm = () => {
-    setForm(emptyForm());
+    setForm(emptyForm(defaultTaxRate));
     setDiscountInput("0");
-    setTaxInput("19");
+    setTaxInput(String(defaultTaxRate));
   };
 
   const parsePercent = (value: string, fallback: number) => {
@@ -95,7 +110,7 @@ export function QuotesView() {
     if (!form.items.some((i) => i.title.trim())) return toast("Mindestens eine Position mit Bezeichnung erforderlich", "error");
 
     const discount_percent = parsePercent(discountInput, 0);
-    const tax_rate = parsePercent(taxInput, 19);
+    const tax_rate = parsePercent(taxInput, defaultTaxRate);
 
     const payload = {
       customer_id: form.customer_id,

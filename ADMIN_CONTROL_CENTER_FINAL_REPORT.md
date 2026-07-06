@@ -90,8 +90,6 @@ Manuelle Tests (Admin): Settings speichern, Systemstatus, E-Mail-Vorschau — vo
 - [ ] Rechtstexte juristisch prüfen lassen (Platzhalter aktiv)
 - [ ] Logo `public/assets/logo.png` hochladen
 - [ ] OG-Bild als PNG 1200×630 optional
-- [ ] Google Analytics / Clarity Script-Injection (IDs gespeichert, Script-Einbindung optional)
-- [ ] Bewertungsformular: `reviewPrivacyHint` im ReviewForm anbinden
 
 ---
 

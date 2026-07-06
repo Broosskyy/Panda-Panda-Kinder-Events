@@ -5,6 +5,7 @@ import { resolveSeoMeta } from "@/lib/cms/resolve-settings";
 import { siteConfig } from "@/config/site";
 import { getSiteUrl } from "@/lib/site-url";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
+import { AnalyticsScripts } from "@/components/analytics/AnalyticsScripts";
 import "./globals.css";
 
 const playfair = Playfair_Display({
@@ -103,6 +104,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de" className={`${playfair.variable} ${montserrat.variable} ${caveat.variable}`}>
       <body className="antialiased">
+        <AnalyticsScripts />
         <AnalyticsProvider>{children}</AnalyticsProvider>
       </body>
     </html>

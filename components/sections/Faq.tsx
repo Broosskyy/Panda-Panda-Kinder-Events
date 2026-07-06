@@ -8,7 +8,6 @@ import type { SiteSectionHeading } from "@/lib/cms/types";
 import { focusRing } from "@/lib/a11y";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface FaqProps {
@@ -61,21 +60,18 @@ export function Faq({
                   id={panelId}
                   role="region"
                   aria-labelledby={buttonId}
-                  hidden={!isOpen}
-                  className="overflow-hidden"
+                  className={`faq-panel grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "faq-panel-open" : "faq-panel-closed"}`}
                 >
-                  <p className="mt-4 max-w-prose text-base leading-relaxed text-text-secondary sm:mt-5 sm:text-lg sm:leading-8">
-                    {faq.answer}
-                  </p>
+                  <div className="overflow-hidden">
+                    <p className="pb-1 pt-4 max-w-prose text-base leading-relaxed text-text-secondary sm:pt-5 sm:text-lg sm:leading-8">
+                      {faq.answer}
+                    </p>
+                  </div>
                 </div>
               </div>
             );
           })}
         </div>
-
-        <ScrollReveal>
-          <SectionCta className="mt-12 sm:mt-16" />
-        </ScrollReveal>
       </Container>
     </section>
   );

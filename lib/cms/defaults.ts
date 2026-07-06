@@ -1,6 +1,5 @@
 import { siteConfig } from "@/config/site";
 import { navigation } from "@/lib/navigation";
-import { trustBadges } from "@/lib/trust-badges";
 import type { SiteSettingsBundle } from "./types";
 
 const HERO_IMAGE_DEFAULT =
@@ -25,6 +24,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     facebook: "",
     location: siteConfig.contact.location,
     mapsUrl: "https://maps.google.com/?q=NRW+Deutschland",
+    responseTime: "Antwort innerhalb von 24 Stunden",
+    openingHours: "Mo–Fr 9–18 Uhr · Termine nach Vereinbarung",
   },
   about: {
     founderName: "Lisa",
@@ -55,10 +56,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   },
   trustBadges: {
     items: [
-      { iconKey: "Award", text: trustBadges[0].text },
-      { iconKey: "Heart", text: trustBadges[1].text },
-      { iconKey: "Shield", text: trustBadges[2].text },
-      { iconKey: "MapPin", text: trustBadges[3].text },
+      { iconKey: "Award", text: "Antwort innerhalb 24h" },
+      { iconKey: "MapPin", text: "NRW & Umgebung" },
+      { iconKey: "Calendar", text: "Flexible Buchung" },
+      { iconKey: "Sparkles", text: "Individuelle Betreuung" },
     ],
   },
   usps: {
@@ -81,7 +82,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
       { number: 1, title: "Anfrage", description: "Ihr sendet uns eure Wünsche — kostenlos und unverbindlich.", iconKey: "PartyPopper" },
       { number: 2, title: "Beratung", description: "Wir besprechen Programm, Teamgröße und Ablauf persönlich.", iconKey: "MessageCircle" },
       { number: 3, title: "Planung", description: "Gemeinsam planen wir Material, Zeiten und Betreuung.", iconKey: "Calendar" },
-      { number: 4, title: "Durchführung", description: "Unsere Panda-Bande sorgt vor Ort für strahlende Kinderaugen.", iconKey: "Users" },
+      { number: 4, title: "Event", description: "Unsere Panda-Bande sorgt vor Ort für strahlende Kinderaugen.", iconKey: "Users" },
       { number: 5, title: "Glückliche Kinder", description: "Zufriedene Kinder, entspannte Eltern — Mission erfüllt!", iconKey: "Heart" },
     ],
   },
@@ -107,8 +108,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
       subtitle: "Echte Rückmeldungen — freigegeben nach Prüfung durch unser Team.",
     },
     about: {
-      title: "Über uns",
-      subtitle: "Die Panda-Bande — mit Herz für kleine Abenteurer.",
+      title: "Über die Panda-Bande",
+      subtitle: "Geschichte, Mission, Werte und Team — alles an einem Ort.",
     },
     news: {
       title: "Aktuelles",

@@ -4,6 +4,7 @@ import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { ICON_STROKE } from "@/lib/design";
 import { Logo } from "@/components/ui/Logo";
 import { Container } from "@/components/ui/Container";
+import { CookieSettingsButton } from "@/components/layout/CookieSettingsButton";
 
 interface FooterProps {
   contact?: SiteContactSettings;
@@ -13,6 +14,7 @@ interface FooterProps {
 
 const FOOTER_NAV = [
   { label: "Leistungen", href: "#leistungen" },
+  { label: "Über uns", href: "#ueber-uns" },
   { label: "Galerie", href: "#galerie" },
   { label: "Bewertungen", href: "#bewertungen" },
   { label: "FAQ", href: "#faq" },
@@ -130,6 +132,7 @@ export function Footer({
               <a href="/agb" className="transition-opacity duration-300 hover:opacity-85">
                 AGB
               </a>
+              <CookieSettingsButton />
             </nav>
             <div className="mt-10 flex items-center justify-center gap-4 md:justify-end">
               <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="social-pill" aria-label="Instagram">

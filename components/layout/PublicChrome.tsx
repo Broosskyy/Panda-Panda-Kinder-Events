@@ -7,13 +7,14 @@ import type { SiteContactSettings } from "@/lib/cms/types";
 
 interface PublicChromeProps {
   contact: SiteContactSettings;
+  ctaLabel?: string;
 }
 
-export function PublicChrome({ contact }: PublicChromeProps) {
+export function PublicChrome({ contact, ctaLabel }: PublicChromeProps) {
   return (
     <>
       <FloatingContactButtons contact={contact} />
-      <StickyCtaBar />
+      <StickyCtaBar label={ctaLabel} />
       <CookieBanner />
     </>
   );

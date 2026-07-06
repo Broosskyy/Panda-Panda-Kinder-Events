@@ -9,8 +9,13 @@ export function CookieBanner() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const stored = localStorage.getItem(CONSENT_KEY);
-    if (!stored) setVisible(true);
+    const sync = () => {
+      const stored = localStorage.getItem(CONSENT_KEY);
+      setVisible(!stored);
+    };
+    sync();
+    window.addEventListener("panda-cookie-consent-reset", sync);
+    return () => window.removeEventListener("panda-cookie-consent-reset", sync);
   }, []);
 
   const accept = () => {

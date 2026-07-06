@@ -1,61 +1,32 @@
 import Image from "next/image";
-import { Calendar, Heart } from "lucide-react";
+import { Calendar, Heart, Star } from "lucide-react";
 import { ICON_STROKE } from "@/lib/design";
-import type {
-  SiteAboutSettings,
-  SiteHeroSettings,
-  SiteTrustBadgesSettings,
-} from "@/lib/cms/types";
+import type { SiteHeroSettings, SiteTrustBadgesSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { resolveContentIcon } from "@/lib/cms/icons";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
+import { StarRating } from "@/components/ui/StarRating";
+
+interface HeroRatingSummary {
+  average: number;
+  count: number;
+}
 
 interface HeroProps {
   hero?: SiteHeroSettings;
-  about?: Pick<SiteAboutSettings, "founderName" | "imageUrl">;
   trustBadges?: SiteTrustBadgesSettings;
-}
-
-function LisaBadge({
-  className = "",
-  founderName,
-  imageUrl,
-  badgeQuote,
-}: {
-  className?: string;
-  founderName: string;
-  imageUrl: string;
-  badgeQuote: string;
-}) {
-  return (
-    <div className={`rounded-[var(--radius-card)] bg-bg-card p-4 sm:p-6 ${className}`}>
-      <div className="flex items-start gap-3 sm:gap-4">
-        <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full ring-2 ring-white shadow-md sm:h-16 sm:w-16 sm:ring-[3px]">
-          <Image src={imageUrl} alt={`${founderName} — Gründerin`} fill className="object-cover" unoptimized={imageUrl.includes("supabase.co")} />
-        </div>
-        <div>
-          <p className="font-accent text-base text-primary sm:text-xl">Hallo, ich bin {founderName}!</p>
-          <p className="text-xs font-medium tracking-wide text-text-muted sm:text-sm">Gründerin der Panda-Bande</p>
-          <p className="mt-1.5 text-xs leading-relaxed text-text-secondary sm:mt-2.5 sm:text-sm sm:leading-relaxed">
-            &ldquo;{badgeQuote}&rdquo;
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  rating?: HeroRatingSummary | null;
 }
 
 export function Hero({
   hero = DEFAULT_SITE_SETTINGS.hero,
-  about = DEFAULT_SITE_SETTINGS.about,
   trustBadges = DEFAULT_SITE_SETTINGS.trustBadges,
+  rating = null,
 }: HeroProps) {
-  const founderImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
   const heroImage = hero.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.hero.imageUrl;
-  const badgeQuote = hero.badgeQuote?.trim() || DEFAULT_SITE_SETTINGS.hero.badgeQuote;
   const badges = trustBadges.items?.length ? trustBadges.items : DEFAULT_SITE_SETTINGS.trustBadges.items;
 
   return (
@@ -69,6 +40,27 @@ export function Hero({
       <Container>
         <div className="grid items-center gap-10 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
           <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:py-4">
+            {rating && rating.count > 0 ? (
+              <div className="hero-rating-pill mb-5 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-4 py-2 shadow-sm backdrop-blur-sm sm:mb-6">
+                <StarRating rating={Math.round(rating.average)} size="sm" />
+                <span className="text-sm font-semibold text-text-primary">
+                  {rating.average.toFixed(1).replace(".", ",")} / 5
+                </span>
+                <span className="text-sm text-text-muted">
+                  ({rating.count} {rating.count === 1 ? "Bewertung" : "Bewertungen"})
+                </span>
+              </div>
+            ) : (
+              <div className="hero-rating-pill mb-5 inline-flex items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-4 py-2 shadow-sm backdrop-blur-sm sm:mb-6">
+                <div className="flex text-primary" aria-hidden>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} className="h-4 w-4 fill-current" strokeWidth={0} />
+                  ))}
+                </div>
+                <span className="text-sm font-medium text-text-secondary">Vertrauen von Familien in NRW</span>
+              </div>
+            )}
+
             <p className="font-accent break-words text-xl leading-snug text-primary sm:text-[1.75rem] md:text-[2rem] md:leading-tight">
               {hero.tagline}{" "}
               <span className="text-accent-heart" aria-hidden>
@@ -127,15 +119,6 @@ export function Hero({
                 priority
                 sizes="(max-width: 1024px) 100vw, 55vw"
                 unoptimized={heroImage.includes("supabase.co")}
-              />
-            </div>
-
-            <div className="hero-badge relative z-10 mt-5 max-w-full bg-bg-card/95 p-1 backdrop-blur-md lg:absolute lg:-bottom-8 lg:left-8 lg:mt-0 lg:max-w-[300px]">
-              <LisaBadge
-                className="!bg-transparent !p-0"
-                founderName={about.founderName}
-                imageUrl={founderImage}
-                badgeQuote={badgeQuote}
               />
             </div>
           </ScrollReveal>

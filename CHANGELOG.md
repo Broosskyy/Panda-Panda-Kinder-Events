@@ -2,6 +2,31 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [0.9.0-rc.13] — 2026-07-06 — Public Website Final Polish (RC5)
+
+### Struktur & UX
+- **Über die Panda-Bande:** About + Team + Mission + Werte in einer Sektion zusammengeführt
+- Hero: Gründerin-Badge entfernt (keine Doppelung), Bewertungs-/Vertrauenszeile ergänzt
+- **CTA bereinigt:** Section-CTAs nach jeder Sektion entfernt; nur Header, Sticky-Bar und WhatsApp-Float
+- Telefon-Float entfernt (Telefon bleibt in Kontakt & Footer)
+- Sticky CTA nutzt CMS-Navigationstext
+
+### CMS
+- Kontakt: Antwortzeit, Öffnungszeiten, Maps, Facebook
+- Öffentliches Team im Admin (Inhalte)
+- Leistungen: `price_from`, `highlights` (Migration `20260711_public_website_rc5.sql`)
+- Trust-Badges Defaults für Hero-Vertrauen aktualisiert
+
+### Polish
+- Leistungskarten: einheitliche Bildhöhe, Fallback-Bild, optional Preis ab / Highlights
+- FAQ: animiertes Accordion (CSS Grid)
+- Footer: Cookie-Einstellungen, Über-uns-Link
+- Galerie: Fallback-Bilder
+- Mobile Safe-Area für Floats, Sticky CTA, Cookie-Banner
+
+### Report
+- `PUBLIC_WEBSITE_FINAL_REPORT.md`
+
 ## [0.9.0-rc.12] — 2026-07-06
 
 ### Emergency: Server/Client boundary crash (GET / 500)

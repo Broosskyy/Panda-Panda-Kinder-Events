@@ -96,6 +96,8 @@ export interface SiteContactSettings {
   facebook: string;
   location: string;
   mapsUrl: string;
+  responseTime: string;
+  openingHours: string;
 }
 
 export interface PublicTeamMemberItem {
@@ -210,6 +212,8 @@ export interface CmsService {
   detail_text?: string;
   image_url?: string;
   button_label?: string;
+  price_from?: string;
+  highlights?: string[];
   sort_order: number;
   visible: boolean;
 }

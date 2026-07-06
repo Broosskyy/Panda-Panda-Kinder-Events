@@ -11,8 +11,10 @@ import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { Lightbox } from "@/components/ui/Lightbox";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
+
+const GALLERY_FALLBACK =
+  "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&h=1000&fit=crop&q=85";
 
 interface GalleryImageItem {
   src: string;
@@ -87,7 +89,7 @@ export function Gallery({
                     aria-label={`${image.alt} vergrößern`}
                   >
                     <Image
-                      src={image.src}
+                      src={image.src?.trim() || GALLERY_FALLBACK}
                       alt={image.alt}
                       fill
                       className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
@@ -102,8 +104,7 @@ export function Gallery({
           </ul>
         </div>
 
-        <ScrollReveal>
-          <div className="mt-10 text-center sm:mt-12">
+        <div className="mt-10 text-center sm:mt-12">
             <Button
               href={contact.instagram}
               size="lg"
@@ -113,8 +114,6 @@ export function Gallery({
               Mehr Eindrücke auf Instagram
             </Button>
           </div>
-          <SectionCta className="mt-10" />
-        </ScrollReveal>
       </Container>
 
       {lightboxImage ? (

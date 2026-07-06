@@ -14,7 +14,7 @@ const SECTION_LABELS: Record<keyof SiteSettingsBundle["sections"], string> = {
   process: "Buchungsablauf",
   gallery: "Galerie",
   testimonials: "Bewertungen",
-  about: "Über uns",
+  about: "Über die Panda-Bande",
   team: "Team",
   news: "Aktuelles",
   faq: "FAQ",
@@ -531,6 +531,10 @@ export function ContentView() {
           <input className="admin-input" placeholder="Instagram URL" value={settings.contact.instagram} onChange={(e) => setSettings({ ...settings, contact: { ...settings.contact, instagram: e.target.value } })} />
           <input className="admin-input" placeholder="Instagram Handle" value={settings.contact.instagramHandle} onChange={(e) => setSettings({ ...settings, contact: { ...settings.contact, instagramHandle: e.target.value } })} />
           <input className="admin-input" placeholder="Einsatzgebiet" value={settings.contact.location} onChange={(e) => setSettings({ ...settings, contact: { ...settings.contact, location: e.target.value } })} />
+          <input className="admin-input" placeholder="Google Maps URL" value={settings.contact.mapsUrl} onChange={(e) => setSettings({ ...settings, contact: { ...settings.contact, mapsUrl: e.target.value } })} />
+          <input className="admin-input" placeholder="Facebook URL" value={settings.contact.facebook} onChange={(e) => setSettings({ ...settings, contact: { ...settings.contact, facebook: e.target.value } })} />
+          <input className="admin-input md:col-span-2" placeholder="Antwortzeit (z. B. Antwort innerhalb 24h)" value={settings.contact.responseTime} onChange={(e) => setSettings({ ...settings, contact: { ...settings.contact, responseTime: e.target.value } })} />
+          <input className="admin-input md:col-span-2" placeholder="Öffnungszeiten" value={settings.contact.openingHours} onChange={(e) => setSettings({ ...settings, contact: { ...settings.contact, openingHours: e.target.value } })} />
         </div>
         <p className="mt-3 text-xs text-text-muted">
           WhatsApp-Button und Social-Links im Footer nutzen diese Kontaktdaten.
@@ -540,7 +544,7 @@ export function ContentView() {
         </button>
       </AdminCard>
 
-      <AdminCard title="Über uns">
+      <AdminCard title="Über die Panda-Bande & Team">
         <div className="grid gap-3">
           <input
             className="admin-input"
@@ -578,6 +582,59 @@ export function ContentView() {
         </div>
         <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("about")}>
           <Save className="h-4 w-4" /> Über uns speichern
+        </button>
+      </AdminCard>
+
+      <AdminCard title="Öffentliches Team (Website)">
+        <div className="grid gap-3 md:grid-cols-2">
+          <input className="admin-input" placeholder="Team-Titel" value={settings.publicTeam.title} onChange={(e) => setSettings({ ...settings, publicTeam: { ...settings.publicTeam, title: e.target.value } })} />
+          <input className="admin-input" placeholder="Team-Untertitel" value={settings.publicTeam.subtitle} onChange={(e) => setSettings({ ...settings, publicTeam: { ...settings.publicTeam, subtitle: e.target.value } })} />
+        </div>
+        <div className="mt-4 space-y-4">
+          {settings.publicTeam.items.map((member, index) => (
+            <div key={index} className="rounded-xl border border-border p-3">
+              <div className="grid gap-2 md:grid-cols-2">
+                <input className="admin-input" placeholder="Name" value={member.name} onChange={(e) => {
+                  const items = [...settings.publicTeam.items];
+                  items[index] = { ...items[index], name: e.target.value };
+                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
+                }} />
+                <input className="admin-input" placeholder="Rolle" value={member.role} onChange={(e) => {
+                  const items = [...settings.publicTeam.items];
+                  items[index] = { ...items[index], role: e.target.value };
+                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
+                }} />
+                <textarea className="admin-input min-h-20 md:col-span-2" placeholder="Beschreibung" value={member.description} onChange={(e) => {
+                  const items = [...settings.publicTeam.items];
+                  items[index] = { ...items[index], description: e.target.value };
+                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
+                }} />
+                <input className="admin-input md:col-span-2" placeholder="Bild-URL" value={member.imageUrl} onChange={(e) => {
+                  const items = [...settings.publicTeam.items];
+                  items[index] = { ...items[index], imageUrl: e.target.value };
+                  setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
+                }} />
+              </div>
+              <button type="button" className="admin-btn-danger mt-2" onClick={() => {
+                const items = settings.publicTeam.items.filter((_, i) => i !== index);
+                setSettings({ ...settings, publicTeam: { ...settings.publicTeam, items } });
+              }}>
+                <Trash2 className="h-4 w-4" /> Entfernen
+              </button>
+            </div>
+          ))}
+          <button type="button" className="admin-btn-secondary" onClick={() => setSettings({
+            ...settings,
+            publicTeam: {
+              ...settings.publicTeam,
+              items: [...settings.publicTeam.items, { name: "", role: "", description: "", imageUrl: "" }],
+            },
+          })}>
+            <Plus className="h-4 w-4" /> Teammitglied hinzufügen
+          </button>
+        </div>
+        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("publicTeam")}>
+          <Save className="h-4 w-4" /> Team speichern
         </button>
       </AdminCard>
 

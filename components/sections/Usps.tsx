@@ -5,7 +5,6 @@ import { resolveContentIcon } from "@/lib/cms/icons";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
-import { SectionCta } from "@/components/ui/SectionCta";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
 interface UspsProps {
@@ -52,10 +51,6 @@ export function Usps({ usps = DEFAULT_SITE_SETTINGS.usps }: UspsProps) {
             );
           })}
         </ul>
-
-        <ScrollReveal>
-          <SectionCta className="mt-12 sm:mt-16" />
-        </ScrollReveal>
       </Container>
     </section>
   );

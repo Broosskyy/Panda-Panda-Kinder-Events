@@ -3,7 +3,15 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 
-export function StickyCtaBar() {
+interface StickyCtaBarProps {
+  label?: string;
+  sublabel?: string;
+}
+
+export function StickyCtaBar({
+  label = "Jetzt unverbindlich anfragen",
+  sublabel = "Bereit für euer Event?",
+}: StickyCtaBarProps) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -18,9 +26,9 @@ export function StickyCtaBar() {
   return (
     <div className="sticky-cta-bar" role="region" aria-label="Schnellanfrage">
       <div className="sticky-cta-inner">
-        <p className="sticky-cta-text hidden sm:block">Bereit für euer Event?</p>
+        <p className="sticky-cta-text hidden sm:block">{sublabel}</p>
         <Button href="#kontakt" size="lg" className="sticky-cta-button min-h-[2.75rem] flex-1 sm:flex-none">
-          Jetzt unverbindlich anfragen
+          {label}
         </Button>
       </div>
     </div>

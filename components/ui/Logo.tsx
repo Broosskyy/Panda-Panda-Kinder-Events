@@ -3,7 +3,6 @@
 import Image from "next/image";
 import {
   BRAND,
-  LOGO_COMBINED_ASPECT,
   LOGO_MARK_ASPECT,
   LOGO_MARK_WIDTH_RATIO,
   LOGO_SIZE_PX,
@@ -101,16 +100,18 @@ export function Logo({
   const textSecondaryClass = isInverse ? "text-white/85" : "text-text-muted";
 
   const customLogo = branding.logoUrl?.trim();
-  const isCombinedMaster = !customLogo || customLogo === BRAND.master;
-  const imageAspect = isCombinedMaster ? LOGO_COMBINED_ASPECT : LOGO_MARK_ASPECT;
+  const isWideCombined =
+    LOGO_MARK_WIDTH_RATIO < 1 && (!customLogo || customLogo === BRAND.master);
+  const imageAspect = LOGO_MARK_ASPECT;
   const markImageWidth = Math.round(markH * imageAspect);
   const markImageHeight = markH;
+  const containerWidth = Math.round(markH * (isWideCombined ? 1 : imageAspect));
 
   const inner = (
     <span className={`inline-flex max-w-full min-w-0 items-center gap-2 sm:gap-2.5 ${className}`}>
       <span
         className={`relative inline-flex shrink-0 items-center justify-center overflow-hidden ${markClass}`}
-        style={{ width: markH, aspectRatio: LOGO_MARK_ASPECT }}
+        style={{ width: containerWidth, aspectRatio: imageAspect }}
       >
         <Image
           src={logoSrc}
@@ -118,12 +119,12 @@ export function Logo({
           width={markImageWidth}
           height={markImageHeight}
           className={
-            isCombinedMaster
+            isWideCombined
               ? "absolute left-0 top-1/2 h-full w-auto max-w-none -translate-y-1/2 object-contain object-left"
               : "h-full w-full object-contain object-center"
           }
           style={
-            isCombinedMaster
+            isWideCombined
               ? { width: `${100 / LOGO_MARK_WIDTH_RATIO}%`, maxWidth: "none" }
               : undefined
           }

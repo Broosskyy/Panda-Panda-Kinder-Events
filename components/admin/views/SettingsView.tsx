@@ -327,7 +327,7 @@ export function SettingsView() {
               <p className="text-sm tracking-widest text-text-muted">{branding.logoTextSecondary}</p>
             </div>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={branding.faviconUrl || "/favicon.png?v=5"} alt="Tab-Icon Vorschau" className="h-12 w-12 rounded-lg border border-border object-contain bg-black" />
+            <img src={branding.faviconUrl || "/favicon.png?v=6"} alt="Tab-Icon Vorschau" className="h-12 w-12 rounded-lg border border-border object-contain bg-[#f4f1ea]" />
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <AdminFormField label="Hauptlogo (Bildmarke)" className="md:col-span-2">

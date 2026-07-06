@@ -1,6 +1,6 @@
 /**
  * Panda-Bande — Branding-Konstanten
- * Bildmarke: /assets/Logo.png
+ * Bildmarke: /assets/Logo.png (Zwei-Panda-Illustration)
  * Textmarke: Panda-Bande / Kinderevents (aus CMS)
  */
 export const BRAND = {
@@ -14,16 +14,13 @@ export const BRAND = {
   backgroundColor: "#f4f1ea",
   alt: "Panda-Bande KinderEvents",
 
-  /** Standard-Logo — Header, Splash, Favicon, PWA (eine Quelle) */
+  /** Eine Quelle: Header, Splash, Favicon, PWA */
   master: "/assets/Logo.png",
 
-  /** Cache-Busting für Favicon/PWA nach Icon-Update */
-  iconVersion: "5",
+  iconVersion: "6",
 
-  /** PDF/E-Mail: dasselbe Logo */
   markOnly: "/assets/Logo.png",
 
-  /** Generierte Icon-Assets (npm run generate:brand-assets) */
   assets: {
     faviconPng: "/favicon.png",
     favicon16: "/icons/panda-icon-16.png",
@@ -38,25 +35,24 @@ export const BRAND = {
     ogImage: "/branding/og-image.png",
   },
 
-  /** Kombi-Logo 640×160 — linke Bildmarke ist quadratisch */
-  combinedWidth: 640,
-  combinedHeight: 160,
-  markWidth: 160,
-  markHeight: 160,
+  /** Logo.png — 1536×1024, volle Illustration (kein Crop) */
+  markWidth: 1536,
+  markHeight: 1024,
 } as const;
 
-/** Breites Kombi-Logo (Bildmarke + eingebetteter Text) */
-export const LOGO_COMBINED_ASPECT = BRAND.combinedWidth / BRAND.combinedHeight;
-
-/** Quadratische Bildmarke (Panda-Kopf) */
 export const LOGO_MARK_ASPECT = BRAND.markWidth / BRAND.markHeight;
 
-/** Anteil der Kombi-Logo-Breite, den die Bildmarke einnimmt */
-export const LOGO_MARK_WIDTH_RATIO = BRAND.markWidth / BRAND.combinedWidth;
+/** Breites Kombi-Logo mit eingebettetem Text — nur wenn Breite > 2× Höhe */
+export const LOGO_COMBINED_ASPECT = LOGO_MARK_ASPECT;
+
+/** 1 = volles Logo anzeigen; <1 = linke Bildmarke aus Kombi-Logo croppen */
+export const LOGO_MARK_WIDTH_RATIO = 1;
 
 export function withIconVersion(path: string): string {
   const v = BRAND.iconVersion;
-  return path.includes("?") ? path : `${path}?v=${v}`;
+  if (!path || path.startsWith("http")) return path;
+  const base = path.split("?")[0];
+  return `${base}?v=${v}`;
 }
 
 export const LOGO_SIZE_PX = {

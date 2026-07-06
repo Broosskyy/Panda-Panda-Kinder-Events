@@ -1,3 +1,4 @@
+import { BRAND } from "@/lib/brand";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { mergeBankFromLegacy, mergeInvoiceFromLegacy, syncLegacyBusinessFields } from "./settings-compat";
 import type {
@@ -35,6 +36,26 @@ function mergeSectionHeadings(
   return merged;
 }
 
+function normalizeBrandingIcons(
+  branding: SiteSettingsBundle["branding"],
+): SiteSettingsBundle["branding"] {
+  const legacy = ["/branding/favicon", "/branding/icon", "/icons/panda-mark", "/assets/logo.png", "/assets/appicon"];
+  const clean = (url: string | undefined, fallback: string) => {
+    const t = url?.trim();
+    if (!t) return fallback;
+    const lower = t.toLowerCase();
+    if (legacy.some((p) => lower.includes(p))) return fallback;
+    return t;
+  };
+  return {
+    ...branding,
+    faviconUrl: clean(branding.faviconUrl, BRAND.assets.faviconPng),
+    appleTouchIconUrl: clean(branding.appleTouchIconUrl, BRAND.assets.appleTouchIcon),
+    pwaIcon192Url: clean(branding.pwaIcon192Url, BRAND.assets.icon192),
+    pwaIcon512Url: clean(branding.pwaIcon512Url, BRAND.assets.icon512),
+    logoUrl: branding.logoUrl?.trim() || BRAND.master,
+  };
+}
 function mergeRecord<T extends object>(defaults: T, value: Partial<T> | undefined | null): T {
   if (!value || typeof value !== "object") return { ...defaults };
   return { ...defaults, ...value };
@@ -80,7 +101,7 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
           ? base.navigation.items
           : defaults.navigation.items,
     },
-    branding: mergeRecord(defaults.branding, base.branding),
+    branding: normalizeBrandingIcons(mergeRecord(defaults.branding, base.branding)),
     trustBadges: {
       items:
         base.trustBadges?.items?.length && base.trustBadges.items.some((i) => i.text?.trim())

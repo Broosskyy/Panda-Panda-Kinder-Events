@@ -1,12 +1,33 @@
 import { BRAND, type LogoContext } from "@/lib/brand";
 import type { SiteBrandingSettings } from "@/lib/cms/types";
 
+const LEGACY_ICON_PATTERNS = [
+  "/branding/favicon",
+  "/branding/icon",
+  "/branding/apple",
+  "/icons/panda-mark",
+  "/assets/logo.png",
+  "/assets/appicon",
+  "/panda-illustration",
+];
+
+function isLegacyIconPath(url: string): boolean {
+  const lower = url.toLowerCase();
+  return LEGACY_ICON_PATTERNS.some((p) => lower.includes(p));
+}
+
 function pickUrl(...candidates: (string | undefined | null)[]): string {
   for (const value of candidates) {
     const trimmed = value?.trim();
-    if (trimmed) return trimmed;
+    if (trimmed && !isLegacyIconPath(trimmed)) return trimmed;
   }
   return BRAND.master;
+}
+
+function pickIconUrl(cmsValue: string | undefined | null, fallback: string): string {
+  const trimmed = cmsValue?.trim();
+  if (trimmed && !isLegacyIconPath(trimmed)) return trimmed;
+  return fallback;
 }
 
 /** CMS-Override oder Master-Logo — eine konsistente Quelle pro Kontext */
@@ -33,11 +54,11 @@ export function resolveBrandLogo(
 }
 
 export function resolveFaviconUrl(branding?: SiteBrandingSettings): string {
-  return pickUrl(branding?.faviconUrl, BRAND.assets.faviconPng);
+  return pickIconUrl(branding?.faviconUrl, BRAND.assets.faviconPng);
 }
 
 export function resolveAppleTouchIconUrl(branding?: SiteBrandingSettings): string {
-  return pickUrl(branding?.appleTouchIconUrl, BRAND.assets.appleTouchIcon);
+  return pickIconUrl(branding?.appleTouchIconUrl, BRAND.assets.appleTouchIcon);
 }
 
 export function resolveOgImageUrl(branding?: SiteBrandingSettings, seoOgUrl?: string): string {
@@ -49,11 +70,11 @@ export function resolveOgImageUrl(branding?: SiteBrandingSettings, seoOgUrl?: st
 }
 
 export function resolvePwaIcon192(branding?: SiteBrandingSettings): string {
-  return pickUrl(branding?.pwaIcon192Url, BRAND.assets.icon192);
+  return pickIconUrl(branding?.pwaIcon192Url, BRAND.assets.icon192);
 }
 
 export function resolvePwaIcon512(branding?: SiteBrandingSettings): string {
-  return pickUrl(branding?.pwaIcon512Url, BRAND.assets.icon512);
+  return pickIconUrl(branding?.pwaIcon512Url, BRAND.assets.icon512);
 }
 
 export function resolvePrimaryColor(branding?: SiteBrandingSettings): string {

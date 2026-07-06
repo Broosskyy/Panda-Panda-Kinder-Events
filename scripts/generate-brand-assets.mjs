@@ -14,8 +14,7 @@ const brandingDir = join(root, "public/branding");
 const appDir = join(root, "src/app");
 const masterLogo = join(root, "public/assets/Logo.png");
 const BG = "#f4f1ea";
-const LOGO_BG = "#000000";
-const ICON_VERSION = "5";
+const ICON_VERSION = "6";
 
 /** Logo.png 640×160 — vollständiges Kombi-Logo proportional in Quadrat einpassen */
 async function renderLogoIcon(sharp, logoBuffer, size, { maskable = false, padding = 0.06 } = {}) {
@@ -37,7 +36,7 @@ async function renderLogoIcon(sharp, logoBuffer, size, { maskable = false, paddi
     .png()
     .toBuffer();
 
-  const bg = maskable ? BG : LOGO_BG;
+  const bg = BG;
 
   return sharp({
     create: {

@@ -35,7 +35,7 @@ function ReviewCard({ review }: { review: PublicReview }) {
   const avatarUrl = review.profile_image_url;
 
   return (
-    <Card className="review-card flex h-full flex-col" padding="md" hover={false}>
+    <Card className="review-card flex h-full flex-col" padding="md" hover>
       <StarRating rating={review.rating} size="xl" className="mb-5 sm:mb-7" />
 
       <blockquote className="flex-1 font-heading text-base leading-relaxed tracking-tight text-text-primary sm:text-lg md:text-xl md:leading-9">

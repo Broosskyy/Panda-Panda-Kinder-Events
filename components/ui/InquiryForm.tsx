@@ -92,10 +92,10 @@ export function InquiryForm({ privacyHint }: InquiryFormProps) {
       <Card padding="lg" hover={false} className="text-center">
         <PandaMascot size={100} className="mx-auto mb-6" />
         <div role="status" aria-live="polite">
-          <p className="text-3xl" aria-hidden>
-            ✓
-          </p>
-          <h3 className="font-heading mt-3 text-2xl font-bold text-text-primary md:text-3xl">
+          <div className="form-success-icon mx-auto" aria-hidden>
+            <Check className="h-8 w-8" strokeWidth={2.5} />
+          </div>
+          <h3 className="font-heading mt-5 text-2xl font-bold text-text-primary md:text-3xl">
             Anfrage erfolgreich versendet
           </h3>
           <p className="mx-auto mt-4 max-w-sm text-lg leading-relaxed text-text-secondary">

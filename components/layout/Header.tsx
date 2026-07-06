@@ -76,9 +76,9 @@ export function Header({
       >
         <div className="mx-auto flex min-h-16 items-center justify-between gap-2 px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:gap-4 md:px-12 md:py-3">
           <Logo
-            size="large"
+            size="lg"
             branding={branding}
-            className={`shrink-0 sm:[&_img]:max-h-11 md:[&_img]:max-h-14 ${isMenuOpen ? "invisible" : ""}`}
+            className={`shrink-0 ${isMenuOpen ? "invisible" : ""}`}
           />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
@@ -132,13 +132,13 @@ export function Header({
           />
           <div
             id={menuId}
-            className="absolute inset-y-0 right-0 flex w-full max-w-[min(100%,22rem)] animate-fade-in-up flex-col bg-bg-primary/98 shadow-2xl backdrop-blur-xl"
+            className="absolute inset-y-0 right-0 flex w-full max-w-[min(100%,22rem)] flex-col bg-bg-primary/98 shadow-2xl backdrop-blur-xl animate-fade-in-up"
           >
             <div className="flex items-center justify-between border-b border-border px-4 py-4 sm:px-5 sm:py-5">
               <h2 id={`${menuId}-title`} className="sr-only">
                 Navigation
               </h2>
-              <Logo branding={branding} />
+            <Logo branding={branding} size="md" />
               <button
                 ref={closeButtonRef}
                 type="button"

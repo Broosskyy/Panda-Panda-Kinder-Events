@@ -1,17 +1,18 @@
 import type { MetadataRoute } from "next";
+import { BRAND } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: siteConfig.name,
-    short_name: "Panda-Bande",
+    short_name: BRAND.shortName,
     description: siteConfig.description,
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
-    background_color: "#f4f1ea",
-    theme_color: "#52563e",
+    background_color: BRAND.backgroundColor,
+    theme_color: BRAND.themeColor,
     lang: "de",
     categories: ["business", "lifestyle"],
     icons: [
@@ -34,7 +35,7 @@ export default function manifest(): MetadataRoute.Manifest {
         purpose: "maskable",
       },
       {
-        src: "/panda-illustration.svg",
+        src: BRAND.logo.svg,
         sizes: "any",
         type: "image/svg+xml",
         purpose: "any",

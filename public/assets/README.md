@@ -1,14 +1,15 @@
 # Assets — Panda-Bande Kinderevents
 
-Lege hier das **originale Panda-Bande Logo** ab:
+Offizielle Marken-Assets:
 
+| Datei | Verwendung |
+|-------|------------|
+| `logo.svg` | Website Header, Footer, Splash, Browser (SVG) |
+| `logo-inverse.svg` | Footer auf dunklem Hintergrund |
+| `logo.png` | PDF, E-Mail-Clients, OG-Fallback (Retina 640×160) |
+
+Regenerieren nach Logo-Änderung:
+
+```bash
+npm run generate:brand-assets
 ```
-public/assets/logo.png
-```
-
-Empfohlen:
-- Format: PNG mit transparentem Hintergrund
-- Mindestbreite: 240px
-- Dateiname exakt: `logo.png`
-
-Die Website referenziert ausschließlich diese Datei (kein nachgebautes SVG-Logo).

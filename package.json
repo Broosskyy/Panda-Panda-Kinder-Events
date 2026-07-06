@@ -1,6 +1,6 @@
 {
   "name": "panda-bande-kinderevents",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -12,6 +12,7 @@
     "export:cms": "node scripts/export-cms.mjs",
     "export:crm": "node scripts/export-crm.mjs",
     "generate:pwa-icons": "node scripts/generate-pwa-icons.mjs",
+    "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
     "live:verify": "node scripts/live-verify.mjs",
     "sprint-report:pdf": "node scripts/generate-sprint-report-pdf.mjs"
   },

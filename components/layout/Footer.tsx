@@ -34,7 +34,7 @@ export function Footer({
       <Container className="relative py-12 sm:py-16 md:py-20">
         <div className="grid gap-12 sm:gap-14 md:grid-cols-2 lg:grid-cols-4 md:gap-10">
           <div className="flex flex-col items-center md:items-start lg:col-span-1">
-            <Logo variant="inverse" size="large" branding={branding} className="md:[&_img]:max-h-14" />
+            <Logo variant="inverse" size="lg" branding={branding} />
             <p className="font-accent mt-5 max-w-xs text-center text-lg leading-snug text-white/90 sm:mt-6 sm:text-xl md:max-w-none md:text-left md:text-2xl">
               {footer.tagline}
             </p>

@@ -82,7 +82,12 @@ export default async function AktuellesPage() {
         </Container>
       </main>
       <Footer contact={settings.contact} footer={settings.footer} branding={settings.branding} />
-      <PublicChrome contact={settings.contact} />
+      <PublicChrome
+        contact={settings.contact}
+        ctaLabel={settings.navigation.ctaLabel}
+        footer={settings.footer}
+        cookieNoticeText={settings.legal.cookieNoticeText}
+      />
     </>
   );
 }

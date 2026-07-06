@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Montserrat, Caveat } from "next/font/google";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { resolveSeoMeta } from "@/lib/cms/resolve-settings";
+import { BRAND } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
 import { getSiteUrl } from "@/lib/site-url";
 import { AnalyticsProvider } from "@/components/analytics/AnalyticsProvider";
@@ -37,7 +38,7 @@ export async function generateMetadata(): Promise<Metadata> {
       baseUrl: getSiteUrl(),
       title: `${siteConfig.name} — Liebevolle Kinderbetreuung für euer Event`,
       description: siteConfig.description,
-      ogImage: `${getSiteUrl()}/panda-illustration.svg`,
+      ogImage: `${getSiteUrl()}${BRAND.ogImage}`,
       robotsIndex: true,
       googleSiteVerification: undefined,
       googleAnalyticsId: undefined,
@@ -87,7 +88,7 @@ export async function generateMetadata(): Promise<Metadata> {
     icons: {
       icon: [
         { url: "/favicon.png", type: "image/png", sizes: "32x32" },
-        { url: "/panda-illustration.svg", type: "image/svg+xml" },
+        { url: BRAND.logo.svg, type: "image/svg+xml" },
       ],
       apple: [{ url: "/apple-touch-icon.png", type: "image/png", sizes: "180x180" }],
     },

@@ -132,6 +132,7 @@ export default async function HomePage() {
         contact={settings.contact}
         ctaLabel={settings.navigation.ctaLabel}
         cookieNoticeText={settings.legal.cookieNoticeText}
+        footer={settings.footer}
       />
     </>
   );

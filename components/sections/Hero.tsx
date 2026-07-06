@@ -9,6 +9,7 @@ import { Container } from "@/components/ui/Container";
 import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { StarRating } from "@/components/ui/StarRating";
+import { PORTRAIT_BLUR_DATA_URL } from "@/lib/image-placeholder";
 
 interface HeroRatingSummary {
   average: number;
@@ -30,7 +31,7 @@ export function Hero({
   const badges = trustBadges.items?.length ? trustBadges.items : DEFAULT_SITE_SETTINGS.trustBadges.items;
 
   return (
-    <section id="startseite" className="hero-section relative section-padding-lg">
+    <section id="startseite" className="hero-section relative section-padding-lg overflow-hidden">
       <FlowerOrnament className="pointer-events-none absolute left-0 top-20 h-20 w-20 opacity-35 sm:-left-4 sm:top-24 sm:h-28 sm:w-28 sm:opacity-50 md:h-40 md:w-40" />
       <FlowerOrnament
         variant="right"
@@ -39,7 +40,7 @@ export function Hero({
 
       <Container>
         <div className="grid items-center gap-10 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
-          <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:py-4">
+          <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:max-w-lg lg:py-6 xl:max-w-xl">
             {rating && rating.count > 0 ? (
               <div className="hero-rating-pill mb-5 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-4 py-2 shadow-sm backdrop-blur-sm sm:mb-6">
                 <StarRating rating={Math.round(rating.average)} size="sm" />
@@ -67,13 +68,13 @@ export function Hero({
                 ♡
               </span>
             </p>
-            <h1 className="font-heading mt-5 text-[2rem] font-bold leading-[1.08] tracking-tight text-text-primary sm:mt-7 sm:text-[2.65rem] md:text-5xl lg:mt-8 lg:text-[3.65rem] lg:leading-[1.04]">
+            <h1 className="font-heading mt-6 text-[2rem] font-bold leading-[1.08] tracking-tight text-text-primary sm:mt-8 sm:text-[2.65rem] md:text-5xl lg:mt-10 lg:text-[3.5rem] lg:leading-[1.05] xl:text-[3.65rem]">
               {hero.headline}
             </h1>
-            <p className="mt-5 max-w-md text-base leading-relaxed text-text-secondary sm:mt-7 sm:text-lg sm:leading-8 md:text-xl md:leading-9">
+            <p className="mt-6 max-w-md text-base leading-relaxed text-text-secondary sm:mt-8 sm:max-w-lg sm:text-lg sm:leading-8 md:text-xl md:leading-9">
               {hero.subtitle}
             </p>
-            <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
+            <div className="mt-10 flex flex-col gap-3 sm:mt-12 sm:flex-row sm:items-center sm:gap-4">
               <Button
                 href="#kontakt"
                 size="lg"
@@ -117,6 +118,8 @@ export function Hero({
                 fill
                 className="object-cover"
                 priority
+                placeholder="blur"
+                blurDataURL={PORTRAIT_BLUR_DATA_URL}
                 sizes="(max-width: 1024px) 100vw, 55vw"
                 unoptimized={heroImage.includes("supabase.co")}
               />

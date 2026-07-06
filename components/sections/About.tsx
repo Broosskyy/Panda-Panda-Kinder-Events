@@ -6,14 +6,16 @@ import type {
 } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
+import { TeamMemberImage } from "@/components/ui/TeamMemberImage";
+import { PORTRAIT_BLUR_DATA_URL } from "@/lib/image-placeholder";
 import { Card } from "@/components/ui/Card";
 import { Container } from "@/components/ui/Container";
 import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-const TEAM_IMAGE_FALLBACK = DEFAULT_SITE_SETTINGS.publicTeam.items[0]?.imageUrl
-  ?? DEFAULT_SITE_SETTINGS.about.imageUrl;
+const TEAM_IMAGE_FALLBACK = DEFAULT_SITE_SETTINGS.publicTeam.items[0]?.imageUrl?.trim()
+  || DEFAULT_SITE_SETTINGS.about.imageUrl;
 
 interface AboutProps {
   about?: SiteAboutSettings;
@@ -49,6 +51,8 @@ export function About({
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   loading="lazy"
+                  placeholder="blur"
+                  blurDataURL={PORTRAIT_BLUR_DATA_URL}
                   unoptimized={aboutImage.includes("supabase.co")}
                 />
               </div>
@@ -110,14 +114,11 @@ export function About({
                   <ScrollReveal delay={i * 80}>
                     <Card className="team-card h-full overflow-hidden !p-0" padding="sm" hover>
                       <div className="team-card-image relative aspect-[4/5] w-full overflow-hidden bg-bg-secondary">
-                        <Image
-                          src={member.imageUrl?.trim() || TEAM_IMAGE_FALLBACK}
-                          alt={`${member.name} — ${member.role}`}
-                          fill
-                          className="object-cover"
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                          loading="lazy"
-                          unoptimized={(member.imageUrl ?? "").includes("supabase.co")}
+                        <TeamMemberImage
+                          src={member.imageUrl}
+                          name={member.name}
+                          role={member.role}
+                          fallbackSrc={TEAM_IMAGE_FALLBACK}
                         />
                       </div>
                       <div className="p-5 md:p-6">

@@ -12,6 +12,8 @@ import { Container } from "@/components/ui/Container";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
+import { LANDSCAPE_BLUR_DATA_URL } from "@/lib/image-placeholder";
+
 const SERVICE_IMAGE_FALLBACK =
   "https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=800&h=500&fit=crop&q=85";
 
@@ -55,6 +57,8 @@ export function Services({
                         className="object-cover"
                         sizes="(max-width: 768px) 88vw, 33vw"
                         loading="lazy"
+                        placeholder="blur"
+                        blurDataURL={LANDSCAPE_BLUR_DATA_URL}
                       />
                     </div>
                     <h3 className="text-lg font-semibold tracking-tight text-text-primary sm:text-xl">{service.title}</h3>

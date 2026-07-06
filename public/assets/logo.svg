@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none" role="img" aria-label="Panda-Bande Kinderevents">
+  <g transform="translate(4, 6) scale(0.3)">
+    <ellipse cx="100" cy="130" rx="55" ry="50" fill="#52563E"/>
+    <circle cx="65" cy="75" r="22" fill="#52563E"/>
+    <circle cx="135" cy="75" r="22" fill="#52563E"/>
+    <circle cx="72" cy="68" r="8" fill="#F9F7F2"/>
+    <circle cx="128" cy="68" r="8" fill="#F9F7F2"/>
+    <circle cx="74" cy="68" r="4" fill="#2C2C2C"/>
+    <circle cx="130" cy="68" r="4" fill="#2C2C2C"/>
+    <ellipse cx="100" cy="88" rx="10" ry="7" fill="#F9F7F2"/>
+    <circle cx="97" cy="86" r="2" fill="#2C2C2C"/>
+    <circle cx="103" cy="86" r="2" fill="#2C2C2C"/>
+    <ellipse cx="100" cy="145" rx="18" ry="14" fill="#F9F7F2"/>
+  </g>
+  <text x="78" y="36" font-family="Montserrat, system-ui, sans-serif" font-weight="700" font-size="21" letter-spacing="0.18em" fill="#52563E">PANDA-BANDE</text>
+  <text x="78" y="56" font-family="Georgia, 'Playfair Display', serif" font-size="10.5" letter-spacing="0.32em" fill="#575757">KINDEREVENTS</text>
+</svg>

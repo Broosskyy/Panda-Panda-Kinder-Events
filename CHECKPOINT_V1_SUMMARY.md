@@ -5,7 +5,7 @@
 | **Version** | `v1.0-checkpoint` / `1.0.0-checkpoint` |
 | **Datum** | 2026-07-06 |
 | **Branch** | `cursor/project-checkpoint-v1-e022` |
-| **Commit** | `d854c4e` |
+| **Commit** | `e721261` |
 | **Vorgänger** | Security Sprint + Team/Users Cleanup |
 
 ## Status

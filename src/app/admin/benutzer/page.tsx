@@ -1,5 +1,5 @@
-import { UsersView } from "@/components/admin/views/UsersView";
+import { redirect } from "next/navigation";
 
-export default function AdminUsersPage() {
-  return <UsersView />;
+export default function LegacyBenutzerPage() {
+  redirect("/admin/sicherheit/benutzer");
 }

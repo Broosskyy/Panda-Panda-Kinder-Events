@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
 import { writeAuditLog } from "@/lib/auth/audit";
+import { fetchSiteSettings, saveSiteSettings } from "@/lib/cms/data";
+import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import {
   createTeamMember,
   deleteTeamMember,
@@ -9,6 +11,7 @@ import {
   listTeamMembers,
   updateTeamMember,
 } from "@/lib/team/db";
+import { syncTeamMembersToPublicCms } from "@/lib/team/sync-public";
 
 const socialLinksSchema = z
   .object({
@@ -21,32 +24,39 @@ const socialLinksSchema = z
   .optional();
 
 const teamMemberSchema = z.object({
-  firstName: z.string().optional(),
-  lastName: z.string().optional(),
-  username: z.string().optional(),
-  displayName: z.string().optional(),
-  name: z.string().optional(),
-  email: z.string().email(),
-  title: z.string().optional(),
-  position: z.string().optional(),
+  name: z.string().min(1, "Name ist erforderlich."),
+  position: z.string().min(1, "Position ist erforderlich."),
   description: z.string().optional(),
   profileImageUrl: z.string().optional(),
   phone: z.string().optional(),
+  email: z.string().email("Ungültige E-Mail.").optional().or(z.literal("")),
   socialLinks: socialLinksSchema,
   sortOrder: z.number().int().optional(),
-  role: z.enum(["admin", "editor", "readonly"]),
   active: z.boolean().optional(),
   archived: z.boolean().optional(),
 });
 
+const sectionSchema = z.object({
+  title: z.string().min(1),
+  subtitle: z.string().optional(),
+});
+
 export async function GET() {
-  const authError = await requireAdmin("team:write");
+  const authError = await requireAdmin("website:read");
   if (authError) return authError;
 
   try {
     const configured = await isTeamTableReady();
     const members = configured ? await listTeamMembers(true) : [];
-    return NextResponse.json({ members, configured });
+    const settings = await fetchSiteSettings();
+    return NextResponse.json({
+      members,
+      configured,
+      section: {
+        title: settings.publicTeam.title,
+        subtitle: settings.publicTeam.subtitle,
+      },
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Laden fehlgeschlagen.";
     return NextResponse.json({ error: message, members: [], configured: false }, { status: 200 });
@@ -54,40 +64,53 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin("team:write");
+  const authError = await requireAdmin("website:write");
   if (authError) return authError;
 
   const body = await request.json();
+
+  if (body.section) {
+    const parsed = sectionSchema.safeParse(body.section);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Ungültige Sektionsdaten." }, { status: 400 });
+    }
+    const settings = await fetchSiteSettings();
+    await saveSiteSettings("publicTeam", {
+      ...settings.publicTeam,
+      title: parsed.data.title,
+      subtitle: parsed.data.subtitle ?? "",
+    });
+    revalidatePublicCms();
+    return NextResponse.json({ success: true, message: "Team-Überschrift gespeichert." });
+  }
+
   const parsed = teamMemberSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ungültige Teamdaten." }, { status: 400 });
+    const msg = parsed.error.errors[0]?.message ?? "Ungültige Teamdaten.";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   const ctx = await getAdminContext();
 
   try {
     const member = await createTeamMember(parsed.data);
+    await syncTeamMembersToPublicCms();
     await writeAuditLog(ctx, {
       action: "create",
-      area: "team",
+      area: "public_team",
       entityId: member.id,
-      after: member,
+      after: { name: member.name, position: member.position, active: member.active },
     });
-    return NextResponse.json({ member, message: "Teammitglied gespeichert." });
+    return NextResponse.json({ member, message: "Teammitglied gespeichert und auf der Website veröffentlicht." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Speichern fehlgeschlagen.";
-    await writeAuditLog(ctx, {
-      action: "create",
-      area: "team",
-      success: false,
-      errorMessage: message,
-    });
+    await writeAuditLog(ctx, { action: "create", area: "public_team", success: false, errorMessage: message });
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin("team:write");
+  const authError = await requireAdmin("website:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -96,18 +119,21 @@ export async function PATCH(request: Request) {
 
   const parsed = teamMemberSchema.partial().safeParse(rest);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ungültige Daten." }, { status: 400 });
+    const msg = parsed.error.errors[0]?.message ?? "Ungültige Daten.";
+    return NextResponse.json({ error: msg }, { status: 400 });
   }
 
   const ctx = await getAdminContext();
 
   try {
     const member = await updateTeamMember(id, parsed.data);
+    await syncTeamMembersToPublicCms();
+    const action = parsed.data.archived ? "archive" : parsed.data.active === false ? "deactivate" : "update";
     await writeAuditLog(ctx, {
-      action: parsed.data.archived ? "archive" : "update",
-      area: "team",
+      action,
+      area: "public_team",
       entityId: id,
-      after: member,
+      after: { name: member.name, position: member.position, active: member.active },
     });
     return NextResponse.json({ member, message: "Teammitglied aktualisiert." });
   } catch (err) {
@@ -117,7 +143,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin("team:write");
+  const authError = await requireAdmin("website:write");
   if (authError) return authError;
 
   const { id } = await request.json();
@@ -127,7 +153,8 @@ export async function DELETE(request: Request) {
 
   try {
     await deleteTeamMember(id);
-    await writeAuditLog(ctx, { action: "delete", area: "team", entityId: id });
+    await syncTeamMembersToPublicCms();
+    await writeAuditLog(ctx, { action: "delete", area: "public_team", entityId: id });
     return NextResponse.json({ success: true, message: "Teammitglied entfernt." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";

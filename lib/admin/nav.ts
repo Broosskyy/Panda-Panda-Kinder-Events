@@ -20,15 +20,6 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
-    id: "crm",
-    label: "CRM",
-    items: [
-      { href: "/admin/kunden", label: "Kunden", iconKey: "Users" },
-      { href: "/admin/angebote", label: "Angebote", iconKey: "FileText" },
-      { href: "/admin/rechnungen", label: "Rechnungen", iconKey: "Receipt" },
-    ],
-  },
-  {
     id: "website",
     label: "Website",
     items: [
@@ -37,6 +28,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/galerie", label: "Galerie", iconKey: "Image" },
       { href: "/admin/beitraege", label: "Beiträge", iconKey: "Newspaper" },
       { href: "/admin/faq", label: "FAQ", iconKey: "HelpCircle" },
+      { href: "/admin/team", label: "Team", iconKey: "UserCog" },
     ],
   },
   {
@@ -48,13 +40,32 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     ],
   },
   {
-    id: "settings",
-    label: "Verwaltung",
+    id: "crm",
+    label: "CRM",
     items: [
-      { href: "/admin/benutzer", label: "Benutzer", iconKey: "Users" },
-      { href: "/admin/team", label: "Team", iconKey: "UserCog" },
-      { href: "/admin/sicherheit", label: "Sicherheit", iconKey: "Shield" },
-      { href: "/admin/einstellungen", label: "Einstellungen", iconKey: "Settings" },
+      { href: "/admin/kunden", label: "Kunden", iconKey: "Users" },
+      { href: "/admin/angebote", label: "Angebote", iconKey: "FileText" },
+      { href: "/admin/rechnungen", label: "Rechnungen", iconKey: "Receipt" },
+    ],
+  },
+  {
+    id: "security",
+    label: "Sicherheit",
+    items: [
+      { href: "/admin/sicherheit/benutzer", label: "Benutzer & Rollen", iconKey: "Users" },
+      { href: "/admin/sicherheit/2fa", label: "2FA", iconKey: "Shield" },
+      { href: "/admin/sicherheit/sitzungen", label: "Sitzungen", iconKey: "Monitor" },
+      { href: "/admin/sicherheit/login-historie", label: "Login-Historie", iconKey: "History" },
+      { href: "/admin/sicherheit/audit", label: "Aktivitätsprotokoll", iconKey: "ScrollText" },
+    ],
+  },
+  {
+    id: "settings",
+    label: "Einstellungen",
+    items: [
+      { href: "/admin/einstellungen", label: "Unternehmensdaten", iconKey: "Settings" },
+      { href: "/admin/einstellungen?tab=email", label: "E-Mail", iconKey: "Mail" },
+      { href: "/admin/einstellungen?tab=system", label: "System", iconKey: "Cpu" },
     ],
   },
 ];
@@ -70,8 +81,9 @@ export const MOBILE_BOTTOM_NAV_HREFS = [
 ] as const;
 
 export function isAdminNavActive(pathname: string, href: string): boolean {
-  if (href === "/admin") return pathname === "/admin";
-  return pathname === href || pathname.startsWith(`${href}/`);
+  const baseHref = href.split("?")[0] ?? href;
+  if (baseHref === "/admin") return pathname === "/admin";
+  return pathname === baseHref || pathname.startsWith(`${baseHref}/`);
 }
 
 export function isAdminNavGroupActive(pathname: string, group: AdminNavGroup): boolean {

@@ -1,17 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, UserPlus } from "lucide-react";
+import { Pencil, Plus, UserPlus } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
 import { AdminButton, AdminEmptyState, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminUi } from "@/components/admin/AdminUiProvider";
-import type { AdminUserPublic } from "@/lib/auth/types";
+import { ADMIN_ROLE_DESCRIPTIONS, ADMIN_ROLE_SHORT } from "@/lib/admin/role-descriptions";
+import type { AdminUserPublic, AdminRoleSlug } from "@/lib/auth/types";
 
 interface Role {
   id: string;
   slug: string;
   label: string;
+}
+
+interface TeamOption {
+  id: string;
+  name: string;
 }
 
 const emptyForm = () => ({
@@ -21,12 +28,20 @@ const emptyForm = () => ({
   displayName: "",
   roleId: "",
   phone: "",
+  teamMemberId: "" as string | null,
 });
+
+function formatLogin(date: string | null) {
+  if (!date) return "—";
+  return new Date(date).toLocaleString("de-DE");
+}
 
 export function UsersView() {
   const [users, setUsers] = useState<AdminUserPublic[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamOption[]>([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
   const { toast, withLoading } = useAdminUi();
 
@@ -36,6 +51,7 @@ export function UsersView() {
     if (res.ok) {
       setUsers(data.users ?? []);
       setRoles(data.roles ?? []);
+      setTeamMembers(data.teamMembers ?? []);
       if (!form.roleId && data.roles?.[0]) {
         setForm((f) => ({ ...f, roleId: data.roles[0].id }));
       }
@@ -48,22 +64,50 @@ export function UsersView() {
     void load();
   }, [load]);
 
-  const create = async () => {
-    if (!form.username || !form.email || !form.password || !form.displayName) {
-      return toast("Alle Pflichtfelder ausfüllen", "error");
+  const openCreate = () => {
+    setEditingId(null);
+    setForm({ ...emptyForm(), roleId: roles[0]?.id ?? "" });
+    setShowForm(true);
+  };
+
+  const openEdit = (user: AdminUserPublic) => {
+    setEditingId(user.id);
+    setForm({
+      username: user.username,
+      email: user.email,
+      password: "",
+      displayName: user.display_name,
+      roleId: user.role_id,
+      phone: user.phone ?? "",
+      teamMemberId: user.team_member_id ?? "",
+    });
+    setShowForm(true);
+  };
+
+  const save = async () => {
+    if (!form.username || !form.email || !form.displayName || !form.roleId) {
+      return toast("Bitte alle Pflichtfelder ausfüllen.", "error");
+    }
+    if (!editingId && !form.password) {
+      return toast("Passwort ist bei Neuanlage erforderlich.", "error");
     }
     await withLoading(
       (async () => {
+        const payload = {
+          ...form,
+          teamMemberId: form.teamMemberId || null,
+          ...(editingId ? { id: editingId, ...(form.password ? { password: form.password, resetPassword: true } : {}) } : {}),
+        };
         const res = await fetch("/api/admin/users", {
-          method: "POST",
+          method: editingId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
+          body: JSON.stringify(payload),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(data.message ?? "Benutzer angelegt");
+        toast(data.message ?? "Gespeichert");
         setShowForm(false);
-        setForm(emptyForm());
+        setEditingId(null);
         await load();
       })(),
     );
@@ -80,40 +124,48 @@ export function UsersView() {
     await load();
   };
 
-  const changeRole = async (userId: string, roleId: string) => {
-    const res = await fetch("/api/admin/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: userId, roleId }),
-    });
-    if (!res.ok) {
-      const data = await res.json();
-      return toast(data.error ?? "Fehler", "error");
-    }
-    await load();
-  };
-
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Benutzer" description="Admin-Benutzer, Rollen und Zugriffsrechte verwalten.">
-        <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setShowForm(true)}>
+      <AdminPageHeader
+        title="Benutzer & Rollen"
+        description="Admin-Accounts für Login und Dashboard. Keine öffentlichen Teamkarten — dafür gibt es Website → Team."
+      >
+        <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
           Benutzer anlegen
         </AdminButton>
       </AdminPageHeader>
 
+      <SecuritySubNav />
+
+      <AdminCard title="Rollenübersicht">
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+          {roles.map((role) => (
+            <div key={role.id} className="rounded-xl border border-border bg-bg-secondary/40 p-3 text-sm">
+              <p className="font-semibold text-text-primary">{role.label}</p>
+              <p className="mt-1 text-xs text-primary">{ADMIN_ROLE_SHORT[role.slug as AdminRoleSlug] ?? ""}</p>
+              <p className="mt-2 text-text-muted">{ADMIN_ROLE_DESCRIPTIONS[role.slug as AdminRoleSlug] ?? ""}</p>
+            </div>
+          ))}
+        </div>
+      </AdminCard>
+
       {showForm ? (
-        <AdminCard title="Neuer Benutzer">
+        <AdminCard title={editingId ? "Benutzer bearbeiten" : "Neuer Benutzer"}>
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Benutzername" required>
+            <AdminFormField label="Benutzername" required hint="Für die Anmeldung.">
               <input className="admin-input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="E-Mail" required>
+            <AdminFormField label="E-Mail" required hint="Für Login und Passwort-Reset.">
               <input className="admin-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
             </AdminFormField>
             <AdminFormField label="Anzeigename" required>
               <input className="admin-input" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="Passwort" required>
+            <AdminFormField
+              label="Passwort"
+              required={!editingId}
+              hint={editingId ? "Nur ausfüllen zum Zurücksetzen." : "Mindestens 12 Zeichen empfohlen."}
+            >
               <input className="admin-input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </AdminFormField>
             <AdminFormField label="Rolle" required>
@@ -123,12 +175,21 @@ export function UsersView() {
                 ))}
               </select>
             </AdminFormField>
-            <AdminFormField label="Telefon">
-              <input className="admin-input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
+            <AdminFormField label="Team-Verknüpfung" hint="Optional: öffentliches Teammitglied verknüpfen (kein Login).">
+              <select
+                className="admin-input"
+                value={form.teamMemberId ?? ""}
+                onChange={(e) => setForm({ ...form, teamMemberId: e.target.value || null })}
+              >
+                <option value="">— Keine Verknüpfung —</option>
+                {teamMembers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
             </AdminFormField>
           </div>
           <div className="mt-6 flex gap-2">
-            <AdminButton variant="primary" onClick={() => void create()}>Speichern</AdminButton>
+            <AdminButton variant="primary" onClick={() => void save()}>Speichern</AdminButton>
             <AdminButton variant="secondary" onClick={() => setShowForm(false)}>Abbrechen</AdminButton>
           </div>
         </AdminCard>
@@ -137,10 +198,10 @@ export function UsersView() {
       {users.length === 0 ? (
         <AdminEmptyState
           icon={UserPlus}
-          title="Noch keine Benutzer"
-          description="Lege den ersten Admin-Benutzer an oder nutze den Bootstrap-Endpunkt."
+          title="Noch keine Admin-Benutzer"
+          description="Lege Benutzer für den Dashboard-Login an. Das globale Passwort gilt nur, bis der erste Benutzer existiert."
           actionLabel="Benutzer anlegen"
-          onAction={() => setShowForm(true)}
+          onAction={openCreate}
         />
       ) : (
         <div className="space-y-3">
@@ -150,22 +211,22 @@ export function UsersView() {
                 <div>
                   <p className="font-semibold text-text-primary">{u.display_name}</p>
                   <p className="text-sm text-text-muted">@{u.username} · {u.email}</p>
+                  <p className="mt-1 text-xs text-text-muted">Letzter Login: {formatLogin(u.last_login)}</p>
+                  {u.team_member_name ? (
+                    <p className="mt-1 text-xs text-text-muted">Verknüpft mit Team: {u.team_member_name}</p>
+                  ) : null}
                   <div className="mt-2 flex flex-wrap gap-2">
                     <AdminStatusBadge label={u.role_label} variant="default" />
                     <AdminStatusBadge label={u.active ? "Aktiv" : "Deaktiviert"} variant={u.active ? "success" : "muted"} />
-                    {u.totp_enabled ? <AdminStatusBadge label="2FA" variant="success" /> : null}
+                    {u.totp_enabled ? (
+                      <AdminStatusBadge label="2FA aktiv" variant="success" />
+                    ) : (
+                      <AdminStatusBadge label="2FA aus" variant="muted" />
+                    )}
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <select
-                    className="admin-input text-sm"
-                    value={u.role_id}
-                    onChange={(e) => void changeRole(u.id, e.target.value)}
-                  >
-                    {roles.map((r) => (
-                      <option key={r.id} value={r.id}>{r.label}</option>
-                    ))}
-                  </select>
+                <div className="flex flex-wrap gap-2">
+                  <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(u)}>Bearbeiten</AdminButton>
                   <AdminButton variant="secondary" onClick={() => void toggleActive(u)}>
                     {u.active ? "Deaktivieren" : "Aktivieren"}
                   </AdminButton>

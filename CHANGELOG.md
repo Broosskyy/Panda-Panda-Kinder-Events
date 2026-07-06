@@ -2,6 +2,29 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.0-rc.2] — 2026-07-06 — Team / Users / 2FA Cleanup
+
+### Klare Trennung
+- **Team** (Website → Team): öffentliche Personen, kein Login, Sync zu `publicTeam`
+- **Benutzer** (Sicherheit → Benutzer & Rollen): Admin-Accounts mit Rollen & 2FA
+- Optionale Verknüpfung `admin_users.team_member_id`
+
+### Navigation
+- Team unter Website; Benutzer/2FA/Sitzungen/Historie/Audit unter Sicherheit
+- Einstellungen mit Tabs: Unternehmensdaten, E-Mail, System
+- `/admin/benutzer` → Redirect zu Sicherheit
+
+### 2FA UX
+- Eigene Seite `/admin/sicherheit/2fa` mit QR, Secret-Fallback, Backup-Codes kopieren/herunterladen
+- Deaktivierung mit Passwortbestätigung
+- Persönliche 2FA ohne `security:write`-Berechtigung
+
+### Migration
+- `20260713_team_users_cleanup.sql`
+
+### Report
+- `ADMIN_TEAM_USERS_2FA_CLEANUP_REPORT.md`
+
 ## [1.0.0-rc.1] — 2026-07-06 — Security & Administration Sprint v1.0
 
 ### Authentifizierung

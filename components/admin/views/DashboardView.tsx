@@ -160,7 +160,7 @@ export function DashboardView() {
           <StatCard
             label="Aktive Benutzer"
             value={stats?.security?.activeUsers ?? "—"}
-            href="/admin/benutzer"
+            href="/admin/sicherheit/benutzer"
             icon={Users}
           />
           <StatCard

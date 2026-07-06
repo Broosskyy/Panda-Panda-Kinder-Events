@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
 import { getUserById, updateUser } from "@/lib/auth/users";
+import { verifyPassword } from "@/lib/auth/password";
 import {
   generateTotpSecret,
   getTotpQrDataUrl,
@@ -10,50 +11,62 @@ import {
 } from "@/lib/auth/totp";
 import { writeAuditLog } from "@/lib/auth/audit";
 
-export async function GET() {
-  const authError = await requireAdmin("security:read");
-  if (authError) return authError;
-
-  const ctx = await getAdminContext();
-  if (!ctx?.userId) {
-    return NextResponse.json({ enabled: false, legacy: true, backupCodesRemaining: 0 });
+/** Personal 2FA — any authenticated multi-user admin can manage their own 2FA. */
+async function requirePersonalAuth() {
+  const authError = await requireAdmin();
+  if (authError) return { error: authError, ctx: null };
+  const adminCtx = await getAdminContext();
+  if (!adminCtx?.userId) {
+    return {
+      error: NextResponse.json(
+        {
+          error: "2FA ist erst verfügbar, wenn ein Admin-Benutzer angelegt wurde. Bitte unter Sicherheit → Benutzer & Rollen den ersten Benutzer anlegen.",
+          legacy: true,
+        },
+        { status: 400 },
+      ),
+      ctx: null,
+    };
   }
+  return { error: null, ctx: adminCtx };
+}
 
-  const user = await getUserById(ctx.userId);
-  const backupCodesRemaining = await countUnusedBackupCodes(ctx.userId);
+export async function GET() {
+  const { error, ctx } = await requirePersonalAuth();
+  if (error) return error;
+
+  const user = await getUserById(ctx!.userId!);
+  const backupCodesRemaining = await countUnusedBackupCodes(ctx!.userId!);
 
   return NextResponse.json({
     enabled: user?.totp_enabled ?? false,
     backupCodesRemaining,
+    email: user?.email,
+    legacy: false,
   });
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin("security:write");
-  if (authError) return authError;
-
-  const ctx = await getAdminContext();
-  if (!ctx?.userId) {
-    return NextResponse.json({ error: "2FA nur im Multi-User-Modus verfügbar." }, { status: 400 });
-  }
+  const { error, ctx } = await requirePersonalAuth();
+  if (error) return error;
 
   const body = await request.json();
-  const user = await getUserById(ctx.userId);
+  const user = await getUserById(ctx!.userId!);
   if (!user) return NextResponse.json({ error: "Benutzer nicht gefunden." }, { status: 404 });
 
   if (body.action === "setup") {
     const secret = generateTotpSecret();
     const qrDataUrl = await getTotpQrDataUrl(user.email, secret);
     await updateUser(user.id, { totpSecret: secret, totpEnabled: false });
-    return NextResponse.json({ secret, qrDataUrl });
+    return NextResponse.json({ secret, qrDataUrl, email: user.email });
   }
 
   if (body.action === "verify") {
     if (!user.totp_secret || !body.code) {
-      return NextResponse.json({ error: "Code erforderlich." }, { status: 400 });
+      return NextResponse.json({ error: "6-stelliger Code erforderlich." }, { status: 400 });
     }
     if (!verifyTotpCode(user.totp_secret, body.code)) {
-      return NextResponse.json({ error: "Ungültiger Code." }, { status: 400 });
+      return NextResponse.json({ error: "Ungültiger Code. Bitte Authenticator-App prüfen." }, { status: 400 });
     }
     const backupCodes = await generateBackupCodes(user.id);
     await updateUser(user.id, { totpEnabled: true });
@@ -62,15 +75,21 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "disable") {
-    if (!user.totp_secret || !body.code) {
-      return NextResponse.json({ error: "Code erforderlich." }, { status: 400 });
+    if (!body.password) {
+      return NextResponse.json({ error: "Passwort zur Bestätigung erforderlich." }, { status: 400 });
     }
-    if (!verifyTotpCode(user.totp_secret, body.code)) {
-      return NextResponse.json({ error: "Ungültiger Code." }, { status: 400 });
+    const passwordOk = await verifyPassword(body.password, user.password_hash);
+    if (!passwordOk) {
+      return NextResponse.json({ error: "Passwort ist falsch." }, { status: 401 });
+    }
+    if (user.totp_enabled && user.totp_secret && body.code) {
+      if (!verifyTotpCode(user.totp_secret, body.code)) {
+        return NextResponse.json({ error: "Zusätzlich 2FA-Code erforderlich." }, { status: 400 });
+      }
     }
     await updateUser(user.id, { totpEnabled: false, totpSecret: null });
     await writeAuditLog(ctx, { action: "2fa_disable", area: "security" });
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, message: "2FA deaktiviert." });
   }
 
   if (body.action === "regenerate_backup") {
@@ -78,7 +97,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "2FA-Code erforderlich." }, { status: 400 });
     }
     if (!verifyTotpCode(user.totp_secret, body.code)) {
-      return NextResponse.json({ error: "Ungültiger Code." }, { status: 400 });
+      return NextResponse.json({ error: "Ungültiger 2FA-Code." }, { status: 400 });
     }
     const backupCodes = await generateBackupCodes(user.id);
     await writeAuditLog(ctx, { action: "2fa_backup_regenerate", area: "security" });

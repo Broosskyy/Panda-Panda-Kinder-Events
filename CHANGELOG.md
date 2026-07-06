@@ -2,6 +2,33 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.0-rc.1] — 2026-07-06 — Security & Administration Sprint v1.0
+
+### Authentifizierung
+- Multi-User Admin-System (`admin_users`) mit bcrypt-Passwort-Hash
+- Login per Benutzername oder E-Mail, „Angemeldet bleiben“, Passwort-Reset per E-Mail
+- 2FA (TOTP) mit QR-Code, Backup-Codes, „Gerät 30 Tage vertrauen“
+- Legacy-Fallback: `ADMIN_PASSWORD` solange keine Benutzer existieren
+
+### Rollen & Sicherheit
+- 6 Rollen, 22 granulare Berechtigungen, serverseitige `requireAdmin(permission)`-Prüfung
+- Sessions, Login-Historie, Audit-Log, Sicherheitseinstellungen
+- Rate Limiting, Account Lockout, HttpOnly/Secure Cookies
+
+### Team Bugfix
+- `GET /api/admin/team` ohne 500 (Graceful Fallback)
+- Vollständiges CRUD: Vorname, Nachname, Profil, Social Links, Archivieren
+
+### Admin UI
+- `/admin/benutzer`, `/admin/sicherheit`, erweitertes Team-Formular
+- Dashboard: Aktive Benutzer, Logins, Systemstatus
+
+### Migration
+- `20260712_security_admin_v1.sql`
+
+### Report
+- `SECURITY_ADMIN_REPORT.md`
+
 ## [0.9.0-rc.13] — 2026-07-06 — Public Website Final Polish (RC5)
 
 ### Struktur & UX

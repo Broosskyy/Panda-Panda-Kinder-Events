@@ -178,12 +178,32 @@ export interface SiteBusinessSettings {
 
 export type TeamMemberRole = "admin" | "editor" | "readonly";
 
+export interface TeamSocialLinks {
+  linkedin?: string;
+  instagram?: string;
+  facebook?: string;
+  twitter?: string;
+  website?: string;
+}
+
 export interface TeamMember {
   id: string;
   name: string;
   email: string;
   role: TeamMemberRole;
   active: boolean;
+  first_name?: string;
+  last_name?: string;
+  username?: string | null;
+  display_name?: string;
+  title?: string;
+  position?: string;
+  description?: string;
+  profile_image_url?: string;
+  phone?: string;
+  social_links?: TeamSocialLinks;
+  sort_order?: number;
+  archived?: boolean;
   created_at: string;
   updated_at: string;
 }

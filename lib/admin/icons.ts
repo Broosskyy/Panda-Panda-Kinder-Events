@@ -10,6 +10,7 @@ import {
   Newspaper,
   Receipt,
   Settings,
+  Shield,
   Sparkles,
   Star,
   UserCog,
@@ -31,6 +32,7 @@ export const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
   Star,
   UserCog,
   Settings,
+  Shield,
 };
 
 export function resolveAdminIcon(key: string): LucideIcon {

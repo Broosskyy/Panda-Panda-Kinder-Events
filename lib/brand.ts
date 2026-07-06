@@ -18,18 +18,19 @@ export const BRAND = {
   master: "/assets/Logo.png",
 
   /** Cache-Busting für Favicon/PWA nach Icon-Update */
-  iconVersion: "2",
+  iconVersion: "3",
 
   /** Extrahierte quadratische Bildmarke (für PDF/E-Mail/Favicon) */
   markOnly: "/icons/panda-mark.png",
 
   /** Generierte Icon-Assets (npm run generate:brand-assets) */
   assets: {
+    faviconPng: "/favicon.png",
     favicon16: "/icons/panda-icon-16.png",
     favicon32: "/icons/panda-icon-32.png",
     favicon48: "/icons/panda-icon-48.png",
     favicon64: "/icons/panda-icon-64.png",
-    faviconIco: "/icons/favicon.ico",
+    faviconIco: "/favicon.ico",
     appleTouchIcon: "/icons/panda-apple-touch-icon.png",
     icon192: "/icons/panda-icon-192.png",
     icon512: "/icons/panda-icon-512.png",

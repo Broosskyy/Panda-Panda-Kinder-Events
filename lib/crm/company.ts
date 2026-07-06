@@ -48,6 +48,6 @@ export async function getBusinessProfile(): Promise<BusinessProfile> {
     defaultQuoteText: invoice.quoteIntroText,
     defaultInvoiceText: invoice.invoiceIntroText,
     defaultPaymentText: invoice.paymentInfoText,
-    faviconUrl: branding.faviconUrl || BRAND.assets.favicon32,
+    faviconUrl: branding.faviconUrl || BRAND.assets.faviconPng,
   };
 }

@@ -51,6 +51,9 @@ export async function generateMetadata(): Promise<Metadata> {
 
   const favicon = resolveFaviconUrl(branding ?? undefined);
   const appleIcon = resolveAppleTouchIconUrl(branding ?? undefined);
+  const faviconV = withIconVersion(favicon);
+  const appleV = withIconVersion(appleIcon);
+  const icoV = withIconVersion(BRAND.assets.faviconIco);
 
   return {
     metadataBase: new URL(seo.baseUrl),
@@ -93,13 +96,13 @@ export async function generateMetadata(): Promise<Metadata> {
       : undefined,
     icons: {
       icon: [
-        { url: withIconVersion(BRAND.assets.faviconIco), sizes: "any" },
-        { url: withIconVersion(favicon), type: "image/png", sizes: "32x32" },
+        { url: faviconV, type: "image/png", sizes: "512x512" },
+        { url: icoV, sizes: "any" },
+        { url: withIconVersion(BRAND.assets.favicon32), type: "image/png", sizes: "32x32" },
         { url: withIconVersion(BRAND.assets.favicon16), type: "image/png", sizes: "16x16" },
-        { url: withIconVersion(BRAND.assets.favicon48), type: "image/png", sizes: "48x48" },
       ],
-      apple: [{ url: withIconVersion(appleIcon), type: "image/png", sizes: "180x180" }],
-      shortcut: [{ url: withIconVersion(BRAND.assets.faviconIco) }],
+      apple: [{ url: appleV, type: "image/png", sizes: "180x180" }],
+      shortcut: [{ url: faviconV }],
     },
   };
 }
@@ -115,6 +118,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="de" className={`${playfair.variable} ${montserrat.variable} ${caveat.variable}`}>
       <head>
         <link rel="preload" href={BRAND.master} as="image" type="image/png" />
+        <link rel="icon" href={withIconVersion(BRAND.assets.faviconPng)} type="image/png" sizes="512x512" />
+        <link rel="shortcut icon" href={withIconVersion(BRAND.assets.faviconIco)} />
+        <link rel="apple-touch-icon" href={withIconVersion(BRAND.assets.appleTouchIcon)} sizes="180x180" />
         <meta name="msapplication-config" content="/branding/browserconfig.xml" />
       </head>
       <body className="antialiased">

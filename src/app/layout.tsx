@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Playfair_Display, Montserrat, Caveat } from "next/font/google";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { resolveSeoMeta } from "@/lib/cms/resolve-settings";
-import { BRAND } from "@/lib/brand";
+import { BRAND, withIconVersion } from "@/lib/brand";
 import { resolveFaviconUrl, resolveAppleTouchIconUrl } from "@/lib/brand/resolve";
 import { siteConfig } from "@/config/site";
 import { getSiteUrl } from "@/lib/site-url";
@@ -93,12 +93,13 @@ export async function generateMetadata(): Promise<Metadata> {
       : undefined,
     icons: {
       icon: [
-        { url: BRAND.assets.faviconIco, sizes: "any" },
-        { url: favicon, type: "image/png", sizes: "32x32" },
-        { url: BRAND.assets.favicon16, type: "image/png", sizes: "16x16" },
-        { url: BRAND.assets.favicon48, type: "image/png", sizes: "48x48" },
+        { url: withIconVersion(BRAND.assets.faviconIco), sizes: "any" },
+        { url: withIconVersion(favicon), type: "image/png", sizes: "32x32" },
+        { url: withIconVersion(BRAND.assets.favicon16), type: "image/png", sizes: "16x16" },
+        { url: withIconVersion(BRAND.assets.favicon48), type: "image/png", sizes: "48x48" },
       ],
-      apple: [{ url: appleIcon, type: "image/png", sizes: "180x180" }],
+      apple: [{ url: withIconVersion(appleIcon), type: "image/png", sizes: "180x180" }],
+      shortcut: [{ url: withIconVersion(BRAND.assets.faviconIco) }],
     },
   };
 }

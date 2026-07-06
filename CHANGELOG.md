@@ -2,6 +2,13 @@
 
 Alle wichtigen Änderungen an diesem Projekt werden in dieser Datei dokumentiert.
 
+## [1.0.5] — 2026-07-06
+
+### Fixed
+- Header/Footer Logo-Größe: Bildmarke wird aus Kombi-Logo korrekt gecroppt und größer dargestellt (Mobile ~38px, Desktop bis 56px)
+- Favicon/PWA-Icons neu aus Panda-Bildmarke generiert (`/icons/panda-icon-*`, Cache-Bust `?v=2`)
+- Master-Logo-Pfad vereinheitlicht auf `/assets/Logo.png` (lowercase `logo.png` entfernt)
+
 ## [1.0.4] — 2026-07-06 — Branding + CMS E-Mail Control
 
 ### Branding

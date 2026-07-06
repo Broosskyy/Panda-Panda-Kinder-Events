@@ -1,15 +1,6 @@
-# Branding — Panda-Bande Kinderevents
+# Branding Assets
 
-**Eine einzige Logoquelle für das gesamte Projekt:**
+Generierte Open-Graph-Bilder und Browser-Konfiguration.
 
-```
-public/branding/logo.png
-```
-
-Alle Favicons, PWA-Icons und OG-Bilder werden daraus generiert:
-
-```bash
-npm run generate:brand-assets
-```
-
-CMS-Overrides: Admin → Einstellungen → Branding
+**Master-Logo:** `/assets/Logo.png`  
+**Favicon/PWA-Icons:** `/icons/panda-icon-*.png` (via `npm run generate:brand-assets`)

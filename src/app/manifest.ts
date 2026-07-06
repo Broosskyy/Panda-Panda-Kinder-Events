@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { BRAND } from "@/lib/brand";
+import { BRAND, withIconVersion } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
 
 export default function manifest(): MetadataRoute.Manifest {
@@ -17,28 +17,22 @@ export default function manifest(): MetadataRoute.Manifest {
     categories: ["business", "lifestyle"],
     icons: [
       {
-        src: BRAND.assets.icon192,
+        src: withIconVersion(BRAND.assets.icon192),
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: BRAND.assets.icon512,
+        src: withIconVersion(BRAND.assets.icon512),
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: BRAND.assets.iconMaskable512,
+        src: withIconVersion(BRAND.assets.iconMaskable512),
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
-      },
-      {
-        src: BRAND.master,
-        sizes: "640x160",
-        type: "image/png",
-        purpose: "any",
       },
     ],
   };

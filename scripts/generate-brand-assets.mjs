@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const brandingDir = join(root, "public/branding");
-const masterLogo = join(brandingDir, "logo.png");
+const masterLogo = join(root, "public/assets/logo.png");
 
 async function main() {
   let sharp;

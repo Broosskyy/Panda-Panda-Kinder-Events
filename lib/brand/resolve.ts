@@ -40,10 +40,28 @@ export function resolveAppleTouchIconUrl(branding?: SiteBrandingSettings): strin
   return pickUrl(branding?.appleTouchIconUrl, BRAND.assets.appleTouchIcon);
 }
 
-export function resolveOgImageUrl(seoOgUrl?: string): string {
-  const trimmed = seoOgUrl?.trim();
-  if (trimmed) return trimmed;
+export function resolveOgImageUrl(branding?: SiteBrandingSettings, seoOgUrl?: string): string {
+  const fromBranding = branding?.ogImageUrl?.trim();
+  if (fromBranding) return fromBranding;
+  const fromSeo = seoOgUrl?.trim();
+  if (fromSeo) return fromSeo;
   return BRAND.assets.ogImage;
+}
+
+export function resolvePwaIcon192(branding?: SiteBrandingSettings): string {
+  return pickUrl(branding?.pwaIcon192Url, BRAND.assets.icon192);
+}
+
+export function resolvePwaIcon512(branding?: SiteBrandingSettings): string {
+  return pickUrl(branding?.pwaIcon512Url, BRAND.assets.icon512);
+}
+
+export function resolvePrimaryColor(branding?: SiteBrandingSettings): string {
+  return branding?.primaryColor?.trim() || BRAND.themeColor;
+}
+
+export function resolveAccentColor(branding?: SiteBrandingSettings): string {
+  return branding?.accentColor?.trim() || BRAND.accentColor;
 }
 
 export function resolveBrandAlt(branding?: SiteBrandingSettings): string {

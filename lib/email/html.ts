@@ -7,12 +7,13 @@ interface EmailLayoutOptions {
   companyName: string;
   bodyHtml: string;
   footerHtml?: string;
+  primaryColor?: string;
 }
 
 /** Responsive HTML-E-Mail mit Logo-Header — Dark-Mode-tauglich */
 export function wrapEmailHtml(opts: EmailLayoutOptions): string {
   const logoSrc = toAbsoluteBrandUrl(opts.logoUrl, opts.baseUrl);
-  const brand = BRAND.themeColor;
+  const brand = opts.primaryColor || BRAND.themeColor;
 
   return `<!DOCTYPE html>
 <html lang="de">

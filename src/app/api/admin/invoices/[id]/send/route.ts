@@ -40,7 +40,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     const emailSettings = await getEmailSettings();
     const sendingSetup = await getResendSendingSetup(emailSettings.senderEmail);
-    if (!sendingSetup.canSend && !sendingSetup.domain?.includes("resend.dev")) {
+    if (!sendingSetup.canSend) {
       throw new CrmApiError(sendingSetup.blockReason ?? "E-Mail-Versand nicht möglich.", {
         code: "sending_not_ready",
         status: 503,

@@ -1,5 +1,6 @@
 import type { DomainRecords } from "resend";
-import { checkResendDomainStatus, RESEND_TEST_FROM } from "./sender";
+import { checkResendDomainStatus, normalizeProductionEmail } from "./sender";
+import { DEFAULT_COMPANY_EMAIL } from "./constants";
 
 export type ResendStatusLevel = "ok" | "warn" | "error" | "optional";
 
@@ -33,8 +34,9 @@ function isResendTestDomain(email: string): boolean {
 }
 
 export async function getResendSendingSetup(senderEmail: string): Promise<ResendSendingSetup> {
+  const productionEmail = normalizeProductionEmail(senderEmail);
   const apiKeySet = Boolean(process.env.RESEND_API_KEY);
-  const domain = extractDomain(senderEmail);
+  const domain = extractDomain(productionEmail);
   const sending: ResendStatusItem[] = [];
   const receiving: ResendStatusItem[] = [];
 
@@ -45,12 +47,12 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
     message: apiKeySet ? "RESEND_API_KEY ist gesetzt." : "RESEND_API_KEY fehlt — Versand deaktiviert.",
   });
 
-  if (!senderEmail.trim()) {
+  if (!productionEmail.trim()) {
     sending.push({
       id: "from_address",
       label: "From-Adresse erlaubt",
       level: "error",
-      message: "Absender-E-Mail ist nicht konfiguriert.",
+      message: `Absender-E-Mail fehlt — Fallback: ${DEFAULT_COMPANY_EMAIL}.`,
     });
     return {
       apiKeySet,
@@ -69,36 +71,31 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
     };
   }
 
-  if (isResendTestDomain(senderEmail)) {
-    sending.push({
-      id: "domain_dkim",
-      label: "Domain DKIM verified",
-      level: "warn",
-      message: `Testdomain ${RESEND_TEST_FROM} — nur für Entwicklung.`,
-    });
+  if (isResendTestDomain(productionEmail)) {
     sending.push({
       id: "from_address",
       label: "From-Adresse erlaubt",
-      level: "warn",
-      message: "Testdomain aktiv — Empfänger auf verifizierte Adressen beschränkt.",
-    });
-    receiving.push({
-      id: "receiving",
-      label: "Empfang (optional)",
-      level: "optional",
-      message: "Nicht aktiv — Empfang kann über externes Mailhosting laufen.",
+      level: "error",
+      message: `Ungültige Test-Absenderadresse — es wird ${DEFAULT_COMPANY_EMAIL} verwendet.`,
     });
     return {
       apiKeySet,
-      domain: "resend.dev",
-      canSend: apiKeySet,
-      blockReason: apiKeySet ? undefined : "RESEND_API_KEY fehlt.",
+      domain,
+      canSend: false,
+      blockReason: "Produktionsadresse erforderlich.",
       sending,
-      receiving,
+      receiving: [
+        {
+          id: "receiving",
+          label: "Empfang (optional)",
+          level: "optional",
+          message: "Optional — externes Mailhosting möglich.",
+        },
+      ],
     };
   }
 
-  const domainCheck = await checkResendDomainStatus(senderEmail);
+  const domainCheck = await checkResendDomainStatus(productionEmail);
 
   if (!apiKeySet) {
     sending.push({
@@ -189,8 +186,8 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
     label: "From-Adresse erlaubt",
     level: domainVerified ? "ok" : "error",
     message: domainVerified
-      ? `Absender ${senderEmail} kann verwendet werden.`
-      : `Domain noch nicht verifiziert — ${domainCheck.message}`,
+      ? `Absender ${productionEmail} kann verwendet werden.`
+      : `Domain noch nicht verifiziert — Versand über ${productionEmail} nach Resend-Verifizierung.`,
   });
 
   const receivingEnabled = capabilities?.receiving === "enabled";

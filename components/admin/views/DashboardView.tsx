@@ -143,13 +143,13 @@ export function DashboardView() {
 
       {emailUsesTestDomain ? (
         <div className="rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <strong>E-Mail: Resend-Testdomain aktiv.</strong> Versand läuft über{" "}
-          <code className="rounded bg-white/60 px-1">onboarding@resend.dev</code> — für den Livegang Domain in Resend
-          verifizieren und unter{" "}
+          <strong>E-Mail: Domain noch nicht verifiziert.</strong> Versand nutzt{" "}
+          <code className="rounded bg-white/60 px-1">info@pb-kinderevents.de</code> — bitte{" "}
+          <strong>pb-kinderevents.de</strong> in Resend verifizieren unter{" "}
           <Link href="/admin/einstellungen?tab=email" className="font-semibold underline">
             Einstellungen → E-Mail
-          </Link>{" "}
-          prüfen.
+          </Link>
+          .
         </div>
       ) : null}
 

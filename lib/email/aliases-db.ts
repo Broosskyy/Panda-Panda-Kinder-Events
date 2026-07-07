@@ -23,13 +23,10 @@ function extractDomain(email: string): string {
 function buildDefaultAliases(domain: string, companyEmail: string): SiteEmailAliasRecord[] {
   const targets = [
     { local: "info", desc: "Allgemeine Anfragen" },
-    { local: "kontakt", desc: "Kontaktformular" },
-    { local: "hallo", desc: "Freundliche Ansprache" },
     { local: "buchung", desc: "Buchungsanfragen" },
     { local: "bewertung", desc: "Bewertungen" },
-    { local: "support", desc: "Support" },
     { local: "rechnung", desc: "Rechnungen" },
-    { local: "noreply", desc: "Automatische Systemmails" },
+    { local: "angebote", desc: "Angebote" },
   ];
   return targets.map((item, i) => ({
     id: `default-${item.local}`,

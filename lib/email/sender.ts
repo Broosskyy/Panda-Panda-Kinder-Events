@@ -1,9 +1,10 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
 import type { SiteEmailSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
-import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
-
-export const RESEND_TEST_FROM = "onboarding@resend.dev";
+import {
+  DEFAULT_COMPANY_EMAIL,
+  DEFAULT_SENDER_NAME,
+} from "@/lib/email/constants";
 
 export type EmailDomainStatus = "test" | "verified" | "pending" | "failed" | "not_configured";
 
@@ -30,39 +31,72 @@ function isResendTestDomain(email: string): boolean {
   return email.toLowerCase().endsWith("@resend.dev");
 }
 
+function isDeprecatedSenderEmail(email: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return true;
+  if (isResendTestDomain(normalized)) return true;
+  if (normalized.endsWith("@panda-bande-events.de")) return true;
+  if (normalized.startsWith("noreply@")) return true;
+  if (normalized === "kontakt@" || normalized === "kontakt") return true;
+  return false;
+}
+
+export function normalizeProductionEmail(email: string | undefined | null): string {
+  const trimmed = email?.trim() ?? "";
+  if (!trimmed || isDeprecatedSenderEmail(trimmed)) {
+    return DEFAULT_COMPANY_EMAIL;
+  }
+  return trimmed;
+}
+
+export function normalizeSenderName(name: string | undefined | null): string {
+  const trimmed = name?.trim() ?? "";
+  return trimmed || DEFAULT_SENDER_NAME;
+}
+
 function mergeEmailSettings(raw: SiteEmailSettings, contactEmail: string): SiteEmailSettings {
   const defaults = DEFAULT_SITE_SETTINGS.email;
   const merged = { ...defaults, ...raw, customAddresses: { ...defaults.customAddresses, ...(raw.customAddresses ?? {}) } };
 
-  const inquiryRecipient =
+  const inquiryRecipient = normalizeProductionEmail(
     merged.inquiryRecipient ||
-    merged.notificationEmail ||
-    process.env.INQUIRY_NOTIFICATION_EMAIL ||
-    merged.companyEmail ||
-    merged.copyToEmail ||
-    merged.replyTo ||
-    contactEmail ||
-    DEFAULT_COMPANY_EMAIL;
+      merged.notificationEmail ||
+      process.env.INQUIRY_NOTIFICATION_EMAIL ||
+      merged.companyEmail ||
+      merged.copyToEmail ||
+      merged.replyTo ||
+      contactEmail,
+  );
 
-  const companyEmail =
-    merged.companyEmail?.trim() ||
-    merged.copyToEmail?.trim() ||
-    merged.replyTo?.trim() ||
-    inquiryRecipient ||
-    DEFAULT_COMPANY_EMAIL;
+  const companyEmail = normalizeProductionEmail(
+    merged.companyEmail || merged.copyToEmail || merged.replyTo || inquiryRecipient,
+  );
+
+  const senderEmail = normalizeProductionEmail(merged.senderEmail);
+  const replyTo = normalizeProductionEmail(merged.branding?.replyTo || merged.replyTo || senderEmail);
+  const senderName = normalizeSenderName(merged.branding?.senderName || merged.senderName);
 
   return {
     ...merged,
+    senderName,
+    senderEmail,
     companyEmail,
-    replyTo: merged.replyTo || merged.senderEmail || companyEmail,
-    copyToEmail: merged.copyToEmail || companyEmail,
-    quoteCopyTo: merged.quoteCopyTo || merged.copyToEmail || companyEmail,
-    invoiceCopyTo: merged.invoiceCopyTo || merged.copyToEmail || companyEmail,
+    replyTo,
+    copyToEmail: normalizeProductionEmail(merged.copyToEmail || companyEmail),
+    quoteCopyTo: normalizeProductionEmail(merged.quoteCopyTo || merged.copyToEmail || companyEmail),
+    invoiceCopyTo: normalizeProductionEmail(merged.invoiceCopyTo || merged.copyToEmail || companyEmail),
     inquiryRecipient,
-    adminNotificationEmail: merged.adminNotificationEmail || companyEmail,
-    reviewRecipient: merged.reviewRecipient?.trim() || merged.adminNotificationEmail || companyEmail,
+    adminNotificationEmail: normalizeProductionEmail(merged.adminNotificationEmail || companyEmail),
+    reviewRecipient: normalizeProductionEmail(
+      merged.reviewRecipient || merged.adminNotificationEmail || companyEmail,
+    ),
+    branding: {
+      ...defaults.branding,
+      ...(merged.branding ?? {}),
+      senderName,
+      replyTo,
+    },
     signature: { ...defaults.signature, ...(merged.signature ?? {}) },
-    branding: { ...defaults.branding, ...(merged.branding ?? {}) },
     testMode: { ...defaults.testMode, ...(merged.testMode ?? {}) },
   };
 }
@@ -73,21 +107,14 @@ export async function getEmailSettings(): Promise<SiteEmailSettings> {
 }
 
 export async function checkResendDomainStatus(senderEmail: string): Promise<EmailDomainCheck> {
-  const domain = extractDomain(senderEmail);
+  const productionEmail = normalizeProductionEmail(senderEmail);
+  const domain = extractDomain(productionEmail);
 
-  if (!senderEmail.trim()) {
+  if (!productionEmail.trim()) {
     return {
       status: "not_configured",
       domain: null,
       message: "Keine Absender-E-Mail konfiguriert.",
-    };
-  }
-
-  if (isResendTestDomain(senderEmail)) {
-    return {
-      status: "test",
-      domain: "resend.dev",
-      message: "Resend-Testdomain wird verwendet.",
     };
   }
 
@@ -104,7 +131,7 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
     return {
       status: "not_configured",
       domain,
-      message: "RESEND_API_KEY ist nicht gesetzt — Testdomain wird verwendet.",
+      message: "RESEND_API_KEY ist nicht gesetzt — Versand ist deaktiviert.",
     };
   }
 
@@ -115,9 +142,9 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
 
     if (error) {
       return {
-        status: "test",
+        status: "pending",
         domain,
-        message: `Domain-Prüfung fehlgeschlagen: ${error.message}. Testdomain wird verwendet.`,
+        message: `Domain-Prüfung fehlgeschlagen: ${error.message}.`,
       };
     }
 
@@ -126,9 +153,9 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
 
     if (!match) {
       return {
-        status: "test",
+        status: "pending",
         domain,
-        message: `Domain „${domain}" ist in Resend nicht hinterlegt. Testdomain wird verwendet.`,
+        message: `Domain „${domain}" ist in Resend nicht hinterlegt.`,
       };
     }
 
@@ -156,63 +183,56 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unbekannter Fehler";
     return {
-      status: "test",
+      status: "pending",
       domain,
-      message: `Domain-Prüfung nicht möglich: ${message}. Testdomain wird verwendet.`,
+      message: `Domain-Prüfung nicht möglich: ${message}.`,
     };
   }
 }
 
 export async function resolveEmailSender(settings?: SiteEmailSettings): Promise<ResolvedEmailSender> {
   const email = settings ?? (await getEmailSettings());
-  const senderName = email.branding?.senderName?.trim() || email.senderName || email.companyName;
-  const domainCheck = await checkResendDomainStatus(email.senderEmail);
-  const replyTo = email.branding?.replyTo?.trim() || email.replyTo || email.senderEmail;
-
-  if (domainCheck.status === "verified" && !isResendTestDomain(email.senderEmail)) {
-    const fromEmail = email.senderEmail.trim();
-    return {
-      from: `${senderName} <${fromEmail}>`,
-      replyTo,
-      usesTestDomain: false,
-      domainStatus: "verified",
-      displayFrom: `${senderName} <${fromEmail}>`,
-    };
-  }
-
-  const from = senderName ? `${senderName} <${RESEND_TEST_FROM}>` : RESEND_TEST_FROM;
+  const senderName = normalizeSenderName(email.branding?.senderName || email.senderName);
+  const fromEmail = normalizeProductionEmail(email.senderEmail);
+  const replyTo = normalizeProductionEmail(email.branding?.replyTo || email.replyTo || fromEmail);
+  const domainCheck = await checkResendDomainStatus(fromEmail);
+  const displayFrom = `${senderName} <${fromEmail}>`;
 
   return {
-    from,
+    from: displayFrom,
     replyTo,
-    usesTestDomain: true,
-    domainStatus: domainCheck.status === "verified" ? "test" : domainCheck.status,
-    displayFrom: from,
+    usesTestDomain: domainCheck.status !== "verified",
+    domainStatus: domainCheck.status,
+    displayFrom,
   };
 }
 
 export function getInquiryRecipient(settings: SiteEmailSettings): string {
-  return (
+  return normalizeProductionEmail(
     settings.inquiryRecipient ||
-    settings.notificationEmail ||
-    process.env.INQUIRY_NOTIFICATION_EMAIL ||
-    settings.copyToEmail ||
-    settings.replyTo
+      settings.notificationEmail ||
+      process.env.INQUIRY_NOTIFICATION_EMAIL ||
+      settings.copyToEmail ||
+      settings.replyTo,
   );
 }
 
 export function getAdminNotificationRecipient(settings: SiteEmailSettings): string {
-  return settings.adminNotificationEmail?.trim() || getInquiryRecipient(settings);
+  return normalizeProductionEmail(settings.adminNotificationEmail || getInquiryRecipient(settings));
 }
 
 export function getReviewRecipient(settings: SiteEmailSettings): string {
-  return settings.reviewRecipient?.trim() || getAdminNotificationRecipient(settings);
+  return normalizeProductionEmail(settings.reviewRecipient || getAdminNotificationRecipient(settings));
 }
 
 export function getCopyEmailForDocument(settings: SiteEmailSettings, type: "quote" | "invoice"): string {
-  if (type === "quote" && settings.quoteCopyTo?.trim()) return settings.quoteCopyTo.trim();
-  if (type === "invoice" && settings.invoiceCopyTo?.trim()) return settings.invoiceCopyTo.trim();
-  return settings.copyToEmail?.trim() || getInquiryRecipient(settings);
+  if (type === "quote" && settings.quoteCopyTo?.trim()) {
+    return normalizeProductionEmail(settings.quoteCopyTo);
+  }
+  if (type === "invoice" && settings.invoiceCopyTo?.trim()) {
+    return normalizeProductionEmail(settings.invoiceCopyTo);
+  }
+  return normalizeProductionEmail(settings.copyToEmail || getInquiryRecipient(settings));
 }
 
 import { applyTemplateVariables } from "@/lib/email/variables";
@@ -231,7 +251,7 @@ export async function resolveFlowEmailSender(
   const email = settings ?? (await getEmailSettings());
   const base = await resolveEmailSender(email);
 
-  const flowSender =
+  const flowSenderRaw =
     flow === "quote"
       ? email.quoteSenderEmail?.trim()
       : flow === "invoice"
@@ -240,24 +260,29 @@ export async function resolveFlowEmailSender(
           ? email.passwordResetSenderEmail?.trim() || email.securityNotificationSender?.trim()
           : "";
 
-  const flowReply =
+  const flowReplyRaw =
     flow === "quote"
       ? email.quoteReplyTo?.trim()
       : flow === "invoice"
         ? email.invoiceReplyTo?.trim()
         : "";
 
-  if (!flowSender) return base;
+  const flowSender = flowSenderRaw ? normalizeProductionEmail(flowSenderRaw) : "";
+  const flowReply = flowReplyRaw ? normalizeProductionEmail(flowReplyRaw) : "";
 
-  const domainCheck = await checkResendDomainStatus(flowSender);
-  if (domainCheck.status === "verified" && !isResendTestDomain(flowSender)) {
-    const senderName = email.senderName || email.companyName;
-    return {
-      ...base,
-      from: `${senderName} <${flowSender}>`,
-      replyTo: flowReply || base.replyTo,
-      displayFrom: `${senderName} <${flowSender}>`,
-    };
+  if (flowSender && flowSender !== DEFAULT_COMPANY_EMAIL) {
+    const domainCheck = await checkResendDomainStatus(flowSender);
+    if (domainCheck.status === "verified") {
+      const senderName = normalizeSenderName(email.branding?.senderName || email.senderName);
+      return {
+        ...base,
+        from: `${senderName} <${flowSender}>`,
+        replyTo: flowReply || base.replyTo,
+        displayFrom: `${senderName} <${flowSender}>`,
+        usesTestDomain: false,
+        domainStatus: "verified",
+      };
+    }
   }
 
   return { ...base, replyTo: flowReply || base.replyTo };

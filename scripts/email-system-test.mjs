@@ -115,6 +115,28 @@ else fail("Auto-reply not enabled by default");
 if (constants.includes("info@pb-kinderevents.de")) ok("Production fallback email constant");
 else fail("DEFAULT_COMPANY_EMAIL missing");
 
+if (constants.includes('DEFAULT_SENDER_NAME = "Panda-Bande"')) ok("Production sender name constant");
+else fail("DEFAULT_SENDER_NAME missing");
+
+const sender = read("lib/email/sender.ts");
+if (sender.includes("normalizeProductionEmail") && sender.includes("DEFAULT_COMPANY_EMAIL")) {
+  ok("Production email normalization in sender");
+} else {
+  fail("Production email normalization missing");
+}
+
+if (!sender.includes("onboarding@resend.dev") && !sender.includes("RESEND_TEST_FROM")) {
+  ok("No Resend test-domain fallback in sender");
+} else {
+  fail("Resend test-domain fallback still present in sender");
+}
+
+if (sender.includes('from: displayFrom') || sender.includes("displayFrom =")) {
+  ok("resolveEmailSender uses production From address");
+} else {
+  fail("resolveEmailSender production From missing");
+}
+
 // 9. Inquiry route: no silent email failure when DB fails
 const inquiry = read("src/app/api/inquiry/route.ts");
 if (inquiry.includes("admin_notes") && inquiry.includes("Quelle: Website")) {

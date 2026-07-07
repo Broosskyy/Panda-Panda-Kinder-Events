@@ -1,6 +1,6 @@
 import { BRAND } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
-import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
+import { DEFAULT_COMPANY_EMAIL, DEFAULT_SENDER_NAME } from "@/lib/email/constants";
 import { SITE_URL_PLACEHOLDER } from "@/lib/site-url";
 import { navigation } from "@/lib/navigation";
 import type { SiteSettingsBundle } from "./types";
@@ -204,8 +204,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     defaultInvoiceText: "Vielen Dank für Ihren Auftrag.",
     defaultPaymentText:
       "Bitte überweisen Sie den Rechnungsbetrag innerhalb des Zahlungsziels auf das unten genannte Konto.",
-    senderName: siteConfig.name,
-    senderEmail: siteConfig.contact.email,
+    senderName: DEFAULT_SENDER_NAME,
+    senderEmail: DEFAULT_COMPANY_EMAIL,
   },
   bank: {
     bankName: "",
@@ -279,8 +279,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     placeholderNotice: "Bitte juristisch prüfen — Platzhaltertext.",
   },
   email: {
-    companyName: siteConfig.name,
-    senderName: siteConfig.name,
+    companyName: "Panda-Bande",
+    senderName: DEFAULT_SENDER_NAME,
     senderEmail: DEFAULT_COMPANY_EMAIL,
     replyTo: DEFAULT_COMPANY_EMAIL,
     companyEmail: DEFAULT_COMPANY_EMAIL,
@@ -325,10 +325,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     applicationEmail: "",
     applicationCopyTo: "",
     customAddresses: {
-      info: "info@",
-      kontakt: "kontakt@",
-      rechnung: "rechnung@",
-      angebote: "angebote@",
+      info: DEFAULT_COMPANY_EMAIL,
+      kontakt: DEFAULT_COMPANY_EMAIL,
+      rechnung: DEFAULT_COMPANY_EMAIL,
+      angebote: DEFAULT_COMPANY_EMAIL,
     },
     signature: {
       companyName: siteConfig.name,
@@ -358,8 +358,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
       footerColor: "#faf9f6",
       fontFamily: "Helvetica, Arial, sans-serif",
       showSocialIcons: true,
-      companyName: siteConfig.name,
-      senderName: siteConfig.name,
+      companyName: "Panda-Bande",
+      senderName: DEFAULT_SENDER_NAME,
       replyTo: DEFAULT_COMPANY_EMAIL,
     },
     testMode: {

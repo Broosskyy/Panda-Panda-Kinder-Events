@@ -19,6 +19,39 @@ import type {
 } from "./types";
 import type { Service } from "@/lib/services";
 
+function mergeCmsSectionValue<T extends keyof SiteSettingsBundle>(
+  section: T,
+  defaults: SiteSettingsBundle[T],
+  cmsValue: unknown,
+): SiteSettingsBundle[T] {
+  if (!cmsValue || typeof cmsValue !== "object") return defaults;
+
+  const base = defaults as unknown as Record<string, unknown>;
+  const patch = cmsValue as Record<string, unknown>;
+  const merged: Record<string, unknown> = { ...base, ...patch };
+
+  if (section === "email") {
+    merged.customAddresses = {
+      ...(base.customAddresses as Record<string, unknown>),
+      ...((patch.customAddresses as Record<string, unknown> | undefined) ?? {}),
+    };
+    merged.signature = {
+      ...(base.signature as Record<string, unknown>),
+      ...((patch.signature as Record<string, unknown> | undefined) ?? {}),
+    };
+    merged.branding = {
+      ...(base.branding as Record<string, unknown>),
+      ...((patch.branding as Record<string, unknown> | undefined) ?? {}),
+    };
+    merged.testMode = {
+      ...(base.testMode as Record<string, unknown>),
+      ...((patch.testMode as Record<string, unknown> | undefined) ?? {}),
+    };
+  }
+
+  return merged as unknown as SiteSettingsBundle[T];
+}
+
 function cmsSection<T extends keyof SiteSettingsBundle>(
   section: T,
   defaults: SiteSettingsBundle[T],
@@ -26,10 +59,7 @@ function cmsSection<T extends keyof SiteSettingsBundle>(
   hasKey: boolean,
 ): SiteSettingsBundle[T] {
   if (!hasKey || !hasNonEmptyCmsValue(cmsValue)) return defaults;
-  const merged = {
-    ...(defaults as unknown as Record<string, unknown>),
-    ...(cmsValue as Record<string, unknown>),
-  };
+  const merged = mergeCmsSectionValue(section, defaults, cmsValue);
   const validated = validateSiteSettingsSection(section, merged);
   if (!validated.ok) return defaults;
   return validated.value as SiteSettingsBundle[T];

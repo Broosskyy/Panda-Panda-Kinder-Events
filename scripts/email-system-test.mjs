@@ -106,7 +106,18 @@ if (templates.includes("inquiry-admin") && templates.includes("review-request") 
 if (templates.includes("resetEmailTemplateToDefault")) ok("Template reset function");
 else fail("Template reset missing");
 
-// 8. Defaults: production email + auto-reply
+// 8. Live domain check
+const liveCheck = read("lib/email/resend-domain-check.ts");
+if (liveCheck.includes("checkResendDomainLive") && liveCheck.includes("domains.get")) {
+  ok("Live Resend domain check with detail API");
+} else {
+  fail("Live Resend domain check missing");
+}
+
+if (!liveCheck.includes("onboarding@resend.dev")) ok("No test-domain logic in live domain check");
+else fail("Test-domain logic still in live domain check");
+
+// 9. Defaults: production email + auto-reply
 const defaults = read("lib/cms/defaults.ts");
 const constants = read("lib/email/constants.ts");
 if (defaults.includes("inquiryAutoReplyEnabled: true")) ok("Auto-reply enabled by default");
@@ -137,7 +148,7 @@ if (sender.includes('from: displayFrom') || sender.includes("displayFrom =")) {
   fail("resolveEmailSender production From missing");
 }
 
-// 9. Inquiry route: no silent email failure when DB fails
+// 10. Inquiry route: no silent email failure when DB fails
 const inquiry = read("src/app/api/inquiry/route.ts");
 if (inquiry.includes("admin_notes") && inquiry.includes("Quelle: Website")) {
   ok("Inquiry CRM source tracking");
@@ -151,7 +162,7 @@ if (inquiry.includes("warning") && inquiry.includes("emailResult")) {
   fail("Inquiry email error handling incomplete");
 }
 
-// 10. Builders: dashboard CTA
+// 11. Builders: dashboard CTA
 const builders = read("lib/email/builders.ts");
 if (builders.includes("Anfrage im Dashboard öffnen") && builders.includes("Bewertung im Dashboard prüfen")) {
   ok("Admin email CTAs present");
@@ -159,7 +170,7 @@ if (builders.includes("Anfrage im Dashboard öffnen") && builders.includes("Bewe
   fail("Admin email CTAs missing");
 }
 
-// 11. Admin UI
+// 12. Admin UI
 try {
   read("components/admin/email/EmailSettingsPanel.tsx");
   ok("EmailSettingsPanel exists");

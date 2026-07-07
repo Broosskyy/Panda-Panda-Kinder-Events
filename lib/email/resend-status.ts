@@ -1,5 +1,6 @@
 import type { DomainRecords } from "resend";
-import { checkResendDomainStatus, normalizeProductionEmail } from "./sender";
+import { normalizeProductionEmail } from "./sender";
+import { checkResendDomainLive } from "./resend-domain-check";
 import { DEFAULT_COMPANY_EMAIL } from "./constants";
 
 export type ResendStatusLevel = "ok" | "warn" | "error" | "optional";
@@ -95,14 +96,14 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
     };
   }
 
-  const domainCheck = await checkResendDomainStatus(productionEmail);
+  const liveCheck = await checkResendDomainLive(productionEmail);
 
   if (!apiKeySet) {
     sending.push({
       id: "domain_dkim",
       label: "Domain DKIM verified",
       level: "warn",
-      message: domainCheck.message,
+      message: liveCheck.message,
     });
     receiving.push({
       id: "receiving",
@@ -146,17 +147,19 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
   const dkimOk = isRecordVerified(records, (r) => r.record === "DKIM");
   const spfTxtOk = isRecordVerified(records, (r) => r.record === "SPF" && r.type === "TXT");
   const spfMxOk = isRecordVerified(records, (r) => r.record === "SPF" && r.type === "MX");
-  const domainVerified = domainCheck.status === "verified";
+  const domainVerified = liveCheck.state === "verified";
 
   sending.push({
     id: "domain_dkim",
     label: "Domain DKIM verified",
-    level: dkimOk || domainVerified ? "ok" : domainCheck.status === "failed" ? "error" : "warn",
+    level: dkimOk || domainVerified ? "ok" : liveCheck.state === "not_verified" ? "error" : "warn",
     message: dkimOk
       ? "DKIM-Eintrag ist verifiziert."
       : domainVerified
         ? "Domain verifiziert (DKIM-Details nicht verfügbar)."
-        : `DKIM noch nicht verifiziert — ${domainCheck.message}`,
+        : liveCheck.state === "unknown"
+          ? `Status unbekannt — ${liveCheck.message}`
+          : `DKIM noch nicht verifiziert — ${liveCheck.message}`,
   });
 
   sending.push({
@@ -187,7 +190,9 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
     level: domainVerified ? "ok" : "error",
     message: domainVerified
       ? `Absender ${productionEmail} kann verwendet werden.`
-      : `Domain noch nicht verifiziert — Versand über ${productionEmail} nach Resend-Verifizierung.`,
+      : liveCheck.state === "unknown"
+        ? `Status unbekannt — ${liveCheck.message}`
+        : `Domain nicht verifiziert — ${liveCheck.message}`,
   });
 
   const receivingEnabled = capabilities?.receiving === "enabled";
@@ -219,13 +224,15 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
   const canSend = apiKeySet && domainVerified;
   return {
     apiKeySet,
-    domain: domainCheck.domain ?? domain,
+    domain: liveCheck.domain ?? domain,
     canSend,
     blockReason: canSend
       ? undefined
       : !apiKeySet
         ? "RESEND_API_KEY fehlt."
-        : "Absender-Domain ist noch nicht verifiziert.",
+        : liveCheck.state === "unknown"
+          ? `Resend API nicht erreichbar — ${liveCheck.message}`
+          : "Absender-Domain ist noch nicht verifiziert.",
     sending,
     receiving,
   };

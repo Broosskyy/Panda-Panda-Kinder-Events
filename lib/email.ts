@@ -30,6 +30,8 @@ export {
   resolveFlowEmailSender,
   applyEmailTemplate,
 } from "@/lib/email/sender";
+export { checkResendDomainLive } from "@/lib/email/resend-domain-check";
+export type { DomainVerificationDisplay, ResendDomainLiveCheck } from "@/lib/email/resend-domain-check";
 export { getResendSendingSetup } from "@/lib/email/resend-status";
 export type { ResendSendingSetup, ResendStatusItem, ResendStatusLevel } from "@/lib/email/resend-status";
 export type { EmailDomainCheck, EmailDomainStatus, ResolvedEmailSender } from "@/lib/email/sender";

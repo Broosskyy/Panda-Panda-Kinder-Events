@@ -7,14 +7,16 @@ import { AdminCard } from "@/components/admin/AdminSidebar";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import type { SiteEmailSettings } from "@/lib/cms/types";
 
+import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
+
 interface Props {
   email: SiteEmailSettings;
-  usesTestDomain: boolean;
+  domainVerification: DomainVerificationDisplay;
   onEmailField: <K extends keyof SiteEmailSettings>(key: K, value: SiteEmailSettings[K]) => void;
   onSave: () => void;
 }
 
-export function EmailBrandingPanel({ email, usesTestDomain, onEmailField, onSave }: Props) {
+export function EmailBrandingPanel({ email, domainVerification, onEmailField, onSave }: Props) {
   const brand = email.branding;
   const setBrand = (key: keyof typeof brand, value: string | boolean) => {
     onEmailField("branding", { ...brand, [key]: value });
@@ -42,10 +44,11 @@ export function EmailBrandingPanel({ email, usesTestDomain, onEmailField, onSave
         <p className="mb-4 text-sm text-text-muted">
           Logo, Farben und Schrift gelten für alle E-Mail-Vorlagen — Panda-Bande heute, jede White-Label-Firma später.
         </p>
-        {usesTestDomain ? (
+        {domainVerification !== "verified" ? (
           <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Domain pb-kinderevents.de ist noch nicht in Resend verifiziert. Versand nutzt trotzdem info@pb-kinderevents.de
-            — Branding wirkt in allen E-Mails.
+            {domainVerification === "unknown"
+              ? "🟡 Domain-Status konnte live nicht geprüft werden — Branding wirkt trotzdem in allen E-Mails."
+              : "🔴 Domain noch nicht in Resend verifiziert — Branding wirkt trotzdem in allen E-Mails."}
           </p>
         ) : null}
         <div className="grid gap-4 md:grid-cols-2">

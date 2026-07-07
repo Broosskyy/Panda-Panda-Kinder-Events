@@ -8,6 +8,7 @@ import { EmailSignaturePanel } from "@/components/admin/email/EmailSignaturePane
 import { EmailBrandingPanel } from "@/components/admin/email/EmailBrandingPanel";
 import { EmailTestModePanel } from "@/components/admin/email/EmailTestModePanel";
 import { EmailSystemStatusPanel } from "@/components/admin/email/EmailSystemStatusPanel";
+import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
 export type EmailSubTab =
   | "general"
@@ -31,7 +32,7 @@ interface EmailSettingsShellProps {
   emailTab: EmailSubTab;
   testTo: string;
   resendConfigured: boolean;
-  usesTestDomain: boolean;
+  domainVerification: DomainVerificationDisplay;
   emailStatusBanner?: React.ReactNode;
   onEmailField: <K extends keyof SiteEmailSettings>(key: K, value: SiteEmailSettings[K]) => void;
   onTestToChange: (value: string) => void;
@@ -44,7 +45,7 @@ export function EmailSettingsShell({
   emailTab,
   testTo,
   resendConfigured,
-  usesTestDomain,
+  domainVerification,
   emailStatusBanner,
   onEmailField,
   onTestToChange,
@@ -96,7 +97,7 @@ export function EmailSettingsShell({
         <EmailSignaturePanel email={email} onEmailField={onEmailField} onSave={onSave} />
       ) : null}
       {emailTab === "branding" ? (
-        <EmailBrandingPanel email={email} onEmailField={onEmailField} onSave={onSave} usesTestDomain={usesTestDomain} />
+        <EmailBrandingPanel email={email} domainVerification={domainVerification} onEmailField={onEmailField} onSave={onSave} />
       ) : null}
       {emailTab === "testmode" ? (
         <EmailTestModePanel email={email} onEmailField={onEmailField} onSave={onSave} onSendTest={onSendTest} testTo={testTo} onTestToChange={onTestToChange} resendConfigured={resendConfigured} />

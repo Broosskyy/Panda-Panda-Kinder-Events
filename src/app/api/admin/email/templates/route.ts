@@ -15,12 +15,14 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
-  const { slug, name, subject, body_html, body_text, area, is_active, is_default, variables } = body as {
+  const { slug, name, subject, body_html, body_text, description, layout, area, is_active, is_default, variables } = body as {
     slug: string;
     name: string;
     subject?: string;
     body_html?: string;
     body_text?: string;
+    description?: string | null;
+    layout?: import("@/lib/cms/types").EmailTemplateLayout | null;
     area?: EmailTemplateArea;
     is_active?: boolean;
     is_default?: boolean;
@@ -35,9 +37,11 @@ export async function POST(request: Request) {
     const template = await upsertEmailTemplate({
       slug: slug.trim(),
       name: name.trim(),
+      description: description ?? null,
       subject: subject ?? "",
       body_html: body_html ?? "",
       body_text: body_text ?? null,
+      layout: layout ?? null,
       area: area ?? "general",
       is_active: is_active ?? true,
       is_default: is_default ?? false,

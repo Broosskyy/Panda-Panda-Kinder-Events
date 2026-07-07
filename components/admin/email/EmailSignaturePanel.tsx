@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo } from "react";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { AdminCard } from "@/components/admin/AdminSidebar";
+import { EmailPreviewFrame } from "@/components/admin/email/EmailPreviewFrame";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import type { SiteEmailSettings } from "@/lib/cms/types";
 
@@ -19,38 +19,34 @@ export function EmailSignaturePanel({ email, onEmailField, onSave }: Props) {
     onEmailField("signature", { ...sig, [key]: value });
   };
 
-  const previewHtml = useMemo(
-    () => `
-      <div style="font-family:Helvetica,Arial,sans-serif;padding:16px;background:#faf9f6;border-radius:12px;">
-        ${sig.contactPerson ? `<p style="margin:0 0 4px;font-weight:600;">${sig.contactPerson}</p>` : ""}
-        <p style="margin:0 0 8px;">${sig.companyName}</p>
-        <p style="margin:0;font-size:13px;color:#666;">${[sig.phone, sig.mobile].filter(Boolean).join(" · ")}</p>
-        <p style="margin:8px 0 0;font-size:13px;color:#666;">${sig.address}</p>
-        ${sig.footerText ? `<p style="margin:12px 0 0;font-size:12px;color:#888;">${sig.footerText}</p>` : ""}
-        ${sig.freeText ? `<p style="margin:8px 0 0;font-size:12px;">${sig.freeText}</p>` : ""}
-      </div>`,
-    [sig],
-  );
+  const previewLayout = {
+    headline: "",
+    intro: "",
+    body: sig.freeText || "Ihr Nachrichtentext erscheint hier.",
+    footerEnabled: true,
+  };
 
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       <AdminCard title="Signatur bearbeiten">
         <p className="mb-4 text-sm text-text-muted">
-          Diese Signatur wird automatisch unter jeder ausgehenden E-Mail angezeigt. Änderungen wirken sofort beim
-          nächsten Versand.
+          Diese Signatur erscheint automatisch unter jeder ausgehenden E-Mail. Änderungen wirken beim nächsten Versand.
         </p>
-        <div className="grid gap-4">
+        <div className="grid gap-4 md:grid-cols-2">
+          <AdminFormField label="Name / Ansprechpartner">
+            <input className="admin-input" value={sig.contactPerson} onChange={(e) => setSig("contactPerson", e.target.value)} />
+          </AdminFormField>
           <AdminFormField label="Firmenname">
             <input className="admin-input" value={sig.companyName} onChange={(e) => setSig("companyName", e.target.value)} />
-          </AdminFormField>
-          <AdminFormField label="Ansprechpartner">
-            <input className="admin-input" value={sig.contactPerson} onChange={(e) => setSig("contactPerson", e.target.value)} />
           </AdminFormField>
           <AdminFormField label="Telefon">
             <input className="admin-input" value={sig.phone} onChange={(e) => setSig("phone", e.target.value)} />
           </AdminFormField>
           <AdminFormField label="Mobil">
             <input className="admin-input" value={sig.mobile} onChange={(e) => setSig("mobile", e.target.value)} />
+          </AdminFormField>
+          <AdminFormField label="WhatsApp">
+            <input className="admin-input" value={sig.whatsapp} onChange={(e) => setSig("whatsapp", e.target.value)} placeholder="+49 …" />
           </AdminFormField>
           <AdminFormField label="Website">
             <input className="admin-input" value={sig.website} onChange={(e) => setSig("website", e.target.value)} />
@@ -64,28 +60,28 @@ export function EmailSignaturePanel({ email, onEmailField, onSave }: Props) {
           <AdminFormField label="TikTok">
             <input className="admin-input" value={sig.tiktok} onChange={(e) => setSig("tiktok", e.target.value)} />
           </AdminFormField>
-          <AdminFormField label="WhatsApp">
-            <input className="admin-input" value={sig.whatsapp} onChange={(e) => setSig("whatsapp", e.target.value)} />
+          <AdminFormField label="YouTube">
+            <input className="admin-input" value={sig.youtube} onChange={(e) => setSig("youtube", e.target.value)} />
           </AdminFormField>
           <AdminFormField label="Adresse" className="md:col-span-2">
             <input className="admin-input" value={sig.address} onChange={(e) => setSig("address", e.target.value)} />
           </AdminFormField>
-          <AdminFormField label="Logo-URL">
-            <input className="admin-input" value={sig.logoUrl} onChange={(e) => setSig("logoUrl", e.target.value)} />
+          <AdminFormField label="Öffnungszeiten" className="md:col-span-2" hint="z. B. Mo–Fr 9–18 Uhr">
+            <input className="admin-input" value={sig.openingHours} onChange={(e) => setSig("openingHours", e.target.value)} />
           </AdminFormField>
           <AdminFormField label="Impressum-Link">
-            <input className="admin-input" value={sig.impressumUrl} onChange={(e) => setSig("impressumUrl", e.target.value)} />
+            <input className="admin-input" value={sig.impressumUrl} onChange={(e) => setSig("impressumUrl", e.target.value)} placeholder="/impressum" />
           </AdminFormField>
           <AdminFormField label="Datenschutz-Link">
-            <input className="admin-input" value={sig.privacyUrl} onChange={(e) => setSig("privacyUrl", e.target.value)} />
+            <input className="admin-input" value={sig.privacyUrl} onChange={(e) => setSig("privacyUrl", e.target.value)} placeholder="/datenschutz" />
           </AdminFormField>
-          <AdminFormField label="Fußzeile">
+          <AdminFormField label="Abschlusssatz / Fußzeile" className="md:col-span-2" hint="Kurzer Satz unter der Signatur.">
             <input className="admin-input" value={sig.footerText} onChange={(e) => setSig("footerText", e.target.value)} />
           </AdminFormField>
-          <AdminFormField label="Freitext">
+          <AdminFormField label="Freitext" className="md:col-span-2" hint="Optionaler Zusatztext in der Signatur.">
             <textarea className="admin-input min-h-20" value={sig.freeText} onChange={(e) => setSig("freeText", e.target.value)} />
           </AdminFormField>
-          <label className="admin-checkbox-row">
+          <label className="admin-checkbox-row md:col-span-2">
             <input type="checkbox" checked={sig.showSocialIcons} onChange={(e) => setSig("showSocialIcons", e.target.checked)} />
             <span>Social-Media-Links in der Signatur anzeigen</span>
           </label>
@@ -94,7 +90,8 @@ export function EmailSignaturePanel({ email, onEmailField, onSave }: Props) {
       </AdminCard>
 
       <AdminCard title="Live-Vorschau">
-        <div className="rounded-xl border border-border bg-bg-secondary p-4" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+        <p className="mb-4 text-sm text-text-muted">So erscheint Ihre Signatur in E-Mails — mit Branding und allen Ansichten.</p>
+        <EmailPreviewFrame layout={previewLayout} />
       </AdminCard>
     </div>
   );

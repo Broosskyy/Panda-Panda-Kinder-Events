@@ -6,9 +6,7 @@ import { logEmailSend, saveEmailDraft } from "@/lib/email/log";
 import { renderEmailFromTemplate } from "@/lib/email/render";
 import { applyTemplateVariables } from "@/lib/email/variables";
 import { buildEmailVariableContext } from "@/lib/email/render";
-import { wrapEmailHtml } from "@/lib/email/html";
-import { fetchSiteSettings } from "@/lib/cms/data";
-import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
+import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
 
 export async function POST(request: Request) {
   const authError = await requireAdmin();
@@ -76,13 +74,7 @@ export async function POST(request: Request) {
       const vars = await buildEmailVariableContext(variables ?? {});
       finalSubject = finalSubject || applyTemplateVariables("Nachricht von {{company_name}}", vars);
       const inner = bodyHtml || applyTemplateVariables("<p>{{message}}</p>", vars);
-      const settings = await fetchSiteSettings();
-      finalHtml = wrapEmailHtml({
-        logoUrl: resolveBrandLogo(settings.branding, "email"),
-        companyName: vars.company_name,
-        primaryColor: resolvePrimaryColor(settings.branding),
-        bodyHtml: inner,
-      });
+      finalHtml = await wrapBrandedEmailHtml(inner, vars.company_name);
       finalText = inner.replace(/<[^>]+>/g, "");
     }
 

@@ -1,9 +1,8 @@
-import { BRAND } from "@/lib/brand";
-import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
+import { resolvePrimaryColor } from "@/lib/brand/resolve";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { getSiteUrl } from "@/lib/site-url";
 import { resolveEmailContent } from "@/lib/email/resolve-content";
-import { buildEmailButton } from "@/lib/email/builders";
+import { buildEmailButton, buildCrmDocumentBodyHtml, buildBrandedEmail, buildInquiryAutoReplyFallback } from "@/lib/email/builders";
 import { sendEmailWithRetry } from "@/lib/email/transport";
 import {
   getCopyEmailForDocument,
@@ -15,8 +14,8 @@ import {
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
 import { DOMAIN_MANUAL_CONFIRM_MESSAGE } from "@/lib/email/domain-status-copy";
-import { getEmailAssetBaseUrl } from "@/lib/email/resolve-image-url";
-import { wrapEmailHtml } from "@/lib/email/html";
+import { getDefaultEmailLogoUrl } from "@/lib/email/resolve-image-url";
+import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
 import type { BusinessProfile } from "@/lib/crm/company";
 
 export {
@@ -101,11 +100,11 @@ export async function sendInquiryNotification(data: InquiryEmailData): Promise<I
 
   const settings = await fetchSiteSettings();
   const companyName = emailSettings.companyName;
-  const logoUrl = resolveBrandLogo(settings.branding, "email");
+  const logoUrl = getDefaultEmailLogoUrl();
   const primaryColor = resolvePrimaryColor(settings.branding);
   const branded = { companyName, logoUrl, primaryColor };
 
-  const { buildInquiryAdminEmail, buildInquiryAutoReplyFallback } = await import("@/lib/email/builders");
+  const { buildInquiryAdminEmail } = await import("@/lib/email/builders");
 
   const adminContent = await resolveEmailContent("inquiry-admin", templateVars, () => {
     const built = buildInquiryAdminEmail({ ...data, submittedAt }, branded);
@@ -170,15 +169,14 @@ export async function sendInquiryNotification(data: InquiryEmailData): Promise<I
         name: data.name.trim().split(/\s+/)[0] || data.name,
       },
       () => {
-        const fallback = buildInquiryAutoReplyFallback(data.name);
+        const fallback = buildInquiryAutoReplyFallback(data.name, getSiteUrl());
         return {
           subject: applyEmailTemplate(emailSettings.inquiryAutoReplySubject, templateVars),
-          html: wrapEmailHtml({
-            logoUrl,
+          html: buildBrandedEmail({
             companyName,
+            logoUrl,
             primaryColor,
             bodyHtml: fallback.bodyHtml,
-            footerHtml: `<p style="margin:8px 0 0;font-size:12px;color:#888;">${settings.contact.phone} · ${settings.contact.email}</p>`,
           }),
           text: fallback.bodyText,
         };
@@ -237,7 +235,7 @@ export async function sendReviewNotification(data: ReviewNotificationData) {
       { ...data, submittedAt },
       {
         companyName: emailSettings.companyName,
-        logoUrl: resolveBrandLogo(settings.branding, "email"),
+        logoUrl: getDefaultEmailLogoUrl(),
         primaryColor: resolvePrimaryColor(settings.branding),
       },
     );
@@ -376,43 +374,6 @@ interface CrmDocumentEmailOptions {
   relatedCustomerId?: string;
 }
 
-function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): string {
-  const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
-  const company = opts.company;
-  const brand = BRAND.themeColor;
-  const logoUrl = company?.logoUrl || BRAND.master;
-
-  const bodyHtml = `
-          <p style="margin:0 0 12px;font-size:15px;">Guten Tag ${opts.customerName},</p>
-          <p style="margin:0 0 8px;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.05em;">${label} ${opts.documentNumber}</p>
-          <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#555;">
-            anbei erhalten Sie ${opts.documentType === "quote" ? "unser Angebot" : "Ihre Rechnung"} als PDF.
-          </p>
-          <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f8f7f4;border-radius:12px;margin-bottom:20px;">
-            <tr><td style="padding:16px 20px;">
-              <p style="margin:0;font-size:12px;color:#888;text-transform:uppercase;letter-spacing:.05em;">Gesamtbetrag</p>
-              <p style="margin:6px 0 0;font-size:24px;font-weight:700;color:${brand};">${opts.totalFormatted}</p>
-            </td></tr>
-          </table>
-          <p style="margin:0 0 8px;font-size:13px;color:#666;">PDF-Anhang: <strong>${opts.documentNumber}.pdf</strong></p>
-          <p style="margin:0;font-size:14px;line-height:1.6;">Bei Fragen melden Sie sich gerne.</p>`;
-
-  const footerHtml = [
-    company?.website ? `<p style="margin:8px 0 0;font-size:12px;color:#888;"><a href="${company.website}" style="color:${brand};">${company.website}</a></p>` : "",
-    company?.phone || company?.email
-      ? `<p style="margin:4px 0 0;font-size:12px;color:#888;">${[company.phone, company.email].filter(Boolean).join(" · ")}</p>`
-      : "",
-  ].join("");
-
-  return wrapEmailHtml({
-    baseUrl: getEmailAssetBaseUrl(),
-    logoUrl,
-    companyName,
-    bodyHtml,
-    footerHtml,
-  });
-}
-
 export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
   const emailSettings = await getEmailSettings();
   const flow = opts.documentType === "quote" ? "quote" : "invoice";
@@ -431,11 +392,24 @@ export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
     due_date: "",
   };
 
-  const content = await resolveEmailContent(templateSlug, templateVars, () => ({
-    subject: `${label} ${opts.documentNumber} — ${companyName}`,
-    html: buildCrmEmailHtml(opts, companyName),
-    text: `Guten Tag ${opts.customerName},\n\nanbei ${label} ${opts.documentNumber}.\nGesamtbetrag: ${opts.totalFormatted}`,
-  }));
+  const settings = await fetchSiteSettings();
+  const primaryColor = resolvePrimaryColor(settings.branding);
+  const logoUrl = getDefaultEmailLogoUrl();
+
+  const content = await resolveEmailContent(templateSlug, templateVars, () => {
+    const bodyHtml = buildCrmDocumentBodyHtml({
+      customerName: opts.customerName,
+      documentNumber: opts.documentNumber,
+      documentType: opts.documentType,
+      totalFormatted: opts.totalFormatted,
+      primaryColor,
+    });
+    return {
+      subject: `${label} ${opts.documentNumber} — ${companyName}`,
+      html: buildBrandedEmail({ companyName, logoUrl, primaryColor, bodyHtml }),
+      text: `Guten Tag ${opts.customerName},\n\nanbei ${label} ${opts.documentNumber}.\nGesamtbetrag: ${opts.totalFormatted}`,
+    };
+  });
 
   const attachment = {
     filename,
@@ -529,14 +503,12 @@ export async function sendTransactionalEmail(opts: {
 
 export async function sendTestEmail(to: string) {
   const emailSettings = await getEmailSettings();
-  const settings = await fetchSiteSettings();
   const sender = await resolveEmailSender(emailSettings);
   const companyName = emailSettings.companyName;
-  const logoUrl = resolveBrandLogo(settings.branding, "email");
 
   const domainNote =
     sender.domainStatus === "verified"
-      ? "Produktionsdomain verifiziert — Versand über info@pb-kinderevents.de."
+      ? "Produktionsdomain verifiziert — Versand über die konfigurierte Absenderadresse."
       : sender.domainStatus === "unknown"
         ? DOMAIN_MANUAL_CONFIRM_MESSAGE
         : "Test-E-Mail wurde zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.";
@@ -559,24 +531,22 @@ Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
 
   const domainBanner =
     sender.domainStatus === "verified"
-      ? '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">Produktionsdomain verifiziert — Versand über info@pb-kinderevents.de.</p>'
+      ? '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:12px;">Produktionsdomain verifiziert.</p>'
       : sender.domainStatus === "unknown"
-        ? `<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">${DOMAIN_MANUAL_CONFIRM_MESSAGE}</p>`
-        : '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:8px;">Test-E-Mail zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.</p>';
+        ? `<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:12px;">${DOMAIN_MANUAL_CONFIRM_MESSAGE}</p>`
+        : '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:12px;">Test-E-Mail zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.</p>';
 
-  const html = wrapEmailHtml({
-    logoUrl,
-    companyName,
-    primaryColor: resolvePrimaryColor(settings.branding),
-    bodyHtml: `<p>Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
-    <table style="background:#f8f7f4;border-radius:12px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
-      <tr><td><strong>Absender:</strong> ${sender.displayFrom}</td></tr>
-      <tr><td><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
-      <tr><td><strong>Domain:</strong> ${domainStatusLabel}</td></tr>
+  const bodyHtml = `<p style="margin:0 0 16px;font-size:16px;">Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
+    <table cellpadding="0" cellspacing="0" role="presentation" style="background:#F1EEE7;border:1px solid #E6E1D8;border-radius:16px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
+      <tr><td style="padding:6px 0;font-size:14px;"><strong>Absender:</strong> ${sender.displayFrom}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;"><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;"><strong>Domain:</strong> ${domainStatusLabel}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;"><strong>Logo:</strong> ${getDefaultEmailLogoUrl()}</td></tr>
     </table>
     ${domainBanner}
-    <p style="color:#888;font-size:13px;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`,
-  });
+    <p style="color:#6F6F66;font-size:13px;margin:16px 0 0;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`;
+
+  const html = await wrapBrandedEmailHtml(bodyHtml, companyName);
 
   const result = await sendEmailWithRetry({
     payload: {

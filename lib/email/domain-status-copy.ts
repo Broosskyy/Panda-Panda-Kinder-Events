@@ -1,11 +1,12 @@
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
 /** Wenn die Resend-API den Domainstatus nicht lesen kann (z. B. eingeschränkter API-Key). */
-export const API_CHECK_UNAVAILABLE_MESSAGE = "Status konnte nicht automatisch geprüft werden.";
+export const API_CHECK_UNAVAILABLE_MESSAGE =
+  "Der Domainstatus konnte nicht automatisch geprüft werden.";
 
 /** Wenn Testmails ankommen, aber die Domain nicht automatisch geprüft werden kann. */
 export const DOMAIN_MANUAL_CONFIRM_MESSAGE =
-  "Versand funktioniert – Domainprüfung manuell in Resend bestätigt.";
+  "Versand funktioniert. Der Domainstatus konnte nicht automatisch geprüft werden.";
 
 export function isTestEmailLog(log: {
   template_slug: string | null;
@@ -36,7 +37,9 @@ export function domainStatusUserMessage(
     return DOMAIN_MANUAL_CONFIRM_MESSAGE;
   }
   if (state === "unknown") {
-    return `${API_CHECK_UNAVAILABLE_MESSAGE} Wenn Test-E-Mails ankommen, ist der Versand in Ordnung.`;
+    return hasSuccessfulTest
+      ? DOMAIN_MANUAL_CONFIRM_MESSAGE
+      : `${API_CHECK_UNAVAILABLE_MESSAGE} Wenn Test-E-Mails ankommen, funktioniert der Versand.`;
   }
   return "Die Domain ist in Resend noch nicht verifiziert.";
 }

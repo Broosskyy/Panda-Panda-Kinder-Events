@@ -21,7 +21,7 @@ export const siteConfig = {
   },
 
   contact: {
-    phone: "+49 170 0000000",
+    phone: "",
     isPlaceholder: {
       phone: true,
       email: true,
@@ -29,7 +29,7 @@ export const siteConfig = {
       location: true,
     },
     email: DEFAULT_COMPANY_EMAIL,
-    whatsapp: "491700000000",
+    whatsapp: "",
     instagram:
       "https://www.instagram.com/pandabande_kinderevents?igsh=aDhoZmVnNHlibTZn",
     instagramHandle: "@pandabande_kinderevents",
@@ -38,8 +38,8 @@ export const siteConfig = {
 
   legal: {
     company: "Panda-Bande Kinderevents",
-    owner: "Lisa Muster",
-    address: "Musterstraße 1, 40210 Düsseldorf",
+    owner: "",
+    address: "",
     isPlaceholder: true,
   },
 

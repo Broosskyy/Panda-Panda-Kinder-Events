@@ -150,13 +150,26 @@ export interface SiteAboutSettings {
   valuesText: string;
 }
 
+export interface EmailTemplateLayout {
+  headline?: string;
+  intro?: string;
+  body?: string;
+  infoBoxEnabled?: boolean;
+  infoBoxItems?: string[];
+  ctaText?: string;
+  ctaUrl?: string;
+  footerEnabled?: boolean;
+}
+
 export interface EmailTemplateRecord {
   id: string;
   slug: string;
   name: string;
+  description?: string | null;
   subject: string;
   body_html: string;
   body_text: string | null;
+  layout?: EmailTemplateLayout | null;
   area: EmailTemplateArea;
   is_active: boolean;
   is_default: boolean;
@@ -175,7 +188,8 @@ export type EmailTemplateArea =
   | "password_reset"
   | "security"
   | "appointment"
-  | "inquiry_reply";
+  | "inquiry_reply"
+  | "newsletter";
 
 export interface EmailLogRecord {
   id: string;
@@ -239,8 +253,10 @@ export interface SiteEmailSignatureSettings {
   instagram: string;
   facebook: string;
   tiktok: string;
+  youtube: string;
   whatsapp: string;
   address: string;
+  openingHours: string;
   logoUrl: string;
   impressumUrl: string;
   privacyUrl: string;
@@ -249,19 +265,31 @@ export interface SiteEmailSignatureSettings {
   showSocialIcons: boolean;
 }
 
+export type EmailThemeMode = "light" | "dark" | "auto";
+
 export interface SiteEmailBrandingSettings {
   logoUrl: string;
+  faviconUrl: string;
   headerImageUrl: string;
+  backgroundColor: string;
+  cardColor: string;
   primaryColor: string;
   secondaryColor: string;
+  accentColor: string;
   buttonColor: string;
+  buttonTextColor: string;
   textColor: string;
+  textMutedColor: string;
+  borderColor: string;
+  linkColor: string;
   footerColor: string;
   fontFamily: string;
+  theme: EmailThemeMode;
   showSocialIcons: boolean;
   companyName: string;
   senderName: string;
   replyTo: string;
+  website: string;
 }
 
 export type EmailTestModePrefix = "TEST" | "STAGING" | "DEV";

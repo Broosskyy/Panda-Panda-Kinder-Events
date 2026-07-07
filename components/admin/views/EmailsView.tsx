@@ -6,12 +6,13 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { EmailVariableHelp } from "@/components/admin/email/EmailVariableHelp";
+import { EmailPreviewFrame } from "@/components/admin/email/EmailPreviewFrame";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
-import type { EmailLogRecord, EmailTemplateRecord } from "@/lib/cms/types";
+import type { EmailLogRecord, EmailTemplateLayout, EmailTemplateRecord } from "@/lib/cms/types";
 
 type Tab = "templates" | "log";
 
@@ -24,12 +25,14 @@ const EMAIL_LOG_STATUS: Record<string, string> = {
 
 const TEMPLATE_PURPOSES: Record<string, string> = {
   "inquiry-auto-reply": "Diese E-Mail erhält ein Kunde automatisch nach einer Anfrage.",
-  "inquiry-admin": "Diese Nachricht erhält ihr, wenn eine neue Kontaktanfrage eingeht.",
-  "review-request": "Wird versendet, wenn ihr im Admin eine Bewertungsanfrage an Kunden schickt.",
+  "inquiry-admin": "Diese Nachricht erhalten Sie, wenn eine neue Kontaktanfrage eingeht.",
+  "review-request": "Wird versendet, wenn Sie im Admin eine Bewertungsanfrage an Kunden schicken.",
   "review-admin": "Diese Adresse bekommt eine Nachricht, wenn eine neue Bewertung eingeht.",
   "quote-send": "Text beim Versand eines Angebots per E-Mail (PDF wird angehängt).",
   "invoice-send": "Text beim Versand einer Rechnung per E-Mail (PDF wird angehängt).",
   "password-reset": "E-Mail für Admin-Benutzer, die ihr Passwort vergessen haben.",
+  "email-test": "Vorlage für Test-E-Mails aus dem Admin.",
+  "newsletter-draft": "Grundgerüst für zukünftige Newsletter (noch inaktiv).",
   "general-message": "Allgemeine freie Nachricht an Kunden.",
   "security-login": "Optionaler Hinweis bei Admin-Anmeldungen.",
 };
@@ -42,7 +45,27 @@ const CORE_TEMPLATES = [
   "quote-send",
   "invoice-send",
   "password-reset",
+  "email-test",
 ] as const;
+
+const EMPTY_LAYOUT: EmailTemplateLayout = {
+  headline: "",
+  intro: "",
+  body: "",
+  infoBoxEnabled: false,
+  infoBoxItems: [],
+  ctaText: "",
+  ctaUrl: "",
+  footerEnabled: true,
+};
+
+function layoutFromTemplate(t: EmailTemplateRecord): EmailTemplateLayout {
+  return {
+    ...EMPTY_LAYOUT,
+    ...(t.layout ?? {}),
+    infoBoxItems: t.layout?.infoBoxItems ?? [],
+  };
+}
 
 export function EmailsView() {
   const { toast, withLoading, error: showError } = useAdminMessages();
@@ -54,9 +77,11 @@ export function EmailsView() {
   const [selectedSlug, setSelectedSlug] = useState<string>("inquiry-auto-reply");
   const [subject, setSubject] = useState("");
   const [bodyHtml, setBodyHtml] = useState("");
+  const [layout, setLayout] = useState<EmailTemplateLayout>(EMPTY_LAYOUT);
   const [isActive, setIsActive] = useState(true);
   const [testTo, setTestTo] = useState("");
-  const [preview, setPreview] = useState(false);
+  const [preview, setPreview] = useState(true);
+  const [showAdvancedHtml, setShowAdvancedHtml] = useState(false);
 
   const load = useCallback(async () => {
     const [tRes, lRes] = await Promise.all([
@@ -73,23 +98,31 @@ export function EmailsView() {
     void withLoading(load());
   }, [load, withLoading]);
 
+  const applyTemplate = useCallback((t: EmailTemplateRecord) => {
+    setSubject(t.subject);
+    setBodyHtml(t.body_html);
+    setLayout(layoutFromTemplate(t));
+    setIsActive(t.is_active);
+    setShowAdvancedHtml(Boolean(t.body_html?.trim()));
+  }, []);
+
   useEffect(() => {
     if (templates.length === 0) return;
     const t = templates.find((x) => x.slug === selectedSlug) ?? templates[0];
     if (!t) return;
-    setSubject(t.subject);
-    setBodyHtml(t.body_html);
-    setIsActive(t.is_active);
-  }, [templates, selectedSlug]);
+    applyTemplate(t);
+  }, [templates, selectedSlug, applyTemplate]);
 
   const selectTemplate = (slug: string) => {
     const t = templates.find((x) => x.slug === slug);
     if (!t) return;
     setSelectedSlug(slug);
-    setSubject(t.subject);
-    setBodyHtml(t.body_html);
-    setIsActive(t.is_active);
-    setPreview(false);
+    applyTemplate(t);
+    setPreview(true);
+  };
+
+  const setLayoutField = <K extends keyof EmailTemplateLayout>(key: K, value: EmailTemplateLayout[K]) => {
+    setLayout((prev) => ({ ...prev, [key]: value }));
   };
 
   const saveTemplate = async () => {
@@ -103,8 +136,10 @@ export function EmailsView() {
           body: JSON.stringify({
             slug: t.slug,
             name: t.name,
+            description: t.description,
             subject,
-            body_html: bodyHtml,
+            body_html: showAdvancedHtml ? bodyHtml : "",
+            layout,
             area: t.area,
             is_active: isActive,
             is_default: t.is_default,
@@ -143,7 +178,7 @@ export function EmailsView() {
           body: JSON.stringify({
             to: testTo.trim(),
             subject,
-            bodyHtml,
+            bodyHtml: showAdvancedHtml ? bodyHtml : undefined,
             templateSlug: selectedSlug,
             area: "test",
           }),
@@ -185,7 +220,7 @@ export function EmailsView() {
       </nav>
 
       {tab === "templates" ? (
-        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+        <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
           <AdminCard title="Vorlagen">
             <ul className="space-y-2">
               {coreTemplates.map((t) => (
@@ -223,59 +258,110 @@ export function EmailsView() {
             </ul>
           </AdminCard>
 
-          <AdminCard title={selected?.name ?? "Vorlage bearbeiten"}>
-            {selected ? (
-              <div className="grid gap-4">
-                <p className="text-sm text-text-muted">
-                  {TEMPLATE_PURPOSES[selected.slug] ?? "E-Mail-Vorlage für automatischen oder manuellen Versand."}
-                </p>
-                <AdminFormField label="Aktiv">
+          <div className="grid gap-6">
+            <AdminCard title={selected?.name ?? "Vorlage bearbeiten"}>
+              {selected ? (
+                <div className="grid gap-4">
+                  <p className="text-sm text-text-muted">
+                    {selected.description || TEMPLATE_PURPOSES[selected.slug] || "E-Mail-Vorlage für automatischen oder manuellen Versand."}
+                  </p>
+                  <AdminFormField label="Aktiv">
+                    <label className="admin-checkbox-row">
+                      <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                      <span>Vorlage ist aktiv (inaktive Vorlagen werden übersprungen)</span>
+                    </label>
+                  </AdminFormField>
+                  <AdminFormField label="Betreff">
+                    <input className="admin-input" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                  </AdminFormField>
+                  <AdminFormField label="Überschrift">
+                    <input className="admin-input" value={layout.headline ?? ""} onChange={(e) => setLayoutField("headline", e.target.value)} />
+                  </AdminFormField>
+                  <AdminFormField label="Einleitung">
+                    <textarea className="admin-input min-h-20" value={layout.intro ?? ""} onChange={(e) => setLayoutField("intro", e.target.value)} />
+                  </AdminFormField>
+                  <AdminFormField label="Haupttext">
+                    <textarea className="admin-input min-h-32" value={layout.body ?? ""} onChange={(e) => setLayoutField("body", e.target.value)} />
+                  </AdminFormField>
                   <label className="admin-checkbox-row">
-                    <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
-                    <span>Vorlage ist aktiv (inaktive Vorlagen werden übersprungen — CMS-Texte greifen dann)</span>
+                    <input
+                      type="checkbox"
+                      checked={layout.infoBoxEnabled ?? false}
+                      onChange={(e) => setLayoutField("infoBoxEnabled", e.target.checked)}
+                    />
+                    <span>Info-Box anzeigen</span>
                   </label>
-                </AdminFormField>
-                <AdminFormField label="Betreff">
-                  <input className="admin-input" value={subject} onChange={(e) => setSubject(e.target.value)} />
-                </AdminFormField>
-                <AdminFormField label="Nachrichtentext (HTML)">
-                  <textarea
-                    className="admin-input min-h-48 font-mono text-sm"
-                    value={bodyHtml}
-                    onChange={(e) => setBodyHtml(e.target.value)}
-                  />
-                </AdminFormField>
-                <EmailVariableHelp compact />
-                <AdminFormField label="Testmail senden an">
+                  {layout.infoBoxEnabled ? (
+                    <AdminFormField label="Info-Box Punkte" hint="Ein Punkt pro Zeile">
+                      <textarea
+                        className="admin-input min-h-20"
+                        value={(layout.infoBoxItems ?? []).join("\n")}
+                        onChange={(e) => setLayoutField("infoBoxItems", e.target.value.split("\n"))}
+                      />
+                    </AdminFormField>
+                  ) : null}
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <AdminFormField label="Button-Text (CTA)">
+                      <input className="admin-input" value={layout.ctaText ?? ""} onChange={(e) => setLayoutField("ctaText", e.target.value)} />
+                    </AdminFormField>
+                    <AdminFormField label="Button-Link (CTA)">
+                      <input className="admin-input" value={layout.ctaUrl ?? ""} onChange={(e) => setLayoutField("ctaUrl", e.target.value)} placeholder="{{website}}" />
+                    </AdminFormField>
+                  </div>
+                  <EmailVariableHelp />
+                  <details className="rounded-lg border border-border p-3">
+                    <summary className="cursor-pointer text-sm font-medium text-text-primary">Erweitert: HTML-Override</summary>
+                    <p className="mt-2 text-xs text-text-muted">
+                      Nur für Experten. Wenn ausgefüllt, ersetzt dieses HTML die strukturierten Felder oben.
+                    </p>
+                    <label className="admin-checkbox-row mt-2">
+                      <input type="checkbox" checked={showAdvancedHtml} onChange={(e) => setShowAdvancedHtml(e.target.checked)} />
+                      <span>HTML-Override verwenden</span>
+                    </label>
+                    {showAdvancedHtml ? (
+                      <textarea
+                        className="admin-input mt-2 min-h-32 font-mono text-sm"
+                        value={bodyHtml}
+                        onChange={(e) => setBodyHtml(e.target.value)}
+                      />
+                    ) : null}
+                  </details>
+                  <AdminFormField label="Testmail senden an">
+                    <div className="flex flex-wrap gap-2">
+                      <input className="admin-input min-w-[14rem] flex-1" type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="deine@adresse.de" />
+                      <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendTest()}>
+                        Testmail senden
+                      </AdminButton>
+                    </div>
+                  </AdminFormField>
                   <div className="flex flex-wrap gap-2">
-                    <input className="admin-input min-w-[14rem] flex-1" type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="deine@adresse.de" />
-                    <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendTest()}>
-                      Testmail senden
+                    <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void saveTemplate()}>
+                      {ADMIN_BTN.save}
+                    </AdminButton>
+                    <AdminButton variant="secondary" icon={<RotateCcw className="h-4 w-4" />} onClick={() => void resetTemplate()}>
+                      Auf Standard zurücksetzen
+                    </AdminButton>
+                    <AdminButton variant="ghost" icon={<Eye className="h-4 w-4" />} onClick={() => setPreview((p) => !p)}>
+                      Vorschau {preview ? "ausblenden" : "anzeigen"}
                     </AdminButton>
                   </div>
-                </AdminFormField>
-                <div className="flex flex-wrap gap-2">
-                  <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void saveTemplate()}>
-                    {ADMIN_BTN.save}
-                  </AdminButton>
-                  <AdminButton variant="secondary" icon={<RotateCcw className="h-4 w-4" />} onClick={() => void resetTemplate()}>
-                    Auf Standard zurücksetzen
-                  </AdminButton>
-                  <AdminButton variant="ghost" icon={<Eye className="h-4 w-4" />} onClick={() => setPreview((p) => !p)}>
-                    Vorschau {preview ? "ausblenden" : "anzeigen"}
-                  </AdminButton>
                 </div>
-                {preview ? (
-                  <div
-                    className="prose prose-sm max-w-none rounded-xl border border-border bg-bg-secondary p-4"
-                    dangerouslySetInnerHTML={{ __html: bodyHtml }}
-                  />
-                ) : null}
-              </div>
-            ) : (
-              <p className="text-sm text-text-muted">Keine Vorlage ausgewählt.</p>
-            )}
-          </AdminCard>
+              ) : (
+                <p className="text-sm text-text-muted">Keine Vorlage ausgewählt.</p>
+              )}
+            </AdminCard>
+
+            {preview && selected ? (
+              <AdminCard title="Live-Vorschau">
+                <EmailPreviewFrame
+                  slug={selectedSlug}
+                  subject={subject}
+                  bodyHtml={showAdvancedHtml ? bodyHtml : undefined}
+                  layout={showAdvancedHtml ? null : layout}
+                />
+              </AdminCard>
+            ) : null}
+          </div>
         </div>
       ) : null}
 

@@ -68,6 +68,13 @@ export interface CmsProcessStepItem {
   iconKey: string;
 }
 
+export interface SitePublicStatsSettings {
+  eventsCount?: number;
+  childrenCount?: number;
+  recommendationPercent?: number;
+  yearsExperience?: number;
+}
+
 export interface SiteTrustBadgesSettings {
   items: CmsIconTextItem[];
 }
@@ -386,6 +393,7 @@ export interface SiteSettingsBundle {
   navigation: SiteNavigationSettings;
   branding: SiteBrandingSettings;
   trustBadges: SiteTrustBadgesSettings;
+  publicStats: SitePublicStatsSettings;
   usps: SiteUspsSettings;
   process: SiteProcessSettings;
   sections: SiteSectionsSettings;

@@ -12,6 +12,7 @@ import {
   Palette,
   PartyPopper,
   Shield,
+  ShieldCheck,
   Sparkles,
   Star,
   Users,
@@ -33,6 +34,7 @@ export const SERVICE_ICON_MAP: Record<string, LucideIcon> = {
   Palette,
   Calendar,
   Clock,
+  ShieldCheck,
 };
 
 export const SERVICE_ICON_KEYS = Object.keys(SERVICE_ICON_MAP);

@@ -1,14 +1,14 @@
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
-const TRUST_POINTS = ["Kostenlos", "Unverbindlich", "Schnelle Rückmeldung"] as const;
+const TRUST_POINTS = ["Kostenlos", "Unverbindlich", "Persönliche Rückmeldung"] as const;
 
 interface SectionCtaProps {
   label?: string;
   className?: string;
 }
 
-export function SectionCta({ label = "Jetzt Termin anfragen", className = "" }: SectionCtaProps) {
+export function SectionCta({ label = "Kostenlos anfragen", className = "" }: SectionCtaProps) {
   return (
     <div className={`section-cta ${className}`}>
       <ul className="mb-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-text-secondary" aria-label="Vorteile">

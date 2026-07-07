@@ -24,7 +24,7 @@ export function SectionHeading({
           <Heart className="hidden h-3.5 w-3.5 fill-accent-heart/40 text-accent-heart sm:block" aria-hidden />
           <h2
             id={id}
-            className="font-heading text-[1.75rem] font-bold leading-[1.15] tracking-tight text-text-primary sm:text-3xl sm:leading-tight md:text-[2.5rem] lg:text-[2.85rem]"
+            className="section-heading-title font-heading text-[1.75rem] font-bold leading-[1.15] tracking-tight text-text-primary sm:text-3xl sm:leading-tight md:text-[2.5rem] lg:text-[2.85rem]"
           >
             {title}
           </h2>

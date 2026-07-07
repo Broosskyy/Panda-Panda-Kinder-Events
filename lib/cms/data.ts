@@ -128,6 +128,12 @@ function buildSettingsFromRows(
     trustBadges: {
       items: trustItems.length > 0 ? trustItems : DEFAULT_SITE_SETTINGS.trustBadges.items,
     },
+    publicStats: cmsSection(
+      "publicStats",
+      DEFAULT_SITE_SETTINGS.publicStats,
+      byKey.get("publicStats"),
+      byKey.has("publicStats"),
+    ),
     usps: {
       ...uspsRaw,
       items: uspItems.length > 0 ? uspItems : DEFAULT_SITE_SETTINGS.usps.items,

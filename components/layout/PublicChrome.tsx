@@ -18,7 +18,10 @@ export function PublicChrome({ contact, ctaLabel, cookieNoticeText, footer }: Pu
     <>
       <SplashScreen tagline={footer?.tagline} />
       <FloatingContactButtons contact={contact} />
-      <StickyCtaBar label={ctaLabel} />
+      <StickyCtaBar
+        label={ctaLabel || "Unverbindlich anfragen"}
+        sublabel="Bereit für euer Event? Wir melden uns persönlich."
+      />
       <CookieBanner noticeText={cookieNoticeText} />
     </>
   );

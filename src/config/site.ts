@@ -7,9 +7,9 @@ import { SITE_URL_PLACEHOLDER } from "@/lib/site-url";
 
 export const siteConfig = {
   name: "Panda-Bande Kinderevents",
-  tagline: "Glückliche Kinder. Entspannte Eltern.",
+  tagline: "Damit ihr feiern könnt — wir kümmern uns um die Kleinen.",
   description:
-    "Liebevolle Kinderbetreuung für Hochzeiten, Geburtstage und Familienfeiern — bundesweit im Einsatz, mit Herz und professionellem Team.",
+    "Liebevolle Kinderbetreuung für Hochzeiten, Geburtstage und Familienfeiern in NRW und bundesweit — mit Herz, Erfahrung und einem Team, dem ihr vertrauen könnt.",
   /** @deprecated Verwende getSiteUrl() aus lib/site-url.ts */
   url: SITE_URL_PLACEHOLDER,
 

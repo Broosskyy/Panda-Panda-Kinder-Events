@@ -229,7 +229,7 @@ export function InquiryForm({ privacyHint }: InquiryFormProps) {
         icon={<Send className="h-5 w-5" aria-hidden />}
         aria-busy={isSubmitting}
       >
-        {isSubmitting ? "Wird gesendet…" : "Jetzt unverbindlich anfragen"}
+        {isSubmitting ? "Wird gesendet…" : "Unverbindlich anfragen"}
       </Button>
     </form>
   );

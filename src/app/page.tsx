@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/Footer";
 import { PublicChrome } from "@/components/layout/PublicChrome";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { Hero } from "@/components/sections/Hero";
+import { PublicStats } from "@/components/sections/PublicStats";
 import { Usps } from "@/components/sections/Usps";
 import { Services } from "@/components/sections/Services";
 import { Process } from "@/components/sections/Process";
@@ -117,6 +118,7 @@ export default async function HomePage() {
       <Header navigation={settings.navigation} branding={settings.branding} />
       <main id="main-content" className="public-main">
         <Hero hero={settings.hero} trustBadges={settings.trustBadges} rating={rating} />
+        <PublicStats stats={settings.publicStats} />
         <Usps usps={settings.usps} />
         <Services items={services} heading={settings.sections.services} />
         <Process process={settings.process} heading={settings.sections.process} />

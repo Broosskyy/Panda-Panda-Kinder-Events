@@ -101,7 +101,7 @@ export function Header({
               icon={<Calendar className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4" aria-hidden />}
             >
               <span className="lg:hidden">{navigation.ctaLabelShort || "Anfragen"}</span>
-              <span className="hidden lg:inline">{navigation.ctaLabel || "Jetzt anfragen"}</span>
+              <span className="hidden lg:inline">{navigation.ctaLabel || "Unverbindlich anfragen"}</span>
             </Button>
             <button
               ref={menuButtonRef}
@@ -177,7 +177,7 @@ export function Header({
                 icon={<Calendar className="h-4 w-4" aria-hidden />}
                 onClick={closeMenu}
               >
-                {navigation.ctaLabel || "Jetzt anfragen"}
+                {navigation.ctaLabel || "Unverbindlich anfragen"}
               </Button>
             </div>
           </div>

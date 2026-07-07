@@ -43,6 +43,7 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
     "showTextMark",
   ],
   trustBadges: [],
+  publicStats: [],
   usps: ["title", "subtitle"],
   process: ["title", "subtitle", "speechBubble"],
   sections: [],

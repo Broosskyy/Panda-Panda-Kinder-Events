@@ -2,7 +2,7 @@
  * Zentrale Auflösung der öffentlichen Website-URL.
  * Für Domain-Wechsel: NEXT_PUBLIC_SITE_URL in Vercel/.env.local setzen.
  */
-const DEFAULT_SITE_URL = "https://panda-bande-events.de";
+const DEFAULT_SITE_URL = "https://pb-kinderevents.de";
 
 export function getSiteUrl(): string {
   const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();

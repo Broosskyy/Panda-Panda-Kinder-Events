@@ -1,5 +1,6 @@
 import { BRAND, type LogoContext } from "@/lib/brand";
 import type { SiteBrandingSettings } from "@/lib/cms/types";
+import { getEmailAssetBaseUrl, resolveEmailImageUrl } from "@/lib/email/resolve-image-url";
 
 const LEGACY_ICON_PATTERNS = [
   "/branding/favicon",
@@ -90,7 +91,9 @@ export function resolveBrandAlt(branding?: SiteBrandingSettings): string {
 }
 
 /** Absolute URL für E-Mails und externe Dienste */
-export function toAbsoluteBrandUrl(path: string, baseUrl: string): string {
-  if (path.startsWith("http")) return path;
-  return `${baseUrl.replace(/\/$/, "")}${path.startsWith("/") ? path : `/${path}`}`;
+export function toAbsoluteBrandUrl(path: string, baseUrl?: string): string {
+  const resolved = resolveEmailImageUrl(path, baseUrl ?? getEmailAssetBaseUrl());
+  if (resolved) return resolved;
+  const base = (baseUrl ?? getEmailAssetBaseUrl()).replace(/\/$/, "");
+  return `${base}/assets/Logo.png`;
 }

@@ -1,9 +1,13 @@
 import { BRAND } from "@/lib/brand";
-import { toAbsoluteBrandUrl } from "@/lib/brand/resolve";
 import type { ResolvedEmailBranding } from "@/lib/email/branding";
+import {
+  buildEmailHeaderImageRow,
+  buildEmailLogoHeaderHtml,
+  getEmailAssetBaseUrl,
+} from "@/lib/email/resolve-image-url";
 
 export interface EmailLayoutOptions {
-  baseUrl: string;
+  baseUrl?: string;
   logoUrl: string;
   companyName: string;
   bodyHtml: string;
@@ -17,16 +21,20 @@ export interface EmailLayoutOptions {
 /** Responsive HTML-E-Mail mit Logo, Branding und Signatur */
 export function wrapEmailHtml(opts: EmailLayoutOptions): string {
   const brand = opts.branding;
-  const logoSrc = toAbsoluteBrandUrl(opts.logoUrl, opts.baseUrl);
+  const baseUrl = opts.baseUrl ?? getEmailAssetBaseUrl();
   const primary = opts.primaryColor || brand?.primaryColor || BRAND.themeColor;
   const secondary = brand?.secondaryColor || "#f4a261";
   const buttonColor = brand?.buttonColor || primary;
   const textColor = brand?.textColor || "#2c2c2c";
   const footerBg = brand?.footerColor || "#faf9f6";
   const fontFamily = brand?.fontFamily || "Helvetica, Arial, sans-serif";
-  const headerImage = opts.headerImageUrl?.trim()
-    ? `<tr><td style="padding:0;"><img src="${toAbsoluteBrandUrl(opts.headerImageUrl, opts.baseUrl)}" alt="" width="560" style="display:block;width:100%;max-width:560px;height:auto;border:0;" /></td></tr>`
-    : "";
+  const headerImage = buildEmailHeaderImageRow(opts.headerImageUrl, baseUrl);
+  const logoHeader = buildEmailLogoHeaderHtml({
+    logoUrl: opts.logoUrl,
+    companyName: opts.companyName,
+    baseUrl,
+    accentColor: primary,
+  });
 
   const signatureBlock = opts.signatureHtml
     ? `<div style="margin-top:16px;padding-top:16px;border-top:1px solid #ece8df;">${opts.signatureHtml}</div>`
@@ -57,7 +65,7 @@ export function wrapEmailHtml(opts: EmailLayoutOptions): string {
       <table width="100%" class="email-card" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
         ${headerImage}
         <tr><td style="padding:28px 28px 20px;text-align:center;border-bottom:1px solid #ece8df;background:linear-gradient(180deg, ${secondary}14 0%, #ffffff 100%);">
-          <img src="${logoSrc}" alt="${BRAND.alt}" width="200" height="50" style="display:block;margin:0 auto;max-width:200px;width:200px;height:auto;border:0;object-fit:contain;" />
+          ${logoHeader}
         </td></tr>
         <tr><td class="email-inner" style="padding:28px;color:${textColor};">
           ${opts.bodyHtml}

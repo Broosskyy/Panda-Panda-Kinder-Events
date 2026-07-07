@@ -1,5 +1,6 @@
 import { BRAND } from "@/lib/brand";
 import { wrapEmailHtml } from "@/lib/email/html";
+import { getEmailAssetBaseUrl } from "@/lib/email/resolve-image-url";
 import { getSiteUrl } from "@/lib/site-url";
 
 function escapeHtml(value: string): string {
@@ -48,7 +49,7 @@ interface BrandedEmailOptions {
 
 export function buildBrandedEmail(opts: BrandedEmailOptions): string {
   return wrapEmailHtml({
-    baseUrl: getSiteUrl(),
+    baseUrl: getEmailAssetBaseUrl(),
     logoUrl: opts.logoUrl,
     companyName: opts.companyName,
     primaryColor: opts.primaryColor ?? BRAND.themeColor,

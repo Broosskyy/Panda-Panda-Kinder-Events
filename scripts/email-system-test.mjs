@@ -45,6 +45,7 @@ for (const file of [
   "lib/email/transport.ts",
   "lib/email/builders.ts",
   "lib/email/html.ts",
+  "lib/email/resolve-image-url.ts",
   "lib/email/templates-db.ts",
   "lib/email/render.ts",
   "lib/email/log.ts",
@@ -204,6 +205,75 @@ if (types.includes("SiteEmailSignatureSettings") && types.includes("SiteEmailTes
 
 if (read("lib/email/transport.ts").includes("prepareOutboundEmail")) ok("Test mode in transport");
 else fail("Test mode transport missing");
+
+// 15. Email logo: absolute public URLs
+const resolveImageUrl = read("lib/email/resolve-image-url.ts");
+const htmlModule = read("lib/email/html.ts");
+const siteUrl = read("lib/site-url.ts");
+
+if (resolveImageUrl.includes("NEXT_PUBLIC_SITE_URL") && resolveImageUrl.includes("https://pb-kinderevents.de")) {
+  ok("Email asset base uses NEXT_PUBLIC_SITE_URL with pb-kinderevents.de fallback");
+} else {
+  fail("Email asset base URL fallback missing");
+}
+
+if (resolveImageUrl.includes('EMAIL_LOGO_ALT = "Panda-Bande Kinderevents"')) {
+  ok("Email logo alt text constant");
+} else {
+  fail("Email logo alt text missing");
+}
+
+if (
+  resolveImageUrl.includes("buildEmailLogoHeaderHtml") &&
+  resolveImageUrl.includes("!absolute") &&
+  htmlModule.includes("buildEmailLogoHeaderHtml")
+) {
+  ok("Logo header uses text fallback when image unavailable");
+} else {
+  fail("Logo text fallback missing");
+}
+
+if (htmlModule.includes("buildEmailLogoHeaderHtml") && !htmlModule.match(/src="\/[^"]+"/)) {
+  ok("Email layout does not emit relative img src paths");
+} else {
+  fail("Email layout may still use relative img src");
+}
+
+if (siteUrl.includes('DEFAULT_SITE_URL = "https://pb-kinderevents.de"')) {
+  ok("Site URL default matches production domain");
+} else {
+  fail("Site URL default not updated to pb-kinderevents.de");
+}
+
+const composeRoute = read("src/app/api/admin/email/compose/route.ts");
+if (!composeRoute.includes("baseUrl: getSiteUrl()")) {
+  ok("Compose route does not pass getSiteUrl as email image base");
+} else {
+  fail("Compose route still uses getSiteUrl for email images");
+}
+
+function testResolveEmailImageUrl(path, base = "https://pb-kinderevents.de") {
+  const trimmed = path?.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith("data:")) return null;
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  const normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
+  return `${base.replace(/\/$/, "")}${normalized}`;
+}
+
+const logoCases = [
+  ["/assets/Logo.png", "https://pb-kinderevents.de/assets/Logo.png"],
+  ["logo.png", "https://pb-kinderevents.de/logo.png"],
+  ["https://cdn.example.com/logo.png", "https://cdn.example.com/logo.png"],
+  ["", null],
+  ["data:image/png;base64,abc", null],
+];
+
+for (const [input, expected] of logoCases) {
+  const result = testResolveEmailImageUrl(input);
+  if (result === expected) ok(`resolveEmailImageUrl("${input}") → ${expected ?? "null"}`);
+  else fail(`resolveEmailImageUrl("${input}")`, `expected ${expected}, got ${result}`);
+}
 
 // 14. Documentation
 try {

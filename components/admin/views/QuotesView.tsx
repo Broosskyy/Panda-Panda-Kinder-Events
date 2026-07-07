@@ -228,6 +228,9 @@ export function QuotesView() {
     if (!form.items.some((i) => i.title.trim())) {
       return showError("Angebot konnte nicht gespeichert werden.", "Mindestens eine Position mit Bezeichnung erforderlich.");
     }
+    if (form.items.some((i) => !i.quantity || i.quantity < 1)) {
+      return showError("Angebot konnte nicht gespeichert werden.", "Jede Position benötigt eine Menge von mindestens 1.");
+    }
 
     const discount_percent = parsePercent(discountInput, 0);
     const tax_rate = parsePercent(taxInput, defaultTaxRate);

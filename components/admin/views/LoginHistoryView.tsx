@@ -7,9 +7,31 @@ import { AdminLoadingCard } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 
+interface LoginHistoryEntry {
+  id: string;
+  identifier_attempt: string | null;
+  success: boolean;
+  device_label: string | null;
+  os_label: string | null;
+  browser_label: string | null;
+  created_at: string;
+  user_display_name?: string | null;
+}
+
+function formatUserLabel(entry: LoginHistoryEntry): string {
+  if (entry.user_display_name?.trim()) return entry.user_display_name.trim();
+  if (entry.identifier_attempt?.trim()) return entry.identifier_attempt.trim();
+  return "Unbekannt";
+}
+
+function formatDeviceLabel(entry: LoginHistoryEntry): string {
+  const parts = [entry.browser_label, entry.os_label, entry.device_label].filter(Boolean);
+  return parts.length > 0 ? parts.join(" · ") : "Gerät unbekannt";
+}
+
 export function LoginHistoryView() {
   const page = adminPageHeaderProps("loginHistorie");
-  const [history, setHistory] = useState<Array<Record<string, unknown>>>([]);
+  const [history, setHistory] = useState<LoginHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { error: showError } = useAdminMessages();
@@ -50,14 +72,22 @@ export function LoginHistoryView() {
               <li className="text-text-muted">Noch keine Einträge.</li>
             ) : (
               history.map((h) => (
-                <li key={String(h.id)} className="flex justify-between rounded-lg border border-border px-3 py-2">
-                  <span>
-                    {String(h.browser_label)} · {String(h.os_label)} ·{" "}
-                    <span className={h.success ? "text-primary" : "text-accent-heart"}>
-                      {h.success ? "Erfolgreich" : "Fehlgeschlagen"}
-                    </span>
-                  </span>
-                  <span className="text-text-muted">{new Date(String(h.created_at)).toLocaleString("de-DE")}</span>
+                <li
+                  key={h.id}
+                  className="rounded-lg border border-border px-3 py-3 sm:flex sm:items-start sm:justify-between sm:gap-4"
+                >
+                  <div className="min-w-0 space-y-1">
+                    <p className="font-medium text-text-primary">{formatUserLabel(h)}</p>
+                    <p className="text-text-muted">{formatDeviceLabel(h)}</p>
+                    <p>
+                      <span className={h.success ? "text-primary" : "text-accent-heart"}>
+                        {h.success ? "Erfolgreich" : "Fehlgeschlagen"}
+                      </span>
+                    </p>
+                  </div>
+                  <p className="mt-2 shrink-0 text-text-muted sm:mt-0 sm:text-right">
+                    {new Date(h.created_at).toLocaleString("de-DE")}
+                  </p>
                 </li>
               ))
             )}

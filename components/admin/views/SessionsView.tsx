@@ -3,24 +3,38 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
-import { AdminButton } from "@/components/admin/ui";
+import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
 
+interface SessionEntry {
+  id: string;
+  deviceLabel: string;
+  lastActiveAt: string;
+  isCurrent?: boolean;
+}
+
 export function SessionsView() {
-  const [sessions, setSessions] = useState<Array<Record<string, unknown>>>([]);
+  const [sessions, setSessions] = useState<SessionEntry[]>([]);
   const [legacy, setLegacy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { toast, fromApi } = useAdminMessages();
   const page = adminPageHeaderProps("sitzungen");
 
   const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
     const res = await fetch("/api/admin/security/sessions");
     const data = await res.json();
     if (res.ok) {
       setSessions(data.sessions ?? []);
       setLegacy(Boolean(data.legacy));
+    } else {
+      setLoadError(data.error ?? "Sitzungen konnten nicht geladen werden.");
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -48,21 +62,48 @@ export function SessionsView() {
     <div className="space-y-6">
       <AdminPageHeader {...page} />
       <SecuritySubNav />
-      {legacy ? (
-        <AdminCard><p className="text-sm text-text-muted">Sitzungsverwaltung ist im Multi-User-Modus verfügbar.</p></AdminCard>
+      {loading ? (
+        <AdminLoadingCard message="Sitzungen werden geladen…" />
+      ) : loadError ? (
+        <AdminCard>
+          <p className="text-sm text-text-muted">{loadError}</p>
+        </AdminCard>
+      ) : legacy ? (
+        <AdminCard>
+          <p className="text-sm text-text-muted">
+            Sitzungsverwaltung ist aktuell nicht aktiviert. Im Ein-Passwort-Modus werden keine einzelnen
+            Gerätesitzungen gespeichert.
+          </p>
+        </AdminCard>
       ) : (
         <AdminCard>
           <div className="mb-4 flex flex-wrap gap-2">
-            <AdminButton variant="secondary" onClick={() => void sessionAction("revoke_others")}>Andere Geräte abmelden</AdminButton>
-            <AdminButton variant="danger" onClick={() => void sessionAction("revoke_all")}>Alle Geräte abmelden</AdminButton>
+            <AdminButton variant="secondary" onClick={() => void sessionAction("revoke_others")}>
+              Andere Geräte abmelden
+            </AdminButton>
+            <AdminButton variant="danger" onClick={() => void sessionAction("revoke_all")}>
+              Alle Geräte abmelden
+            </AdminButton>
           </div>
           <ul className="space-y-2 text-sm">
-            {sessions.map((s) => (
-              <li key={String(s.id)} className="flex justify-between rounded-lg border border-border px-3 py-2">
-                <span>{String(s.deviceLabel)} {s.isCurrent ? "(dieses Gerät)" : ""}</span>
-                <span className="text-text-muted">{new Date(String(s.lastActiveAt)).toLocaleString("de-DE")}</span>
-              </li>
-            ))}
+            {sessions.length === 0 ? (
+              <li className="text-text-muted">Keine aktiven Sitzungen gefunden.</li>
+            ) : (
+              sessions.map((s) => (
+                <li
+                  key={s.id}
+                  className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <span>
+                    {s.deviceLabel || "Unbekanntes Gerät"}
+                    {s.isCurrent ? " (dieses Gerät)" : ""}
+                  </span>
+                  <span className="text-text-muted">
+                    Zuletzt aktiv: {new Date(s.lastActiveAt).toLocaleString("de-DE")}
+                  </span>
+                </li>
+              ))
+            )}
           </ul>
         </AdminCard>
       )}

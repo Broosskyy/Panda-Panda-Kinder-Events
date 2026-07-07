@@ -30,7 +30,7 @@ export function lineItemToApiPayload(item: QuoteLineItemDraft) {
     : item.title.trim();
   return {
     description: description || "Position",
-    quantity: item.quantity,
+    quantity: Math.max(1, item.quantity || 1),
     unit_price_cents: item.unit_price_cents,
   };
 }
@@ -38,6 +38,52 @@ export function lineItemToApiPayload(item: QuoteLineItemDraft) {
 function centsToEuroInput(cents: number): string {
   if (!cents) return "";
   return (cents / 100).toFixed(2).replace(".", ",");
+}
+
+function LineItemQuantityInput({
+  quantity,
+  onChange,
+}: {
+  quantity: number;
+  onChange: (quantity: number) => void;
+}) {
+  const [value, setValue] = useState(quantity > 0 ? String(quantity) : "");
+
+  useEffect(() => {
+    setValue(quantity > 0 ? String(quantity) : "");
+  }, [quantity]);
+
+  return (
+    <input
+      className="admin-input"
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      placeholder="1"
+      value={value}
+      onChange={(e) => {
+        const next = e.target.value;
+        if (next === "" || /^\d+$/.test(next)) {
+          setValue(next);
+          if (next !== "") onChange(Number(next));
+        }
+      }}
+      onBlur={() => {
+        if (value.trim() === "") {
+          onChange(0);
+          return;
+        }
+        const num = Number(value);
+        if (Number.isNaN(num) || num <= 0) {
+          setValue("");
+          onChange(0);
+          return;
+        }
+        setValue(String(num));
+        onChange(num);
+      }}
+    />
+  );
 }
 
 function LineItemPriceInput({
@@ -73,7 +119,7 @@ interface QuoteLineItemsEditorProps {
 
 export function QuoteLineItemsEditor({ items, discountPercent, taxRate, onChange }: QuoteLineItemsEditorProps) {
   const totals = calculateDocumentTotals(
-    items.map((i) => ({ quantity: i.quantity, unit_price_cents: i.unit_price_cents })),
+    items.map((i) => ({ quantity: i.quantity || 0, unit_price_cents: i.unit_price_cents })),
     discountPercent,
     taxRate,
   );
@@ -95,7 +141,7 @@ export function QuoteLineItemsEditor({ items, discountPercent, taxRate, onChange
 
       <div className="space-y-3">
         {items.map((item, index) => {
-          const lineTotal = Math.round(item.quantity * item.unit_price_cents);
+          const lineTotal = Math.round((item.quantity || 0) * item.unit_price_cents);
           return (
             <div key={item.key} className="admin-line-item-card">
               <div className="grid gap-3 md:grid-cols-2">
@@ -116,12 +162,9 @@ export function QuoteLineItemsEditor({ items, discountPercent, taxRate, onChange
                   />
                 </AdminFormField>
                 <AdminFormField label="Menge">
-                  <input
-                    className="admin-input"
-                    type="number"
-                    min={1}
-                    value={item.quantity}
-                    onChange={(e) => updateItem(index, { quantity: Math.max(1, Number(e.target.value) || 1) })}
+                  <LineItemQuantityInput
+                    quantity={item.quantity}
+                    onChange={(quantity) => updateItem(index, { quantity })}
                   />
                 </AdminFormField>
                 <AdminFormField label="Einzelpreis (€)">

@@ -10,6 +10,7 @@ import {
   AdminEmptyState,
   AdminFilterBar,
   AdminFilterSelect,
+  AdminLoadingCard,
   AdminSearchInput,
   AdminStatusBadge,
   crmDocumentStatusVariant,
@@ -79,6 +80,7 @@ function exportInvoicesCsv(rows: InvoiceRow[]) {
 
 export function InvoicesView() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
+  const [listLoading, setListLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<InvoiceView>("active");
   const [sortField, setSortField] = useState<CrmSortField>("date");
@@ -111,6 +113,7 @@ export function InvoicesView() {
   const empty = ADMIN_EMPTY_STATES.invoices;
 
   const load = useCallback(() => {
+    setListLoading(true);
     const params = new URLSearchParams();
     if (search) params.set("q", search);
     params.set("view", view);
@@ -119,7 +122,8 @@ export function InvoicesView() {
       .then((d) => {
         setInvoices(d.invoices ?? []);
         setSelected(new Set());
-      });
+      })
+      .finally(() => setListLoading(false));
   }, [search, view]);
 
   useEffect(() => {
@@ -325,7 +329,9 @@ export function InvoicesView() {
         />
       ) : null}
 
-      {filteredInvoices.length === 0 ? (
+      {listLoading ? (
+        <AdminLoadingCard message="Rechnungen werden geladen…" />
+      ) : filteredInvoices.length === 0 ? (
         <AdminEmptyState
           icon={Receipt}
           title={view === "archived" ? "Keine archivierten Rechnungen" : empty.title}
@@ -404,7 +410,7 @@ export function InvoicesView() {
                       }
                       onClick={() => void downloadPdf(pdfUrl(inv.id), downloadKey, `${inv.invoice_number}.pdf`)}
                     >
-                      {ADMIN_BTN.pdfDownload}
+                      {isPdfLoading(downloadKey) ? "Wird heruntergeladen…" : ADMIN_BTN.pdfDownload}
                     </AdminButton>
                     <AdminButton
                       variant="primary"

@@ -160,12 +160,17 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
           className={`relative min-h-[40dvh] max-h-[65dvh] w-full flex-1 overflow-auto bg-bg-secondary sm:min-h-[20rem] sm:max-h-[70vh] ${
             zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
           }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setZoomed((z) => !z);
-          }}
         >
-          <div className={`relative h-full min-h-[40dvh] w-full transition-transform duration-300 ${zoomed ? "scale-[1.5] origin-center" : ""}`}>
+          <button
+            type="button"
+            className={`relative block h-full min-h-[40dvh] w-full border-0 bg-transparent p-0 transition-transform duration-300 ${zoomed ? "scale-[1.5] origin-center" : ""}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setZoomed((z) => !z);
+            }}
+            aria-label={zoomed ? "Zoom verkleinern" : "Zoom vergrößern"}
+            aria-pressed={zoomed}
+          >
             <Image
               src={item.src}
               alt={item.alt}
@@ -176,7 +181,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
               priority
               draggable={false}
             />
-          </div>
+          </button>
         </div>
 
         <div className="shrink-0 border-t border-border/60 px-4 py-4 sm:px-6 sm:py-5">

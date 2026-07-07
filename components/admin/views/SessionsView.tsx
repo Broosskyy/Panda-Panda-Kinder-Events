@@ -29,7 +29,7 @@ export function SessionsView() {
 
   const sessionAction = async (action: string) => {
     if (action === "revoke_others" && !confirmDanger(ADMIN_CONFIRM.revokeAllSessions)) return;
-    if (action === "revoke_all" && !confirmDanger(ADMIN_CONFIRM.revokeAllSessions)) return;
+    if (action === "revoke_all" && !confirmDanger(ADMIN_CONFIRM.revokeAllDevices)) return;
     const res = await fetch("/api/admin/security/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

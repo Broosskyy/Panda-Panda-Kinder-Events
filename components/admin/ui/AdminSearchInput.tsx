@@ -5,6 +5,7 @@ interface AdminSearchInputProps {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  "aria-label"?: string;
 }
 
 export function AdminSearchInput({
@@ -12,6 +13,7 @@ export function AdminSearchInput({
   onChange,
   placeholder = "Suchen…",
   className = "",
+  "aria-label": ariaLabel,
 }: AdminSearchInputProps) {
   return (
     <div className={`admin-search-wrap ${className}`}>
@@ -21,6 +23,7 @@ export function AdminSearchInput({
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
+        aria-label={ariaLabel ?? placeholder}
         className="admin-input admin-search-input"
       />
     </div>

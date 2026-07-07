@@ -16,6 +16,7 @@ import {
   AdminEmptyState,
   AdminFilterBar,
   AdminFilterSelect,
+  AdminLoadingCard,
   AdminSearchInput,
   AdminStatusBadge,
   crmDocumentStatusVariant,
@@ -113,6 +114,7 @@ function exportQuotesCsv(rows: QuoteRow[]) {
 
 export function QuotesView() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
+  const [listLoading, setListLoading] = useState(true);
   const [customers, setCustomers] = useState<CrmCustomer[]>([]);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<QuoteView>("active");
@@ -155,6 +157,7 @@ export function QuotesView() {
   const { open: openPdf, download: downloadPdf, isLoading: isPdfLoading } = useAdminPdf(handlePdfError);
 
   const load = useCallback(() => {
+    setListLoading(true);
     const params = new URLSearchParams();
     if (search) params.set("q", search);
     params.set("view", view);
@@ -163,7 +166,8 @@ export function QuotesView() {
       .then((d) => {
         setQuotes(d.quotes ?? []);
         setSelected(new Set());
-      });
+      })
+      .finally(() => setListLoading(false));
   }, [search, view]);
 
   useEffect(() => {
@@ -532,7 +536,9 @@ export function QuotesView() {
         </AdminCard>
       ) : null}
 
-      {filteredQuotes.length === 0 ? (
+      {listLoading ? (
+        <AdminLoadingCard message="Angebote werden geladen…" />
+      ) : filteredQuotes.length === 0 ? (
         <AdminEmptyState
           icon={FileText}
           title={view === "archived" ? "Keine archivierten Angebote" : empty.title}
@@ -612,7 +618,7 @@ export function QuotesView() {
                       }
                       onClick={() => void downloadPdf(pdfUrl(q.id), downloadKey, `${q.quote_number}.pdf`)}
                     >
-                      {ADMIN_BTN.pdfDownload}
+                      {isPdfLoading(downloadKey) ? "Wird heruntergeladen…" : ADMIN_BTN.pdfDownload}
                     </AdminButton>
                     <AdminButton
                       variant="primary"

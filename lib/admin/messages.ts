@@ -82,6 +82,8 @@ export const ADMIN_CONFIRM = {
   replaceFavicon: "Das Favicon wird ersetzt. Browser-Tabs und PWA-Icons können kurz veraltet wirken.\n\nFortfahren?",
   revokeSession: "Diese Sitzung wird beendet. Das Gerät muss sich neu anmelden.\n\nFortfahren?",
   revokeAllSessions: "Alle anderen Sitzungen werden beendet.\n\nFortfahren?",
+  revokeAllDevices:
+    "Alle Geräte werden abgemeldet — auch dieses Gerät. Du musst dich danach neu anmelden.\n\nFortfahren?",
   deleteQuote:
     "Möchten Sie dieses Angebot wirklich löschen?\n\nDiese Aktion kann nicht rückgängig gemacht werden.",
   archiveQuote: "Dieses Angebot wird archiviert und standardmäßig ausgeblendet.\n\nFortfahren?",

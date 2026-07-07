@@ -141,16 +141,34 @@ summary:focus-visible,
   }
 }
 
-.card-premium:hover {
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-hover);
-  border-color: rgba(82, 86, 62, 0.14);
-}
-
 .card-premium.card-static:hover {
   transform: none;
   box-shadow: var(--shadow-md);
   border-color: var(--color-border);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card-premium:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(82, 86, 62, 0.14);
+  }
+
+  .review-card:hover,
+  .team-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+  }
+}
+
+@media not all and (hover: hover) and (pointer: fine) {
+  .card-premium:hover,
+  .review-card:hover,
+  .team-card:hover,
+  .trust-chip:hover {
+    transform: none;
+    box-shadow: var(--shadow-md);
+  }
 }
 
 .card-beige {
@@ -229,7 +247,6 @@ img {
     radial-gradient(ellipse 50% 40% at 95% 10%, rgba(239, 233, 223, 0.45) 0%, transparent 45%);
 }
 
-/* Above-the-fold hero text must never be clipped or hidden by reveal animation */
 /* Above-the-fold hero text must never be clipped or hidden by reveal animation */
 .hero-section .hero-content,
 .hero-section .hero-content .reveal {
@@ -355,6 +372,7 @@ img {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   padding-bottom: 0.25rem;
+  padding-inline: 0.25rem;
   overscroll-behavior-x: contain;
 }
 
@@ -1286,7 +1304,9 @@ img {
 }
 
 .admin-btn-primary:disabled,
-.admin-btn-secondary:disabled {
+.admin-btn-secondary:disabled,
+.admin-btn-danger:disabled,
+.admin-btn-ghost:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -1854,7 +1874,7 @@ body.lightbox-open .floating-contact-stack {
 }
 
 .gallery-filter-chip {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   border-radius: 9999px;
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
@@ -1862,7 +1882,24 @@ body.lightbox-open .floating-contact-stack {
   font-size: 0.875rem;
   font-weight: 600;
   color: var(--color-text-secondary);
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  touch-action: manipulation;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .gallery-filter-chip:hover {
+    border-color: color-mix(in srgb, var(--color-primary) 35%, var(--color-border));
+    background: color-mix(in srgb, var(--color-primary) 6%, var(--color-bg-card));
+  }
+}
+
+.gallery-filter-chip:active {
+  transform: scale(0.98);
+}
+
+.gallery-filter-chip:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .gallery-filter-chip-active {
@@ -1911,12 +1948,13 @@ body.lightbox-open .floating-contact-stack {
   right: 1rem;
   top: 1rem;
   display: flex;
-  height: 2.5rem;
-  width: 2.5rem;
+  height: 2.75rem;
+  width: 2.75rem;
   align-items: center;
   justify-content: center;
   border-radius: 9999px;
   background: var(--color-bg-secondary);
+  touch-action: manipulation;
 }
 
 .card-equal,

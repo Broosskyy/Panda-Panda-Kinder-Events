@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
@@ -39,6 +39,17 @@ export function CrmSendModal({
   onConfirm,
 }: CrmSendModalProps) {
   const [showDetail, setShowDetail] = useState(false);
+  const canSendToCustomer = Boolean(customerEmail?.trim());
+  const canConfirm = sendToCustomer && canSendToCustomer;
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !loading) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, loading, onClose]);
 
   if (!open) return null;
 
@@ -49,8 +60,15 @@ export function CrmSendModal({
         <h2 className="font-heading text-lg font-semibold text-text-primary">{title}</h2>
         <p className="mt-2 text-sm text-text-muted">
           Das PDF wird automatisch erstellt und als Anhang versendet
-          {customerEmail ? ` an ${customerEmail}` : ""}.
+          {sendToCustomer && customerEmail ? ` an ${customerEmail}` : ""}
+          {copyToBusiness ? " — mit Kopie an uns." : "."}
         </p>
+
+        {!canSendToCustomer && sendToCustomer ? (
+          <p className="mt-3 rounded-lg border border-accent-heart/25 bg-accent-heart/5 px-3 py-2 text-sm text-text-secondary" role="alert">
+            Beim Kunden ist keine E-Mail-Adresse hinterlegt. Bitte Kunde bearbeiten oder nur „Kopie an uns“ wählen.
+          </p>
+        ) : null}
 
         {error ? (
           <div className="mt-4 rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-text-primary" role="alert">
@@ -84,8 +102,9 @@ export function CrmSendModal({
               type="checkbox"
               checked={sendToCustomer}
               onChange={(e) => onChangeSendToCustomer(e.target.checked)}
+              disabled={!canSendToCustomer}
             />
-            <span>An Kunden senden</span>
+            <span>An Kunden senden{canSendToCustomer ? "" : " (keine E-Mail)"}</span>
           </label>
           <label className="admin-checkbox-row">
             <input
@@ -98,7 +117,7 @@ export function CrmSendModal({
         </div>
 
         <div className="mt-6 flex flex-wrap gap-2">
-          <AdminButton variant="primary" onClick={onConfirm} disabled={loading || !sendToCustomer}>
+          <AdminButton variant="primary" onClick={onConfirm} disabled={loading || !canConfirm}>
             {loading ? "Wird gesendet…" : ADMIN_BTN.send}
           </AdminButton>
           <AdminButton variant="secondary" onClick={onClose} disabled={loading}>

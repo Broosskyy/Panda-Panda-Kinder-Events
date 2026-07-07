@@ -16,10 +16,18 @@ export function SectionHeading({
   align = "center",
   id,
 }: SectionHeadingProps) {
+  const centered = align === "center";
+
   return (
-    <div className={`mb-10 text-center sm:mb-14 md:mb-20 lg:mb-24 ${align === "center" ? "" : "text-left"}`}>
-      <div className={`mb-7 flex items-center gap-3 sm:mb-10 sm:gap-5 ${align === "center" ? "" : "max-w-xl"}`}>
-        {align === "center" && <div className="hidden h-px flex-1 bg-gradient-to-r from-transparent via-divider to-divider sm:block" />}
+    <div className={`section-header ${centered ? "text-center" : "text-left"}`}>
+      <div
+        className={`mb-7 flex items-center gap-3 sm:mb-10 sm:gap-5 ${
+          centered ? "justify-center" : "max-w-xl"
+        }`}
+      >
+        {centered ? (
+          <div className="hidden h-px flex-1 max-w-[4rem] bg-gradient-to-r from-transparent via-divider to-divider sm:block lg:max-w-none" />
+        ) : null}
         <div className="flex shrink-0 flex-col items-center gap-2 sm:flex-row sm:gap-3">
           <Heart className="hidden h-3.5 w-3.5 fill-accent-heart/40 text-accent-heart sm:block" aria-hidden />
           <h2
@@ -30,15 +38,19 @@ export function SectionHeading({
           </h2>
           <Heart className="hidden h-3.5 w-3.5 fill-accent-heart/40 text-accent-heart sm:block" aria-hidden />
         </div>
-        {align === "center" && <div className="hidden h-px flex-1 bg-gradient-to-l from-transparent via-divider to-divider sm:block" />}
+        {centered ? (
+          <div className="hidden h-px flex-1 max-w-[4rem] bg-gradient-to-l from-transparent via-divider to-divider sm:block lg:max-w-none" />
+        ) : null}
       </div>
-      {subtitle && (
+      {subtitle ? (
         <p
-          className={`mx-auto max-w-2xl text-[0.9375rem] leading-relaxed text-text-secondary sm:text-lg sm:leading-8 md:text-xl md:leading-9 ${align === "center" ? "" : "mx-0"}`}
+          className={`section-prose text-[0.9375rem] leading-relaxed text-text-secondary sm:text-lg sm:leading-8 md:text-xl md:leading-9 ${
+            centered ? "" : "section-prose-left mx-0 text-left"
+          }`}
         >
           {subtitle}
         </p>
-      )}
+      ) : null}
       {children}
     </div>
   );

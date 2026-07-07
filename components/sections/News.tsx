@@ -36,14 +36,14 @@ export function News({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="swipe-bleed md:mx-0 md:px-0">
+        <div className="swipe-bleed swipe-bleed-reset-md">
           <ul
             className="swipe-track md:grid md:grid-cols-2 md:gap-8 md:overflow-visible lg:grid-cols-3"
             role="list"
             aria-label="Aktuelles"
           >
             {posts.map((post, i) => (
-              <li key={post.id} className="swipe-item w-[min(88vw,22rem)] md:w-auto">
+              <li key={post.id} className="swipe-item swipe-item-card md:w-auto">
                 <ScrollReveal delay={i * 80}>
                   <Link href={`/aktuelles/${post.slug}`} className="group block h-full">
                     <Card className="h-full overflow-hidden !p-0" padding="sm" hover>
@@ -77,7 +77,7 @@ export function News({
             ))}
           </ul>
         </div>
-        <div className="mt-10 text-center sm:mt-12">
+        <div className="section-content-gap text-center">
             <Link
               href="/aktuelles"
               className="inline-flex min-h-[3rem] items-center justify-center rounded-full border border-primary/25 bg-bg-card px-6 py-3 text-sm font-semibold text-primary transition hover:bg-bg-secondary"

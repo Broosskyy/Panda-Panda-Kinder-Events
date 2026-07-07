@@ -261,7 +261,7 @@ export function Testimonials({
               </>
             ) : null}
 
-            <div className="swipe-bleed lg:mx-0 lg:px-0">
+            <div className="swipe-bleed swipe-bleed-reset-lg">
               <ul
                 className="swipe-track lg:grid lg:grid-cols-3 lg:gap-8 lg:overflow-visible"
                 role="list"
@@ -275,7 +275,7 @@ export function Testimonials({
                   return (
                     <li
                       key={review.id}
-                      className={`swipe-item w-[min(90vw,24rem)] sm:w-[min(92vw,26rem)] lg:w-auto ${
+                      className={`swipe-item swipe-item-card md:w-auto lg:w-auto ${
                         hiddenOnDesktop ? "lg:hidden" : ""
                       }`}
                     >
@@ -288,7 +288,11 @@ export function Testimonials({
           </div>
         )}
 
-        <div ref={formRef} id="bewertung-form" className="mx-auto mt-10 max-w-xl scroll-mt-24 sm:mt-16 sm:scroll-mt-28">
+        <div
+          ref={formRef}
+          id="bewertung-form"
+          className="section-container--narrow form-chrome-safe section-content-gap"
+        >
           <ScrollReveal>
             <ReviewForm privacyHint={privacyHint} />
           </ScrollReveal>

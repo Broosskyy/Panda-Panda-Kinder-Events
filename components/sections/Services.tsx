@@ -53,7 +53,7 @@ export function Services({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="swipe-bleed md:mx-0 md:px-0">
+        <div className="swipe-bleed swipe-bleed-reset-md">
           <ul
             className="swipe-track md:grid md:grid-cols-2 md:gap-7 md:overflow-visible lg:grid-cols-3 lg:gap-8"
             role="list"
@@ -61,7 +61,7 @@ export function Services({
           >
             {items.map((service, i) => {
               return (
-              <li key={service.title} className="swipe-item w-[min(88vw,20rem)] sm:w-[min(85vw,22rem)] md:w-auto">
+              <li key={service.title} className="swipe-item swipe-item-card md:w-auto">
                 <ScrollReveal delay={i * 60}>
                   <Card className="card-equal service-card flex h-full flex-col" padding="md">
                     <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-bg-secondary">

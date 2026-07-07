@@ -61,6 +61,7 @@ export function About({
           </ScrollReveal>
 
           <ScrollReveal delay={120}>
+            <div className="about-copy">
             <p className="font-accent text-xl leading-snug text-primary sm:text-2xl md:text-[1.85rem] md:leading-snug">
               {about.introText}
             </p>
@@ -70,6 +71,7 @@ export function About({
             <p className="mt-5 text-base leading-relaxed text-text-secondary sm:mt-6 sm:text-lg sm:leading-8">
               {about.paragraph2}
             </p>
+            </div>
           </ScrollReveal>
         </div>
 

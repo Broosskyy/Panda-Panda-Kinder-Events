@@ -51,9 +51,9 @@ export function News({
                         <div className="relative aspect-[16/10] w-full overflow-hidden">
                           <Image
                             src={post.hero_image_url}
-                            alt=""
+                            alt={post.title}
                             fill
-                            className="object-cover transition-transform duration-700 group-hover:scale-105"
+                            className="portrait-cover transition-transform duration-700 group-hover:scale-105"
                             sizes="(max-width: 1024px) 50vw, 33vw"
                             unoptimized={post.hero_image_url.includes("supabase.co")}
                           />

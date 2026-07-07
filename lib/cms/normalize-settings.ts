@@ -2,6 +2,7 @@ import { BRAND } from "@/lib/brand";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { resolveImageUrl } from "./resolve-image";
 import { mergeBankFromLegacy, mergeInvoiceFromLegacy, syncLegacyBusinessFields } from "./settings-compat";
+import { sanitizeAboutIntro, sanitizeGenderedRole } from "./content-quality";
 import type {
   SiteSectionHeading,
   SiteSectionsSettings,
@@ -71,17 +72,32 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
   const teamItems = publicTeam.items?.filter((m) => m?.name?.trim() && m?.role?.trim());
   publicTeam.items =
     teamItems?.length
-      ? teamItems.map((m) => ({
-          name: m.name.trim(),
-          role: m.role.trim(),
-          description: m.description?.trim() || "",
-          imageUrl:
-            resolveImageUrl("site-assets", m.imageUrl?.trim()) ||
-            m.imageUrl?.trim() ||
-            defaults.publicTeam.items[0]?.imageUrl ||
-            defaults.hero.imageUrl,
-        }))
+      ? teamItems.map((m) => {
+          const name = m.name.trim();
+          const role = sanitizeGenderedRole(name, m.role.trim());
+          return {
+            name,
+            role,
+            description: m.description?.trim() || defaults.publicTeam.items[0]?.description || "",
+            imageUrl:
+              resolveImageUrl("site-assets", m.imageUrl?.trim()) ||
+              m.imageUrl?.trim() ||
+              "",
+          };
+        })
       : defaults.publicTeam.items;
+
+  const aboutRaw = mergeRecord(defaults.about, base.about);
+  const founderName = aboutRaw.founderName?.trim() || defaults.about.founderName;
+  const about = {
+    ...aboutRaw,
+    founderName,
+    introText: sanitizeAboutIntro(aboutRaw.introText, founderName),
+    imageUrl:
+      resolveImageUrl("site-assets", aboutRaw.imageUrl?.trim()) ||
+      aboutRaw.imageUrl?.trim() ||
+      defaults.about.imageUrl,
+  };
 
   const business = mergeRecord(defaults.business, base.business);
   const bank = mergeBankFromLegacy(business, mergeRecord(defaults.bank, base.bank));
@@ -98,7 +114,7 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
   return {
     hero: mergeRecord(defaults.hero, base.hero),
     contact,
-    about: mergeRecord(defaults.about, base.about),
+    about,
     footer: mergeRecord(defaults.footer, base.footer),
     navigation: {
       ...defaults.navigation,

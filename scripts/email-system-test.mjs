@@ -294,10 +294,46 @@ if (domainCheck.includes("API_CHECK_UNAVAILABLE_MESSAGE") && !domainCheck.includ
   fail("Domain check still shows Status unbekannt");
 }
 
+const domainStatusCopy = read("lib/email/domain-status-copy.ts");
+if (
+  domainStatusCopy.includes("DOMAIN_MANUAL_CONFIRM_MESSAGE") &&
+  domainStatusCopy.includes("Versand funktioniert")
+) {
+  ok("Domain manual confirm message for successful test mail");
+} else {
+  fail("Domain manual confirm message missing");
+}
+
+if (emailSystemStatus.includes("DOMAIN_MANUAL_CONFIRM_MESSAGE") && emailSystemStatus.includes("hasSuccessfulTest")) {
+  ok("Email system status softens domain warnings after test mail");
+} else {
+  fail("Email system status test-mail domain softening missing");
+}
+
 if (systemStatus.includes("overall: summary.overall") && systemStatus.includes("email_test")) {
   ok("General system status computes overall + test email check");
 } else {
   fail("General system status overall/test email missing");
+}
+
+if (systemStatus.includes("Manuelles App-Backup verfügbar")) {
+  ok("Backup status shows manual app backup");
+} else {
+  fail("Backup status still references Supabase-only backup");
+}
+
+const contentQuality = read("lib/cms/content-quality.ts");
+const aboutSection = read("components/sections/About.tsx");
+if (contentQuality.includes("isValidPublishedPost") && contentQuality.includes("schnecke")) {
+  ok("Published posts filter unsuitable placeholder images");
+} else {
+  fail("Published post content filter missing");
+}
+
+if (aboutSection.includes("Liebevolle Betreuung mit Erfahrung") && !aboutSection.includes("Gründerin")) {
+  ok("About section uses neutral contact copy");
+} else {
+  fail("About section still shows gendered founder copy");
 }
 
 if (emailSystemStatus.includes('id: "email_test"') && emailSystemStatus.includes("computeStatusSummary")) {

@@ -14,8 +14,9 @@ import {
   applyEmailTemplate,
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
-import { wrapEmailHtml } from "@/lib/email/html";
+import { DOMAIN_MANUAL_CONFIRM_MESSAGE } from "@/lib/email/domain-status-copy";
 import { getEmailAssetBaseUrl } from "@/lib/email/resolve-image-url";
+import { wrapEmailHtml } from "@/lib/email/html";
 import type { BusinessProfile } from "@/lib/crm/company";
 
 export {
@@ -533,14 +534,35 @@ export async function sendTestEmail(to: string) {
   const companyName = emailSettings.companyName;
   const logoUrl = resolveBrandLogo(settings.branding, "email");
 
+  const domainNote =
+    sender.domainStatus === "verified"
+      ? "Produktionsdomain verifiziert — Versand über info@pb-kinderevents.de."
+      : sender.domainStatus === "unknown"
+        ? DOMAIN_MANUAL_CONFIRM_MESSAGE
+        : "Test-E-Mail wurde zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.";
+
+  const domainStatusLabel =
+    sender.domainStatus === "verified"
+      ? "Verifiziert"
+      : sender.domainStatus === "unknown"
+        ? "Automatische Prüfung nicht möglich"
+        : "Nicht verifiziert";
+
   const text = `Dies ist eine Test-E-Mail von ${companyName}.
 
 Absender: ${sender.displayFrom}
 Reply-To: ${sender.replyTo}
-Domain-Status: ${sender.domainStatus}
-${sender.domainStatus === "verified" ? "Die Produktionsdomain ist verifiziert." : "Hinweis: Domain in Resend verifizieren, damit der Versand zuverlässig funktioniert."}
+Domain: ${domainStatusLabel}
+${domainNote}
 
 Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
+
+  const domainBanner =
+    sender.domainStatus === "verified"
+      ? '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">Produktionsdomain verifiziert — Versand über info@pb-kinderevents.de.</p>'
+      : sender.domainStatus === "unknown"
+        ? `<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">${DOMAIN_MANUAL_CONFIRM_MESSAGE}</p>`
+        : '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:8px;">Test-E-Mail zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.</p>';
 
   const html = wrapEmailHtml({
     logoUrl,
@@ -550,9 +572,9 @@ Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
     <table style="background:#f8f7f4;border-radius:12px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
       <tr><td><strong>Absender:</strong> ${sender.displayFrom}</td></tr>
       <tr><td><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
-      <tr><td><strong>Domain-Status:</strong> ${sender.domainStatus}</td></tr>
+      <tr><td><strong>Domain:</strong> ${domainStatusLabel}</td></tr>
     </table>
-    ${sender.domainStatus === "verified" ? '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">Produktionsdomain verifiziert — Versand über info@pb-kinderevents.de.</p>' : '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:8px;">Domain noch nicht verifiziert — bitte pb-kinderevents.de in Resend prüfen.</p>'}
+    ${domainBanner}
     <p style="color:#888;font-size:13px;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`,
   });
 

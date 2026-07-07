@@ -1,7 +1,6 @@
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
 
-/** Meldung, wenn die Resend-Domain-API nicht gelesen werden kann (z. B. fehlende Berechtigung). */
-export const API_CHECK_UNAVAILABLE_MESSAGE = "Status konnte nicht automatisch geprüft werden.";
+export { API_CHECK_UNAVAILABLE_MESSAGE, DOMAIN_MANUAL_CONFIRM_MESSAGE } from "@/lib/email/domain-status-copy";
 
 const INFORMATIONAL_IDS = new Set([
   "backup",
@@ -45,7 +44,9 @@ export function isUnavailableApiCheckMessage(message: string): boolean {
     lower.includes("nicht automatisch") ||
     lower.includes("nicht erreichbar") ||
     lower.includes("live-prüfung nicht möglich") ||
-    lower.includes("resend api")
+    lower.includes("resend api") ||
+    lower.includes("domain nicht verifiziert") ||
+    lower.includes("versand funktioniert")
   );
 }
 
@@ -57,5 +58,17 @@ export function softenUnavailableApiLevel(
   if (level === "error" && isUnavailableApiCheckMessage(message)) {
     return "warn";
   }
+  return level;
+}
+
+/** Nach erfolgreicher Testmail: technische Domain-Warnungen als OK behandeln. */
+export function softenWhenTestMailSucceeded(
+  level: SystemStatusLevel,
+  message: string,
+  hasSuccessfulTest: boolean,
+): SystemStatusLevel {
+  if (!hasSuccessfulTest) return level;
+  if (level === "error" && isUnavailableApiCheckMessage(message)) return "ok";
+  if (level === "warn" && isUnavailableApiCheckMessage(message)) return "ok";
   return level;
 }

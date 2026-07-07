@@ -30,6 +30,7 @@ export function About({
 }: AboutProps) {
   const safeHeading = resolveSectionHeading(heading, "about");
   const aboutImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
+  const contactName = about.founderName?.trim() || "Panda-Bande Team";
   const teamItems = team.items?.filter((m) => m.name?.trim() && m.role?.trim()) ?? [];
   const teamHeading = team.title?.trim() || "Unser Team";
 
@@ -47,9 +48,9 @@ export function About({
               <div className="about-image-frame relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden">
                 <Image
                   src={aboutImage}
-                  alt={`${about.founderName} — Panda-Bande Kinderevents`}
+                  alt={`${contactName} — Panda-Bande Kinderevents`}
                   fill
-                  className="object-cover"
+                  className="portrait-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   loading="lazy"
                   placeholder="blur"
@@ -93,9 +94,9 @@ export function About({
 
         <ScrollReveal>
           <div className="mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Ansprechpartnerin</p>
-            <p className="mt-2 font-heading text-xl font-bold text-text-primary">{about.founderName}</p>
-            <p className="mt-1 text-sm text-text-secondary">Gründerin &amp; persönliche Ansprechpartnerin für euer Event</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Persönliche Ansprechpartnerin</p>
+            <p className="mt-2 font-heading text-xl font-bold text-text-primary">{contactName}</p>
+            <p className="mt-1 text-sm text-text-secondary">Liebevolle Betreuung mit Erfahrung.</p>
           </div>
         </ScrollReveal>
 

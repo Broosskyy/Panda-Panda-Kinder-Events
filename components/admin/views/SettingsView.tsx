@@ -53,6 +53,7 @@ interface EmailStatusResponse {
     domainStatus: string;
     domainVerification?: DomainVerificationDisplay;
   };
+  hasSuccessfulTest?: boolean;
 }
 
 interface SystemStatusResponse {
@@ -490,6 +491,7 @@ export function SettingsView() {
             testTo={testTo}
             resendConfigured={Boolean(emailStatus?.resendConfigured)}
             domainVerification={domainVerification}
+            hasSuccessfulTest={Boolean(emailStatus?.hasSuccessfulTest)}
             emailStatusBanner={
               emailTab === "general" ? (
                 <>
@@ -497,6 +499,7 @@ export function SettingsView() {
                     className="mb-4"
                     state={domainVerification}
                     message={emailStatus?.domainLive?.message}
+                    hasSuccessfulTest={Boolean(emailStatus?.hasSuccessfulTest)}
                   />
                   {!emailStatus?.resendConfigured ? (
                     <p className="mb-4 text-sm text-accent-heart">

@@ -33,6 +33,7 @@ interface EmailSettingsShellProps {
   testTo: string;
   resendConfigured: boolean;
   domainVerification: DomainVerificationDisplay;
+  hasSuccessfulTest?: boolean;
   emailStatusBanner?: React.ReactNode;
   onEmailField: <K extends keyof SiteEmailSettings>(key: K, value: SiteEmailSettings[K]) => void;
   onTestToChange: (value: string) => void;
@@ -46,6 +47,7 @@ export function EmailSettingsShell({
   testTo,
   resendConfigured,
   domainVerification,
+  hasSuccessfulTest = false,
   emailStatusBanner,
   onEmailField,
   onTestToChange,
@@ -97,7 +99,13 @@ export function EmailSettingsShell({
         <EmailSignaturePanel email={email} onEmailField={onEmailField} onSave={onSave} />
       ) : null}
       {emailTab === "branding" ? (
-        <EmailBrandingPanel email={email} domainVerification={domainVerification} onEmailField={onEmailField} onSave={onSave} />
+        <EmailBrandingPanel
+          email={email}
+          domainVerification={domainVerification}
+          hasSuccessfulTest={hasSuccessfulTest}
+          onEmailField={onEmailField}
+          onSave={onSave}
+        />
       ) : null}
       {emailTab === "testmode" ? (
         <EmailTestModePanel email={email} onEmailField={onEmailField} onSave={onSave} onSendTest={onSendTest} testTo={testTo} onTestToChange={onTestToChange} resendConfigured={resendConfigured} />

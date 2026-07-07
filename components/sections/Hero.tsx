@@ -69,7 +69,7 @@ export function Hero({
               {hero.subtitle}
             </p>
 
-            <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
+            <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4 lg:justify-start">
               <Button
                 href="#kontakt"
                 size="lg"
@@ -110,8 +110,8 @@ export function Hero({
             </div>
           </div>
 
-          <div className="relative order-2 lg:-mr-4 lg:order-none xl:-mr-8">
-            <div className="hero-image-wrap relative aspect-[5/6] w-full max-h-[min(48vh,20rem)] overflow-hidden sm:aspect-[4/5] sm:max-h-none">
+          <div className="relative order-2 lg:order-none">
+            <div className="hero-image-wrap relative mx-auto aspect-[5/6] w-full max-h-[min(48vh,20rem)] overflow-hidden sm:aspect-[4/5] sm:max-h-none lg:-mr-4 xl:-mr-8">
               <Image
                 src={heroImage}
                 alt="Panda-Bande Team bei der liebevollen Kinderbetreuung"

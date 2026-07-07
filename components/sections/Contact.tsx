@@ -65,7 +65,7 @@ export function Contact({
   const contactLinks = buildContactLinks(contact);
 
   return (
-    <section id="kontakt" className="relative section-padding section-warm">
+    <section id="kontakt" className="relative section-padding section-warm form-chrome-safe">
       <FlowerOrnament className="absolute right-4 top-20 hidden h-28 w-28 opacity-25 lg:block" variant="right" />
 
       <Container>

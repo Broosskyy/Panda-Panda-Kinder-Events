@@ -51,12 +51,12 @@ export function Process({
                     ) : null}
 
                     <ScrollReveal delay={index * 80} className="relative z-10 w-full lg:flex lg:flex-col lg:items-center">
-                      <div className="flex gap-5 pl-1 lg:flex-col lg:items-center lg:pl-0">
+                      <div className="process-step-row flex gap-5 pl-1 lg:flex-col lg:items-center lg:pl-0">
                         <div className="step-circle relative z-10 h-11 w-11 shrink-0 text-sm sm:h-12 sm:w-12 sm:text-base lg:h-12 lg:w-12">
                           {step.number}
                         </div>
-                        <div className="flex-1 pb-2 lg:pb-0">
-                          <div className="mb-2 flex items-center gap-3 lg:mb-0 lg:mt-6 lg:flex-col lg:gap-0">
+                        <div className="process-step-body flex-1 pb-2 lg:pb-0">
+                          <div className="process-step-icon-row mb-2 flex items-center gap-3 lg:mb-0 lg:mt-6 lg:flex-col lg:gap-0">
                             <Icon
                               className="h-5 w-5 text-primary sm:h-6 sm:w-6 lg:mt-6 lg:h-7 lg:w-7 lg:transition-transform lg:duration-500 lg:group-hover:scale-110"
                               strokeWidth={ICON_STROKE}

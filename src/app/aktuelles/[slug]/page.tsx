@@ -54,7 +54,7 @@ export default async function PostPage({ params }: PageProps) {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Header />
-      <main id="main-content" className="bg-bg-primary pt-24 sm:pt-28">
+      <main id="main-content" className="public-main bg-bg-primary pt-24 sm:pt-28">
         <Container className="max-w-3xl py-10 sm:py-14">
           <Link
             href="/#aktuelles"

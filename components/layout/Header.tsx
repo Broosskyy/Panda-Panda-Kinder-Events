@@ -74,7 +74,7 @@ export function Header({
             : "bg-bg-primary/50 backdrop-blur-md"
         }`}
       >
-        <div className="mx-auto flex min-h-16 items-center justify-between gap-2 px-4 py-2 sm:px-5 md:min-h-[5.5rem] md:gap-4 md:px-12 md:py-3">
+        <div className="section-container flex min-h-16 items-center justify-between gap-2 py-2 md:min-h-[5.5rem] md:gap-4 md:py-3">
           <Logo
             context="header"
             branding={branding}

@@ -75,14 +75,14 @@ export function Gallery({
           ))}
         </div>
 
-        <div className="swipe-bleed md:mx-0 md:px-0">
+        <div className="swipe-bleed swipe-bleed-reset-md">
           <ul
             className="swipe-track md:grid md:grid-cols-2 md:gap-5 md:overflow-visible lg:grid-cols-3 lg:gap-6"
             role="list"
             aria-label="Galerie"
           >
             {filtered.map((image, index) => (
-              <li key={`${image.src}-${index}`} className="swipe-item w-[min(78vw,18rem)] sm:w-[min(80vw,20rem)] md:w-auto">
+              <li key={`${image.src}-${index}`} className="swipe-item swipe-item-card md:w-auto">
                 <ScrollReveal delay={index * 80}>
                   <button
                     type="button"
@@ -111,7 +111,7 @@ export function Gallery({
           </ul>
         </div>
 
-        <div className="mt-10 text-center sm:mt-12">
+        <div className="section-content-gap text-center">
             <Button
               href={contact.instagram}
               size="lg"

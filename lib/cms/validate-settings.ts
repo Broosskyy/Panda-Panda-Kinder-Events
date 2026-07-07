@@ -228,7 +228,7 @@ export function validateSiteSettingsSection(
       email.loginAlertRecipient,
       email.applicationEmail,
       email.applicationCopyTo,
-      email.notificationEmail,
+      email.testMode?.testAddress,
     ].filter(Boolean);
     for (const addr of optionalEmails) {
       if (addr && !emailPattern.test(addr)) {

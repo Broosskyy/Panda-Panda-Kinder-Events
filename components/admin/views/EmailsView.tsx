@@ -297,6 +297,10 @@ export function EmailsView() {
                     </span>
                   </div>
                   <p className="text-text-muted">{log.recipient}</p>
+                  {log.original_recipient && log.original_recipient !== log.recipient ? (
+                    <p className="text-xs text-text-muted">Ursprünglich: {log.original_recipient}</p>
+                  ) : null}
+                  {log.sender_from ? <p className="text-xs text-text-muted">Von: {log.sender_from}</p> : null}
                   <p className="text-xs text-text-muted">
                     {new Date(log.created_at).toLocaleString("de-DE")}
                     {log.template_slug ? ` · ${log.template_slug}` : ""}

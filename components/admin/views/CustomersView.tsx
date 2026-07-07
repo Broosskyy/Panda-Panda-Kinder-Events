@@ -8,6 +8,7 @@ import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { CustomerCommunicationTimeline } from "@/components/admin/email/CustomerCommunicationTimeline";
 import { CRM_CUSTOMER_STATUS_LABELS, type CrmCustomer, type CrmCustomerStatus } from "@/lib/crm/types";
 
 interface CustomerHistory {
@@ -188,6 +189,7 @@ export function CustomersView() {
                     </ul>
                   </div>
                 ) : null}
+                <CustomerCommunicationTimeline customerId={selected.id} />
               </div>
             ) : null}
           </AdminCard>

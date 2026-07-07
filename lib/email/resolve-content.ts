@@ -2,10 +2,7 @@ import { getEmailSettings } from "@/lib/email/sender";
 import type { SiteEmailSettings } from "@/lib/cms/types";
 import { applyTemplateVariables } from "@/lib/email/variables";
 import { buildEmailVariableContext, renderEmailFromTemplate } from "@/lib/email/render";
-import { wrapEmailHtml } from "@/lib/email/html";
-import { fetchSiteSettings } from "@/lib/cms/data";
-import { getSiteUrl } from "@/lib/site-url";
-import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
+import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
 
 function plainTextToHtml(text: string): string {
   const escaped = text
@@ -41,16 +38,12 @@ const CMS_FIELD_MAP: Record<string, CmsFieldFallback> = {
 };
 
 async function wrapWithBranding(bodyHtml: string, vars: Record<string, string>): Promise<string> {
-  const settings = await fetchSiteSettings();
-  return wrapEmailHtml({
-    baseUrl: getSiteUrl(),
-    logoUrl: resolveBrandLogo(settings.branding, "email"),
-    companyName: vars.company_name,
-    primaryColor: resolvePrimaryColor(settings.branding),
+  return wrapBrandedEmailHtml(
     bodyHtml,
-    footerHtml: `<p style="margin:8px 0 0;font-size:12px;color:#888;">${vars.company_phone} · ${vars.company_email}</p>
-      <p style="margin:4px 0 0;font-size:12px;color:#888;"><a href="${vars.company_website}" style="color:${resolvePrimaryColor(settings.branding)};">${vars.company_website}</a></p>`,
-  });
+    vars.company_name,
+    `<p style="margin:8px 0 0;font-size:12px;color:#888;">${vars.company_phone} · ${vars.company_email}</p>
+      <p style="margin:4px 0 0;font-size:12px;color:#888;"><a href="${vars.company_website}">${vars.company_website}</a></p>`,
+  );
 }
 
 /**

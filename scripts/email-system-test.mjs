@@ -145,7 +145,34 @@ try {
   fail("EmailSettingsPanel missing");
 }
 
-// 12. Documentation
+// 13. Email V2 modules
+for (const file of [
+  "lib/email/aliases-db.ts",
+  "lib/email/signature.ts",
+  "lib/email/branding.ts",
+  "lib/email/test-mode.ts",
+  "lib/email/wrap-branded.ts",
+  "components/admin/email/EmailSettingsShell.tsx",
+]) {
+  try {
+    read(file);
+    ok(`File exists: ${file}`);
+  } catch {
+    fail(`Missing file: ${file}`);
+  }
+}
+
+const types = read("lib/cms/types.ts");
+if (types.includes("SiteEmailSignatureSettings") && types.includes("SiteEmailTestModeSettings")) {
+  ok("V2 CMS email types");
+} else {
+  fail("V2 CMS types missing");
+}
+
+if (read("lib/email/transport.ts").includes("prepareOutboundEmail")) ok("Test mode in transport");
+else fail("Test mode transport missing");
+
+// 14. Documentation
 try {
   read("EMAIL_SETUP.md");
   ok("EMAIL_SETUP.md exists");

@@ -189,6 +189,11 @@ export interface EmailLogRecord {
   related_customer_id: string | null;
   related_quote_id: string | null;
   related_invoice_id: string | null;
+  original_recipient?: string | null;
+  sender_from?: string | null;
+  body_preview?: string | null;
+  opened_at?: string | null;
+  tenant_id?: string | null;
   created_at: string;
 }
 
@@ -212,6 +217,59 @@ export interface SiteEmailCustomAddresses {
   kontakt: string;
   rechnung: string;
   angebote: string;
+}
+
+/** Alias-Eintrag (CMS-Fallback; primär in email_aliases Tabelle) */
+export interface SiteEmailAliasRecord {
+  id: string;
+  aliasAddress: string;
+  forwardTo: string;
+  description: string;
+  isActive: boolean;
+  sortOrder?: number;
+  tenantId?: string | null;
+}
+
+export interface SiteEmailSignatureSettings {
+  companyName: string;
+  contactPerson: string;
+  phone: string;
+  mobile: string;
+  website: string;
+  instagram: string;
+  facebook: string;
+  tiktok: string;
+  whatsapp: string;
+  address: string;
+  logoUrl: string;
+  impressumUrl: string;
+  privacyUrl: string;
+  footerText: string;
+  freeText: string;
+  showSocialIcons: boolean;
+}
+
+export interface SiteEmailBrandingSettings {
+  logoUrl: string;
+  headerImageUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  buttonColor: string;
+  textColor: string;
+  footerColor: string;
+  fontFamily: string;
+  showSocialIcons: boolean;
+  companyName: string;
+  senderName: string;
+  replyTo: string;
+}
+
+export type EmailTestModePrefix = "TEST" | "STAGING" | "DEV";
+
+export interface SiteEmailTestModeSettings {
+  enabled: boolean;
+  testAddress: string;
+  subjectPrefix: EmailTestModePrefix;
 }
 
 export interface SiteEmailSettings {
@@ -255,6 +313,9 @@ export interface SiteEmailSettings {
   applicationEmail: string;
   applicationCopyTo: string;
   customAddresses: SiteEmailCustomAddresses;
+  signature: SiteEmailSignatureSettings;
+  branding: SiteEmailBrandingSettings;
+  testMode: SiteEmailTestModeSettings;
   /** @deprecated use inquiryRecipient */
   notificationEmail?: string;
 }

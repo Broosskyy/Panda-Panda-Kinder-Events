@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RefreshCw } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
+import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
@@ -26,7 +26,7 @@ import type {
   SiteSeoSettings,
   SiteSettingsBundle,
 } from "@/lib/cms/types";
-import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
+import type { SystemStatusItem } from "@/lib/admin/system-status";
 import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/EmailSettingsShell";
 import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
 
@@ -227,7 +227,7 @@ export function SettingsView() {
     setLegal({ ...legal, [key]: value });
   };
 
-  const usesTestDomain = emailStatus?.resolved.usesTestDomain ?? true;
+  const usesTestDomain = emailStatus?.resolved.usesTestDomain ?? false;
 
   const sitemapUrl = useMemo(() => {
     if (!seo || !business) return "";
@@ -480,8 +480,9 @@ export function SettingsView() {
                 <>
                   {usesTestDomain ? (
                     <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                      <strong>Resend-Testdomain aktiv.</strong> Für den Livegang Domain in Resend verifizieren — dann
-                      wird automatisch eure Firmenadresse verwendet.
+                      <strong>Domain noch nicht verifiziert.</strong> Versand nutzt{" "}
+                      <code className="rounded bg-white/60 px-1">info@pb-kinderevents.de</code> — bitte Domain{" "}
+                      <strong>pb-kinderevents.de</strong> in Resend verifizieren.
                     </div>
                   ) : null}
                   {!emailStatus?.resendConfigured ? (

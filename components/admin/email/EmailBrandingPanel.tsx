@@ -44,7 +44,8 @@ export function EmailBrandingPanel({ email, usesTestDomain, onEmailField, onSave
         </p>
         {usesTestDomain ? (
           <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            Momentan wird die Resend-Testdomain für den Versand genutzt. Branding wirkt trotzdem in allen E-Mails.
+            Domain pb-kinderevents.de ist noch nicht in Resend verifiziert. Versand nutzt trotzdem info@pb-kinderevents.de
+            — Branding wirkt in allen E-Mails.
           </p>
         ) : null}
         <div className="grid gap-4 md:grid-cols-2">

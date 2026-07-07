@@ -18,13 +18,14 @@ import { wrapEmailHtml } from "@/lib/email/html";
 import type { BusinessProfile } from "@/lib/crm/company";
 
 export {
-  RESEND_TEST_FROM,
   checkResendDomainStatus,
   getCopyEmailForDocument,
   getEmailSettings,
   getInquiryRecipient,
   getAdminNotificationRecipient,
   getReviewRecipient,
+  normalizeProductionEmail,
+  normalizeSenderName,
   resolveEmailSender,
   resolveFlowEmailSender,
   applyEmailTemplate,
@@ -528,7 +529,7 @@ export async function sendTestEmail(to: string) {
 Absender: ${sender.displayFrom}
 Reply-To: ${sender.replyTo}
 Domain-Status: ${sender.domainStatus}
-${sender.usesTestDomain ? "Hinweis: Es wird die Resend-Testdomain verwendet." : "Ihre verifizierte Domain wird verwendet."}
+${sender.domainStatus === "verified" ? "Die Produktionsdomain ist verifiziert." : "Hinweis: Domain in Resend verifizieren, damit der Versand zuverlässig funktioniert."}
 
 Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
 
@@ -543,7 +544,7 @@ Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
       <tr><td><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
       <tr><td><strong>Domain-Status:</strong> ${sender.domainStatus}</td></tr>
     </table>
-    ${sender.usesTestDomain ? '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:8px;">Momentan wird die Resend-Testdomain verwendet.</p>' : '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">Ihre verifizierte Domain wird verwendet.</p>'}
+    ${sender.domainStatus === "verified" ? '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:8px;">Produktionsdomain verifiziert — Versand über info@pb-kinderevents.de.</p>' : '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:8px;">Domain noch nicht verifiziert — bitte pb-kinderevents.de in Resend prüfen.</p>'}
     <p style="color:#888;font-size:13px;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`,
   });
 

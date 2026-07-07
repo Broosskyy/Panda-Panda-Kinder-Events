@@ -20,6 +20,17 @@ export async function getEmailBrandingSettings(): Promise<SiteEmailBrandingSetti
     replyTo: emailBranding.replyTo?.trim() || settings.email.replyTo,
     website: emailBranding.website?.trim() || business.website || "",
     theme: (emailBranding.theme as EmailThemeMode) || "light",
+    brandDisplayName:
+      emailBranding.brandDisplayName?.trim() ||
+      settings.branding.brandName ||
+      emailBranding.companyName ||
+      business.companyName,
+    slogan:
+      emailBranding.slogan?.trim() ||
+      settings.branding.slogan ||
+      settings.branding.tagline ||
+      business.slogan ||
+      "",
   };
 }
 
@@ -42,6 +53,30 @@ export interface ResolvedEmailBranding {
   fontFamily: string;
   theme: EmailThemeMode;
   companyName: string;
+  logoWidth: number;
+  logoHeight: number;
+  logoPaddingTop: number;
+  logoPaddingBottom: number;
+  brandDisplayName: string;
+  slogan: string;
+  showBrandName: boolean;
+  showSlogan: boolean;
+  showLogo: boolean;
+  cardRadius: number;
+  shadowEnabled: boolean;
+  closingLine: string;
+  defaultCtaUrl: string;
+  adminEmail: string;
+  darkBackgroundColor: string;
+  darkCardColor: string;
+  darkPrimaryColor: string;
+  darkSecondaryColor: string;
+  darkTextColor: string;
+  darkTextMutedColor: string;
+  darkBorderColor: string;
+  darkAccentColor: string;
+  darkButtonColor: string;
+  darkButtonTextColor: string;
 }
 
 export async function resolveEmailBranding(): Promise<ResolvedEmailBranding> {
@@ -65,6 +100,30 @@ export async function resolveEmailBranding(): Promise<ResolvedEmailBranding> {
     fontFamily: branding.fontFamily || SYSTEM_EMAIL_DEFAULTS.fontFamily,
     theme: branding.theme || "light",
     companyName: branding.companyName,
+    logoWidth: branding.logoWidth || SYSTEM_EMAIL_DEFAULTS.logoWidth,
+    logoHeight: branding.logoHeight ?? 0,
+    logoPaddingTop: branding.logoPaddingTop ?? 32,
+    logoPaddingBottom: branding.logoPaddingBottom ?? 16,
+    brandDisplayName: branding.brandDisplayName || branding.companyName,
+    slogan: branding.slogan || "",
+    showBrandName: branding.showBrandName !== false,
+    showSlogan: branding.showSlogan !== false,
+    showLogo: branding.showLogo !== false,
+    cardRadius: branding.cardRadius ?? 16,
+    shadowEnabled: branding.shadowEnabled !== false,
+    closingLine: branding.closingLine?.trim() || "Mit freundlichen Grüßen",
+    defaultCtaUrl: branding.defaultCtaUrl?.trim() || branding.website || "",
+    adminEmail: branding.adminEmail?.trim() || "",
+    darkBackgroundColor: branding.darkBackgroundColor || "#1a1a18",
+    darkCardColor: branding.darkCardColor || "#2a2a26",
+    darkPrimaryColor: branding.darkPrimaryColor || branding.primaryColor || SYSTEM_EMAIL_DEFAULTS.primary,
+    darkSecondaryColor: branding.darkSecondaryColor || branding.darkPrimaryColor || branding.primaryColor || SYSTEM_EMAIL_DEFAULTS.primary,
+    darkTextColor: branding.darkTextColor || "#f4f1ea",
+    darkTextMutedColor: branding.darkTextMutedColor || "#b8b5ad",
+    darkBorderColor: branding.darkBorderColor || "#3d3d38",
+    darkAccentColor: branding.darkAccentColor || "#33332f",
+    darkButtonColor: branding.darkButtonColor || branding.darkPrimaryColor || branding.primaryColor || SYSTEM_EMAIL_DEFAULTS.primary,
+    darkButtonTextColor: branding.darkButtonTextColor || "#ffffff",
   };
 }
 

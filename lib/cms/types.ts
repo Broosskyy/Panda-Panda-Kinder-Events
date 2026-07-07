@@ -150,6 +150,8 @@ export interface SiteAboutSettings {
   valuesText: string;
 }
 
+export type EmailThemeMode = "light" | "dark" | "auto";
+
 export interface EmailTemplateLayout {
   headline?: string;
   intro?: string;
@@ -159,6 +161,12 @@ export interface EmailTemplateLayout {
   ctaText?: string;
   ctaUrl?: string;
   footerEnabled?: boolean;
+  /** Per-template header overrides — undefined inherits CMS branding defaults */
+  showLogo?: boolean;
+  showBrandName?: boolean;
+  showSlogan?: boolean;
+  /** Override global theme for this template only */
+  themeOverride?: EmailThemeMode | "";
 }
 
 export interface EmailTemplateRecord {
@@ -265,8 +273,6 @@ export interface SiteEmailSignatureSettings {
   showSocialIcons: boolean;
 }
 
-export type EmailThemeMode = "light" | "dark" | "auto";
-
 export interface SiteEmailBrandingSettings {
   logoUrl: string;
   faviconUrl: string;
@@ -290,6 +296,36 @@ export interface SiteEmailBrandingSettings {
   senderName: string;
   replyTo: string;
   website: string;
+  /** Admin notification fallback address */
+  adminEmail: string;
+  /** Default CTA URL when template has no ctaUrl */
+  defaultCtaUrl: string;
+  /** Logo width in px (email clients) */
+  logoWidth: number;
+  /** Logo height in px — 0 = auto */
+  logoHeight: number;
+  logoPaddingTop: number;
+  logoPaddingBottom: number;
+  /** Display name under logo */
+  brandDisplayName: string;
+  slogan: string;
+  showBrandName: boolean;
+  showSlogan: boolean;
+  showLogo: boolean;
+  cardRadius: number;
+  shadowEnabled: boolean;
+  closingLine: string;
+  /** Dark theme color overrides */
+  darkBackgroundColor: string;
+  darkCardColor: string;
+  darkPrimaryColor: string;
+  darkSecondaryColor: string;
+  darkTextColor: string;
+  darkTextMutedColor: string;
+  darkBorderColor: string;
+  darkAccentColor: string;
+  darkButtonColor: string;
+  darkButtonTextColor: string;
 }
 
 export type EmailTestModePrefix = "TEST" | "STAGING" | "DEV";

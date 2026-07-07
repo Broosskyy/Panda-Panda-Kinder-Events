@@ -261,6 +261,29 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
         companyName: base.email?.branding?.companyName?.trim() || base.email?.companyName?.trim() || defaults.email.branding.companyName,
         senderName: base.email?.branding?.senderName?.trim() || base.email?.senderName?.trim() || defaults.email.branding.senderName,
         replyTo: base.email?.branding?.replyTo?.trim() || base.email?.replyTo?.trim() || defaults.email.branding.replyTo,
+        adminEmail:
+          base.email?.branding?.adminEmail?.trim() ||
+          base.email?.adminNotificationEmail?.trim() ||
+          defaults.email.branding.adminEmail,
+        defaultCtaUrl:
+          base.email?.branding?.defaultCtaUrl?.trim() ||
+          base.email?.branding?.website?.trim() ||
+          business.website?.trim() ||
+          defaults.email.branding.defaultCtaUrl,
+        brandDisplayName:
+          base.email?.branding?.brandDisplayName?.trim() ||
+          branding.brandName?.trim() ||
+          defaults.email.branding.brandDisplayName,
+        slogan:
+          base.email?.branding?.slogan?.trim() ||
+          branding.slogan?.trim() ||
+          business.slogan?.trim() ||
+          defaults.email.branding.slogan,
+        logoWidth: base.email?.branding?.logoWidth ?? defaults.email.branding.logoWidth,
+        showBrandName: base.email?.branding?.showBrandName ?? defaults.email.branding.showBrandName,
+        showSlogan: base.email?.branding?.showSlogan ?? defaults.email.branding.showSlogan,
+        showLogo: base.email?.branding?.showLogo ?? defaults.email.branding.showLogo,
+        closingLine: base.email?.branding?.closingLine?.trim() || defaults.email.branding.closingLine,
       },
       testMode: {
         ...defaults.email.testMode,

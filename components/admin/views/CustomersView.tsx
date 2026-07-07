@@ -110,6 +110,7 @@ export function CustomersView() {
       return;
     }
     setEditForm(customerToForm(selected));
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- only reset form when a different customer is selected
   }, [selected?.id]);
 
   useEffect(() => {

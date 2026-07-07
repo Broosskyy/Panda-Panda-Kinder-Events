@@ -31,6 +31,7 @@ const TEMPLATE_PURPOSES: Record<string, string> = {
   "quote-send": "Text beim Versand eines Angebots per E-Mail (PDF wird angehängt).",
   "invoice-send": "Text beim Versand einer Rechnung per E-Mail (PDF wird angehängt).",
   "password-reset": "E-Mail für Admin-Benutzer, die ihr Passwort vergessen haben.",
+  "account-created": "Willkommens-E-Mail bei neuem Admin-Account.",
   "email-test": "Vorlage für Test-E-Mails aus dem Admin.",
   "newsletter-draft": "Grundgerüst für zukünftige Newsletter (noch inaktiv).",
   "general-message": "Allgemeine freie Nachricht an Kunden.",
@@ -45,6 +46,7 @@ const CORE_TEMPLATES = [
   "quote-send",
   "invoice-send",
   "password-reset",
+  "account-created",
   "email-test",
 ] as const;
 
@@ -168,6 +170,29 @@ export function EmailsView() {
     );
   };
 
+  const sendTestAll = async () => {
+    if (!testTo.trim()) return showError("Bitte Empfänger eingeben.");
+    await withLoading(
+      (async () => {
+        for (const slug of CORE_TEMPLATES) {
+          const t = templates.find((x) => x.slug === slug);
+          if (!t?.is_active) continue;
+          const res = await fetch("/api/admin/email/compose", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ to: testTo.trim(), templateSlug: slug, area: "test" }),
+          });
+          if (!res.ok) {
+            const data = await res.json();
+            throw new Error(data.error ?? `Test für ${slug} fehlgeschlagen`);
+          }
+        }
+        toast("Alle aktiven Vorlagen wurden als Test gesendet.");
+        await load();
+      })(),
+    );
+  };
+
   const sendTest = async () => {
     if (!testTo.trim()) return showError("Bitte Empfänger eingeben.");
     await withLoading(
@@ -179,6 +204,7 @@ export function EmailsView() {
             to: testTo.trim(),
             subject,
             bodyHtml: showAdvancedHtml ? bodyHtml : undefined,
+            layout: showAdvancedHtml ? undefined : layout,
             templateSlug: selectedSlug,
             area: "test",
           }),
@@ -308,6 +334,36 @@ export function EmailsView() {
                       <input className="admin-input" value={layout.ctaUrl ?? ""} onChange={(e) => setLayoutField("ctaUrl", e.target.value)} placeholder="{{website}}" />
                     </AdminFormField>
                   </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="admin-checkbox-row">
+                      <input type="checkbox" checked={layout.footerEnabled !== false} onChange={(e) => setLayoutField("footerEnabled", e.target.checked)} />
+                      <span>Footer anzeigen</span>
+                    </label>
+                    <label className="admin-checkbox-row">
+                      <input type="checkbox" checked={layout.showLogo !== false} onChange={(e) => setLayoutField("showLogo", e.target.checked)} />
+                      <span>Logo anzeigen</span>
+                    </label>
+                    <label className="admin-checkbox-row">
+                      <input type="checkbox" checked={layout.showBrandName !== false} onChange={(e) => setLayoutField("showBrandName", e.target.checked)} />
+                      <span>Markenname anzeigen</span>
+                    </label>
+                    <label className="admin-checkbox-row">
+                      <input type="checkbox" checked={layout.showSlogan !== false} onChange={(e) => setLayoutField("showSlogan", e.target.checked)} />
+                      <span>Slogan anzeigen</span>
+                    </label>
+                  </div>
+                  <AdminFormField label="Theme-Override" hint="Leer = globales E-Mail-Branding">
+                    <select
+                      className="admin-input"
+                      value={layout.themeOverride ?? ""}
+                      onChange={(e) => setLayoutField("themeOverride", e.target.value as EmailTemplateLayout["themeOverride"])}
+                    >
+                      <option value="">Global (CMS Branding)</option>
+                      <option value="light">Hell</option>
+                      <option value="dark">Dunkel</option>
+                      <option value="auto">Automatisch</option>
+                    </select>
+                  </AdminFormField>
                   <EmailVariableHelp />
                   <details className="rounded-lg border border-border p-3">
                     <summary className="cursor-pointer text-sm font-medium text-text-primary">Erweitert: HTML-Override</summary>
@@ -331,6 +387,9 @@ export function EmailsView() {
                       <input className="admin-input min-w-[14rem] flex-1" type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="deine@adresse.de" />
                       <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendTest()}>
                         Testmail senden
+                      </AdminButton>
+                      <AdminButton variant="ghost" onClick={() => void sendTestAll()}>
+                        Alle Templates testen
                       </AdminButton>
                     </div>
                   </AdminFormField>

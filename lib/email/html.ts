@@ -1,9 +1,10 @@
+import type { EmailTemplateLayout } from "@/lib/cms/types";
 import type { ResolvedEmailBranding } from "@/lib/email/branding";
 import { resolveActiveDesignTokens, type EmailDesignTokens } from "@/lib/email/design-system";
 import { SYSTEM_EMAIL_DEFAULTS } from "@/lib/email/brand-tokens";
 import {
+  buildEmailHeaderBlock,
   buildEmailHeaderImageRow,
-  buildEmailLogoHeaderHtml,
   getEmailAssetBaseUrl,
 } from "@/lib/email/resolve-image-url";
 
@@ -16,7 +17,9 @@ export interface EmailLayoutOptions {
   signatureHtml?: string;
   branding?: Partial<ResolvedEmailBranding>;
   headerImageUrl?: string;
-  previewMode?: "desktop" | "tablet" | "mobile" | "dark";
+  previewMode?: "desktop" | "tablet" | "mobile" | "dark" | "light";
+  layout?: EmailTemplateLayout;
+  footerEnabled?: boolean;
 }
 
 function colorSchemeMeta(tokens: EmailDesignTokens): string {
@@ -37,6 +40,7 @@ function themeStyles(tokens: EmailDesignTokens): string {
       .email-body { background-color: #1a1a18 !important; }
       .email-card { background-color: #2a2a26 !important; color: #f4f1ea !important; }
       .email-muted { color: #b8b5ad !important; }
+      .email-headline { color: #f4f1ea !important; }
     }`
       : "";
 
@@ -44,28 +48,63 @@ function themeStyles(tokens: EmailDesignTokens): string {
     @media only screen and (max-width: 600px) {
       .email-card { width: 100% !important; }
       .email-inner { padding: 24px 20px !important; }
-      .email-header { padding: 28px 20px 20px !important; }
+      .email-header { padding: 24px 20px 16px !important; }
       .email-footer { padding: 20px !important; }
     }${darkBlock}`;
 }
 
-/** Responsive HTML-E-Mail — design tokens from CMS branding */
+function escapeCompanyName(name: string): string {
+  return name.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/** Global email shell — logo, brand, body, footer from CMS branding */
 export function wrapEmailHtml(opts: EmailLayoutOptions): string {
-  const tokens = resolveActiveDesignTokens(opts.branding ?? {});
+  const brand = opts.branding ?? {};
+  const forceDark = opts.previewMode === "dark";
+  const tokens = resolveActiveDesignTokens(brand, forceDark ? "dark" : brand.theme);
   const baseUrl = opts.baseUrl ?? getEmailAssetBaseUrl();
+  const layout = opts.layout;
+  const footerOn = opts.footerEnabled ?? layout?.footerEnabled ?? true;
+
+  const showLogo = layout?.showLogo ?? brand.showLogo ?? true;
+  const showBrandName = layout?.showBrandName ?? brand.showBrandName ?? true;
+  const showSlogan = layout?.showSlogan ?? brand.showSlogan ?? true;
+
   const headerImage = buildEmailHeaderImageRow(opts.headerImageUrl, baseUrl);
-  const logoHeader = buildEmailLogoHeaderHtml({
+  const headerBlock = buildEmailHeaderBlock({
     logoUrl: opts.logoUrl,
-    companyName: opts.companyName,
+    brandName: brand.brandDisplayName || opts.companyName,
+    slogan: brand.slogan,
+    showLogo,
+    showBrandName,
+    showSlogan,
+    logoWidth: brand.logoWidth ?? SYSTEM_EMAIL_DEFAULTS.logoWidth,
+    logoHeight: brand.logoHeight,
+    logoPaddingTop: brand.logoPaddingTop,
+    logoPaddingBottom: brand.logoPaddingBottom,
+    textColor: tokens.text,
+    textMutedColor: tokens.textMuted,
+    primaryColor: tokens.primary,
     baseUrl,
-    accentColor: tokens.primary,
   });
 
-  const signatureBlock = opts.signatureHtml
-    ? `<div style="margin-top:16px;padding-top:16px;border-top:1px solid ${tokens.border};">${opts.signatureHtml}</div>`
+  const signatureBlock =
+    footerOn && opts.signatureHtml
+      ? `<div style="margin-top:16px;padding-top:16px;border-top:1px solid ${tokens.border};">${opts.signatureHtml}</div>`
+      : "";
+
+  const closingLine = brand.closingLine?.trim() || "Mit freundlichen Grüßen";
+  const footerSection = footerOn
+    ? `<tr><td class="email-footer" style="padding:24px 32px 28px;border-top:1px solid ${tokens.border};background:${tokens.cardBackground};">
+          <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${tokens.primary};">${escapeCompanyName(closingLine)}</p>
+          <p class="email-muted" style="margin:0;font-size:13px;color:${tokens.textMuted};">${escapeCompanyName(opts.companyName)}</p>
+          ${signatureBlock}
+          ${opts.footerHtml ?? ""}
+        </td></tr>`
     : "";
 
-  const maxWidth = opts.previewMode === "mobile" ? "390px" : opts.previewMode === "tablet" ? "768px" : "600px";
+  const maxWidth =
+    opts.previewMode === "mobile" ? "390px" : opts.previewMode === "tablet" ? "768px" : "600px";
 
   return `<!DOCTYPE html>
 <html lang="de">
@@ -78,20 +117,13 @@ export function wrapEmailHtml(opts: EmailLayoutOptions): string {
 <body class="email-body" style="margin:0;padding:0;background:${tokens.pageBackground};font-family:${tokens.fontFamily};color:${tokens.text};-webkit-text-size-adjust:100%;">
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${tokens.pageBackground};padding:32px 16px;">
     <tr><td align="center">
-      <table width="100%" class="email-card" cellpadding="0" cellspacing="0" role="presentation" style="max-width:${maxWidth};background:${tokens.cardBackground};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(47,47,47,0.06);border:1px solid ${tokens.border};">
+      <table width="100%" class="email-card" cellpadding="0" cellspacing="0" role="presentation" style="max-width:${maxWidth};background:${tokens.cardBackground};border-radius:${tokens.cardRadius};overflow:hidden;box-shadow:${tokens.cardShadow};border:1px solid ${tokens.border};">
         ${headerImage}
-        <tr><td class="email-header" style="padding:32px 32px 24px;text-align:center;background:${tokens.cardBackground};">
-          ${logoHeader}
-        </td></tr>
+        ${headerBlock ? `<tr><td class="email-header" style="background:${tokens.cardBackground};">${headerBlock}</td></tr>` : ""}
         <tr><td class="email-inner" style="padding:0 32px 32px;color:${tokens.text};font-size:16px;line-height:1.65;">
           ${opts.bodyHtml}
         </td></tr>
-        <tr><td class="email-footer" style="padding:24px 32px 28px;border-top:1px solid ${tokens.border};background:${tokens.cardBackground};">
-          <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${tokens.primary};">Mit freundlichen Grüßen</p>
-          <p class="email-muted" style="margin:0;font-size:13px;color:${tokens.textMuted};">${opts.companyName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
-          ${signatureBlock}
-          ${opts.footerHtml ?? ""}
-        </td></tr>
+        ${footerSection}
       </table>
     </td></tr>
   </table>
@@ -110,9 +142,9 @@ export function buildEmailCtaButton(
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-  return `<table cellpadding="0" cellspacing="0" role="presentation" style="margin:24px auto;">
+  return `<table cellpadding="0" cellspacing="0" role="presentation" style="margin:28px auto;">
     <tr><td align="center" style="border-radius:999px;background:${buttonColor};">
-      <a href="${safeHref}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:${buttonText};text-decoration:none;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">${safeLabel}</a>
+      <a href="${safeHref}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${buttonText};text-decoration:none;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">${safeLabel}</a>
     </td></tr>
   </table>`;
 }
@@ -127,14 +159,14 @@ export function buildEmailInfoBox(
   const rows = items
     .map(
       (item) =>
-        `<tr><td style="padding:6px 0;font-size:14px;line-height:1.6;color:${textColor};">✓ ${item
+        `<tr><td style="padding:8px 0;font-size:14px;line-height:1.6;color:${textColor};">✓ ${item
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;")}</td></tr>`,
     )
     .join("");
-  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${accentColor};border:1px solid ${borderColor};border-radius:12px;margin:20px 0;">
-    <tr><td style="padding:16px 20px;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${accentColor};border:1px solid ${borderColor};border-radius:12px;margin:24px 0;">
+    <tr><td style="padding:18px 22px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation">${rows}</table>
     </td></tr>
   </table>`;

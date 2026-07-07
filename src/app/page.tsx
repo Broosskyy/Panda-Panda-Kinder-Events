@@ -21,6 +21,7 @@ import {
   fetchPublishedPosts,
   fetchSiteSettings,
 } from "@/lib/cms/data";
+import { fetchPublicTeam } from "@/lib/team/public";
 import { fetchApprovedReviews } from "@/lib/cms/reviews";
 import { breadcrumbJsonLd, getSeoDefaultImage, organizationJsonLd, serviceJsonLd } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
@@ -47,8 +48,9 @@ export const metadata: Metadata = {
 };
 
 export default async function HomePage() {
-  const [settings, services, faqs, galleryImages, posts, reviews] = await Promise.all([
+  const [settings, team, services, faqs, galleryImages, posts, reviews] = await Promise.all([
     fetchSiteSettings(),
+    fetchPublicTeam(),
     fetchCmsServices(),
     fetchCmsFaqs(),
     fetchGalleryImages(),
@@ -124,7 +126,7 @@ export default async function HomePage() {
         <Process process={settings.process} heading={settings.sections.process} />
         <Gallery images={galleryImages} contact={settings.contact} heading={settings.sections.gallery} />
         <Testimonials reviews={reviews} heading={settings.sections.testimonials} privacyHint={settings.legal.reviewPrivacyHint} />
-        <About about={settings.about} team={settings.publicTeam} heading={settings.sections.about} />
+        <About about={settings.about} team={team} heading={settings.sections.about} />
         <News posts={posts} heading={settings.sections.news} />
         <Faq items={faqs} heading={settings.sections.faq} />
         <Contact contact={settings.contact} heading={settings.sections.contact} privacyHint={settings.legal.inquiryPrivacyHint} />

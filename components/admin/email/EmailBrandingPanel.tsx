@@ -8,15 +8,17 @@ import { ADMIN_BTN } from "@/lib/admin/buttons";
 import type { SiteEmailSettings } from "@/lib/cms/types";
 
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
+import { DOMAIN_MANUAL_CONFIRM_MESSAGE } from "@/lib/email/domain-status-copy";
 
 interface Props {
   email: SiteEmailSettings;
   domainVerification: DomainVerificationDisplay;
+  hasSuccessfulTest?: boolean;
   onEmailField: <K extends keyof SiteEmailSettings>(key: K, value: SiteEmailSettings[K]) => void;
   onSave: () => void;
 }
 
-export function EmailBrandingPanel({ email, domainVerification, onEmailField, onSave }: Props) {
+export function EmailBrandingPanel({ email, domainVerification, hasSuccessfulTest = false, onEmailField, onSave }: Props) {
   const brand = email.branding;
   const setBrand = (key: keyof typeof brand, value: string | boolean) => {
     onEmailField("branding", { ...brand, [key]: value });
@@ -44,13 +46,19 @@ export function EmailBrandingPanel({ email, domainVerification, onEmailField, on
         <p className="mb-4 text-sm text-text-muted">
           Logo, Farben und Schrift gelten für alle E-Mail-Vorlagen — Panda-Bande heute, jede White-Label-Firma später.
         </p>
-        {domainVerification !== "verified" ? (
-          <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
-            {domainVerification === "unknown"
-              ? "🟡 Domain-Status konnte live nicht geprüft werden — Branding wirkt trotzdem in allen E-Mails."
-              : "🔴 Domain noch nicht in Resend verifiziert — Branding wirkt trotzdem in allen E-Mails."}
+        {domainVerification === "verified" ? null : domainVerification === "unknown" && hasSuccessfulTest ? (
+          <p className="mb-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-900">
+            🟢 {DOMAIN_MANUAL_CONFIRM_MESSAGE}
           </p>
-        ) : null}
+        ) : domainVerification === "unknown" ? (
+          <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            🟡 Domain-Status konnte live nicht geprüft werden — Branding wirkt trotzdem in allen E-Mails.
+          </p>
+        ) : (
+          <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-900">
+            🔴 Domain noch nicht in Resend verifiziert — Branding wirkt trotzdem in allen E-Mails.
+          </p>
+        )}
         <div className="grid gap-4 md:grid-cols-2">
           <AdminFormField label="Logo-URL" className="md:col-span-2">
             <input className="admin-input" value={brand.logoUrl} onChange={(e) => setBrand("logoUrl", e.target.value)} />

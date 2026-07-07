@@ -100,8 +100,8 @@ export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
 
   return (
     <Card padding="lg" hover={false}>
-      <h3 className="font-heading text-2xl font-bold text-text-primary">Bewertung abgeben</h3>
-      <p className="mt-3 text-base text-text-muted">Eure Bewertung wird nach Prüfung veröffentlicht.</p>
+      <h3 className="text-center font-heading text-2xl font-bold text-text-primary sm:text-left">Bewertung abgeben</h3>
+      <p className="mt-3 text-center text-base text-text-muted sm:text-left">Eure Bewertung wird nach Prüfung veröffentlicht.</p>
 
       <form onSubmit={handleSubmit} className="relative mt-8 space-y-6" noValidate aria-label="Bewertungsformular">
         <input
@@ -142,12 +142,12 @@ export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
           </select>
         </FormField>
 
-        <fieldset>
-          <legend className={labelClassName}>
+        <fieldset className="text-center sm:text-left">
+          <legend className={`${labelClassName} text-center sm:text-left`}>
             Sterne <span className="text-accent-heart" aria-hidden>*</span>
             <span className="sr-only"> (Pflichtfeld)</span>
           </legend>
-          <div className="mt-2 flex gap-2" role="radiogroup" aria-label="Sternebewertung">
+          <div className="review-star-rating mt-2 flex flex-wrap justify-center gap-1.5 sm:gap-2" role="radiogroup" aria-label="Sternebewertung">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
                 key={star}
@@ -157,7 +157,7 @@ export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
                 onClick={() => setRating(star)}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
-                className={`flex h-14 w-14 items-center justify-center rounded-2xl transition-all hover:bg-bg-secondary hover:scale-105 ${focusRing}`}
+                className={`review-star-btn flex h-12 w-12 items-center justify-center rounded-2xl transition-all hover:bg-bg-secondary hover:scale-105 sm:h-14 sm:w-14 ${focusRing}`}
                 aria-label={`${star} von 5 Sternen`}
               >
                 <Star

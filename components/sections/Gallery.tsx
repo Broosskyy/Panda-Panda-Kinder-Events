@@ -60,7 +60,7 @@ export function Gallery({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="mb-8 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Galerie Filter">
+        <div className="gallery-filter-row mb-8 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Galerie Filter">
           {categories.map((category) => (
             <button
               key={category}
@@ -94,7 +94,7 @@ export function Gallery({
                       src={image.src?.trim() || GALLERY_FALLBACK}
                       alt={image.alt}
                       fill
-                      className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
+                      className="portrait-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]"
                       sizes="(max-width: 1024px) 33vw, 20vw"
                       loading="lazy"
                       placeholder="blur"

@@ -3,7 +3,7 @@ import { faqs as staticFaqs } from "@/lib/faqs";
 import { galleryImages as staticGallery } from "@/lib/gallery";
 import { services as staticServices } from "@/lib/services";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
-import { isPlaceholderContent, isValidCmsFaq, isValidCmsService } from "./content-quality";
+import { isPlaceholderContent, isValidCmsFaq, isValidCmsService, isValidPublishedPost } from "./content-quality";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { normalizeSiteSettings } from "./normalize-settings";
 import { resolveImageUrl } from "./resolve-image";
@@ -77,6 +77,28 @@ function normalizeHeroSettings(hero: SiteHeroSettings): SiteHeroSettings {
   const imageUrl =
     (resolved ?? hero.imageUrl?.trim()) || DEFAULT_SITE_SETTINGS.hero.imageUrl;
   return { ...hero, imageUrl };
+}
+
+function mergePublicTeamSettings(
+  cmsValue: unknown,
+  hasKey: boolean,
+): SiteSettingsBundle["publicTeam"] {
+  const defaults = DEFAULT_SITE_SETTINGS.publicTeam;
+  if (!hasKey || !cmsValue || typeof cmsValue !== "object") {
+    return { ...defaults, items: [] };
+  }
+
+  const validated = validateSiteSettingsSection("publicTeam", cmsValue);
+  if (!validated.ok) {
+    const obj = cmsValue as Record<string, unknown>;
+    return {
+      title: String(obj.title ?? "").trim() || defaults.title,
+      subtitle: String(obj.subtitle ?? "").trim(),
+      items: [],
+    };
+  }
+
+  return { ...(validated.value as SiteSettingsBundle["publicTeam"]), items: [] };
 }
 
 function filterPlaceholderItems<T extends { text?: string; title?: string; description?: string; question?: string; answer?: string }>(
@@ -189,12 +211,7 @@ function buildSettingsFromRows(
     invoice: cmsSection("invoice", DEFAULT_SITE_SETTINGS.invoice, byKey.get("invoice"), byKey.has("invoice")),
     seo: cmsSection("seo", DEFAULT_SITE_SETTINGS.seo, byKey.get("seo"), byKey.has("seo")),
     legal: cmsSection("legal", DEFAULT_SITE_SETTINGS.legal, byKey.get("legal"), byKey.has("legal")),
-    publicTeam: cmsSection(
-      "publicTeam",
-      DEFAULT_SITE_SETTINGS.publicTeam,
-      byKey.get("publicTeam"),
-      byKey.has("publicTeam"),
-    ),
+    publicTeam: mergePublicTeamSettings(byKey.get("publicTeam"), byKey.has("publicTeam")),
   };
   } catch (err) {
     console.error("buildSettingsFromRows:", err);
@@ -394,10 +411,12 @@ export async function fetchPublishedPosts(limit = 6): Promise<CmsPost[]> {
 
     if (!data) return [];
 
-    return (data as CmsPost[]).map((post) => ({
-      ...post,
-      hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
-    }));
+    return (data as CmsPost[])
+      .map((post) => ({
+        ...post,
+        hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
+      }))
+      .filter(isValidPublishedPost);
   } catch (err) {
     console.error("fetchPublishedPosts:", err);
     return [];
@@ -424,10 +443,11 @@ export async function fetchPostBySlug(slug: string): Promise<CmsPost | null> {
   if (!data) return null;
 
   const post = data as CmsPost;
-  return {
+  const resolved = {
     ...post,
     hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
   };
+  return isValidPublishedPost(resolved) ? resolved : null;
 }
 
 export async function fetchDashboardStats() {

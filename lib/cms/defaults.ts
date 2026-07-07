@@ -36,10 +36,9 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     openingHours: "Mo–Fr 9–18 Uhr · Termine nach Vereinbarung",
   },
   about: {
-    founderName: "Lisa",
-    imageUrl:
-      "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=800&h=1000&fit=crop&q=85",
-    introText: "Hallo, ich bin Lisa — die Gründerin der Panda-Bande.",
+    founderName: "Panda-Bande Team",
+    imageUrl: HERO_IMAGE_DEFAULT,
+    introText: "Die Panda-Bande begleitet Familien mit Herz — liebevolle Betreuung mit Erfahrung.",
     paragraph1:
       "Panda-Bande entstand aus einer einfachen Überzeugung: Kinder gehören auf Feiern nicht an den Rand, sondern ins Herz des Moments.",
     paragraph2:
@@ -160,22 +159,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   },
   publicTeam: {
     title: "Unser Team",
-    subtitle: "Liebevolle Betreuerinnen mit Erfahrung, Kreativität und Herz.",
-    items: [
-      {
-        name: "Lisa",
-        role: "Gründerin & Leitung",
-        description: "Mit viel Herz und Erfahrung koordiniert Lisa jedes Event persönlich.",
-        imageUrl:
-          "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=800&h=1000&fit=crop&q=85",
-      },
-      {
-        name: "Panda-Bande Team",
-        role: "Betreuerinnen",
-        description: "Unser erfahrenes Team begleitet Kinder liebevoll bei jedem Anlass.",
-        imageUrl: "",
-      },
-    ],
+    subtitle: "Liebevolle Betreuung mit Erfahrung.",
+    items: [],
   },
   business: {
     companyName: siteConfig.name,

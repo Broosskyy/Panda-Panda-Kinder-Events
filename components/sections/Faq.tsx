@@ -33,7 +33,7 @@ export function Faq({
             subtitle={safeHeading.subtitle}
           />
         </ScrollReveal>
-        <div className="section-container--narrow divide-y divide-border/80" role="list">
+        <div className="faq-list section-container--narrow divide-y divide-border/80" role="list">
           {items.map((faq, index) => {
             const isOpen = openIndex === index;
             const buttonId = `${baseId}-faq-${index}`;

@@ -1,5 +1,5 @@
 import type { DomainRecords } from "resend";
-import { API_CHECK_UNAVAILABLE_MESSAGE } from "@/lib/admin/status-summary";
+import { API_CHECK_UNAVAILABLE_MESSAGE } from "@/lib/email/domain-status-copy";
 import { normalizeProductionEmail } from "./sender";
 import { checkResendDomainLive } from "./resend-domain-check";
 import { DEFAULT_COMPANY_EMAIL } from "./constants";

@@ -86,6 +86,7 @@ export function DashboardView() {
   const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
   const [domainVerification, setDomainVerification] = useState<DomainVerificationDisplay | null>(null);
+  const [emailTestSucceeded, setEmailTestSucceeded] = useState(false);
   const [emailTestMode, setEmailTestMode] = useState<{ enabled: boolean; address: string } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -104,6 +105,7 @@ export function DashboardView() {
         if (emailData.domainLive?.state || emailData.resolved?.domainVerification) {
           setDomainVerification(emailData.domainLive?.state ?? emailData.resolved.domainVerification);
         }
+        setEmailTestSucceeded(Boolean(emailData.hasSuccessfulTest));
         const testMode = settingsData.settings?.email?.testMode;
         if (testMode?.enabled) {
           setEmailTestMode({ enabled: true, address: testMode.testAddress ?? "" });
@@ -144,7 +146,11 @@ export function DashboardView() {
       ) : null}
 
       {domainVerification ? (
-        <DomainVerificationBanner className="mb-4" state={domainVerification} />
+        <DomainVerificationBanner
+          className="mb-4"
+          state={domainVerification}
+          hasSuccessfulTest={emailTestSucceeded}
+        />
       ) : null}
 
       {loading ? (

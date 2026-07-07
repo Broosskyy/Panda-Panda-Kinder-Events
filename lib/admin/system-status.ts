@@ -8,8 +8,13 @@ import { listEmailLogs } from "@/lib/email/log";
 import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 import {
   API_CHECK_UNAVAILABLE_MESSAGE,
+  DOMAIN_MANUAL_CONFIRM_MESSAGE,
+  isTestEmailLog,
+} from "@/lib/email/domain-status-copy";
+import {
   computeStatusSummary,
   softenUnavailableApiLevel,
+  softenWhenTestMailSucceeded,
 } from "@/lib/admin/status-summary";
 
 export type SystemStatusLevel = "ok" | "warn" | "error";
@@ -80,18 +85,33 @@ export async function getSystemStatus(): Promise<{
   });
 
   if (resendOk) {
+    let hasSuccessfulTest = false;
+    try {
+      const logs = await listEmailLogs(20);
+      hasSuccessfulTest = logs.some(isTestEmailLog);
+    } catch {
+      hasSuccessfulTest = false;
+    }
+
     try {
       const email = await getEmailSettings();
       const sendingSetup = await getResendSendingSetup(email.senderEmail);
       for (const item of sendingSetup.sending) {
         const rawLevel =
           item.level === "optional" ? "warn" : item.level === "ok" ? "ok" : item.level === "warn" ? "warn" : "error";
-        const level = softenUnavailableApiLevel(rawLevel, item.message);
+        let level = softenUnavailableApiLevel(rawLevel, item.message);
+        level = softenWhenTestMailSucceeded(level, item.message, hasSuccessfulTest);
+        let message = item.message;
+        if (hasSuccessfulTest && level === "ok" && rawLevel !== "ok") {
+          message = DOMAIN_MANUAL_CONFIRM_MESSAGE;
+        } else if (level === "warn" && rawLevel === "error") {
+          message = API_CHECK_UNAVAILABLE_MESSAGE;
+        }
         items.push({
           id: `resend_${item.id}`,
           label: item.label,
           level,
-          message: level === "warn" && rawLevel === "error" ? API_CHECK_UNAVAILABLE_MESSAGE : item.message,
+          message,
           action:
             level === "error" && item.id === "from_address"
               ? "Domain im Resend-Dashboard verifizieren."
@@ -223,8 +243,8 @@ export async function getSystemStatus(): Promise<{
   items.push({
     id: "backup",
     label: "Backup",
-    level: "warn",
-    message: "Optional — regelmäßiges Backup über Einstellungen → Systemstatus → Backup empfohlen.",
+    level: "ok",
+    message: "Manuelles App-Backup verfügbar.",
     action: "Einstellungen → Systemstatus → Backup",
   });
 

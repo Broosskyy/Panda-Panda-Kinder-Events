@@ -14,8 +14,8 @@ import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-const TEAM_IMAGE_FALLBACK = DEFAULT_SITE_SETTINGS.publicTeam.items[0]?.imageUrl?.trim()
-  || DEFAULT_SITE_SETTINGS.about.imageUrl;
+const TEAM_IMAGE_FALLBACK =
+  DEFAULT_SITE_SETTINGS.about.imageUrl?.trim() || "";
 
 interface AboutProps {
   about?: SiteAboutSettings;
@@ -25,13 +25,15 @@ interface AboutProps {
 
 export function About({
   about = DEFAULT_SITE_SETTINGS.about,
-  team = DEFAULT_SITE_SETTINGS.publicTeam,
+  team,
   heading,
 }: AboutProps) {
   const safeHeading = resolveSectionHeading(heading, "about");
   const aboutImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
-  const teamItems = team.items?.filter((m) => m.name?.trim() && m.role?.trim()) ?? [];
-  const teamHeading = team.title?.trim() || "Unser Team";
+  const contactName = about.founderName?.trim() || "Panda-Bande Team";
+  const teamItems = team?.items?.filter((m) => m.name?.trim() && m.role?.trim()) ?? [];
+  const teamHeading = team?.title?.trim() || "Unser Team";
+  const teamSubtitle = team?.subtitle?.trim();
 
   return (
     <section id="ueber-uns" className="section-padding bg-bg-secondary/20">
@@ -47,9 +49,9 @@ export function About({
               <div className="about-image-frame relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden">
                 <Image
                   src={aboutImage}
-                  alt={`${about.founderName} — Panda-Bande Kinderevents`}
+                  alt={`${contactName} — Panda-Bande Kinderevents`}
                   fill
-                  className="object-cover"
+                  className="portrait-cover"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                   loading="lazy"
                   placeholder="blur"
@@ -62,15 +64,15 @@ export function About({
 
           <ScrollReveal delay={120}>
             <div className="about-copy">
-            <p className="font-accent text-xl leading-snug text-primary sm:text-2xl md:text-[1.85rem] md:leading-snug">
-              {about.introText}
-            </p>
-            <p className="mt-6 text-base leading-relaxed text-text-secondary sm:mt-8 sm:text-lg sm:leading-8">
-              {about.paragraph1}
-            </p>
-            <p className="mt-5 text-base leading-relaxed text-text-secondary sm:mt-6 sm:text-lg sm:leading-8">
-              {about.paragraph2}
-            </p>
+              <p className="font-accent text-xl leading-snug text-primary sm:text-2xl md:text-[1.85rem] md:leading-snug">
+                {about.introText}
+              </p>
+              <p className="mt-6 text-base leading-relaxed text-text-secondary sm:mt-8 sm:text-lg sm:leading-8">
+                {about.paragraph1}
+              </p>
+              <p className="mt-5 text-base leading-relaxed text-text-secondary sm:mt-6 sm:text-lg sm:leading-8">
+                {about.paragraph2}
+              </p>
             </div>
           </ScrollReveal>
         </div>
@@ -92,29 +94,29 @@ export function About({
         </div>
 
         <ScrollReveal>
-          <div className="mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Ansprechpartnerin</p>
-            <p className="mt-2 font-heading text-xl font-bold text-text-primary">{about.founderName}</p>
-            <p className="mt-1 text-sm text-text-secondary">Gründerin &amp; persönliche Ansprechpartnerin für euer Event</p>
+          <div className="about-contact-card mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
+            <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Persönliche Ansprechpartnerin</p>
+            <p className="mt-2 font-heading text-xl font-bold text-text-primary">{contactName}</p>
+            <p className="mt-1 text-sm text-text-secondary">Liebevolle Betreuung mit Erfahrung.</p>
           </div>
         </ScrollReveal>
 
         {teamItems.length > 0 ? (
-          <div className="mt-14 sm:mt-20">
+          <div id="unser-team" className="mt-14 sm:mt-20">
             <ScrollReveal>
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
                 {teamHeading}
               </h3>
-              {team.subtitle ? (
+              {teamSubtitle ? (
                 <p className="mx-auto mt-3 max-w-2xl text-center text-base text-text-secondary sm:text-lg">
-                  {team.subtitle}
+                  {teamSubtitle}
                 </p>
               ) : null}
             </ScrollReveal>
 
             <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
               {teamItems.map((member, i) => (
-                <li key={`${member.name}-${i}`}>
+                <li key={`${member.name}-${member.role}-${i}`}>
                   <ScrollReveal delay={i * 80}>
                     <Card className="team-card h-full overflow-hidden !p-0" padding="sm" hover>
                       <div className="team-card-image relative aspect-[4/5] w-full overflow-hidden bg-bg-secondary">

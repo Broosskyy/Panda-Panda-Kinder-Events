@@ -14,6 +14,9 @@ import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
+const TEAM_IMAGE_FALLBACK =
+  DEFAULT_SITE_SETTINGS.about.imageUrl?.trim() || "";
+
 interface AboutProps {
   about?: SiteAboutSettings;
   team?: SitePublicTeamSettings;
@@ -61,15 +64,15 @@ export function About({
 
           <ScrollReveal delay={120}>
             <div className="about-copy">
-            <p className="font-accent text-xl leading-snug text-primary sm:text-2xl md:text-[1.85rem] md:leading-snug">
-              {about.introText}
-            </p>
-            <p className="mt-6 text-base leading-relaxed text-text-secondary sm:mt-8 sm:text-lg sm:leading-8">
-              {about.paragraph1}
-            </p>
-            <p className="mt-5 text-base leading-relaxed text-text-secondary sm:mt-6 sm:text-lg sm:leading-8">
-              {about.paragraph2}
-            </p>
+              <p className="font-accent text-xl leading-snug text-primary sm:text-2xl md:text-[1.85rem] md:leading-snug">
+                {about.introText}
+              </p>
+              <p className="mt-6 text-base leading-relaxed text-text-secondary sm:mt-8 sm:text-lg sm:leading-8">
+                {about.paragraph1}
+              </p>
+              <p className="mt-5 text-base leading-relaxed text-text-secondary sm:mt-6 sm:text-lg sm:leading-8">
+                {about.paragraph2}
+              </p>
             </div>
           </ScrollReveal>
         </div>
@@ -91,7 +94,7 @@ export function About({
         </div>
 
         <ScrollReveal>
-          <div className="mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
+          <div className="about-contact-card mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Persönliche Ansprechpartnerin</p>
             <p className="mt-2 font-heading text-xl font-bold text-text-primary">{contactName}</p>
             <p className="mt-1 text-sm text-text-secondary">Liebevolle Betreuung mit Erfahrung.</p>
@@ -99,7 +102,7 @@ export function About({
         </ScrollReveal>
 
         {teamItems.length > 0 ? (
-          <div className="mt-14 sm:mt-20">
+          <div id="unser-team" className="mt-14 sm:mt-20">
             <ScrollReveal>
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
                 {teamHeading}
@@ -121,6 +124,7 @@ export function About({
                           src={member.imageUrl}
                           name={member.name}
                           role={member.role}
+                          fallbackSrc={TEAM_IMAGE_FALLBACK}
                         />
                       </div>
                       <div className="p-5 md:p-6">

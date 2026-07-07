@@ -18,18 +18,21 @@ export function AdminStickySave({
   children,
 }: AdminStickySaveProps) {
   return (
-    <div className="admin-sticky-save">
-      <div className="admin-sticky-save-inner">
-        {children}
-        <AdminButton
-          variant="primary"
-          onClick={onSave}
-          disabled={disabled}
-          icon={<Save className="h-4 w-4" aria-hidden />}
-        >
-          {label}
-        </AdminButton>
+    <>
+      <div className="admin-sticky-save-spacer" aria-hidden />
+      <div className="admin-sticky-save">
+        <div className="admin-sticky-save-inner">
+          {children}
+          <AdminButton
+            variant="primary"
+            onClick={onSave}
+            disabled={disabled}
+            icon={<Save className="h-4 w-4" aria-hidden />}
+          >
+            {label}
+          </AdminButton>
+        </div>
       </div>
-    </div>
+    </>
   );
 }

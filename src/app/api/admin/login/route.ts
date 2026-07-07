@@ -156,6 +156,12 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: getAdminSessionMaxAge(),
     });
+    await recordLoginHistory({
+      identifier: "legacy",
+      success: true,
+      ip,
+      userAgent: request.headers.get("user-agent"),
+    });
     return response;
   }
 

@@ -11,7 +11,33 @@ interface ReviewAdminImagesProps {
 export function ReviewAdminImages({ profileUrl, eventUrl, name, onOpen }: ReviewAdminImagesProps) {
   return (
     <div className="review-admin-media">
-      <div className="review-admin-media-slot">
+      <div className="review-admin-media-slot review-admin-media-slot-event">
+        {eventUrl ? (
+          <button
+            type="button"
+            className="review-admin-event-btn"
+            onClick={() => onOpen("event")}
+            aria-label={`Eventfoto von ${name} vergrößern`}
+          >
+            <Image
+              src={eventUrl}
+              alt=""
+              fill
+              className="object-cover"
+              sizes="(max-width: 640px) 100vw, 120px"
+              loading="lazy"
+              unoptimized={eventUrl.includes("supabase.co")}
+            />
+          </button>
+        ) : (
+          <div className="review-admin-event-placeholder" aria-hidden>
+            <ImageIcon className="h-6 w-6 text-text-muted" />
+          </div>
+        )}
+        <span className="review-admin-media-label">Event</span>
+      </div>
+
+      <div className="review-admin-media-slot review-admin-media-slot-profile">
         {profileUrl ? (
           <button
             type="button"
@@ -35,32 +61,6 @@ export function ReviewAdminImages({ profileUrl, eventUrl, name, onOpen }: Review
           </div>
         )}
         <span className="review-admin-media-label">Profil</span>
-      </div>
-
-      <div className="review-admin-media-slot review-admin-media-slot-event">
-        {eventUrl ? (
-          <button
-            type="button"
-            className="review-admin-event-btn"
-            onClick={() => onOpen("event")}
-            aria-label={`Eventfoto von ${name} vergrößern`}
-          >
-            <Image
-              src={eventUrl}
-              alt=""
-              fill
-              className="object-cover"
-              sizes="120px"
-              loading="lazy"
-              unoptimized={eventUrl.includes("supabase.co")}
-            />
-          </button>
-        ) : (
-          <div className="review-admin-event-placeholder" aria-hidden>
-            <ImageIcon className="h-6 w-6 text-text-muted" />
-          </div>
-        )}
-        <span className="review-admin-media-label">Event</span>
       </div>
     </div>
   );

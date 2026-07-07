@@ -9,6 +9,9 @@ export interface PdfFetchResult {
   filename: string;
 }
 
+/** Verhindert parallele Öffnungen (Doppelklick, Strict Mode, Event-Bubbling). */
+let pdfActionInFlight = false;
+
 function parseFilename(contentDisposition: string | null, fallback: string): string {
   if (!contentDisposition) return fallback;
   const match = /filename="?([^";\n]+)"?/i.exec(contentDisposition);
@@ -62,27 +65,46 @@ export async function fetchAdminPdf(
   }
 }
 
-function openBlobInViewer(blob: Blob): boolean {
+/** Öffnet genau ein Tab — nur Anchor-Navigation, kein window.open-Fallback. */
+function openBlobInViewer(blob: Blob): void {
   const objectUrl = URL.createObjectURL(blob);
-  const tab = window.open(objectUrl, "_blank", "noopener,noreferrer");
-  if (!tab) {
-    const a = document.createElement("a");
-    a.href = objectUrl;
-    a.target = "_blank";
-    a.rel = "noopener noreferrer";
-    a.click();
-  }
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.target = "_blank";
+  anchor.rel = "noopener noreferrer";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 120_000);
-  return Boolean(tab);
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = objectUrl;
+  anchor.download = filename;
+  anchor.rel = "noopener";
+  anchor.style.display = "none";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
 }
 
 export async function openAdminPdf(url: string, onError: (err: PdfOpenError) => void): Promise<void> {
-  const result = await fetchAdminPdf(url);
-  if ("error" in result) {
-    onError(result.error);
-    return;
+  if (pdfActionInFlight) return;
+  pdfActionInFlight = true;
+  try {
+    const result = await fetchAdminPdf(url);
+    if ("error" in result) {
+      onError(result.error);
+      return;
+    }
+    openBlobInViewer(result.blob);
+  } finally {
+    pdfActionInFlight = false;
   }
-  openBlobInViewer(result.blob);
 }
 
 export async function downloadAdminPdf(
@@ -90,18 +112,16 @@ export async function downloadAdminPdf(
   onError: (err: PdfOpenError) => void,
   filename?: string,
 ): Promise<void> {
-  const result = await fetchAdminPdf(url);
-  if ("error" in result) {
-    onError(result.error);
-    return;
+  if (pdfActionInFlight) return;
+  pdfActionInFlight = true;
+  try {
+    const result = await fetchAdminPdf(url);
+    if ("error" in result) {
+      onError(result.error);
+      return;
+    }
+    downloadBlob(result.blob, filename ?? result.filename);
+  } finally {
+    pdfActionInFlight = false;
   }
-  const objectUrl = URL.createObjectURL(result.blob);
-  const a = document.createElement("a");
-  a.href = objectUrl;
-  a.download = filename ?? result.filename;
-  a.rel = "noopener";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 30_000);
 }

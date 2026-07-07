@@ -98,7 +98,7 @@ export interface CrmDashboardStats {
 export const CRM_STATUS_LABELS: Record<CrmDocumentStatus, string> = {
   draft: "Entwurf",
   sent: "Gesendet",
-  confirmed: "Bestätigt",
+  confirmed: "Angenommen",
   paid: "Bezahlt",
   open: "Offen",
   cancelled: "Storniert",

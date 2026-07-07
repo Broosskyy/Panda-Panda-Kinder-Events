@@ -19,7 +19,9 @@ export function AdminStatusBadge({ label, variant = "default" }: AdminStatusBadg
 
 export function crmDocumentStatusVariant(
   status: string,
+  archived?: boolean,
 ): AdminStatusBadgeVariant {
+  if (archived) return "muted";
   switch (status) {
     case "paid":
     case "confirmed":

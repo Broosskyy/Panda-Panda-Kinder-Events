@@ -35,6 +35,7 @@ export function useAdminMessages() {
     imageUploaded: () => toast(ADMIN_MSG.imageUploaded),
     gallerySaved: () => toast(ADMIN_MSG.gallerySaved),
     reviewSaved: () => toast(ADMIN_MSG.reviewSaved),
+    reviewPublished: () => toast(ADMIN_MSG.reviewPublished),
     postCreated: () => toast(ADMIN_MSG.postCreated),
     postUpdated: () => toast(ADMIN_MSG.postUpdated),
     emailSent: () => toast(ADMIN_MSG.emailSent),

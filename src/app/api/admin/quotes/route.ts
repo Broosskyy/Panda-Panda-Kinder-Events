@@ -2,8 +2,11 @@ import { NextResponse } from "next/server";
 import { getAdminContext, requireAdmin } from "@/lib/admin-route";
 import {
   archiveQuote,
+  bulkArchiveQuotes,
+  bulkDeleteQuotes,
   createQuote,
   deleteQuote,
+  duplicateQuote,
   listQuotes,
   restoreQuote,
   updateQuote,
@@ -83,6 +86,36 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ success: true });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Wiederherstellen fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "duplicate") {
+    try {
+      const quote = await duplicateQuote(id, ctx);
+      return NextResponse.json({ quote });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Duplizieren fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "bulk_archive" && Array.isArray(body.ids)) {
+    try {
+      await bulkArchiveQuotes(body.ids as string[], ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Massenarchivierung fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "bulk_delete" && Array.isArray(body.ids)) {
+    try {
+      await bulkDeleteQuotes(body.ids as string[], ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Massenlöschung fehlgeschlagen.";
       return NextResponse.json({ error: message }, { status: 400 });
     }
   }

@@ -187,6 +187,31 @@ export async function createQuote(input: {
   return getQuoteWithDetails(quote.id);
 }
 
+export async function duplicateQuote(id: string, _ctx: AdminContext | null) {
+  const source = await getQuoteWithDetails(id);
+  if (!source || source.deleted_at) throw new Error("Angebot nicht gefunden.");
+  if (!source.items?.length) throw new Error("Angebot hat keine Positionen.");
+
+  const duplicate = await createQuote({
+    customer_id: source.customer_id,
+    booking_request_id: source.booking_request_id,
+    title: source.title.includes("(Kopie)") ? source.title : `${source.title} (Kopie)`,
+    status: "draft",
+    remarks: source.remarks,
+    discount_percent: source.discount_percent,
+    tax_rate: source.tax_rate,
+    valid_until: source.valid_until,
+    items: source.items.map((item) => ({
+      description: item.description,
+      quantity: item.quantity,
+      unit_price_cents: item.unit_price_cents,
+      sort_order: item.sort_order,
+    })),
+  });
+
+  return duplicate;
+}
+
 export async function updateQuote(
   id: string,
   input: Partial<{
@@ -466,6 +491,30 @@ export async function cancelInvoice(id: string, ctx: AdminContext | null, reason
   });
 
   return getInvoiceWithDetails(id);
+}
+
+export async function bulkArchiveQuotes(ids: string[], ctx: AdminContext | null) {
+  for (const id of ids) {
+    await archiveQuote(id, ctx);
+  }
+}
+
+export async function bulkDeleteQuotes(ids: string[], ctx: AdminContext | null) {
+  for (const id of ids) {
+    await deleteQuote(id, ctx);
+  }
+}
+
+export async function bulkArchiveInvoices(ids: string[], ctx: AdminContext | null) {
+  for (const id of ids) {
+    await archiveInvoice(id, ctx);
+  }
+}
+
+export async function bulkDeleteInvoices(ids: string[], ctx: AdminContext | null) {
+  for (const id of ids) {
+    await deleteInvoice(id, ctx);
+  }
 }
 
 export async function deleteInvoice(id: string, ctx: AdminContext | null) {

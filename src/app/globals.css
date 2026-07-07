@@ -593,6 +593,8 @@ img {
   overflow: hidden;
   border-radius: var(--radius-card-mobile);
   box-shadow: var(--shadow-md);
+  cursor: pointer;
+  touch-action: manipulation;
   transition: transform 0.5s var(--ease-premium), box-shadow 0.5s var(--ease-premium);
 }
 
@@ -1744,6 +1746,11 @@ img {
 
 .sticky-cta-button {
   min-width: min(100%, 20rem);
+}
+
+body.lightbox-open .sticky-cta-bar,
+body.lightbox-open .floating-contact-stack {
+  display: none !important;
 }
 
 .floating-contact-stack {

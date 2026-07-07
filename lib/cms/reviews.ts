@@ -32,6 +32,7 @@ export async function fetchApprovedReviews(): Promise<PublicReview[]> {
       .from("reviews")
       .select("*")
       .eq("approved", true)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
 
     if (error) {

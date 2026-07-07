@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X } from "lucide-react";
 import { focusRing } from "@/lib/a11y";
 import { StarRating } from "@/components/ui/StarRating";
 
@@ -15,6 +15,7 @@ export interface LightboxItem {
   name?: string;
   rating?: number;
   reviewText?: string;
+  date?: string;
 }
 
 interface LightboxProps {
@@ -29,6 +30,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
   const closeRef = useRef<HTMLButtonElement>(null);
   const touchStartX = useRef<number | null>(null);
   const [current, setCurrent] = useState(index);
+  const [zoomed, setZoomed] = useState(false);
 
   const item = items[current];
   const hasMultiple = items.length > 1;
@@ -37,6 +39,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
     (next: number) => {
       const clamped = Math.max(0, Math.min(items.length - 1, next));
       setCurrent(clamped);
+      setZoomed(false);
       onIndexChange?.(clamped);
     },
     [items.length, onIndexChange],
@@ -47,9 +50,11 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
 
   useEffect(() => {
     setCurrent(index);
+    setZoomed(false);
   }, [index]);
 
   useEffect(() => {
+    document.body.classList.add("lightbox-open");
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
 
@@ -60,6 +65,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
     };
     window.addEventListener("keydown", onKey);
     return () => {
+      document.body.classList.remove("lightbox-open");
       document.body.style.overflow = "";
       window.removeEventListener("keydown", onKey);
     };
@@ -69,7 +75,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
 
   return (
     <div
-      className="lightbox-root fixed inset-0 z-[80] flex items-end justify-center bg-text-primary/90 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="lightbox-root fixed inset-0 z-[100] flex items-end justify-center bg-text-primary/90 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -78,15 +84,32 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
       <p id={titleId} className="sr-only">
         Bildansicht: {item.alt}
       </p>
-      <button
-        ref={closeRef}
-        type="button"
-        onClick={onClose}
-        className={`absolute right-3 top-3 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:right-4 sm:top-4 sm:h-12 sm:w-12 ${focusRing}`}
-        aria-label="Bildansicht schließen"
-      >
-        <X className="h-6 w-6" aria-hidden />
-      </button>
+
+      <div className="absolute right-3 top-3 z-20 flex gap-2 sm:right-4 sm:top-4">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setZoomed((z) => !z);
+          }}
+          className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:h-12 sm:w-12 ${focusRing}`}
+          aria-label={zoomed ? "Zoom verkleinern" : "Zoom vergrößern"}
+        >
+          {zoomed ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}
+        </button>
+        <button
+          ref={closeRef}
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClose();
+          }}
+          className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:h-12 sm:w-12 ${focusRing}`}
+          aria-label="Bildansicht schließen"
+        >
+          <X className="h-6 w-6" aria-hidden />
+        </button>
+      </div>
 
       {hasMultiple ? (
         <>
@@ -97,7 +120,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
               prev();
             }}
             disabled={current === 0}
-            className={`absolute left-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-30 sm:flex ${focusRing}`}
+            className={`absolute left-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-30 sm:left-4 sm:h-12 sm:w-12 ${focusRing}`}
             aria-label="Vorheriges Bild"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -109,7 +132,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
               next();
             }}
             disabled={current >= items.length - 1}
-            className={`absolute right-2 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-30 sm:flex ${focusRing}`}
+            className={`absolute right-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-30 sm:right-4 sm:h-12 sm:w-12 ${focusRing}`}
             aria-label="Nächstes Bild"
           >
             <ChevronRight className="h-6 w-6" />
@@ -124,7 +147,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
           touchStartX.current = e.touches[0]?.clientX ?? null;
         }}
         onTouchEnd={(e) => {
-          if (touchStartX.current == null || !hasMultiple) return;
+          if (touchStartX.current == null || !hasMultiple || zoomed) return;
           const delta = (e.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
           if (Math.abs(delta) > 48) {
             if (delta < 0) next();
@@ -133,16 +156,27 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
           touchStartX.current = null;
         }}
       >
-        <div className="relative min-h-[40dvh] max-h-[65dvh] w-full flex-1 bg-bg-secondary sm:min-h-[20rem] sm:max-h-[70vh]">
-          <Image
-            src={item.src}
-            alt={item.alt}
-            fill
-            className="object-contain p-2"
-            sizes="(max-width: 768px) 100vw, 896px"
-            unoptimized={item.src.includes("supabase.co")}
-            priority
-          />
+        <div
+          className={`relative min-h-[40dvh] max-h-[65dvh] w-full flex-1 overflow-auto bg-bg-secondary sm:min-h-[20rem] sm:max-h-[70vh] ${
+            zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
+          }`}
+          onClick={(e) => {
+            e.stopPropagation();
+            setZoomed((z) => !z);
+          }}
+        >
+          <div className={`relative h-full min-h-[40dvh] w-full transition-transform duration-300 ${zoomed ? "scale-[1.5] origin-center" : ""}`}>
+            <Image
+              src={item.src}
+              alt={item.alt}
+              fill
+              className="object-contain p-2"
+              sizes="(max-width: 768px) 100vw, 896px"
+              unoptimized={item.src.includes("supabase.co")}
+              priority
+              draggable={false}
+            />
+          </div>
         </div>
 
         <div className="shrink-0 border-t border-border/60 px-4 py-4 sm:px-6 sm:py-5">
@@ -152,6 +186,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
               {typeof item.rating === "number" ? <StarRating rating={item.rating} size="sm" /> : null}
             </div>
           ) : null}
+          {item.date ? <p className="mb-1 text-xs text-text-muted">{item.date}</p> : null}
           {item.title ? <p className="font-semibold text-text-primary">{item.title}</p> : null}
           {item.category ? (
             <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-primary">{item.category}</p>

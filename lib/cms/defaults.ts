@@ -288,10 +288,10 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     inquiryRecipient: siteConfig.contact.email,
     inquiryCopyTo: "",
     adminNotificationEmail: siteConfig.contact.email,
-    inquiryAutoReplyEnabled: false,
-    inquiryAutoReplySubject: "Ihre Anfrage bei Panda-Bande — wir melden uns",
+    inquiryAutoReplyEnabled: true,
+    inquiryAutoReplySubject: "Eure Anfrage bei Panda-Bande — wir melden uns",
     inquiryAutoReplyText:
-      "Vielen Dank für Ihre Anfrage. Wir haben Ihre Nachricht erhalten und melden uns schnellstmöglich.",
+      "Hallo {{customer_name}},\n\nvielen Dank für eure Anfrage.\n\nWir freuen uns sehr über euer Interesse an Panda-Bande.\n\nWir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.\n\nBis bald ❤️\nEuer Panda-Bande Team",
     quoteSenderEmail: "",
     quoteReplyTo: "",
     quoteSubjectTemplate: "Angebot {number} — {company}",

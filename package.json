@@ -10,6 +10,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "test:crm": "node scripts/crm-test.mjs",
+    "test:email": "node scripts/email-system-test.mjs",
     "export:cms": "node scripts/export-cms.mjs",
     "export:crm": "node scripts/export-crm.mjs",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",

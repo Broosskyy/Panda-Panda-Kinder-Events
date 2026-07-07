@@ -68,6 +68,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       pdfBuffer: pdfBytes,
       copyToBusiness,
       company,
+      relatedInvoiceId: id,
+      relatedCustomerId: invoice.customer_id,
     });
 
     await updateInvoiceStatus(id, "sent");

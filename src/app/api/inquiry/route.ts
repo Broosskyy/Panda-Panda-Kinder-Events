@@ -47,18 +47,25 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ungültige Veranstaltungsart." }, { status: 400 });
     }
 
+    const submittedAt = new Date();
     const data = {
       name: stripHtml(parsed.data.name),
       phone: stripHtml(parsed.data.phone),
       email: stripHtml(parsed.data.email).toLowerCase(),
       eventType: parsed.data.eventType,
       date: parsed.data.date,
-      time: "12:00",
-      duration: undefined as string | undefined,
-      location: "Wird im Gespräch geklärt",
       childrenCount: String(childrenCount),
       message: stripHtml(parsed.data.message),
+      submittedAt: submittedAt.toLocaleString("de-DE", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
     };
+
+    let savedToDb = false;
 
     if (isSupabaseConfigured()) {
       const supabase = getSupabaseAdmin();
@@ -68,12 +75,13 @@ export async function POST(request: Request) {
         email: data.email,
         event_type: data.eventType,
         event_date: data.date,
-        event_time: data.time,
+        event_time: "10:00:00",
         duration: null,
-        location: data.location,
+        location: "Wird im Gespräch geklärt",
         children_count: childrenCount,
         message: data.message,
         status: "new",
+        admin_notes: "Quelle: Website Kontaktformular",
       });
 
       if (dbError) {
@@ -83,38 +91,57 @@ export async function POST(request: Request) {
           { status: 500 },
         );
       }
+      savedToDb = true;
     }
 
-    if (isResendConfigured()) {
-      try {
-        await sendInquiryNotification({
-          name: data.name,
-          phone: data.phone,
-          email: data.email,
-          eventType: data.eventType,
-          date: data.date,
-          time: data.time,
-          location: data.location,
-          childrenCount: data.childrenCount,
-          message: data.message,
-        });
-      } catch (emailError) {
-        safeApiError("Resend inquiry:", emailError, "");
-        if (!isSupabaseConfigured()) {
+    if (!isResendConfigured()) {
+      if (!savedToDb) {
+        return NextResponse.json(
+          { error: "Formular ist derzeit nicht verfügbar. Bitte kontaktiert uns direkt." },
+          { status: 503 },
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        warning: "Anfrage gespeichert. E-Mail-Versand ist nicht konfiguriert.",
+      });
+    }
+
+    try {
+      const emailResult = await sendInquiryNotification(data);
+
+      if (!emailResult.adminSent) {
+        safeApiError("Inquiry admin email failed:", emailResult.errors.join("; "), "");
+        if (!savedToDb) {
           return NextResponse.json(
             { error: "E-Mail konnte nicht gesendet werden. Bitte kontaktiert uns direkt." },
             { status: 500 },
           );
         }
+        return NextResponse.json({
+          success: true,
+          warning: "Anfrage gespeichert. Die Benachrichtigung konnte nicht versendet werden — bitte im Admin prüfen.",
+        });
       }
-    } else if (!isSupabaseConfigured()) {
-      return NextResponse.json(
-        { error: "Formular ist derzeit nicht verfügbar. Bitte kontaktiert uns direkt." },
-        { status: 503 },
-      );
-    }
 
-    return NextResponse.json({ success: true });
+      if (!emailResult.customerSent && emailResult.errors.length > 0) {
+        safeApiError("Inquiry customer email failed:", emailResult.errors.join("; "), "");
+      }
+
+      return NextResponse.json({ success: true });
+    } catch (emailError) {
+      safeApiError("Resend inquiry:", emailError, "");
+      if (!savedToDb) {
+        return NextResponse.json(
+          { error: "E-Mail konnte nicht gesendet werden. Bitte kontaktiert uns direkt." },
+          { status: 500 },
+        );
+      }
+      return NextResponse.json({
+        success: true,
+        warning: "Anfrage gespeichert. E-Mail-Versand teilweise fehlgeschlagen — bitte im Admin prüfen.",
+      });
+    }
   } catch (error) {
     safeApiError("Inquiry API:", error, "");
     return NextResponse.json({ error: "Ein unerwarteter Fehler ist aufgetreten." }, { status: 500 });

@@ -20,7 +20,19 @@ const SYSTEM_LEVEL_VARIANT: Record<SystemStatusLevel, "success" | "warning" | "d
 const SYSTEM_LEVEL_LABEL: Record<SystemStatusLevel, string> = {
   ok: "OK",
   warn: "Hinweis",
-  error: "Fehler",
+  error: "Kritisch",
+};
+
+const OVERALL_LABEL: Record<SystemStatusLevel, string> = {
+  ok: "Alles in Ordnung",
+  warn: "Einige Hinweise — bitte prüfen",
+  error: "Kritische Punkte — bitte beheben",
+};
+
+const OVERALL_EMOJI: Record<SystemStatusLevel, string> = {
+  ok: "🟢",
+  warn: "🟡",
+  error: "🔴",
 };
 
 interface SystemSettingsShellProps {
@@ -28,6 +40,7 @@ interface SystemSettingsShellProps {
   systemStatus: {
     items: SystemStatusItem[];
     summary: { ok: number; warn: number; error: number };
+    overall?: SystemStatusLevel;
   } | null;
   systemError: string | null;
 }
@@ -64,6 +77,21 @@ export function SystemSettingsShell({
 
           {systemStatus ? (
             <>
+              {systemStatus.overall ? (
+                <div
+                  className={`rounded-xl border px-4 py-3 text-sm ${
+                    systemStatus.overall === "ok"
+                      ? "border-primary/30 bg-primary/10"
+                      : systemStatus.overall === "error"
+                        ? "border-red-300 bg-red-50"
+                        : "border-amber-300 bg-amber-50"
+                  }`}
+                >
+                  <strong>
+                    {OVERALL_EMOJI[systemStatus.overall]} {OVERALL_LABEL[systemStatus.overall]}
+                  </strong>
+                </div>
+              ) : null}
               <div className="flex flex-wrap gap-2">
                 <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
                   {systemStatus.summary.ok} OK
@@ -72,7 +100,7 @@ export function SystemSettingsShell({
                   {systemStatus.summary.warn} Hinweise
                 </span>
                 <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
-                  {systemStatus.summary.error} Fehler
+                  {systemStatus.summary.error} Kritisch
                 </span>
               </div>
               <ul className="space-y-3">

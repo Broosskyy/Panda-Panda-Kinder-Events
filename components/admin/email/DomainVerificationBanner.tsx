@@ -17,14 +17,22 @@ const STYLES: Record<DomainVerificationDisplay, string> = {
 const LABELS: Record<DomainVerificationDisplay, string> = {
   verified: "🟢 Domain verifiziert",
   not_verified: "🔴 Domain nicht verifiziert",
-  unknown: "🟡 Status unbekannt",
+  unknown: "🟡 Automatische Prüfung nicht möglich",
+};
+
+const DEFAULT_MESSAGES: Record<DomainVerificationDisplay, string | undefined> = {
+  verified: undefined,
+  not_verified: undefined,
+  unknown: "Status konnte nicht automatisch geprüft werden. Wenn Test-E-Mails ankommen, ist der Versand in Ordnung.",
 };
 
 export function DomainVerificationBanner({ state, message, className = "" }: DomainVerificationBannerProps) {
+  const detail = message || DEFAULT_MESSAGES[state];
+
   return (
     <div className={`rounded-xl border px-4 py-3 text-sm ${STYLES[state]} ${className}`}>
       <strong>{LABELS[state]}</strong>
-      {message ? <p className="mt-1">{message}</p> : null}
+      {detail ? <p className="mt-1">{detail}</p> : null}
     </div>
   );
 }

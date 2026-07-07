@@ -6,6 +6,11 @@ import { getSiteUrl } from "@/lib/site-url";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
 import { listEmailLogs } from "@/lib/email/log";
 import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
+import {
+  API_CHECK_UNAVAILABLE_MESSAGE,
+  computeStatusSummary,
+  softenUnavailableApiLevel,
+} from "@/lib/admin/status-summary";
 
 export type SystemStatusLevel = "ok" | "warn" | "error";
 
@@ -20,6 +25,7 @@ export interface SystemStatusItem {
 export async function getSystemStatus(): Promise<{
   items: SystemStatusItem[];
   summary: { ok: number; warn: number; error: number };
+  overall: SystemStatusLevel;
 }> {
   const items: SystemStatusItem[] = [];
   const settings = await fetchSiteSettings();
@@ -78,14 +84,17 @@ export async function getSystemStatus(): Promise<{
       const email = await getEmailSettings();
       const sendingSetup = await getResendSendingSetup(email.senderEmail);
       for (const item of sendingSetup.sending) {
+        const rawLevel =
+          item.level === "optional" ? "warn" : item.level === "ok" ? "ok" : item.level === "warn" ? "warn" : "error";
+        const level = softenUnavailableApiLevel(rawLevel, item.message);
         items.push({
           id: `resend_${item.id}`,
           label: item.label,
-          level: item.level === "optional" ? "warn" : item.level === "ok" ? "ok" : item.level === "warn" ? "warn" : "error",
-          message: item.message,
+          level,
+          message: level === "warn" && rawLevel === "error" ? API_CHECK_UNAVAILABLE_MESSAGE : item.message,
           action:
-            item.level === "error" && item.id === "from_address"
-              ? "Domain in Resend verifizieren (DOMAIN_EMAIL_SETUP_GUIDE.md)."
+            level === "error" && item.id === "from_address"
+              ? "Domain im Resend-Dashboard verifizieren."
               : undefined,
         });
       }
@@ -100,22 +109,32 @@ export async function getSystemStatus(): Promise<{
     } catch {
       items.push({
         id: "resend_domain",
-        label: "Resend Domain verifiziert",
+        label: "Domain-Verifizierung (Resend)",
         level: "warn",
-        message: "Domain-Status konnte nicht geprüft werden.",
+        message: API_CHECK_UNAVAILABLE_MESSAGE,
       });
     }
   }
 
   const envUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
   const cmsUrl = resolvePublicSiteUrl(settings);
-  const domainSet = Boolean(envUrl || settings.seo.primaryDomain || settings.seo.canonicalBaseUrl);
+  const displayUrl = (envUrl || cmsUrl || getSiteUrl()).replace(/\/$/, "");
+  const hasExplicitConfig = Boolean(
+    envUrl ||
+      settings.seo.primaryDomain?.trim() ||
+      settings.seo.canonicalBaseUrl?.trim() ||
+      settings.business.website?.trim(),
+  );
   items.push({
     id: "domain",
-    label: "Domain gesetzt",
-    level: domainSet ? "ok" : "warn",
-    message: domainSet ? `Aktive URL: ${cmsUrl}` : "Keine Domain konfiguriert.",
-    action: domainSet ? undefined : "NEXT_PUBLIC_SITE_URL oder SEO-Einstellungen setzen.",
+    label: "Website-Domain",
+    level: displayUrl ? "ok" : "warn",
+    message: displayUrl
+      ? hasExplicitConfig
+        ? `Aktive Website: ${displayUrl}`
+        : `Website erreichbar unter: ${displayUrl}`
+      : "Keine Domain konfiguriert.",
+    action: displayUrl ? undefined : "NEXT_PUBLIC_SITE_URL oder SEO-Einstellungen setzen.",
   });
 
   const senderSet = Boolean(settings.email.senderEmail?.trim());
@@ -129,15 +148,19 @@ export async function getSystemStatus(): Promise<{
 
   try {
     const logs = await listEmailLogs(20);
-    const lastTest = logs.find((l) => l.template_slug === "test" && l.status === "sent");
+    const lastTest = logs.find(
+      (l) =>
+        l.status === "sent" &&
+        (l.template_slug === "test" || l.subject?.includes("Test-E-Mail")),
+    );
     items.push({
       id: "email_test",
       label: "Test-E-Mail erfolgreich",
       level: lastTest ? "ok" : resendOk ? "warn" : "warn",
       message: lastTest
-        ? `Letzte erfolgreiche Testmail: ${new Date(lastTest.created_at).toLocaleString("de-DE")}`
+        ? `Letzte erfolgreiche Test-E-Mail: ${new Date(lastTest.created_at).toLocaleString("de-DE")}`
         : resendOk
-          ? "Noch keine erfolgreiche Testmail im Protokoll — Test unter Einstellungen → E-Mail senden."
+          ? "Noch keine Test-E-Mail im Protokoll — bitte unter Einstellungen → E-Mail eine Testmail senden."
           : "Test erst möglich, wenn der Versand-Dienst verbunden ist.",
       action: lastTest ? undefined : "Einstellungen → E-Mail → Test-E-Mail senden.",
     });
@@ -192,15 +215,17 @@ export async function getSystemStatus(): Promise<{
     id: "analytics",
     label: "Analytics",
     level: analyticsActive ? "ok" : "warn",
-    message: analyticsActive ? "Google Analytics ID gesetzt." : "Analytics optional — noch nicht konfiguriert.",
+    message: analyticsActive
+      ? "Besucherstatistik ist eingerichtet."
+      : "Optional — Besucherstatistik ist noch nicht eingerichtet.",
   });
 
   items.push({
     id: "backup",
     label: "Backup",
     level: "warn",
-    message: "Manuelles Backup über Supabase Dashboard empfohlen.",
-    action: "backups/checkpoint-v1/DATABASE_BACKUP_GUIDE.md",
+    message: "Optional — regelmäßiges Backup über Einstellungen → Systemstatus → Backup empfohlen.",
+    action: "Einstellungen → Systemstatus → Backup",
   });
 
   items.push({
@@ -210,13 +235,9 @@ export async function getSystemStatus(): Promise<{
     message: supabaseOk ? "Letzte Migration: 20260714_admin_control_center (Control Center)." : "Migrationen nicht prüfbar.",
   });
 
-  const summary = {
-    ok: items.filter((i) => i.level === "ok").length,
-    warn: items.filter((i) => i.level === "warn").length,
-    error: items.filter((i) => i.level === "error").length,
-  };
+  const summary = computeStatusSummary(items);
 
-  return { items, summary };
+  return { items, summary, overall: summary.overall };
 }
 
 export function getEnvSiteUrlHint(): string {

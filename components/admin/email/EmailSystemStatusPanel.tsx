@@ -20,9 +20,9 @@ const LEVEL_EMOJI: Record<SystemStatusLevel, string> = {
 };
 
 const OVERALL_LABEL: Record<SystemStatusLevel, string> = {
-  ok: "Alles OK",
-  warn: "Warnung — bitte prüfen",
-  error: "Fehler — bitte beheben",
+  ok: "Alles in Ordnung",
+  warn: "Einige Hinweise — bitte prüfen",
+  error: "Kritische Punkte — bitte beheben",
 };
 
 interface Props {
@@ -78,7 +78,7 @@ export function EmailSystemStatusPanel({ testTo, resendConfigured, onTestToChang
                 {item.action ? <p className="mt-1 text-xs text-text-secondary">{item.action}</p> : null}
               </div>
               <AdminStatusBadge
-                label={item.level === "ok" ? "OK" : item.level === "warn" ? "Prüfen" : "Fehler"}
+                label={item.level === "ok" ? "OK" : item.level === "warn" ? "Hinweis" : "Kritisch"}
                 variant={LEVEL_VARIANT[item.level]}
               />
             </li>

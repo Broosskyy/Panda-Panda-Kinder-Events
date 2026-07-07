@@ -5,11 +5,20 @@ import { listEmailLogs } from "@/lib/email/log";
 import { isEmailTestModeActive } from "@/lib/email/test-mode";
 import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
+import {
+  API_CHECK_UNAVAILABLE_MESSAGE,
+  computeStatusSummary,
+  softenUnavailableApiLevel,
+} from "@/lib/admin/status-summary";
 
-function levelFromResend(level: string): SystemStatusLevel {
+function levelFromResend(level: string, message: string): SystemStatusLevel {
   if (level === "ok") return "ok";
-  if (level === "error") return "error";
+  if (level === "error") return softenUnavailableApiLevel("error", message);
   return "warn";
+}
+
+function isTestEmailLog(log: { template_slug: string | null; subject: string; status: string }): boolean {
+  return log.status === "sent" && (log.template_slug === "test" || log.subject.includes("Test-E-Mail"));
 }
 
 /** Laienfreundlicher E-Mail-Systemstatus für Admin → E-Mail → Systemstatus */
@@ -22,45 +31,53 @@ export async function getEmailSystemStatus(): Promise<{
   const email = await getEmailSettings();
   const resendOk = Boolean(process.env.RESEND_API_KEY);
   const liveDomain = await checkResendDomainLive(email.senderEmail);
+  const senderDomain = email.senderEmail?.includes("@") ? email.senderEmail.split("@")[1] : null;
 
   items.push({
     id: "resend_domain_live",
-    label: "Resend Domain (Live-Check)",
+    label: "Versand-Domain (Resend)",
     level: liveDomain.state === "verified" ? "ok" : liveDomain.state === "unknown" ? "warn" : "error",
-    message: `${liveDomain.label}${liveDomain.message ? ` — ${liveDomain.message}` : ""}`,
+    message:
+      liveDomain.state === "unknown"
+        ? API_CHECK_UNAVAILABLE_MESSAGE
+        : liveDomain.state === "verified"
+          ? `Domain „${liveDomain.domain ?? senderDomain}" ist verifiziert und kann zum Versand genutzt werden.`
+          : `Domain „${liveDomain.domain ?? senderDomain}" ist in Resend noch nicht verifiziert.`,
     action:
       liveDomain.state === "verified"
         ? undefined
-        : "Resend Dashboard prüfen: Domain pb-kinderevents.de verifizieren.",
+        : liveDomain.state === "unknown"
+          ? "Wenn E-Mails bereits ankommen, ist alles in Ordnung — die automatische Prüfung war nur nicht möglich."
+          : `Resend-Dashboard öffnen und Domain „${liveDomain.domain ?? senderDomain ?? "pb-kinderevents.de"}" verifizieren.`,
   });
 
   items.push({
     id: "domain_connected",
-    label: "Domain verbunden",
-    level: email.senderEmail?.includes("@") ? "ok" : "warn",
-    message: email.senderEmail?.includes("@")
-      ? `Versand-Domain: ${email.senderEmail.split("@")[1]}`
-      : "Keine Absender-Domain hinterlegt.",
-    action: email.senderEmail?.includes("@") ? undefined : "Einstellungen → E-Mail → Absender-E-Mail setzen.",
+    label: "Absender-Domain hinterlegt",
+    level: senderDomain ? "ok" : "warn",
+    message: senderDomain
+      ? `Versand über: ${senderDomain}`
+      : "Es ist noch keine Absender-E-Mail mit Domain hinterlegt.",
+    action: senderDomain ? undefined : "Einstellungen → E-Mail → Absender-E-Mail setzen.",
   });
 
   items.push({
     id: "resend_connected",
-    label: "Resend verbunden",
+    label: "Versand-Dienst verbunden",
     level: resendOk ? "ok" : "error",
     message: resendOk
-      ? "Der automatische E-Mail-Dienst ist verbunden."
-      : "Der E-Mail-Dienst ist nicht verbunden — automatischer Versand deaktiviert.",
+      ? "Der automatische E-Mail-Versand ist eingerichtet."
+      : "Der Versand-Dienst ist nicht verbunden — automatische E-Mails können nicht gesendet werden.",
     action: resendOk ? undefined : "RESEND_API_KEY in den Server-Einstellungen setzen.",
   });
 
   items.push({
     id: "zoho_reachable",
-    label: "Zoho erreichbar",
+    label: "Hauptpostfach hinterlegt",
     level: email.companyEmail?.includes("@") ? "ok" : "warn",
     message: email.companyEmail?.includes("@")
-      ? `Hauptpostfach konfiguriert: ${email.companyEmail}`
-      : "Hauptpostfach noch nicht gesetzt — bitte Firmen-E-Mail prüfen.",
+      ? `Firmen-E-Mail: ${email.companyEmail}`
+      : "Optional — Firmen-E-Mail für Rückfragen noch nicht gesetzt.",
     action: email.companyEmail?.includes("@") ? undefined : "Einstellungen → E-Mail → Firmen-E-Mail setzen.",
   });
 
@@ -68,7 +85,7 @@ export async function getEmailSystemStatus(): Promise<{
     try {
       const setup = await getResendSendingSetup(email.senderEmail);
       const friendlyLabels: Record<string, string> = {
-        domain_dkim: "DKIM (E-Mail-Signatur für Zustellbarkeit)",
+        domain_dkim: "DKIM (E-Mail-Signatur)",
         spf_txt: "SPF (Absender-Berechtigung)",
         sending_mx: "MX für Versand",
         from_address: "Absender-Adresse freigegeben",
@@ -76,37 +93,46 @@ export async function getEmailSystemStatus(): Promise<{
       };
 
       for (const item of setup.sending) {
+        if (item.id === "api_key") continue;
         const label = friendlyLabels[item.id] ?? item.label;
+        const level = levelFromResend(item.level, item.message);
         items.push({
           id: `email_${item.id}`,
           label,
-          level: levelFromResend(item.level),
-          message: item.message,
+          level,
+          message:
+            level === "warn" && item.level === "error"
+              ? API_CHECK_UNAVAILABLE_MESSAGE
+              : item.message,
         });
       }
 
       items.push({
         id: "dmarc",
         label: "DMARC (Schutz vor Fälschungen)",
-        level: setup.sending.some((s) => s.id === "domain_dkim" && s.level === "ok") ? "ok" : "warn",
+        level: "warn",
         message:
           setup.sending.some((s) => s.id === "domain_dkim" && s.level === "ok")
-            ? "Empfohlen: DMARC-Eintrag beim Domain-Anbieter prüfen (Zoho/Resend-Anleitung)."
-            : "DMARC kann erst sinnvoll geprüft werden, wenn DKIM/SPF aktiv sind.",
+            ? "Optional — DMARC-Eintrag beim Domain-Anbieter prüfen (empfohlen)."
+            : "Optional — DMARC kann eingerichtet werden, sobald DKIM/SPF aktiv sind.",
       });
 
       items.push({
         id: "api_reachable",
-        label: "API erreichbar",
-        level: setup.canSend ? "ok" : "error",
-        message: setup.canSend ? "Versand-API antwortet." : setup.blockReason ?? "Versand blockiert.",
+        label: "Versand bereit",
+        level: setup.canSend ? "ok" : liveDomain.state === "unknown" ? "warn" : "error",
+        message: setup.canSend
+          ? "E-Mails können versendet werden."
+          : liveDomain.state === "unknown"
+            ? API_CHECK_UNAVAILABLE_MESSAGE
+            : setup.blockReason ?? "Versand ist noch nicht freigegeben.",
       });
     } catch {
       items.push({
         id: "api_reachable",
-        label: "API erreichbar",
+        label: "Versand bereit",
         level: "warn",
-        message: "Domain-Status konnte nicht vollständig geprüft werden.",
+        message: API_CHECK_UNAVAILABLE_MESSAGE,
       });
     }
   }
@@ -123,8 +149,19 @@ export async function getEmailSystemStatus(): Promise<{
 
   try {
     const logs = await listEmailLogs(30);
+    const lastTest = logs.find(isTestEmailLog);
     const lastSuccess = logs.find((l) => l.status === "sent");
     const lastFailed = logs.find((l) => l.status === "failed");
+
+    items.push({
+      id: "email_test",
+      label: "Test-E-Mail erfolgreich",
+      level: lastTest ? "ok" : resendOk ? "warn" : "warn",
+      message: lastTest
+        ? `Letzte erfolgreiche Test-E-Mail: ${new Date(lastTest.created_at).toLocaleString("de-DE")}`
+        : "Noch keine Test-E-Mail im Protokoll — bitte unten eine Testmail senden.",
+      action: lastTest ? undefined : "Test-E-Mail senden (Formular unten).",
+    });
 
     items.push({
       id: "last_success",
@@ -141,15 +178,15 @@ export async function getEmailSystemStatus(): Promise<{
       label: "Letzter Fehler",
       level: lastFailed ? "error" : "ok",
       message: lastFailed
-        ? `${lastFailed.error_message ?? "Unbekannt"} (${new Date(lastFailed.created_at).toLocaleString("de-DE")})`
-        : "Keine Fehler im aktuellen Protokoll.",
+        ? `${lastFailed.error_message ?? "Unbekannter Fehler"} (${new Date(lastFailed.created_at).toLocaleString("de-DE")})`
+        : "Keine fehlgeschlagenen E-Mails im aktuellen Protokoll.",
     });
   } catch {
     items.push({
-      id: "last_success",
-      label: "Letzter erfolgreicher Versand",
+      id: "email_test",
+      label: "Test-E-Mail erfolgreich",
       level: "warn",
-      message: "Protokoll nicht lesbar.",
+      message: "Versandprotokoll konnte nicht gelesen werden.",
     });
   }
 
@@ -160,14 +197,7 @@ export async function getEmailSystemStatus(): Promise<{
     message: email.companyEmail || DEFAULT_COMPANY_EMAIL,
   });
 
-  const summary = {
-    ok: items.filter((i) => i.level === "ok").length,
-    warn: items.filter((i) => i.level === "warn").length,
-    error: items.filter((i) => i.level === "error").length,
-  };
+  const summary = computeStatusSummary(items);
 
-  const overall: SystemStatusLevel =
-    summary.error > 0 ? "error" : summary.warn > 0 ? "warn" : "ok";
-
-  return { items, summary, overall };
+  return { items, summary, overall: summary.overall };
 }

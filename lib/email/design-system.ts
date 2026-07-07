@@ -1,7 +1,8 @@
 import type { ResolvedEmailBranding } from "@/lib/email/branding";
 import { SYSTEM_EMAIL_DEFAULTS } from "@/lib/email/brand-tokens";
+import type { EmailThemeMode } from "@/lib/cms/types";
 
-export type EmailThemeMode = "light" | "dark" | "auto";
+export type { EmailThemeMode };
 
 /** Resolved design tokens — single source for all email HTML output */
 export interface EmailDesignTokens {
@@ -18,19 +19,21 @@ export interface EmailDesignTokens {
   link: string;
   fontFamily: string;
   theme: EmailThemeMode;
+  cardRadius: string;
+  cardShadow: string;
 }
 
-const DARK_THEME_OVERRIDES: Partial<EmailDesignTokens> = {
-  pageBackground: "#1a1a18",
-  cardBackground: "#2a2a26",
-  text: "#f4f1ea",
-  textMuted: "#b8b5ad",
-  accent: "#33332f",
-  border: "#3d3d38",
-};
+function shadowCss(enabled: boolean): string {
+  return enabled
+    ? "0 4px 24px rgba(47,47,47,0.06)"
+    : "none";
+}
 
 export function resolveDesignTokens(branding: Partial<ResolvedEmailBranding>): EmailDesignTokens {
   const theme = branding.theme ?? "light";
+  const radius = `${branding.cardRadius ?? 16}px`;
+  const shadowOn = branding.shadowEnabled !== false;
+
   const light: EmailDesignTokens = {
     pageBackground: branding.backgroundColor || SYSTEM_EMAIL_DEFAULTS.pageBackground,
     cardBackground: branding.cardBackground || SYSTEM_EMAIL_DEFAULTS.cardBackground,
@@ -45,21 +48,35 @@ export function resolveDesignTokens(branding: Partial<ResolvedEmailBranding>): E
     link: branding.linkColor || branding.primaryColor || SYSTEM_EMAIL_DEFAULTS.primary,
     fontFamily: branding.fontFamily || SYSTEM_EMAIL_DEFAULTS.fontFamily,
     theme,
+    cardRadius: radius,
+    cardShadow: shadowCss(shadowOn),
   };
 
   if (theme !== "dark") return light;
 
   return {
     ...light,
-    ...DARK_THEME_OVERRIDES,
-    primary: branding.primaryColor || light.primary,
-    button: branding.buttonColor || light.button,
-    link: branding.linkColor || branding.primaryColor || light.link,
+    pageBackground: branding.darkBackgroundColor || "#1a1a18",
+    cardBackground: branding.darkCardColor || "#2a2a26",
+    primary: branding.darkPrimaryColor || branding.primaryColor || light.primary,
+    secondary: branding.darkSecondaryColor || branding.darkPrimaryColor || light.secondary,
+    text: branding.darkTextColor || "#f4f1ea",
+    textMuted: branding.darkTextMutedColor || "#b8b5ad",
+    border: branding.darkBorderColor || "#3d3d38",
+    accent: branding.darkAccentColor || "#33332f",
+    button: branding.darkButtonColor || branding.darkPrimaryColor || light.button,
+    buttonText: branding.darkButtonTextColor || "#ffffff",
+    link: branding.darkPrimaryColor || branding.linkColor || light.link,
+    theme: "dark",
   };
 }
 
-/** Auto theme: light only in output (dark prep for future client detection) */
-export function resolveActiveDesignTokens(branding: Partial<ResolvedEmailBranding>): EmailDesignTokens {
-  if (branding.theme === "dark") return resolveDesignTokens({ ...branding, theme: "dark" });
-  return resolveDesignTokens({ ...branding, theme: "light" });
+/** Resolves tokens for output — dark preview forces dark inline styles */
+export function resolveActiveDesignTokens(
+  branding: Partial<ResolvedEmailBranding>,
+  forceTheme?: EmailThemeMode,
+): EmailDesignTokens {
+  const theme = forceTheme ?? branding.theme ?? "light";
+  if (theme === "dark") return resolveDesignTokens({ ...branding, theme: "dark" });
+  return resolveDesignTokens({ ...branding, theme: theme === "auto" ? "auto" : "light" });
 }

@@ -91,13 +91,65 @@ export function buildEmailLogoHeaderHtml(opts: {
   logoUrl: string | null | undefined;
   companyName: string;
   baseUrl?: string;
-  accentColor?: string;
+  logoWidth?: number;
+  logoHeight?: number;
 }): string {
   const resolved = opts.logoUrl ? resolveEmailImageUrl(opts.logoUrl, opts.baseUrl) : null;
   const absolute = resolved && !isUnsafeEmailAssetUrl(resolved) ? resolved : getDefaultEmailLogoUrl();
   const companyName = opts.companyName?.trim() || "Panda-Bande Kinderevents";
+  const width = opts.logoWidth ?? 140;
+  const heightAttr = opts.logoHeight && opts.logoHeight > 0 ? ` height="${opts.logoHeight}"` : "";
 
-  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName)}" width="180" style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto;" />`;
+  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName)}" width="${width}"${heightAttr} style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto;" />`;
+}
+
+export function buildEmailHeaderBlock(opts: {
+  logoUrl: string;
+  brandName?: string;
+  slogan?: string;
+  showLogo?: boolean;
+  showBrandName?: boolean;
+  showSlogan?: boolean;
+  logoWidth?: number;
+  logoHeight?: number;
+  logoPaddingTop?: number;
+  logoPaddingBottom?: number;
+  textColor?: string;
+  textMutedColor?: string;
+  primaryColor?: string;
+  baseUrl?: string;
+}): string {
+  const parts: string[] = [];
+  const padTop = opts.logoPaddingTop ?? 32;
+  const padBottom = opts.logoPaddingBottom ?? 16;
+
+  if (opts.showLogo !== false) {
+    parts.push(
+      buildEmailLogoHeaderHtml({
+        logoUrl: opts.logoUrl,
+        companyName: opts.brandName || "Panda-Bande Kinderevents",
+        baseUrl: opts.baseUrl,
+        logoWidth: opts.logoWidth,
+        logoHeight: opts.logoHeight,
+      }),
+    );
+  }
+
+  if (opts.showBrandName !== false && opts.brandName?.trim()) {
+    parts.push(
+      `<p style="margin:${opts.showLogo !== false ? "16px" : "0"} 0 4px;font-size:17px;font-weight:600;color:${opts.textColor || "#2F2F2F"};letter-spacing:0.01em;">${escapeHtml(opts.brandName.trim())}</p>`,
+    );
+  }
+
+  if (opts.showSlogan !== false && opts.slogan?.trim()) {
+    parts.push(
+      `<p style="margin:0;font-size:13px;color:${opts.textMutedColor || "#6B6B6B"};font-style:italic;">${escapeHtml(opts.slogan.trim())}</p>`,
+    );
+  }
+
+  if (!parts.length) return "";
+
+  return `<div style="padding:${padTop}px 32px ${padBottom}px;text-align:center;">${parts.join("")}</div>`;
 }
 
 export function buildEmailHeaderImageRow(

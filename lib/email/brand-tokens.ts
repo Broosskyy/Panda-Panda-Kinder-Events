@@ -9,7 +9,7 @@ export const SYSTEM_EMAIL_DEFAULTS = {
   accent: "#F4F6EE",
   buttonText: "#FFFFFF",
   fontFamily: "Helvetica, Arial, sans-serif",
-  logoWidth: 180,
+  logoWidth: 140,
 } as const;
 
 /** @deprecated Use SYSTEM_EMAIL_DEFAULTS */

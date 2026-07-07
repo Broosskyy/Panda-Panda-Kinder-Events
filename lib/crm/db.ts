@@ -225,7 +225,8 @@ export async function createQuote(input: {
   return getQuoteWithDetails(quote.id);
 }
 
-export async function duplicateQuote(id: string, _ctx: AdminContext | null) {
+export async function duplicateQuote(id: string, ctx: AdminContext | null) {
+  void ctx;
   const source = await getQuoteWithDetails(id);
   if (!source || source.deleted_at) throw new Error("Angebot nicht gefunden.");
   if (!source.items?.length) throw new Error("Angebot hat keine Positionen.");

@@ -1,4 +1,5 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
+import type { EmailTemplateLayout } from "@/lib/cms/types";
 import { resolveEmailBranding, resolveEmailLogoForSend, type ResolvedEmailBranding } from "@/lib/email/branding";
 import { getEmailAssetBaseUrl } from "@/lib/email/asset-url";
 import { buildEmailSignatureFooter } from "@/lib/email/signature";
@@ -9,8 +10,10 @@ export async function wrapBrandedEmailHtml(
   companyName?: string,
   extraFooterHtml?: string,
   options?: {
-    previewMode?: "desktop" | "tablet" | "mobile" | "dark";
+    previewMode?: "desktop" | "tablet" | "mobile" | "dark" | "light";
     branding?: Partial<ResolvedEmailBranding>;
+    layout?: EmailTemplateLayout;
+    footerEnabled?: boolean;
   },
 ): Promise<string> {
   const [settings, resolvedBranding] = await Promise.all([
@@ -19,9 +22,10 @@ export async function wrapBrandedEmailHtml(
   ]);
 
   const branding = options?.branding ?? resolvedBranding;
-  const signatureHtml = await buildEmailSignatureFooter(
-    branding.linkColor || branding.primaryColor || "#4F5638",
-  );
+  const footerOn = options?.footerEnabled ?? options?.layout?.footerEnabled ?? true;
+  const signatureHtml = footerOn
+    ? await buildEmailSignatureFooter(branding.linkColor || branding.primaryColor || "#6B7A3A")
+    : "";
   const name = companyName || branding.companyName || settings.email.companyName;
 
   return wrapEmailHtml({
@@ -34,5 +38,7 @@ export async function wrapBrandedEmailHtml(
     signatureHtml,
     footerHtml: extraFooterHtml,
     previewMode: options?.previewMode,
+    layout: options?.layout,
+    footerEnabled: footerOn,
   });
 }

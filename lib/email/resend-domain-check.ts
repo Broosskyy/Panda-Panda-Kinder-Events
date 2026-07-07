@@ -1,4 +1,5 @@
 import type { Domain } from "resend";
+import { API_CHECK_UNAVAILABLE_MESSAGE } from "@/lib/admin/status-summary";
 import { DEFAULT_COMPANY_DOMAIN, DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 
 export type DomainVerificationDisplay = "verified" | "not_verified" | "unknown";
@@ -45,7 +46,7 @@ function buildResult(
       ? "🟢 Domain verifiziert"
       : state === "not_verified"
         ? "🔴 Domain nicht verifiziert"
-        : "🟡 Status unbekannt";
+        : "🟡 Automatische Prüfung nicht möglich";
 
   return {
     state,
@@ -98,12 +99,7 @@ export async function checkResendDomainLive(senderEmail?: string | null): Promis
 
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    return buildResult(
-      "unknown",
-      domain,
-      null,
-      "RESEND_API_KEY ist nicht gesetzt — Live-Prüfung nicht möglich.",
-    );
+    return buildResult("unknown", domain, null, API_CHECK_UNAVAILABLE_MESSAGE);
   }
 
   try {
@@ -123,12 +119,7 @@ export async function checkResendDomainLive(senderEmail?: string | null): Promis
 
     const detail = await resend.domains.get(match.id);
     if (detail.error) {
-      return buildResult(
-        "unknown",
-        domain,
-        match.status ?? null,
-        `Resend-Details nicht abrufbar: ${detail.error.message}`,
-      );
+      return buildResult("unknown", domain, match.status ?? null, API_CHECK_UNAVAILABLE_MESSAGE);
     }
 
     const liveStatus = detail.data?.status ?? match.status ?? null;
@@ -149,8 +140,7 @@ export async function checkResendDomainLive(senderEmail?: string | null): Promis
       normalizedStatus,
       `Domain „${detail.data?.name ?? match.name}" hat Status „${normalizedStatus ?? "unbekannt"}".`,
     );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unbekannter Fehler";
-    return buildResult("unknown", domain, null, `Resend API nicht erreichbar: ${message}`);
+  } catch {
+    return buildResult("unknown", domain, null, API_CHECK_UNAVAILABLE_MESSAGE);
   }
 }

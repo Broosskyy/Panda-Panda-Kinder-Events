@@ -1,13 +1,22 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { countAdminUsers } from "@/lib/auth/users";
 import { listLoginHistory } from "@/lib/auth/login-history";
+import { getSystemStatus } from "@/lib/admin/system-status";
+import type { SystemStatusLevel } from "@/lib/admin/system-status";
 
 export interface AdminSecurityDashboard {
   activeUsers: number;
   recentLogins: number;
-  systemStatus: "ok" | "degraded" | "legacy";
+  systemStatus: SystemStatusLevel;
+  systemStatusLabel: string;
   multiUserEnabled: boolean;
 }
+
+const SYSTEM_STATUS_LABELS: Record<SystemStatusLevel, string> = {
+  ok: "Alles OK",
+  warn: "Hinweise",
+  error: "Achtung",
+};
 
 export async function fetchSecurityDashboardStats(): Promise<AdminSecurityDashboard> {
   const multiUserEnabled = (await countAdminUsers()) > 0;
@@ -30,10 +39,19 @@ export async function fetchSecurityDashboardStats(): Promise<AdminSecurityDashbo
     recentLogins = 0;
   }
 
+  let systemStatus: SystemStatusLevel = "warn";
+  try {
+    const health = await getSystemStatus();
+    systemStatus = health.overall;
+  } catch {
+    systemStatus = "warn";
+  }
+
   return {
     activeUsers,
     recentLogins,
-    systemStatus: multiUserEnabled ? "ok" : "legacy",
+    systemStatus,
+    systemStatusLabel: SYSTEM_STATUS_LABELS[systemStatus],
     multiUserEnabled,
   };
 }

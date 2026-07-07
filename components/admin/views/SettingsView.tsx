@@ -26,7 +26,7 @@ import type {
   SiteSeoSettings,
   SiteSettingsBundle,
 } from "@/lib/cms/types";
-import type { SystemStatusItem } from "@/lib/admin/system-status";
+import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
 import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/EmailSettingsShell";
 import { DomainVerificationBanner } from "@/components/admin/email/DomainVerificationBanner";
 import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
@@ -58,6 +58,7 @@ interface EmailStatusResponse {
 interface SystemStatusResponse {
   items: SystemStatusItem[];
   summary: { ok: number; warn: number; error: number };
+  overall?: SystemStatusLevel;
 }
 
 const VALID_TABS = new Set<string>(CONTROL_CENTER_TABS.map((t) => t.id));

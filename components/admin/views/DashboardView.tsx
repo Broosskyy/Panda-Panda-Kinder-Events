@@ -246,15 +246,19 @@ export function DashboardView() {
           />
           <StatCard
             label="Systemstatus"
-            value={
-              stats?.security?.systemStatus === "legacy"
-                ? "Legacy"
-                : stats?.security?.systemStatus === "ok"
-                  ? "OK"
-                  : "—"
-            }
-            href="/admin/sicherheit"
+            value={stats?.security?.systemStatusLabel ?? "—"}
+            href="/admin/einstellungen?tab=system"
             icon={Shield}
+            sublabel={
+              stats?.security?.systemStatus === "ok"
+                ? "Alle wichtigen Prüfungen bestanden"
+                : stats?.security?.systemStatus === "warn"
+                  ? "Einige Hinweise vorhanden"
+                  : stats?.security?.systemStatus === "error"
+                    ? "Kritische Punkte offen"
+                    : undefined
+            }
+            highlight={stats?.security?.systemStatus === "error"}
           />
         </div>
       </section>

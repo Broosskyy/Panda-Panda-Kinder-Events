@@ -1,4 +1,5 @@
 import type { DomainRecords } from "resend";
+import { API_CHECK_UNAVAILABLE_MESSAGE } from "@/lib/admin/status-summary";
 import { normalizeProductionEmail } from "./sender";
 import { checkResendDomainLive } from "./resend-domain-check";
 import { DEFAULT_COMPANY_EMAIL } from "./constants";
@@ -158,7 +159,7 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
       : domainVerified
         ? "Domain verifiziert (DKIM-Details nicht verfügbar)."
         : liveCheck.state === "unknown"
-          ? `Status unbekannt — ${liveCheck.message}`
+          ? API_CHECK_UNAVAILABLE_MESSAGE
           : `DKIM noch nicht verifiziert — ${liveCheck.message}`,
   });
 
@@ -187,11 +188,11 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
   sending.push({
     id: "from_address",
     label: "From-Adresse erlaubt",
-    level: domainVerified ? "ok" : "error",
+    level: domainVerified ? "ok" : liveCheck.state === "unknown" ? "warn" : "error",
     message: domainVerified
       ? `Absender ${productionEmail} kann verwendet werden.`
       : liveCheck.state === "unknown"
-        ? `Status unbekannt — ${liveCheck.message}`
+        ? API_CHECK_UNAVAILABLE_MESSAGE
         : `Domain nicht verifiziert — ${liveCheck.message}`,
   });
 
@@ -221,7 +222,7 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
     });
   }
 
-  const canSend = apiKeySet && domainVerified;
+  const canSend = apiKeySet && (domainVerified || liveCheck.state === "unknown");
   return {
     apiKeySet,
     domain: liveCheck.domain ?? domain,
@@ -231,7 +232,7 @@ export async function getResendSendingSetup(senderEmail: string): Promise<Resend
       : !apiKeySet
         ? "RESEND_API_KEY fehlt."
         : liveCheck.state === "unknown"
-          ? `Resend API nicht erreichbar — ${liveCheck.message}`
+          ? API_CHECK_UNAVAILABLE_MESSAGE
           : "Absender-Domain ist noch nicht verifiziert.",
     sending,
     receiving,

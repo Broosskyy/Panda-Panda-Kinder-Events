@@ -275,6 +275,43 @@ for (const [input, expected] of logoCases) {
   else fail(`resolveEmailImageUrl("${input}")`, `expected ${expected}, got ${result}`);
 }
 
+// 16. System status polish
+const statusSummary = read("lib/admin/status-summary.ts");
+const systemStatus = read("lib/admin/system-status.ts");
+const emailSystemStatus = read("lib/admin/email-system-status.ts");
+const domainCheck = read("lib/email/resend-domain-check.ts");
+const dashboardStats = read("lib/admin/dashboard-stats.ts");
+
+if (statusSummary.includes("computeStatusSummary") && statusSummary.includes("isInformationalStatusItem")) {
+  ok("Shared status summary helper");
+} else {
+  fail("Status summary helper missing");
+}
+
+if (domainCheck.includes("API_CHECK_UNAVAILABLE_MESSAGE") && !domainCheck.includes("Status unbekannt")) {
+  ok("Domain check uses friendly unavailable message");
+} else {
+  fail("Domain check still shows Status unbekannt");
+}
+
+if (systemStatus.includes("overall: summary.overall") && systemStatus.includes("email_test")) {
+  ok("General system status computes overall + test email check");
+} else {
+  fail("General system status overall/test email missing");
+}
+
+if (emailSystemStatus.includes('id: "email_test"') && emailSystemStatus.includes("computeStatusSummary")) {
+  ok("Email system status has test email item + overall summary");
+} else {
+  fail("Email system status test email / overall missing");
+}
+
+if (dashboardStats.includes("getSystemStatus") && dashboardStats.includes("systemStatusLabel")) {
+  ok("Dashboard uses real system health status");
+} else {
+  fail("Dashboard system status not wired to health checks");
+}
+
 // 14. Documentation
 try {
   read("EMAIL_SETUP.md");

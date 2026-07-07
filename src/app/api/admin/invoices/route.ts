@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAdminContext, requireAdmin } from "@/lib/admin-route";
 import {
   archiveInvoice,
+  bulkArchiveInvoices,
+  bulkDeleteInvoices,
   cancelInvoice,
   createInvoiceFromQuote,
   deleteInvoice,
@@ -89,6 +91,26 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ invoice });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Stornieren fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "bulk_archive" && Array.isArray(body.ids)) {
+    try {
+      await bulkArchiveInvoices(body.ids as string[], ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Massenarchivierung fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 400 });
+    }
+  }
+
+  if (action === "bulk_delete" && Array.isArray(body.ids)) {
+    try {
+      await bulkDeleteInvoices(body.ids as string[], ctx);
+      return NextResponse.json({ success: true });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Massenlöschung fehlgeschlagen.";
       return NextResponse.json({ error: message }, { status: 400 });
     }
   }

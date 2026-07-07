@@ -14,25 +14,24 @@ export const BRAND = {
   backgroundColor: "#f4f1ea",
   alt: "Panda-Bande KinderEvents",
 
-  /** Header, Splash, Footer — unverändert */
+  /** Eine Quelle: Header, Splash, Favicon, PWA */
   master: "/assets/Logo.png",
 
-  /** Cache-Bust für Browser/PWA-Icons (bump bei Regeneration) */
   iconVersion: "7",
 
   markOnly: "/assets/Logo.png",
 
-  /** Browser- und App-Icons — generiert aus /assets/logo.png */
   assets: {
-    faviconPng: "/android-chrome-512x512.png",
-    favicon16: "/favicon-16x16.png",
-    favicon32: "/favicon-32x32.png",
+    faviconPng: "/favicon.png",
+    favicon16: "/icons/panda-icon-16.png",
+    favicon32: "/icons/panda-icon-32.png",
+    favicon48: "/icons/panda-icon-48.png",
+    favicon64: "/icons/panda-icon-64.png",
     faviconIco: "/favicon.ico",
-    appleTouchIcon: "/apple-touch-icon.png",
-    icon192: "/android-chrome-192x192.png",
-    icon512: "/android-chrome-512x512.png",
-    iconMaskable512: "/android-chrome-maskable-512x512.png",
-    mstile150: "/mstile-150x150.png",
+    appleTouchIcon: "/icons/panda-apple-touch-icon.png",
+    icon192: "/icons/panda-icon-192.png",
+    icon512: "/icons/panda-icon-512.png",
+    iconMaskable512: "/icons/panda-icon-maskable-512.png",
     ogImage: "/branding/og-image.png",
   },
 

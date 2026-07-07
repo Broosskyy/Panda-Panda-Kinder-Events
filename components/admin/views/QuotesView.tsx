@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, FileText, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { Copy, Download, FileText, Loader2, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { CrmDocumentListControls } from "@/components/admin/crm/CrmDocumentListControls";
 import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
 import {
   QuoteLineItemsEditor,
@@ -20,12 +21,13 @@ import {
   crmDocumentStatusVariant,
 } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
+import { paginateRows, sortCrmRows, type CrmSortDir, type CrmSortField } from "@/lib/admin/crm-list";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { useAdminPdf } from "@/lib/admin/use-admin-pdf";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
-import { downloadAdminPdf, openAdminPdf } from "@/lib/admin/open-pdf";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmCustomer, type CrmDocumentStatus, type CrmLineItem } from "@/lib/crm/types";
 
@@ -35,6 +37,7 @@ interface QuoteRow {
   title: string;
   status: CrmDocumentStatus;
   total_cents: number;
+  created_at?: string;
   archived_at?: string | null;
   customer?: { name: string; email?: string | null };
 }
@@ -45,6 +48,13 @@ const VIEW_OPTIONS = [
   { value: "active", label: "Aktiv" },
   { value: "archived", label: "Archiviert" },
 ];
+
+const STATUS_FILTER_OPTIONS = [
+  { value: "all", label: "Alle Status" },
+  ...Object.entries(CRM_STATUS_LABELS).map(([value, label]) => ({ value, label })),
+];
+
+const PAGE_SIZE = 10;
 
 const emptyForm = (taxRate = 19) => ({
   customer_id: "",
@@ -75,11 +85,42 @@ function FormSection({ title, children }: { title: string; children: React.React
   );
 }
 
+function exportQuotesCsv(rows: QuoteRow[]) {
+  const headers = ["Nummer", "Titel", "Kunde", "Status", "Betrag", "Erstellt"];
+  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const lines = rows.map((q) =>
+    [
+      q.quote_number,
+      q.title,
+      q.customer?.name ?? "",
+      CRM_STATUS_LABELS[q.status],
+      (q.total_cents / 100).toFixed(2).replace(".", ","),
+      q.created_at ? new Date(q.created_at).toLocaleDateString("de-DE") : "",
+    ]
+      .map(String)
+      .map(escape)
+      .join(","),
+  );
+  const csv = [headers.join(","), ...lines].join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = `angebote-${new Date().toISOString().slice(0, 10)}.csv`;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+
 export function QuotesView() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [customers, setCustomers] = useState<CrmCustomer[]>([]);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<QuoteView>("active");
+  const [sortField, setSortField] = useState<CrmSortField>("date");
+  const [sortDir, setSortDir] = useState<CrmSortDir>("desc");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [page, setPage] = useState(1);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
@@ -92,7 +133,6 @@ export function QuotesView() {
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
   const {
-    toast,
     withLoading,
     quoteCreated,
     quoteSent,
@@ -100,22 +140,42 @@ export function QuotesView() {
     quoteArchived,
     quoteDeleted,
     invoiceCreated,
+    success,
     error: showError,
   } = useAdminMessages();
-  const page = adminPageHeaderProps("angebote");
+  const pageMeta = adminPageHeaderProps("angebote");
   const empty = ADMIN_EMPTY_STATES.quotes;
+
+  const handlePdfError = useCallback(
+    (err: { message: string; detail?: string }) => {
+      showError("PDF konnte nicht erstellt werden.", err.detail ?? err.message, "Bitte Seite neu laden und erneut versuchen.");
+    },
+    [showError],
+  );
+  const { open: openPdf, download: downloadPdf, isLoading: isPdfLoading } = useAdminPdf(handlePdfError);
 
   const load = useCallback(() => {
     const params = new URLSearchParams();
     if (search) params.set("q", search);
     params.set("view", view);
-    fetch(`/api/admin/quotes?${params}`).then((r) => r.json()).then((d) => setQuotes(d.quotes ?? []));
+    fetch(`/api/admin/quotes?${params}`)
+      .then((r) => r.json())
+      .then((d) => {
+        setQuotes(d.quotes ?? []);
+        setSelected(new Set());
+      });
   }, [search, view]);
 
   useEffect(() => {
     load();
-    fetch("/api/admin/customers").then((r) => r.json()).then((d) => setCustomers(d.customers ?? []));
+    fetch("/api/admin/customers")
+      .then((r) => r.json())
+      .then((d) => setCustomers(d.customers ?? []));
   }, [load]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [search, view, statusFilter, sortField, sortDir]);
 
   useEffect(() => {
     fetch("/api/admin/settings")
@@ -130,6 +190,19 @@ export function QuotesView() {
       })
       .catch(() => undefined);
   }, []);
+
+  const filteredQuotes = useMemo(() => {
+    let rows = quotes;
+    if (statusFilter !== "all") {
+      rows = rows.filter((q) => q.status === statusFilter);
+    }
+    return sortCrmRows(rows, sortField, sortDir);
+  }, [quotes, statusFilter, sortField, sortDir]);
+
+  const { pageRows, totalPages } = useMemo(
+    () => paginateRows(filteredQuotes, page, PAGE_SIZE),
+    [filteredQuotes, page],
+  );
 
   const resetForm = () => {
     setForm(emptyForm(defaultTaxRate));
@@ -242,11 +315,7 @@ export function QuotesView() {
   };
 
   const pdfUrl = (id: string) => `/api/admin/quotes/${id}/pdf`;
-
-  const handlePdfError = (err: { message: string; detail?: string }) => {
-    toast(err.message, "error");
-    if (err.detail) console.error("PDF error:", err.detail);
-  };
+  const pdfKey = (id: string, action: "open" | "download") => `${id}-${action}`;
 
   const archiveQuote = async (id: string) => {
     if (!confirmDanger(ADMIN_CONFIRM.archiveQuote)) return;
@@ -269,7 +338,49 @@ export function QuotesView() {
       body: JSON.stringify({ id }),
     });
     const data = await res.json();
-    if (!res.ok) return showError("Löschen fehlgeschlagen.", data.error);
+    if (!res.ok) return showError("Dokument konnte nicht gelöscht werden.", data.error, "Nur Entwürfe oder nicht verknüpfte Angebote können gelöscht werden.");
+    quoteDeleted();
+    load();
+  };
+
+  const duplicateQuote = async (id: string) => {
+    const res = await fetch("/api/admin/quotes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "duplicate" }),
+    });
+    const data = await res.json();
+    if (!res.ok) return showError("Duplizieren fehlgeschlagen.", data.error);
+    success(`Angebot ${data.quote?.quote_number ?? ""} als Kopie erstellt.`);
+    load();
+  };
+
+  const bulkArchive = async () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (!confirmDanger(`Möchten Sie ${ids.length} Angebot(e) archivieren?`)) return;
+    const res = await fetch("/api/admin/quotes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "bulk_archive", ids }),
+    });
+    const data = await res.json();
+    if (!res.ok) return showError("Archivieren fehlgeschlagen.", data.error);
+    quoteArchived();
+    load();
+  };
+
+  const bulkDelete = async () => {
+    const ids = [...selected];
+    if (!ids.length) return;
+    if (!confirmDanger(`Möchten Sie ${ids.length} Angebot(e) wirklich löschen?`)) return;
+    const res = await fetch("/api/admin/quotes", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "bulk_delete", ids }),
+    });
+    const data = await res.json();
+    if (!res.ok) return showError("Dokument konnte nicht gelöscht werden.", data.error);
     quoteDeleted();
     load();
   };
@@ -285,6 +396,23 @@ export function QuotesView() {
     invoiceCreated(data.invoice?.invoice_number);
   };
 
+  const toggleSelect = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selected.size === pageRows.length) {
+      setSelected(new Set());
+    } else {
+      setSelected(new Set(pageRows.map((q) => q.id)));
+    }
+  };
+
   const customerOptions = useMemo(
     () => [{ value: "", label: "Kunde wählen…" }, ...customers.map((c) => ({ value: c.id, label: c.name }))],
     [customers],
@@ -295,7 +423,7 @@ export function QuotesView() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader {...page}>
+      <AdminPageHeader {...pageMeta}>
         <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => { resetForm(); setShowForm(true); }}>
           Neues Angebot
         </AdminButton>
@@ -305,6 +433,25 @@ export function QuotesView() {
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Angebote suchen…" />
         <AdminFilterSelect value={view} onChange={(v) => setView(v as QuoteView)} options={VIEW_OPTIONS} />
       </AdminFilterBar>
+
+      {quotes.length > 0 ? (
+        <CrmDocumentListControls
+          sortField={sortField}
+          sortDir={sortDir}
+          onSortFieldChange={setSortField}
+          onSortDirChange={setSortDir}
+          statusFilter={statusFilter}
+          onStatusFilterChange={setStatusFilter}
+          statusOptions={STATUS_FILTER_OPTIONS}
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          selectedCount={selected.size}
+          onBulkArchive={view === "active" ? () => void bulkArchive() : undefined}
+          onBulkDelete={() => void bulkDelete()}
+          onExport={() => exportQuotesCsv(filteredQuotes.filter((q) => selected.has(q.id)).length ? filteredQuotes.filter((q) => selected.has(q.id)) : filteredQuotes)}
+        />
+      ) : null}
 
       {showForm ? (
         <AdminCard title={editingId ? "Angebot bearbeiten" : "Neues Angebot"}>
@@ -385,7 +532,7 @@ export function QuotesView() {
         </AdminCard>
       ) : null}
 
-      {quotes.length === 0 ? (
+      {filteredQuotes.length === 0 ? (
         <AdminEmptyState
           icon={FileText}
           title={view === "archived" ? "Keine archivierten Angebote" : empty.title}
@@ -395,58 +542,106 @@ export function QuotesView() {
         />
       ) : (
         <div className="space-y-3">
-          {quotes.map((q) => (
-            <AdminCard key={q.id}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-text-primary">{q.quote_number} — {q.title}</p>
-                  <p className="text-sm text-text-muted">{q.customer?.name} · {formatCents(q.total_cents)}</p>
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    <AdminStatusBadge label={CRM_STATUS_LABELS[q.status]} variant={crmDocumentStatusVariant(q.status)} />
-                    {q.archived_at ? <AdminStatusBadge label="Archiviert" variant="muted" /> : null}
+          {pageRows.length > 1 ? (
+            <label className="flex items-center gap-2 px-1 text-sm text-text-muted">
+              <input
+                type="checkbox"
+                checked={selected.size === pageRows.length && pageRows.length > 0}
+                onChange={toggleSelectAll}
+                className="h-4 w-4 rounded border-border"
+              />
+              Alle auf dieser Seite auswählen
+            </label>
+          ) : null}
+          {pageRows.map((q) => {
+            const openKey = pdfKey(q.id, "open");
+            const downloadKey = pdfKey(q.id, "download");
+            const pdfBusy = isPdfLoading(openKey) || isPdfLoading(downloadKey);
+
+            return (
+              <AdminCard key={q.id}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="flex min-w-0 flex-1 gap-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(q.id)}
+                      onChange={() => toggleSelect(q.id)}
+                      className="mt-1 h-4 w-4 shrink-0 rounded border-border"
+                      aria-label={`${q.quote_number} auswählen`}
+                    />
+                    <div>
+                      <p className="font-semibold text-text-primary">{q.quote_number} — {q.title}</p>
+                      <p className="text-sm text-text-muted">{q.customer?.name} · {formatCents(q.total_cents)}</p>
+                      <div className="mt-1 flex flex-wrap gap-2">
+                        <AdminStatusBadge
+                          label={CRM_STATUS_LABELS[q.status]}
+                          variant={crmDocumentStatusVariant(q.status, Boolean(q.archived_at))}
+                        />
+                        {q.archived_at ? <AdminStatusBadge label="Archiviert" variant="muted" /> : null}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => void startEdit(q.id)}>
+                      {ADMIN_BTN.edit}
+                    </AdminButton>
+                    <AdminButton
+                      variant="secondary"
+                      icon={<Copy className="h-4 w-4" />}
+                      onClick={() => void duplicateQuote(q.id)}
+                    >
+                      {ADMIN_BTN.duplicate}
+                    </AdminButton>
+                    <AdminButton
+                      variant="secondary"
+                      disabled={pdfBusy}
+                      icon={isPdfLoading(openKey) ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
+                      onClick={() => void openPdf(pdfUrl(q.id), openKey)}
+                    >
+                      {isPdfLoading(openKey) ? "PDF wird erstellt…" : ADMIN_BTN.pdfOpen}
+                    </AdminButton>
+                    <AdminButton
+                      variant="secondary"
+                      disabled={pdfBusy}
+                      icon={
+                        isPdfLoading(downloadKey) ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Download className="h-4 w-4" />
+                        )
+                      }
+                      onClick={() => void downloadPdf(pdfUrl(q.id), downloadKey, `${q.quote_number}.pdf`)}
+                    >
+                      {ADMIN_BTN.pdfDownload}
+                    </AdminButton>
+                    <AdminButton
+                      variant="primary"
+                      icon={<Send className="h-4 w-4" />}
+                      onClick={() => {
+                        setSendTarget(q);
+                        setSendToCustomer(true);
+                        setCopyToBusiness(true);
+                        setSendError(null);
+                      }}
+                    >
+                      {ADMIN_BTN.send}
+                    </AdminButton>
+                    {!q.archived_at ? (
+                      <AdminButton variant="secondary" onClick={() => void archiveQuote(q.id)}>
+                        {ADMIN_BTN.archive}
+                      </AdminButton>
+                    ) : null}
+                    <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void deleteQuote(q.id)}>
+                      {ADMIN_BTN.delete}
+                    </AdminButton>
+                    <AdminButton variant="secondary" onClick={() => toInvoice(q.id)}>
+                      → Rechnung
+                    </AdminButton>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => void startEdit(q.id)}>
-                    {ADMIN_BTN.edit}
-                  </AdminButton>
-                  <AdminButton variant="secondary" onClick={() => void openAdminPdf(pdfUrl(q.id), handlePdfError)}>
-                    {ADMIN_BTN.pdfOpen}
-                  </AdminButton>
-                  <AdminButton
-                    variant="secondary"
-                    icon={<Download className="h-4 w-4" />}
-                    onClick={() => void downloadAdminPdf(pdfUrl(q.id), handlePdfError, `${q.quote_number}.pdf`)}
-                  >
-                    {ADMIN_BTN.pdfDownload}
-                  </AdminButton>
-                  <AdminButton
-                    variant="primary"
-                    icon={<Send className="h-4 w-4" />}
-                    onClick={() => {
-                      setSendTarget(q);
-                      setSendToCustomer(true);
-                      setCopyToBusiness(true);
-                      setSendError(null);
-                    }}
-                  >
-                    {ADMIN_BTN.send}
-                  </AdminButton>
-                  {!q.archived_at ? (
-                    <AdminButton variant="secondary" onClick={() => void archiveQuote(q.id)}>
-                      {ADMIN_BTN.archive}
-                    </AdminButton>
-                  ) : null}
-                  <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void deleteQuote(q.id)}>
-                    {ADMIN_BTN.delete}
-                  </AdminButton>
-                  <AdminButton variant="secondary" onClick={() => toInvoice(q.id)}>
-                    → Rechnung
-                  </AdminButton>
-                </div>
-              </div>
-            </AdminCard>
-          ))}
+              </AdminCard>
+            );
+          })}
         </div>
       )}
 

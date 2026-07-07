@@ -51,6 +51,7 @@ function ReviewCard({
       rating: review.rating,
       reviewText: review.text,
       category: review.event_type,
+      date: formatReviewDate(review.created_at),
     });
   };
 
@@ -63,6 +64,7 @@ function ReviewCard({
       rating: review.rating,
       reviewText: review.text,
       category: review.event_type,
+      date: formatReviewDate(review.created_at),
     });
   };
 
@@ -190,6 +192,7 @@ export function Testimonials({
           rating: review.rating,
           reviewText: review.text,
           category: review.event_type,
+          date: formatReviewDate(review.created_at),
         });
       }
       return items;

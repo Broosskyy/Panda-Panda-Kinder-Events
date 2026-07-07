@@ -15,6 +15,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("reviews")
     .select("*")
+    .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
   if (error) {
@@ -22,7 +23,14 @@ export async function GET() {
   }
 
   return NextResponse.json({
-    reviews: (data ?? []).map((row) => mapReviewRow(row as Record<string, unknown>)),
+    reviews: (data ?? []).map((row) => {
+      const mapped = mapReviewRow(row as Record<string, unknown>);
+      return {
+        ...mapped,
+        approved: Boolean((row as Record<string, unknown>).approved),
+        sort_order: Number((row as Record<string, unknown>).sort_order ?? 0),
+      };
+    }),
   });
 }
 
@@ -30,7 +38,8 @@ export async function PATCH(request: Request) {
   const authError = await requireAdmin();
   if (authError) return authError;
 
-  const { id, approved, admin_reply, verified, profile_image_url, event_image_url } = await request.json();
+  const { id, approved, admin_reply, verified, profile_image_url, event_image_url, name, text, rating, event_type, sort_order } =
+    await request.json();
 
   if (!id) {
     return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
@@ -40,6 +49,11 @@ export async function PATCH(request: Request) {
   if (typeof approved === "boolean") updates.approved = approved;
   if (admin_reply !== undefined) updates.admin_reply = admin_reply;
   if (typeof verified === "boolean") updates.verified = verified;
+  if (typeof name === "string" && name.trim()) updates.name = name.trim();
+  if (typeof text === "string") updates.text = text.trim();
+  if (typeof event_type === "string") updates.event_type = event_type.trim();
+  if (typeof rating === "number" && rating >= 1 && rating <= 5) updates.rating = Math.round(rating);
+  if (typeof sort_order === "number" && Number.isFinite(sort_order)) updates.sort_order = Math.round(sort_order);
   if (profile_image_url !== undefined) {
     updates.profile_image_url =
       typeof profile_image_url === "string" ? toStoragePath("reviews", profile_image_url) : profile_image_url;

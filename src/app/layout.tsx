@@ -120,6 +120,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preload" href={BRAND.master} as="image" type="image/png" />
         <link rel="icon" href={withIconVersion(BRAND.assets.favicon32)} type="image/png" sizes="32x32" />
         <link rel="icon" href={withIconVersion(BRAND.assets.favicon16)} type="image/png" sizes="16x16" />
+        <link rel="icon" href={withIconVersion(BRAND.assets.faviconPng)} type="image/png" sizes="512x512" />
         <link rel="shortcut icon" href={withIconVersion(BRAND.assets.faviconIco)} />
         <link rel="apple-touch-icon" href={withIconVersion(BRAND.assets.appleTouchIcon)} sizes="180x180" />
         <meta name="msapplication-config" content={`/branding/browserconfig.xml?v=${BRAND.iconVersion}`} />

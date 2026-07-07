@@ -1,4 +1,4 @@
-import { EMAIL_BRAND } from "@/lib/email/brand-tokens";
+import { SYSTEM_EMAIL_DEFAULTS } from "@/lib/email/brand-tokens";
 import { buildEmailCtaButton, buildEmailInfoBox, wrapEmailHtml } from "@/lib/email/html";
 import { getDefaultEmailLogoUrl, getEmailAssetBaseUrl } from "@/lib/email/resolve-image-url";
 import { getSiteUrl } from "@/lib/site-url";
@@ -11,7 +11,7 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-export function buildEmailButton(href: string, label: string, primaryColor: string = EMAIL_BRAND.primary): string {
+export function buildEmailButton(href: string, label: string, primaryColor: string = SYSTEM_EMAIL_DEFAULTS.primary): string {
   return buildEmailCtaButton(href, label, primaryColor);
 }
 
@@ -20,15 +20,15 @@ export function buildInfoTable(rows: { label: string; value: string }[]): string
     .filter((row) => row.value.trim())
     .map(
       (row) => `<tr>
-        <td style="padding:10px 0;border-bottom:1px solid ${EMAIL_BRAND.border};font-size:12px;font-weight:600;color:${EMAIL_BRAND.textMuted};text-transform:uppercase;letter-spacing:.04em;width:38%;vertical-align:top;">${escapeHtml(row.label)}</td>
-        <td style="padding:10px 0 10px 12px;border-bottom:1px solid ${EMAIL_BRAND.border};font-size:15px;line-height:1.5;color:${EMAIL_BRAND.text};vertical-align:top;">${escapeHtml(row.value)}</td>
+        <td style="padding:10px 0;border-bottom:1px solid ${SYSTEM_EMAIL_DEFAULTS.border};font-size:12px;font-weight:600;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};text-transform:uppercase;letter-spacing:.04em;width:38%;vertical-align:top;">${escapeHtml(row.label)}</td>
+        <td style="padding:10px 0 10px 12px;border-bottom:1px solid ${SYSTEM_EMAIL_DEFAULTS.border};font-size:15px;line-height:1.5;color:${SYSTEM_EMAIL_DEFAULTS.text};vertical-align:top;">${escapeHtml(row.value)}</td>
       </tr>`,
     )
     .join("");
 
   if (!items) return "";
 
-  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${EMAIL_BRAND.accent};border:1px solid ${EMAIL_BRAND.border};border-radius:16px;margin:24px 0;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${SYSTEM_EMAIL_DEFAULTS.accent};border:1px solid ${SYSTEM_EMAIL_DEFAULTS.border};border-radius:16px;margin:24px 0;">
     <tr><td style="padding:18px 20px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation">${items}</table>
     </td></tr>
@@ -44,21 +44,20 @@ interface BrandedEmailOptions {
 }
 
 export function buildBrandedEmail(opts: BrandedEmailOptions): string {
-  const primary = opts.primaryColor ?? EMAIL_BRAND.primary;
+  const primary = opts.primaryColor ?? SYSTEM_EMAIL_DEFAULTS.primary;
   return wrapEmailHtml({
     baseUrl: getEmailAssetBaseUrl(),
     logoUrl: opts.logoUrl || getDefaultEmailLogoUrl(),
     companyName: opts.companyName,
-    primaryColor: primary,
     branding: {
       primaryColor: primary,
       buttonColor: primary,
-      backgroundColor: EMAIL_BRAND.pageBackground,
-      cardBackground: EMAIL_BRAND.cardBackground,
-      accentColor: EMAIL_BRAND.accent,
-      textColor: EMAIL_BRAND.text,
-      textMutedColor: EMAIL_BRAND.textMuted,
-      footerColor: EMAIL_BRAND.accent,
+      backgroundColor: SYSTEM_EMAIL_DEFAULTS.pageBackground,
+      cardBackground: SYSTEM_EMAIL_DEFAULTS.cardBackground,
+      accentColor: SYSTEM_EMAIL_DEFAULTS.accent,
+      textColor: SYSTEM_EMAIL_DEFAULTS.text,
+      textMutedColor: SYSTEM_EMAIL_DEFAULTS.textMuted,
+      footerColor: SYSTEM_EMAIL_DEFAULTS.accent,
     },
     bodyHtml: opts.bodyHtml,
     footerHtml: opts.footerHtml,
@@ -81,12 +80,12 @@ export function buildInquiryAdminEmail(
   data: InquiryAdminEmailData,
   opts: { companyName: string; logoUrl: string; primaryColor?: string },
 ): { html: string; text: string } {
-  const primary = opts.primaryColor ?? EMAIL_BRAND.primary;
+  const primary = opts.primaryColor ?? SYSTEM_EMAIL_DEFAULTS.primary;
   const adminUrl = `${getSiteUrl()}/admin/anfragen`;
   const bodyHtml = `
     <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:${primary};text-transform:uppercase;letter-spacing:.05em;">Neue Anfrage</p>
-    <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25;color:${EMAIL_BRAND.text};">Neue Anfrage eingegangen</h1>
-    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.textMuted};">Eine neue Anfrage ist über die Website eingegangen. Alle Details auf einen Blick:</p>
+    <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25;color:${SYSTEM_EMAIL_DEFAULTS.text};">Neue Anfrage eingegangen</h1>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};">Eine neue Anfrage ist über die Website eingegangen. Alle Details auf einen Blick:</p>
     ${buildInfoTable(
       [
         { label: "Name", value: data.name },
@@ -101,7 +100,7 @@ export function buildInquiryAdminEmail(
       ],
     )}
     ${buildEmailButton(adminUrl, "Anfrage im Admin öffnen", primary)}
-    <p style="margin:0;font-size:13px;color:${EMAIL_BRAND.textMuted};">Antworten direkt an <a href="mailto:${escapeHtml(data.email)}" style="color:${primary};">${escapeHtml(data.email)}</a></p>`;
+    <p style="margin:0;font-size:13px;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};">Antworten direkt an <a href="mailto:${escapeHtml(data.email)}" style="color:${primary};">${escapeHtml(data.email)}</a></p>`;
 
   const text = [
     "Neue Anfrage eingegangen",
@@ -139,12 +138,12 @@ export function buildReviewAdminEmail(
   data: ReviewAdminEmailData,
   opts: { companyName: string; logoUrl: string; primaryColor?: string },
 ): { html: string; text: string } {
-  const primary = opts.primaryColor ?? EMAIL_BRAND.primary;
+  const primary = opts.primaryColor ?? SYSTEM_EMAIL_DEFAULTS.primary;
   const adminUrl = `${getSiteUrl()}/admin/bewertungen`;
   const stars = "★".repeat(data.rating) + "☆".repeat(5 - data.rating);
   const bodyHtml = `
     <p style="margin:0 0 8px;font-size:13px;font-weight:600;color:${primary};text-transform:uppercase;letter-spacing:.05em;">Neue Bewertung</p>
-    <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25;color:${EMAIL_BRAND.text};">Neue Bewertung wartet auf Prüfung</h1>
+    <h1 style="margin:0 0 16px;font-size:26px;line-height:1.25;color:${SYSTEM_EMAIL_DEFAULTS.text};">Neue Bewertung wartet auf Prüfung</h1>
     ${buildInfoTable(
       [
         { label: "Name", value: data.name },
@@ -153,7 +152,7 @@ export function buildReviewAdminEmail(
         { label: "Datum", value: data.submittedAt },
       ],
     )}
-    <blockquote style="margin:0 0 20px;padding:16px 18px;border-left:4px solid ${primary};background:${EMAIL_BRAND.accent};border-radius:0 16px 16px 0;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.text};">&ldquo;${escapeHtml(data.text)}&rdquo;</blockquote>
+    <blockquote style="margin:0 0 20px;padding:16px 18px;border-left:4px solid ${primary};background:${SYSTEM_EMAIL_DEFAULTS.accent};border-radius:0 16px 16px 0;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">&ldquo;${escapeHtml(data.text)}&rdquo;</blockquote>
     ${buildEmailButton(adminUrl, "Bewertung im Admin prüfen", primary)}`;
 
   const text = [
@@ -180,16 +179,17 @@ export function buildInquiryAutoReplyFallback(
 ): { bodyHtml: string; bodyText: string } {
   const firstName = customerName.trim().split(/\s+/)[0] || customerName;
   const site = websiteUrl || getSiteUrl();
-  const primary = EMAIL_BRAND.primary;
+  const primary = SYSTEM_EMAIL_DEFAULTS.primary;
   const bodyHtml = `
-    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:${EMAIL_BRAND.text};">Hallo ${escapeHtml(firstName)},</p>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.text};">vielen Dank für eure Anfrage.</p>
-    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.text};">Wir haben eure Nachricht erhalten und melden uns persönlich innerhalb von 24 Stunden zurück.</p>
-    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.text};">Bis dahin könnt ihr euch entspannt zurücklehnen — wir schauen uns euren Anlass in Ruhe an.</p>
+    <p style="margin:0 0 16px;font-size:16px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">Hallo ${escapeHtml(firstName)},</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">vielen Dank für eure Anfrage.</p>
+    <p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">Wir haben eure Nachricht erhalten und melden uns persönlich innerhalb von 24 Stunden zurück.</p>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">Bis dahin könnt ihr euch entspannt zurücklehnen — wir schauen uns euren Anlass in Ruhe an.</p>
     ${buildEmailInfoBox(
       ["Anfrage erhalten", "Persönliche Rückmeldung", "Kostenlos & unverbindlich"],
-      EMAIL_BRAND.accent,
-      EMAIL_BRAND.border,
+      SYSTEM_EMAIL_DEFAULTS.accent,
+      SYSTEM_EMAIL_DEFAULTS.border,
+      SYSTEM_EMAIL_DEFAULTS.text,
     )}
     ${buildEmailCtaButton(site, "Zur Website", primary)}`;
 
@@ -213,20 +213,20 @@ export function buildCrmDocumentBodyHtml(opts: {
   totalFormatted: string;
   primaryColor?: string;
 }): string {
-  const primary = opts.primaryColor ?? EMAIL_BRAND.primary;
+  const primary = opts.primaryColor ?? SYSTEM_EMAIL_DEFAULTS.primary;
   const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
   return `
-    <p style="margin:0 0 12px;font-size:16px;color:${EMAIL_BRAND.text};">Guten Tag ${escapeHtml(opts.customerName)},</p>
-    <p style="margin:0 0 8px;font-size:12px;color:${EMAIL_BRAND.textMuted};text-transform:uppercase;letter-spacing:.05em;">${label} ${escapeHtml(opts.documentNumber)}</p>
-    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.textMuted};">
+    <p style="margin:0 0 12px;font-size:16px;color:${SYSTEM_EMAIL_DEFAULTS.text};">Guten Tag ${escapeHtml(opts.customerName)},</p>
+    <p style="margin:0 0 8px;font-size:12px;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};text-transform:uppercase;letter-spacing:.05em;">${label} ${escapeHtml(opts.documentNumber)}</p>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};">
       anbei erhalten Sie ${opts.documentType === "quote" ? "unser Angebot" : "Ihre Rechnung"} als PDF.
     </p>
-    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${EMAIL_BRAND.accent};border:1px solid ${EMAIL_BRAND.border};border-radius:16px;margin-bottom:24px;">
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${SYSTEM_EMAIL_DEFAULTS.accent};border:1px solid ${SYSTEM_EMAIL_DEFAULTS.border};border-radius:16px;margin-bottom:24px;">
       <tr><td style="padding:18px 20px;">
-        <p style="margin:0;font-size:12px;color:${EMAIL_BRAND.textMuted};text-transform:uppercase;letter-spacing:.05em;">Gesamtbetrag</p>
+        <p style="margin:0;font-size:12px;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};text-transform:uppercase;letter-spacing:.05em;">Gesamtbetrag</p>
         <p style="margin:8px 0 0;font-size:26px;font-weight:700;color:${primary};">${escapeHtml(opts.totalFormatted)}</p>
       </td></tr>
     </table>
-    <p style="margin:0 0 8px;font-size:13px;color:${EMAIL_BRAND.textMuted};">PDF-Anhang: <strong>${escapeHtml(opts.documentNumber)}.pdf</strong></p>
-    <p style="margin:0;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.text};">Bei Fragen melden Sie sich gerne — wir helfen Ihnen persönlich weiter.</p>`;
+    <p style="margin:0 0 8px;font-size:13px;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};">PDF-Anhang: <strong>${escapeHtml(opts.documentNumber)}.pdf</strong></p>
+    <p style="margin:0;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">Bei Fragen melden Sie sich gerne — wir helfen Ihnen persönlich weiter.</p>`;
 }

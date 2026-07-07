@@ -3,7 +3,7 @@ import type { SiteEmailSettings } from "@/lib/cms/types";
 import { applyTemplateVariables } from "@/lib/email/variables";
 import { buildEmailVariableContext, renderEmailFromTemplate } from "@/lib/email/render";
 import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
-import { EMAIL_BRAND } from "@/lib/email/brand-tokens";
+import { SYSTEM_EMAIL_DEFAULTS } from "@/lib/email/brand-tokens";
 
 function plainTextToHtml(text: string): string {
   const escaped = text
@@ -12,7 +12,7 @@ function plainTextToHtml(text: string): string {
     .replace(/>/g, "&gt;");
   return escaped
     .split(/\n\n+/)
-    .map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.text};">${p.replace(/\n/g, "<br/>")}</p>`)
+    .map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">${p.replace(/\n/g, "<br/>")}</p>`)
     .join("");
 }
 
@@ -43,10 +43,10 @@ function buildOptionalFooterHtml(vars: Record<string, string>): string {
   if (vars.company_phone?.trim()) bits.push(vars.company_phone.trim());
   if (vars.company_email?.trim()) bits.push(vars.company_email.trim());
   const contactLine = bits.length
-    ? `<p style="margin:8px 0 0;font-size:12px;color:${EMAIL_BRAND.textMuted};">${bits.join(" · ")}</p>`
+    ? `<p style="margin:8px 0 0;font-size:12px;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};">${bits.join(" · ")}</p>`
     : "";
   const websiteLine = vars.company_website?.trim()
-    ? `<p style="margin:4px 0 0;font-size:12px;color:${EMAIL_BRAND.textMuted};"><a href="${vars.company_website}" style="color:${EMAIL_BRAND.primary};">${vars.company_website}</a></p>`
+    ? `<p style="margin:4px 0 0;font-size:12px;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};"><a href="${vars.company_website}" style="color:${SYSTEM_EMAIL_DEFAULTS.primary};">${vars.company_website}</a></p>`
     : "";
   return `${contactLine}${websiteLine}`;
 }

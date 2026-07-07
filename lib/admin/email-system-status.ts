@@ -7,18 +7,24 @@ import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
 import {
   API_CHECK_UNAVAILABLE_MESSAGE,
+  DOMAIN_MANUAL_CONFIRM_MESSAGE,
+  domainStatusUserMessage,
+  isTestEmailLog,
+} from "@/lib/email/domain-status-copy";
+import {
   computeStatusSummary,
   softenUnavailableApiLevel,
+  softenWhenTestMailSucceeded,
 } from "@/lib/admin/status-summary";
 
-function levelFromResend(level: string, message: string): SystemStatusLevel {
+function levelFromResend(
+  level: string,
+  message: string,
+  hasSuccessfulTest: boolean,
+): SystemStatusLevel {
   if (level === "ok") return "ok";
-  if (level === "error") return softenUnavailableApiLevel("error", message);
-  return "warn";
-}
-
-function isTestEmailLog(log: { template_slug: string | null; subject: string; status: string }): boolean {
-  return log.status === "sent" && (log.template_slug === "test" || log.subject.includes("Test-E-Mail"));
+  const softened = level === "error" ? softenUnavailableApiLevel("error", message) : "warn";
+  return softenWhenTestMailSucceeded(softened, message, hasSuccessfulTest);
 }
 
 /** Laienfreundlicher E-Mail-Systemstatus für Admin → E-Mail → Systemstatus */
@@ -33,21 +39,34 @@ export async function getEmailSystemStatus(): Promise<{
   const liveDomain = await checkResendDomainLive(email.senderEmail);
   const senderDomain = email.senderEmail?.includes("@") ? email.senderEmail.split("@")[1] : null;
 
+  let hasSuccessfulTest = false;
+  try {
+    const logs = await listEmailLogs(30);
+    hasSuccessfulTest = logs.some(isTestEmailLog);
+  } catch {
+    hasSuccessfulTest = false;
+  }
+
+  const domainUnknownWithTest = liveDomain.state === "unknown" && hasSuccessfulTest;
+  const domainLevel: SystemStatusLevel =
+    liveDomain.state === "verified"
+      ? "ok"
+      : domainUnknownWithTest
+        ? "ok"
+        : liveDomain.state === "unknown"
+          ? "warn"
+          : "error";
+
   items.push({
     id: "resend_domain_live",
     label: "Versand-Domain (Resend)",
-    level: liveDomain.state === "verified" ? "ok" : liveDomain.state === "unknown" ? "warn" : "error",
-    message:
-      liveDomain.state === "unknown"
-        ? API_CHECK_UNAVAILABLE_MESSAGE
-        : liveDomain.state === "verified"
-          ? `Domain „${liveDomain.domain ?? senderDomain}" ist verifiziert und kann zum Versand genutzt werden.`
-          : `Domain „${liveDomain.domain ?? senderDomain}" ist in Resend noch nicht verifiziert.`,
+    level: domainLevel,
+    message: domainStatusUserMessage(liveDomain.state, hasSuccessfulTest),
     action:
-      liveDomain.state === "verified"
+      liveDomain.state === "verified" || domainUnknownWithTest
         ? undefined
         : liveDomain.state === "unknown"
-          ? "Wenn E-Mails bereits ankommen, ist alles in Ordnung — die automatische Prüfung war nur nicht möglich."
+          ? "Optional: Domain-Status im Resend-Dashboard prüfen."
           : `Resend-Dashboard öffnen und Domain „${liveDomain.domain ?? senderDomain ?? "pb-kinderevents.de"}" verifizieren.`,
   });
 
@@ -64,11 +83,13 @@ export async function getEmailSystemStatus(): Promise<{
   items.push({
     id: "resend_connected",
     label: "Versand-Dienst verbunden",
-    level: resendOk ? "ok" : "error",
+    level: resendOk || hasSuccessfulTest ? "ok" : "error",
     message: resendOk
       ? "Der automatische E-Mail-Versand ist eingerichtet."
-      : "Der Versand-Dienst ist nicht verbunden — automatische E-Mails können nicht gesendet werden.",
-    action: resendOk ? undefined : "RESEND_API_KEY in den Server-Einstellungen setzen.",
+      : hasSuccessfulTest
+        ? "Versand funktioniert — Test-E-Mail wurde erfolgreich zugestellt."
+        : "Der Versand-Dienst ist nicht verbunden — automatische E-Mails können nicht gesendet werden.",
+    action: resendOk || hasSuccessfulTest ? undefined : "RESEND_API_KEY in den Server-Einstellungen setzen.",
   });
 
   items.push({
@@ -95,16 +116,17 @@ export async function getEmailSystemStatus(): Promise<{
       for (const item of setup.sending) {
         if (item.id === "api_key") continue;
         const label = friendlyLabels[item.id] ?? item.label;
-        const level = levelFromResend(item.level, item.message);
-        items.push({
-          id: `email_${item.id}`,
-          label,
-          level,
-          message:
-            level === "warn" && item.level === "error"
-              ? API_CHECK_UNAVAILABLE_MESSAGE
-              : item.message,
-        });
+        let level = levelFromResend(item.level, item.message, hasSuccessfulTest);
+        let message = item.message;
+        if (hasSuccessfulTest && (liveDomain.state === "unknown" || item.level !== "ok")) {
+          if (item.id === "from_address" || item.id === "domain_dkim") {
+            level = "ok";
+            message = DOMAIN_MANUAL_CONFIRM_MESSAGE;
+          }
+        } else if (level === "warn" && item.level === "error") {
+          message = API_CHECK_UNAVAILABLE_MESSAGE;
+        }
+        items.push({ id: `email_${item.id}`, label, level, message });
       }
 
       items.push({
@@ -112,17 +134,20 @@ export async function getEmailSystemStatus(): Promise<{
         label: "DMARC (Schutz vor Fälschungen)",
         level: "warn",
         message:
-          setup.sending.some((s) => s.id === "domain_dkim" && s.level === "ok")
+          setup.sending.some((s) => s.id === "domain_dkim" && s.level === "ok") || hasSuccessfulTest
             ? "Optional — DMARC-Eintrag beim Domain-Anbieter prüfen (empfohlen)."
             : "Optional — DMARC kann eingerichtet werden, sobald DKIM/SPF aktiv sind.",
       });
 
+      const versandOk = setup.canSend || hasSuccessfulTest || domainUnknownWithTest;
       items.push({
         id: "api_reachable",
         label: "Versand bereit",
-        level: setup.canSend ? "ok" : liveDomain.state === "unknown" ? "warn" : "error",
-        message: setup.canSend
-          ? "E-Mails können versendet werden."
+        level: versandOk ? "ok" : liveDomain.state === "unknown" ? "warn" : "error",
+        message: versandOk
+          ? hasSuccessfulTest && liveDomain.state !== "verified"
+            ? DOMAIN_MANUAL_CONFIRM_MESSAGE
+            : "E-Mails können versendet werden."
           : liveDomain.state === "unknown"
             ? API_CHECK_UNAVAILABLE_MESSAGE
             : setup.blockReason ?? "Versand ist noch nicht freigegeben.",
@@ -131,8 +156,8 @@ export async function getEmailSystemStatus(): Promise<{
       items.push({
         id: "api_reachable",
         label: "Versand bereit",
-        level: "warn",
-        message: API_CHECK_UNAVAILABLE_MESSAGE,
+        level: hasSuccessfulTest ? "ok" : "warn",
+        message: hasSuccessfulTest ? DOMAIN_MANUAL_CONFIRM_MESSAGE : API_CHECK_UNAVAILABLE_MESSAGE,
       });
     }
   }

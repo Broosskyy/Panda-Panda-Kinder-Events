@@ -1,5 +1,5 @@
 import type { Domain } from "resend";
-import { API_CHECK_UNAVAILABLE_MESSAGE } from "@/lib/admin/status-summary";
+import { API_CHECK_UNAVAILABLE_MESSAGE } from "@/lib/email/domain-status-copy";
 import { DEFAULT_COMPANY_DOMAIN, DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 
 export type DomainVerificationDisplay = "verified" | "not_verified" | "unknown";

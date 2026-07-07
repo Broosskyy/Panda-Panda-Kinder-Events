@@ -43,7 +43,7 @@ export function TeamMemberImage({
       src={imageSrc}
       alt={`${name} — ${role}`}
       fill
-      className={`object-cover ${className}`}
+      className={`portrait-cover ${className}`}
       sizes="(max-width: 768px) 100vw, 33vw"
       loading="lazy"
       placeholder="blur"

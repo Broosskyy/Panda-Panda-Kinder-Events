@@ -886,6 +886,11 @@ img {
   overflow: hidden;
 }
 
+.portrait-cover {
+  object-fit: cover;
+  object-position: center 22%;
+}
+
 @media (min-width: 768px) {
   .about-image-frame {
     border-radius: 1.75rem 4.5rem 1.75rem 1.75rem;

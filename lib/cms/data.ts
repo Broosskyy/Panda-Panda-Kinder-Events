@@ -3,7 +3,7 @@ import { faqs as staticFaqs } from "@/lib/faqs";
 import { galleryImages as staticGallery } from "@/lib/gallery";
 import { services as staticServices } from "@/lib/services";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
-import { isPlaceholderContent, isValidCmsFaq, isValidCmsService } from "./content-quality";
+import { isPlaceholderContent, isValidCmsFaq, isValidCmsService, isValidPublishedPost } from "./content-quality";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { normalizeSiteSettings } from "./normalize-settings";
 import { resolveImageUrl } from "./resolve-image";
@@ -394,10 +394,12 @@ export async function fetchPublishedPosts(limit = 6): Promise<CmsPost[]> {
 
     if (!data) return [];
 
-    return (data as CmsPost[]).map((post) => ({
-      ...post,
-      hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
-    }));
+    return (data as CmsPost[])
+      .map((post) => ({
+        ...post,
+        hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
+      }))
+      .filter(isValidPublishedPost);
   } catch (err) {
     console.error("fetchPublishedPosts:", err);
     return [];
@@ -424,10 +426,11 @@ export async function fetchPostBySlug(slug: string): Promise<CmsPost | null> {
   if (!data) return null;
 
   const post = data as CmsPost;
-  return {
+  const resolved = {
     ...post,
     hero_image_url: resolveImageUrl("site-assets", post.hero_image_path),
   };
+  return isValidPublishedPost(resolved) ? resolved : null;
 }
 
 export async function fetchDashboardStats() {

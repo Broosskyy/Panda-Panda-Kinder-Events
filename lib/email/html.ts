@@ -1,5 +1,5 @@
-import { BRAND } from "@/lib/brand";
 import type { ResolvedEmailBranding } from "@/lib/email/branding";
+import { EMAIL_BRAND } from "@/lib/email/brand-tokens";
 import {
   buildEmailHeaderImageRow,
   buildEmailLogoHeaderHtml,
@@ -18,15 +18,17 @@ export interface EmailLayoutOptions {
   headerImageUrl?: string;
 }
 
-/** Responsive HTML-E-Mail mit Logo, Branding und Signatur */
+/** Responsive HTML-E-Mail mit Logo, Branding und Signatur — hell & website-aligned */
 export function wrapEmailHtml(opts: EmailLayoutOptions): string {
   const brand = opts.branding;
   const baseUrl = opts.baseUrl ?? getEmailAssetBaseUrl();
-  const primary = opts.primaryColor || brand?.primaryColor || BRAND.themeColor;
-  const secondary = brand?.secondaryColor || "#f4a261";
-  const buttonColor = brand?.buttonColor || primary;
-  const textColor = brand?.textColor || "#2c2c2c";
-  const footerBg = brand?.footerColor || "#faf9f6";
+  const pageBg = brand?.backgroundColor || EMAIL_BRAND.pageBackground;
+  const cardBg = brand?.cardBackground || EMAIL_BRAND.cardBackground;
+  const primary = opts.primaryColor || brand?.primaryColor || EMAIL_BRAND.primary;
+  const accent = brand?.accentColor || brand?.footerColor || EMAIL_BRAND.accent;
+  const textColor = brand?.textColor || EMAIL_BRAND.text;
+  const textMuted = brand?.textMutedColor || EMAIL_BRAND.textMuted;
+  const border = EMAIL_BRAND.border;
   const fontFamily = brand?.fontFamily || "Helvetica, Arial, sans-serif";
   const headerImage = buildEmailHeaderImageRow(opts.headerImageUrl, baseUrl);
   const logoHeader = buildEmailLogoHeaderHtml({
@@ -37,7 +39,7 @@ export function wrapEmailHtml(opts: EmailLayoutOptions): string {
   });
 
   const signatureBlock = opts.signatureHtml
-    ? `<div style="margin-top:16px;padding-top:16px;border-top:1px solid #ece8df;">${opts.signatureHtml}</div>`
+    ? `<div style="margin-top:16px;padding-top:16px;border-top:1px solid ${border};">${opts.signatureHtml}</div>`
     : "";
 
   return `<!DOCTYPE html>
@@ -45,34 +47,31 @@ export function wrapEmailHtml(opts: EmailLayoutOptions): string {
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="light dark">
-  <meta name="supported-color-schemes" content="light dark">
+  <meta name="color-scheme" content="light only">
+  <meta name="supported-color-schemes" content="light">
   <style>
-    @media (prefers-color-scheme: dark) {
-      .email-body { background-color: #1a1a18 !important; }
-      .email-card { background-color: #2a2a26 !important; color: #f4f1ea !important; }
-      .email-muted { color: #b8b5ad !important; }
-    }
     @media only screen and (max-width: 600px) {
       .email-card { width: 100% !important; }
-      .email-inner { padding: 20px 16px !important; }
+      .email-inner { padding: 22px 18px !important; }
+      .email-header { padding: 24px 18px 18px !important; }
+      .email-footer { padding: 18px !important; }
     }
   </style>
 </head>
-<body class="email-body" style="margin:0;padding:0;background:#f4f1ea;font-family:${fontFamily};color:${textColor};">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f4f1ea;padding:24px 12px;">
+<body class="email-body" style="margin:0;padding:0;background:${pageBg};font-family:${fontFamily};color:${textColor};">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${pageBg};padding:28px 14px;">
     <tr><td align="center">
-      <table width="100%" class="email-card" cellpadding="0" cellspacing="0" role="presentation" style="max-width:560px;background:#ffffff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,.08);">
+      <table width="100%" class="email-card" cellpadding="0" cellspacing="0" role="presentation" style="max-width:600px;background:${cardBg};border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(46,46,42,.08);border:1px solid ${border};">
         ${headerImage}
-        <tr><td style="padding:28px 28px 20px;text-align:center;border-bottom:1px solid #ece8df;background:linear-gradient(180deg, ${secondary}14 0%, #ffffff 100%);">
+        <tr><td class="email-header" style="padding:32px 32px 24px;text-align:center;border-bottom:1px solid ${border};background:linear-gradient(180deg, ${accent} 0%, ${cardBg} 100%);">
           ${logoHeader}
         </td></tr>
-        <tr><td class="email-inner" style="padding:28px;color:${textColor};">
+        <tr><td class="email-inner" style="padding:32px;color:${textColor};font-size:15px;line-height:1.7;">
           ${opts.bodyHtml}
         </td></tr>
-        <tr><td style="padding:20px 28px;border-top:1px solid #ece8df;background:${footerBg};">
-          <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${buttonColor};">Mit freundlichen Grüßen</p>
-          <p style="margin:0;font-size:13px;color:#555;" class="email-muted">${opts.companyName}</p>
+        <tr><td class="email-footer" style="padding:24px 32px;border-top:1px solid ${border};background:${accent};">
+          <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${primary};">Mit freundlichen Grüßen</p>
+          <p style="margin:0;font-size:13px;color:${textMuted};">${opts.companyName}</p>
           ${signatureBlock}
           ${opts.footerHtml ?? ""}
         </td></tr>
@@ -81,4 +80,35 @@ export function wrapEmailHtml(opts: EmailLayoutOptions): string {
   </table>
 </body>
 </html>`;
+}
+
+export function buildEmailCtaButton(href: string, label: string, buttonColor: string, buttonText = EMAIL_BRAND.buttonText): string {
+  const safeHref = href.replace(/"/g, "&quot;");
+  const safeLabel = label
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+  return `<table cellpadding="0" cellspacing="0" role="presentation" style="margin:28px 0;">
+    <tr><td align="center" style="border-radius:9999px;background:${buttonColor};">
+      <a href="${safeHref}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${buttonText};text-decoration:none;border-radius:9999px;">${safeLabel}</a>
+    </td></tr>
+  </table>`;
+}
+
+export function buildEmailInfoBox(items: string[], accentColor: string, borderColor: string): string {
+  if (!items.length) return "";
+  const rows = items
+    .map(
+      (item) =>
+        `<tr><td style="padding:6px 0;font-size:14px;line-height:1.6;color:${EMAIL_BRAND.text};">✓ ${item
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")}</td></tr>`,
+    )
+    .join("");
+  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${accentColor};border:1px solid ${borderColor};border-radius:16px;margin:24px 0;">
+    <tr><td style="padding:18px 20px;">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">${rows}</table>
+    </td></tr>
+  </table>`;
 }

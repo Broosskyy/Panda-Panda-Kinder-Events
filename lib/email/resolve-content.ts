@@ -3,6 +3,7 @@ import type { SiteEmailSettings } from "@/lib/cms/types";
 import { applyTemplateVariables } from "@/lib/email/variables";
 import { buildEmailVariableContext, renderEmailFromTemplate } from "@/lib/email/render";
 import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
+import { EMAIL_BRAND } from "@/lib/email/brand-tokens";
 
 function plainTextToHtml(text: string): string {
   const escaped = text
@@ -11,7 +12,7 @@ function plainTextToHtml(text: string): string {
     .replace(/>/g, "&gt;");
   return escaped
     .split(/\n\n+/)
-    .map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:#444;">${p.replace(/\n/g, "<br/>")}</p>`)
+    .map((p) => `<p style="margin:0 0 16px;font-size:15px;line-height:1.7;color:${EMAIL_BRAND.text};">${p.replace(/\n/g, "<br/>")}</p>`)
     .join("");
 }
 
@@ -37,13 +38,21 @@ const CMS_FIELD_MAP: Record<string, CmsFieldFallback> = {
   "password-reset": { subjectField: "passwordResetSubject", textField: "passwordResetText" },
 };
 
+function buildOptionalFooterHtml(vars: Record<string, string>): string {
+  const bits: string[] = [];
+  if (vars.company_phone?.trim()) bits.push(vars.company_phone.trim());
+  if (vars.company_email?.trim()) bits.push(vars.company_email.trim());
+  const contactLine = bits.length
+    ? `<p style="margin:8px 0 0;font-size:12px;color:${EMAIL_BRAND.textMuted};">${bits.join(" · ")}</p>`
+    : "";
+  const websiteLine = vars.company_website?.trim()
+    ? `<p style="margin:4px 0 0;font-size:12px;color:${EMAIL_BRAND.textMuted};"><a href="${vars.company_website}" style="color:${EMAIL_BRAND.primary};">${vars.company_website}</a></p>`
+    : "";
+  return `${contactLine}${websiteLine}`;
+}
+
 async function wrapWithBranding(bodyHtml: string, vars: Record<string, string>): Promise<string> {
-  return wrapBrandedEmailHtml(
-    bodyHtml,
-    vars.company_name,
-    `<p style="margin:8px 0 0;font-size:12px;color:#888;">${vars.company_phone} · ${vars.company_email}</p>
-      <p style="margin:4px 0 0;font-size:12px;color:#888;"><a href="${vars.company_website}">${vars.company_website}</a></p>`,
-  );
+  return wrapBrandedEmailHtml(bodyHtml, vars.company_name, buildOptionalFooterHtml(vars));
 }
 
 /**

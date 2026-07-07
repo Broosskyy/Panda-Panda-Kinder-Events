@@ -26,16 +26,16 @@ export function EmailBrandingPanel({ email, domainVerification, hasSuccessfulTes
 
   const previewHtml = useMemo(
     () => `
-      <div style="font-family:${brand.fontFamily};max-width:360px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,.08);">
-        <div style="padding:20px;text-align:center;background:linear-gradient(180deg, ${brand.secondaryColor}22, #fff);">
-          <div style="height:40px;background:${brand.primaryColor};opacity:.15;border-radius:8px;margin-bottom:12px;"></div>
+      <div style="font-family:${brand.fontFamily};max-width:360px;margin:0 auto;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(46,46,42,.08);border:1px solid #E6E1D8;">
+        <div style="padding:20px;text-align:center;background:linear-gradient(180deg, ${brand.accentColor || brand.footerColor} 0%, ${brand.cardColor || "#fff"} 100%);">
+          <div style="height:36px;margin-bottom:12px;color:${brand.primaryColor};font-weight:700;">Logo</div>
           <strong style="color:${brand.textColor};">${brand.companyName}</strong>
         </div>
-        <div style="padding:20px;color:${brand.textColor};background:#fff;">
+        <div style="padding:20px;color:${brand.textColor};background:${brand.cardColor || "#fff"};">
           <p style="margin:0 0 16px;">Beispieltext einer Kunden-E-Mail.</p>
-          <a href="#" style="display:inline-block;padding:12px 20px;background:${brand.buttonColor};color:#fff;text-decoration:none;border-radius:999px;font-weight:600;">Button</a>
+          <a href="#" style="display:inline-block;padding:12px 24px;background:${brand.buttonColor};color:${brand.buttonTextColor || "#fff"};text-decoration:none;border-radius:999px;font-weight:600;">Button</a>
         </div>
-        <div style="padding:16px;background:${brand.footerColor};font-size:12px;color:#666;">Footer · ${brand.senderName}</div>
+        <div style="padding:16px;background:${brand.footerColor};font-size:12px;color:${brand.textMutedColor || "#6F6F66"};">Footer · ${brand.senderName}</div>
       </div>`,
     [brand],
   );
@@ -60,23 +60,35 @@ export function EmailBrandingPanel({ email, domainVerification, hasSuccessfulTes
           </p>
         )}
         <div className="grid gap-4 md:grid-cols-2">
-          <AdminFormField label="Logo-URL" className="md:col-span-2">
-            <input className="admin-input" value={brand.logoUrl} onChange={(e) => setBrand("logoUrl", e.target.value)} />
+          <AdminFormField label="Logo-URL" className="md:col-span-2" hint="Für E-Mails: https://pb-kinderevents.de/assets/Logo.png">
+            <input className="admin-input" value={brand.logoUrl} onChange={(e) => setBrand("logoUrl", e.target.value)} placeholder="https://pb-kinderevents.de/assets/Logo.png" />
           </AdminFormField>
           <AdminFormField label="Headerbild-URL" className="md:col-span-2">
             <input className="admin-input" value={brand.headerImageUrl} onChange={(e) => setBrand("headerImageUrl", e.target.value)} />
           </AdminFormField>
+          <AdminFormField label="Seiten-Hintergrund">
+            <input className="admin-input" type="color" value={brand.backgroundColor || "#F8F6F1"} onChange={(e) => setBrand("backgroundColor", e.target.value)} />
+          </AdminFormField>
+          <AdminFormField label="Kartenfarbe">
+            <input className="admin-input" type="color" value={brand.cardColor || "#FFFFFF"} onChange={(e) => setBrand("cardColor", e.target.value)} />
+          </AdminFormField>
           <AdminFormField label="Primärfarbe">
             <input className="admin-input" type="color" value={brand.primaryColor} onChange={(e) => setBrand("primaryColor", e.target.value)} />
           </AdminFormField>
-          <AdminFormField label="Sekundärfarbe">
-            <input className="admin-input" type="color" value={brand.secondaryColor} onChange={(e) => setBrand("secondaryColor", e.target.value)} />
+          <AdminFormField label="Akzentfarbe">
+            <input className="admin-input" type="color" value={brand.accentColor || brand.footerColor} onChange={(e) => setBrand("accentColor", e.target.value)} />
           </AdminFormField>
           <AdminFormField label="Buttonfarbe">
             <input className="admin-input" type="color" value={brand.buttonColor} onChange={(e) => setBrand("buttonColor", e.target.value)} />
           </AdminFormField>
+          <AdminFormField label="Buttontextfarbe">
+            <input className="admin-input" type="color" value={brand.buttonTextColor || "#FFFFFF"} onChange={(e) => setBrand("buttonTextColor", e.target.value)} />
+          </AdminFormField>
           <AdminFormField label="Textfarbe">
             <input className="admin-input" type="color" value={brand.textColor} onChange={(e) => setBrand("textColor", e.target.value)} />
+          </AdminFormField>
+          <AdminFormField label="Gedämpfte Textfarbe">
+            <input className="admin-input" type="color" value={brand.textMutedColor || "#6F6F66"} onChange={(e) => setBrand("textMutedColor", e.target.value)} />
           </AdminFormField>
           <AdminFormField label="Footerfarbe">
             <input className="admin-input" type="color" value={brand.footerColor} onChange={(e) => setBrand("footerColor", e.target.value)} />

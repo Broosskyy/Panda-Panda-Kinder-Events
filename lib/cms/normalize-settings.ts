@@ -201,7 +201,7 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
           base.email?.companyName?.trim() ||
           business.companyName?.trim() ||
           defaults.email.signature.companyName,
-        phone: base.email?.signature?.phone?.trim() || contact.phone || defaults.email.signature.phone,
+        phone: base.email?.signature?.phone?.trim() || (contact.phone?.trim() && !contact.phone.includes("000000") ? contact.phone : "") || "",
         website: base.email?.signature?.website?.trim() || business.website?.trim() || defaults.email.signature.website,
         instagram: base.email?.signature?.instagram?.trim() || contact.instagram || defaults.email.signature.instagram,
         whatsapp: base.email?.signature?.whatsapp?.trim() || contact.whatsapp || defaults.email.signature.whatsapp,
@@ -215,6 +215,11 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
         ...defaults.email.branding,
         ...(base.email?.branding ?? {}),
         logoUrl: base.email?.branding?.logoUrl?.trim() || branding.emailLogoUrl || branding.logoUrl || defaults.email.branding.logoUrl,
+        backgroundColor: base.email?.branding?.backgroundColor?.trim() || defaults.email.branding.backgroundColor,
+        cardColor: base.email?.branding?.cardColor?.trim() || defaults.email.branding.cardColor,
+        accentColor: base.email?.branding?.accentColor?.trim() || defaults.email.branding.accentColor,
+        buttonTextColor: base.email?.branding?.buttonTextColor?.trim() || defaults.email.branding.buttonTextColor,
+        textMutedColor: base.email?.branding?.textMutedColor?.trim() || defaults.email.branding.textMutedColor,
         primaryColor: base.email?.branding?.primaryColor?.trim() || branding.primaryColor || defaults.email.branding.primaryColor,
         companyName: base.email?.branding?.companyName?.trim() || base.email?.companyName?.trim() || defaults.email.branding.companyName,
         senderName: base.email?.branding?.senderName?.trim() || base.email?.senderName?.trim() || defaults.email.branding.senderName,

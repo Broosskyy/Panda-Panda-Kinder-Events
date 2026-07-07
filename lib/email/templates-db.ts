@@ -19,19 +19,15 @@ const DEFAULT_TEMPLATES: Omit<EmailTemplateRecord, "id" | "created_at" | "update
     subject: "Eure Anfrage bei {{company_name}} — wir melden uns",
     body_html: `<p>Hallo {{customer_name}},</p>
 <p>vielen Dank für eure Anfrage.</p>
-<p>Wir freuen uns sehr über euer Interesse an Panda-Bande.</p>
-<p>Wir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.</p>
-<p>Bis bald ❤️<br/><strong>Euer Panda-Bande Team</strong></p>`,
+<p>Wir haben eure Nachricht erhalten und melden uns persönlich innerhalb von 24 Stunden zurück.</p>
+<p>Bis dahin könnt ihr euch entspannt zurücklehnen — wir schauen uns euren Anlass in Ruhe an.</p>`,
     body_text: `Hallo {{customer_name}},
 
 vielen Dank für eure Anfrage.
 
-Wir freuen uns sehr über euer Interesse an Panda-Bande.
+Wir haben eure Nachricht erhalten und melden uns persönlich innerhalb von 24 Stunden zurück.
 
-Wir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.
-
-Bis bald ❤️
-Euer Panda-Bande Team`,
+Bis dahin könnt ihr euch entspannt zurücklehnen — wir schauen uns euren Anlass in Ruhe an.`,
     area: "inquiry",
     is_active: true,
     is_default: true,
@@ -41,8 +37,8 @@ Euer Panda-Bande Team`,
     slug: "inquiry-admin",
     name: "Anfrage: Benachrichtigung an Admin",
     subject: "Neue Anfrage — {{event_type}} ({{customer_name}})",
-    body_html: `<p><strong>Neue Kontaktanfrage über die Website</strong></p>
-<p>Name: {{customer_name}}<br/>Telefon: {{customer_phone}}<br/>E-Mail: {{customer_email}}<br/>Eventart: {{event_type}}<br/>Datum: {{event_date}}<br/>Kinder: {{children_count}}</p>
+    body_html: `<p><strong>Neue Anfrage eingegangen</strong></p>
+<p>Name: {{customer_name}}<br/>Telefon: {{customer_phone}}<br/>E-Mail: {{customer_email}}<br/>Event-Art: {{event_type}}<br/>Datum: {{event_date}}<br/>Kinder: {{children_count}}</p>
 <p><strong>Nachricht:</strong><br/>{{message}}</p>`,
     body_text: `Neue Kontaktanfrage über die Website
 
@@ -87,8 +83,8 @@ Euer Panda-Bande Team`,
     slug: "review-admin",
     name: "Neue Bewertung an Admin",
     subject: "Neue Bewertung — {{event_type}} ({{customer_name}})",
-    body_html: `<p><strong>Neue Bewertung eingegangen</strong></p>
-<p>Name: {{customer_name}}<br/>Anlass: {{event_type}}<br/>Bewertung: {{rating}} / 5</p>
+    body_html: `<p><strong>Neue Bewertung wartet auf Prüfung</strong></p>
+<p>Name: {{customer_name}}<br/>Event-Art: {{event_type}}<br/>Sterne: {{rating}} / 5</p>
 <p><strong>Text:</strong><br/>{{message}}</p>`,
     body_text: `Neue Bewertung eingegangen
 

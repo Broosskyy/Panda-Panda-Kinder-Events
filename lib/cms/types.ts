@@ -252,10 +252,15 @@ export interface SiteEmailSignatureSettings {
 export interface SiteEmailBrandingSettings {
   logoUrl: string;
   headerImageUrl: string;
+  backgroundColor: string;
+  cardColor: string;
   primaryColor: string;
   secondaryColor: string;
+  accentColor: string;
   buttonColor: string;
+  buttonTextColor: string;
   textColor: string;
+  textMutedColor: string;
   footerColor: string;
   fontFamily: string;
   showSocialIcons: boolean;

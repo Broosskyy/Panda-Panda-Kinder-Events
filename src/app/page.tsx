@@ -23,6 +23,7 @@ import {
 } from "@/lib/cms/data";
 import { fetchPublicTeam } from "@/lib/team/public";
 import { fetchApprovedReviews } from "@/lib/cms/reviews";
+import { safeJsonLdStringify } from "@/lib/json-ld";
 import { breadcrumbJsonLd, getSeoDefaultImage, organizationJsonLd, serviceJsonLd } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
 import type { Metadata } from "next";
@@ -115,7 +116,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }} />
       <SkipLink />
       <Header navigation={settings.navigation} branding={settings.branding} />
       <main id="main-content" className="public-main">

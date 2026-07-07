@@ -684,10 +684,10 @@ export function SettingsView() {
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Primäre Domain" hint="z. B. panda-bande-events.de">
+            <AdminFormField label="Primäre Domain" hint="z. B. pb-kinderevents.de">
               <input className="admin-input" value={seo.primaryDomain} onChange={(e) => setSeoField("primaryDomain", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="WWW-Domain" hint="Optional, z. B. www.panda-bande-events.de">
+            <AdminFormField label="WWW-Domain" hint="Optional, z. B. www.pb-kinderevents.de">
               <input className="admin-input" value={seo.wwwDomain} onChange={(e) => setSeoField("wwwDomain", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Canonical Base URL" tooltip="canonical" hint="Vollständige URL mit https://" className="md:col-span-2">

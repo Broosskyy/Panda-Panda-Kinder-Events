@@ -291,14 +291,14 @@ export function QuotesView() {
   };
 
   const confirmSend = async () => {
-    if (!sendTarget || !sendToCustomer) return;
+    if (!sendTarget || (!sendToCustomer && !copyToBusiness)) return;
     setSending(true);
     setSendError(null);
     try {
       const res = await fetch(`/api/admin/quotes/${sendTarget.id}/send`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ copyToBusiness }),
+        body: JSON.stringify({ copyToBusiness, sendToCustomer }),
       });
       const data = await res.json();
       if (!res.ok) {

@@ -40,7 +40,7 @@ export function CrmSendModal({
 }: CrmSendModalProps) {
   const [showDetail, setShowDetail] = useState(false);
   const canSendToCustomer = Boolean(customerEmail?.trim());
-  const canConfirm = sendToCustomer && canSendToCustomer;
+  const canConfirm = (sendToCustomer && canSendToCustomer) || copyToBusiness;
 
   useEffect(() => {
     if (!open) return;

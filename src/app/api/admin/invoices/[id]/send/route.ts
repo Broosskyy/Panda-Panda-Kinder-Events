@@ -6,7 +6,7 @@ import { getBusinessProfile } from "@/lib/crm/company";
 import { formatCents } from "@/lib/crm/money";
 import { generateCrmPdf, invoiceToPdfData } from "@/lib/crm/pdf";
 import { logCustomerEvent } from "@/lib/crm/events";
-import { getEmailSettings, isResendConfigured, sendCrmDocumentEmail } from "@/lib/email";
+import { getEmailSettings, getCopyEmailForDocument, isResendConfigured, sendCrmDocumentEmail } from "@/lib/email";
 import { getResendSendingSetup } from "@/lib/email/resend-status";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -17,6 +17,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   const body = await request.json().catch(() => ({}));
   const emailSettings = await getEmailSettings();
   const copyToBusiness = Boolean(body.copyToBusiness ?? emailSettings.crmCopyToCompanyEnabled !== false);
+  const sendToCustomer = body.sendToCustomer !== false;
 
   if (!isResendConfigured()) {
     return NextResponse.json(
@@ -34,8 +35,12 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       );
     }
 
-    if (!invoice.customer.email?.trim()) {
+    if (!invoice.customer.email?.trim() && sendToCustomer) {
       return NextResponse.json({ error: "Empfänger fehlt.", code: "missing_recipient" }, { status: 400 });
+    }
+
+    if (!sendToCustomer && !copyToBusiness) {
+      return NextResponse.json({ error: "Kein Versandziel ausgewählt.", code: "missing_recipient" }, { status: 400 });
     }
 
     const emailSettings = await getEmailSettings();
@@ -61,13 +66,14 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
 
     await sendCrmDocumentEmail({
-      to: invoice.customer.email,
+      to: invoice.customer.email || getCopyEmailForDocument(emailSettings, "invoice"),
       customerName: invoice.customer.name,
       documentNumber: invoice.invoice_number,
       documentType: "invoice",
       totalFormatted: formatCents(invoice.total_cents),
       pdfBuffer: pdfBytes,
       copyToBusiness,
+      sendToCustomer,
       company,
       relatedInvoiceId: id,
       relatedCustomerId: invoice.customer_id,

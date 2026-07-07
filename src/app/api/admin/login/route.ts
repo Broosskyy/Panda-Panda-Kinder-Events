@@ -80,6 +80,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ungültige 2FA-Anfrage." }, { status: 400 });
     }
 
+    const { cookies } = await import("next/headers");
+    const pendingCookie = (await cookies()).get(PENDING_2FA_COOKIE)?.value;
+    if (!pendingCookie || sha256(pendingToken) !== pendingCookie) {
+      return NextResponse.json({ error: "2FA-Sitzung abgelaufen. Bitte erneut anmelden." }, { status: 401 });
+    }
+
     const { getUserById } = await import("@/lib/auth/users");
     const user = await getUserById(userId);
     if (!user?.active || !user.totp_enabled || !user.totp_secret) {

@@ -6,7 +6,7 @@ export const API_CHECK_UNAVAILABLE_MESSAGE =
 
 /** Wenn Testmails ankommen, aber die Domain nicht automatisch geprüft werden kann. */
 export const DOMAIN_MANUAL_CONFIRM_MESSAGE =
-  "Versand funktioniert. Der Domainstatus konnte nicht automatisch geprüft werden.";
+  "Versand funktioniert. Domainstatus wurde manuell in Resend bestätigt.";
 
 export function isTestEmailLog(log: {
   template_slug: string | null;

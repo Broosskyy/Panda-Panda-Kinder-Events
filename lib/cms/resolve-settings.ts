@@ -14,7 +14,7 @@ export function resolvePublicSiteUrl(settings: Pick<SiteSettingsBundle, "seo" | 
   }
 
   const website = settings.business?.website?.trim();
-  if (website && !website.includes("panda-bande-events.de")) {
+  if (website && !website.includes("panda-bande-events.de") && !website.includes("resend.dev")) {
     const withProto = website.startsWith("http") ? website : `https://${website}`;
     return withProto.replace(/\/$/, "");
   }

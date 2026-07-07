@@ -114,8 +114,9 @@ export function CustomerCommunicationTimeline({ customerId }: Props) {
       )}
 
       {preview ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setPreview(null)}>
-          <div className="max-h-[80vh] w-full max-w-lg overflow-auto rounded-xl bg-bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
+        <div className="admin-modal-root" role="dialog" aria-modal="true" aria-label="E-Mail-Vorschau">
+          <button type="button" className="admin-modal-backdrop" onClick={() => setPreview(null)} aria-label="Schließen" />
+          <div className="admin-modal-panel max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center gap-2">
               <Mail className="h-5 w-5 text-primary" />
               <h4 className="font-semibold text-text-primary">{preview.subject}</h4>

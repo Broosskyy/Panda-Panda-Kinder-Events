@@ -33,7 +33,7 @@ export default async function AktuellesPage() {
   return (
     <>
       <Header navigation={settings.navigation} branding={settings.branding} />
-      <main id="main-content" className="public-main bg-bg-primary pt-[max(6.5rem,calc(5rem+env(safe-area-inset-top,0px)))]">
+      <main id="main-content" className="public-main public-main-subpage bg-bg-primary pt-[max(6.5rem,calc(5rem+env(safe-area-inset-top,0px)))]">
         <Container className="max-w-5xl py-10 sm:py-14">
           <Link
             href="/"

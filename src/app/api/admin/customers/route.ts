@@ -1,9 +1,19 @@
 import { NextResponse } from "next/server";
 import { requireAdmin } from "@/lib/admin-route";
-import { listCustomers, getCustomer } from "@/lib/crm/db";
+import { listCustomers, getCustomer, getCustomerDeleteBlockers } from "@/lib/crm/db";
 import { crmCustomerSchema } from "@/lib/crm/schemas";
 import { logCustomerEvent } from "@/lib/crm/events";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+
+function normalizeCustomerFields(data: Record<string, unknown>): Record<string, unknown> {
+  const out = { ...data };
+  for (const key of ["email", "phone", "address", "notes"]) {
+    if (typeof out[key] === "string" && (out[key] as string).trim() === "") {
+      out[key] = null;
+    }
+  }
+  return out;
+}
 
 export async function GET(request: Request) {
   const authError = await requireAdmin();
@@ -28,16 +38,17 @@ export async function POST(request: Request) {
   const body = await request.json();
   const parsed = crmCustomerSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ungültige Kundendaten." }, { status: 400 });
+    return NextResponse.json({ error: "Ungültige Kundendaten. Bitte Name prüfen." }, { status: 400 });
   }
 
   try {
     const supabase = getSupabaseAdmin();
+    const payload = normalizeCustomerFields(parsed.data);
     const { data, error } = await supabase
       .from("crm_customers")
       .insert({
-        ...parsed.data,
-        email: parsed.data.email || null,
+        ...payload,
+        email: payload.email || null,
       })
       .select()
       .single();
@@ -62,20 +73,21 @@ export async function PATCH(request: Request) {
 
   const parsed = crmCustomerSchema.partial().safeParse(rest);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ungültige Daten." }, { status: 400 });
+    return NextResponse.json({ error: "Ungültige Daten. Bitte E-Mail und Pflichtfelder prüfen." }, { status: 400 });
   }
 
   try {
     const supabase = getSupabaseAdmin();
+    const payload = normalizeCustomerFields({ ...parsed.data, updated_at: new Date().toISOString() });
     const { data, error } = await supabase
       .from("crm_customers")
-      .update({ ...parsed.data, updated_at: new Date().toISOString() })
+      .update(payload)
       .eq("id", id)
       .select()
       .single();
 
     if (error) throw new Error(error.message);
-    return NextResponse.json({ customer: data });
+    return NextResponse.json({ customer: data, message: "Kunde gespeichert." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Update fehlgeschlagen.";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -93,10 +105,30 @@ export async function DELETE(request: Request) {
   if (!existing) return NextResponse.json({ error: "Kunde nicht gefunden." }, { status: 404 });
 
   try {
+    const blockers = await getCustomerDeleteBlockers(id);
+    const blocked = blockers.quotes > 0 || blockers.invoices > 0 || blockers.bookings > 0;
+
+    if (blocked) {
+      const parts: string[] = [];
+      if (blockers.bookings > 0) parts.push(`${blockers.bookings} Anfrage(n)`);
+      if (blockers.quotes > 0) parts.push(`${blockers.quotes} Angebot(e)`);
+      if (blockers.invoices > 0) parts.push(`${blockers.invoices} Rechnung(en)`);
+
+      return NextResponse.json(
+        {
+          error: `Dieser Kunde kann nicht gelöscht werden, weil noch ${parts.join(", ")} verknüpft sind.`,
+          blockers,
+          canArchive: true,
+        },
+        { status: 409 },
+      );
+    }
+
     const supabase = getSupabaseAdmin();
     const { error } = await supabase.from("crm_customers").delete().eq("id", id);
     if (error) throw new Error(error.message);
-    return NextResponse.json({ success: true });
+
+    return NextResponse.json({ success: true, message: "Kunde wurde gelöscht." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";
     return NextResponse.json({ error: message }, { status: 500 });

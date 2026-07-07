@@ -25,13 +25,51 @@ export async function listCustomers(search?: string) {
   let query = supabase.from("crm_customers").select("*").order("updated_at", { ascending: false });
 
   if (search?.trim()) {
-    const q = `%${search.trim()}%`;
-    query = query.or(`name.ilike.${q},email.ilike.${q},phone.ilike.${q}`);
+    const term = search.trim().replace(/"/g, '""');
+    const pattern = `"%${term}%"`;
+    query = query.or(`name.ilike.${pattern},email.ilike.${pattern},phone.ilike.${pattern}`);
   }
 
   const { data, error } = await query;
   if (error) throw new Error(error.message);
   return (data ?? []) as CrmCustomer[];
+}
+
+export interface CustomerDeleteBlockers {
+  quotes: number;
+  invoices: number;
+  bookings: number;
+}
+
+export async function getCustomerDeleteBlockers(customerId: string): Promise<CustomerDeleteBlockers> {
+  const supabase = getSupabaseAdmin();
+
+  const [quotes, invoices, bookings] = await Promise.all([
+    supabase
+      .from("crm_quotes")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .is("deleted_at", null),
+    supabase
+      .from("crm_invoices")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId)
+      .is("deleted_at", null),
+    supabase
+      .from("booking_requests")
+      .select("id", { count: "exact", head: true })
+      .eq("customer_id", customerId),
+  ]);
+
+  if (quotes.error) throw new Error(quotes.error.message);
+  if (invoices.error) throw new Error(invoices.error.message);
+  if (bookings.error) throw new Error(bookings.error.message);
+
+  return {
+    quotes: quotes.count ?? 0,
+    invoices: invoices.count ?? 0,
+    bookings: bookings.count ?? 0,
+  };
 }
 
 export async function getCustomer(id: string) {

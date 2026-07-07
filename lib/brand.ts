@@ -17,7 +17,7 @@ export const BRAND = {
   /** Eine Quelle: Header, Splash, Favicon, PWA */
   master: "/assets/Logo.png",
 
-  iconVersion: "6",
+  iconVersion: "7",
 
   markOnly: "/assets/Logo.png",
 

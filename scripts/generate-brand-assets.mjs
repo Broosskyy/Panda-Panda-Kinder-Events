@@ -14,7 +14,7 @@ const brandingDir = join(root, "public/branding");
 const appDir = join(root, "src/app");
 const masterLogo = join(root, "public/assets/Logo.png");
 const BG = "#f4f1ea";
-const ICON_VERSION = "6";
+const ICON_VERSION = "7";
 
 /** Logo.png 640×160 — vollständiges Kombi-Logo proportional in Quadrat einpassen */
 async function renderLogoIcon(sharp, logoBuffer, size, { maskable = false, padding = 0.06 } = {}) {
@@ -82,7 +82,6 @@ async function main() {
   }
 
   const faviconIco = await toIco(icoBuffers);
-  writeFileSync(join(iconsDir, "favicon.ico"), faviconIco);
   writeFileSync(join(root, "public/favicon.ico"), faviconIco);
   console.log("✓ public/favicon.ico");
 

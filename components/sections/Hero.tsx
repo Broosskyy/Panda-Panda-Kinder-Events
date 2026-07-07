@@ -69,12 +69,12 @@ export function Hero({
               {hero.subtitle}
             </p>
 
-            <div className="mt-8 flex flex-col items-center gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4 lg:justify-start">
+            <div className="hero-cta-group mt-8 w-full sm:mt-10">
               <Button
                 href="#kontakt"
                 size="lg"
-                className="w-full shadow-lg sm:w-auto sm:shadow-xl"
-                icon={<Calendar className="h-5 w-5" aria-hidden />}
+                className="hero-cta-btn w-full sm:w-auto"
+                icon={<Calendar className="h-5 w-5 shrink-0" aria-hidden />}
               >
                 {hero.ctaPrimary}
               </Button>
@@ -82,8 +82,8 @@ export function Hero({
                 href="#leistungen"
                 variant="secondary"
                 size="lg"
-                className="w-full sm:w-auto"
-                icon={<Heart className="h-5 w-5" aria-hidden />}
+                className="hero-cta-btn w-full sm:w-auto"
+                icon={<Heart className="h-5 w-5 shrink-0" aria-hidden />}
               >
                 {hero.ctaSecondary}
               </Button>

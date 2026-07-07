@@ -2538,6 +2538,39 @@ body.splash-active {
   }
 }
 
+/* Hero CTA group — aligned button pair on desktop */
+.hero-cta-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .hero-cta-group {
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hero-cta-group {
+    gap: 1.125rem;
+  }
+
+  .hero-cta-group .hero-cta-btn {
+    min-height: 3.75rem;
+  }
+}
+
+.hero-cta-group .hero-cta-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* ── Hero mobile rhythm ── */
 
 @media (max-width: 1023px) {

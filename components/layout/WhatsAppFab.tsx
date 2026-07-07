@@ -11,6 +11,8 @@ interface WhatsAppFabProps {
 
 export function WhatsAppFab({ contact = DEFAULT_SITE_SETTINGS.contact }: WhatsAppFabProps) {
   const hidden = useHideNearFormSections();
+  const whatsapp = contact.whatsapp?.trim();
+  if (!whatsapp) return null;
 
   return (
     <div
@@ -19,7 +21,7 @@ export function WhatsAppFab({ contact = DEFAULT_SITE_SETTINGS.contact }: WhatsAp
       aria-hidden={hidden}
     >
       <a
-        href={`https://wa.me/${contact.whatsapp}`}
+        href={`https://wa.me/${whatsapp}`}
         target="_blank"
         rel="noopener noreferrer"
         className="floating-contact-btn floating-contact-btn-whatsapp"

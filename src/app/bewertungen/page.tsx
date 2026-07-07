@@ -13,6 +13,7 @@ import { fetchApprovedReviews } from "@/lib/cms/reviews";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { buildPageMetadata, breadcrumbJsonLd } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
+import { safeJsonLdStringify } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 
@@ -76,11 +77,11 @@ export default async function BewertungenPage() {
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }} />
       <Header navigation={settings.navigation} branding={settings.branding} />
       <main
         id="main-content"
-        className="public-main bg-bg-primary pt-[max(6.5rem,calc(5rem+env(safe-area-inset-top,0px)))]"
+        className="public-main public-main-subpage bg-bg-primary pt-[max(6.5rem,calc(5rem+env(safe-area-inset-top,0px)))]"
       >
         <Container className="max-w-6xl py-10 sm:py-14">
           <Link

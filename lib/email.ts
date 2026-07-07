@@ -8,6 +8,7 @@ import {
   getCopyEmailForDocument,
   getEmailSettings,
   getInquiryRecipient,
+  normalizeProductionEmail,
   resolveEmailSender,
   resolveFlowEmailSender,
   applyEmailTemplate,
@@ -139,7 +140,7 @@ export async function sendInquiryNotification(data: InquiryEmailData): Promise<I
   if (!adminResult.success && adminResult.error) errors.push(`Admin-Benachrichtigung: ${adminResult.error}`);
 
   if (emailSettings.inquiryCopyTo?.trim()) {
-    const copyTo = emailSettings.inquiryCopyTo.trim();
+    const copyTo = normalizeProductionEmail(emailSettings.inquiryCopyTo);
     const copyResult = await sendEmailWithRetry({
       payload: {
         from: sender.from,
@@ -279,7 +280,7 @@ export interface ReviewRequestEmailData {
 export async function sendReviewRequestEmail(data: ReviewRequestEmailData) {
   const emailSettings = await getEmailSettings();
   const sender = await resolveEmailSender(emailSettings);
-  const reviewLink = data.reviewLink ?? `${getSiteUrl()}/bewertung`;
+  const reviewLink = data.reviewLink ?? `${getSiteUrl()}/bewertungen`;
 
   const content = await resolveEmailContent("review-request", {
     customer_name: data.customerName,
@@ -367,6 +368,7 @@ interface CrmDocumentEmailOptions {
   totalFormatted: string;
   pdfBuffer: Uint8Array;
   copyToBusiness?: boolean;
+  sendToCustomer?: boolean;
   company?: BusinessProfile;
   sender?: ResolvedEmailSender;
   relatedQuoteId?: string;
@@ -416,37 +418,40 @@ export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
     content: Buffer.from(opts.pdfBuffer),
   };
 
-  const mainResult = await sendEmailWithRetry({
-    payload: {
-      from: sender.from,
-      to: opts.to,
-      replyTo: sender.replyTo || emailSettings.replyTo,
-      subject: content.subject,
-      text: content.text,
-      html: content.html,
-      attachments: [attachment],
-    },
-    log: {
-      recipient: opts.to,
-      subject: content.subject,
-      templateSlug,
-      area: opts.documentType,
-      relatedQuoteId: opts.relatedQuoteId,
-      relatedInvoiceId: opts.relatedInvoiceId,
-      relatedCustomerId: opts.relatedCustomerId,
-    },
-  });
-
-  if (!mainResult.success) {
-    throw new Error(mainResult.error ?? "CRM-E-Mail fehlgeschlagen");
-  }
-
+  const sendToCustomer = opts.sendToCustomer !== false;
   const shouldCopy =
     opts.copyToBusiness ?? emailSettings.crmCopyToCompanyEnabled !== false;
 
+  if (sendToCustomer) {
+    const mainResult = await sendEmailWithRetry({
+      payload: {
+        from: sender.from,
+        to: opts.to,
+        replyTo: sender.replyTo || emailSettings.replyTo,
+        subject: content.subject,
+        text: content.text,
+        html: content.html,
+        attachments: [attachment],
+      },
+      log: {
+        recipient: opts.to,
+        subject: content.subject,
+        templateSlug,
+        area: opts.documentType,
+        relatedQuoteId: opts.relatedQuoteId,
+        relatedInvoiceId: opts.relatedInvoiceId,
+        relatedCustomerId: opts.relatedCustomerId,
+      },
+    });
+
+    if (!mainResult.success) {
+      throw new Error(mainResult.error ?? "CRM-E-Mail fehlgeschlagen");
+    }
+  }
+
   if (shouldCopy) {
     const copyTo = getCopyEmailForDocument(emailSettings, opts.documentType);
-    await sendEmailWithRetry({
+    const copyResult = await sendEmailWithRetry({
       payload: {
         from: sender.from,
         to: copyTo,
@@ -465,6 +470,13 @@ export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
         relatedInvoiceId: opts.relatedInvoiceId,
       },
     });
+    if (!copyResult.success) {
+      throw new Error(copyResult.error ?? "Kopie an Firma fehlgeschlagen");
+    }
+  }
+
+  if (!sendToCustomer && !shouldCopy) {
+    throw new Error("Kein Empfänger ausgewählt.");
   }
 }
 

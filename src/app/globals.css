@@ -1537,7 +1537,7 @@ img {
 .admin-sticky-save {
   position: sticky;
   bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
-  z-index: 60;
+  z-index: 75;
   margin-top: 1.5rem;
   padding-top: 0.5rem;
 }
@@ -2128,11 +2128,12 @@ img {
 
 @media (max-width: 767px) {
   .floating-contact-stack {
-    bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
+    z-index: 48;
   }
 
   .cookie-banner {
-    bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
   }
 
   .footer-premium {
@@ -2144,6 +2145,16 @@ img {
 
 .public-main {
   padding-bottom: calc(var(--chrome-bottom-mobile) + env(safe-area-inset-bottom, 0px));
+}
+
+.public-main-subpage {
+  padding-bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 768px) {
+  .public-main-subpage {
+    padding-bottom: 0;
+  }
 }
 
 .sticky-cta-bar {
@@ -2187,7 +2198,7 @@ body.lightbox-open .floating-contact-stack {
   position: fixed;
   right: max(1rem, env(safe-area-inset-right, 0px));
   bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
-  z-index: 44;
+  z-index: 48;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
@@ -2201,8 +2212,13 @@ body.lightbox-open .floating-contact-stack {
 }
 
 @media (min-width: 768px) {
+  .sticky-cta-bar {
+    display: none !important;
+  }
+
   .floating-contact-stack {
     bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    z-index: 48;
   }
 
   .public-main {
@@ -2561,7 +2577,7 @@ body.splash-active {
   gap: 0.75rem;
 }
 
-@media (min-width: 640px) {
+@media (min-width: 768px) {
   .hero-cta-group {
     flex-direction: row;
     justify-content: center;

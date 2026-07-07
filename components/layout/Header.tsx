@@ -78,7 +78,7 @@ export function Header({
           <Logo
             context="header"
             branding={branding}
-            className={`shrink-0 ${isMenuOpen ? "invisible" : ""}`}
+            className={`min-w-0 max-w-[min(100%,12rem)] sm:max-w-none ${isMenuOpen ? "invisible" : ""}`}
           />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">

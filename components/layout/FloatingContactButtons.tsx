@@ -14,6 +14,8 @@ export function FloatingContactButtons({
   contact = DEFAULT_SITE_SETTINGS.contact,
 }: FloatingContactButtonsProps) {
   const hidden = useHideNearFormSections();
+  const whatsapp = contact.whatsapp?.trim();
+  if (!whatsapp) return null;
 
   return (
     <div
@@ -22,7 +24,7 @@ export function FloatingContactButtons({
       aria-hidden={hidden}
     >
       <a
-        href={`https://wa.me/${contact.whatsapp}`}
+        href={`https://wa.me/${whatsapp}`}
         target="_blank"
         rel="noopener noreferrer"
         className="floating-contact-btn floating-contact-btn-whatsapp"

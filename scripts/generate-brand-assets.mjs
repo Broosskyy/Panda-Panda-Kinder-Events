@@ -17,7 +17,7 @@ const BG = "#f4f1ea";
 const ICON_VERSION = "7";
 
 /** Logo.png 640×160 — vollständiges Kombi-Logo proportional in Quadrat einpassen */
-async function renderLogoIcon(sharp, logoBuffer, size, { maskable = false, padding = 0.06 } = {}) {
+async function renderLogoIcon(sharp, logoBuffer, size, { padding = 0.06 } = {}) {
   const meta = await sharp(logoBuffer).metadata();
   const logoW = meta.width ?? 640;
   const logoH = meta.height ?? 160;

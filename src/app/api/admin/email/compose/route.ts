@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
-import { getResendClient, isResendConfigured } from "@/lib/email";
+import { isResendConfigured } from "@/lib/email";
 import { resolveEmailSender } from "@/lib/email/sender";
 import { logEmailSend, saveEmailDraft } from "@/lib/email/log";
 import { renderEmailFromTemplate } from "@/lib/email/render";
 import { applyTemplateVariables } from "@/lib/email/variables";
 import { buildEmailVariableContext } from "@/lib/email/render";
 import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
+import { sendEmailWithRetry } from "@/lib/email/transport";
 
 export async function POST(request: Request) {
   const authError = await requireAdmin();
@@ -79,16 +80,27 @@ export async function POST(request: Request) {
     }
 
     const sender = await resolveEmailSender();
-    const resend = getResendClient();
 
-    await resend.emails.send({
-      from: sender.from,
-      to: to.trim(),
-      replyTo: sender.replyTo,
-      subject: finalSubject,
-      html: finalHtml,
-      text: finalText || undefined,
+    const mainResult = await sendEmailWithRetry({
+      payload: {
+        from: sender.from,
+        to: to.trim(),
+        replyTo: sender.replyTo,
+        subject: finalSubject,
+        html: finalHtml,
+        text: finalText || undefined,
+      },
+      log: {
+        recipient: to.trim(),
+        subject: finalSubject,
+        templateSlug: templateSlug ?? null,
+        area: area ?? templateSlug ?? "general",
+      },
     });
+
+    if (!mainResult.success) {
+      throw new Error(mainResult.error ?? "Versand fehlgeschlagen.");
+    }
 
     await logEmailSend({
       recipient: to.trim(),
@@ -100,14 +112,25 @@ export async function POST(request: Request) {
     });
 
     if (copyTo?.trim()) {
-      await resend.emails.send({
-        from: sender.from,
-        to: copyTo.trim(),
-        replyTo: sender.replyTo,
-        subject: `[Kopie] ${finalSubject}`,
-        html: finalHtml,
-        text: finalText || undefined,
+      const copyResult = await sendEmailWithRetry({
+        payload: {
+          from: sender.from,
+          to: copyTo.trim(),
+          replyTo: sender.replyTo,
+          subject: `[Kopie] ${finalSubject}`,
+          html: finalHtml,
+          text: finalText || undefined,
+        },
+        log: {
+          recipient: copyTo.trim(),
+          subject: `[Kopie] ${finalSubject}`,
+          templateSlug: templateSlug ?? null,
+          area: area ?? "general",
+        },
       });
+      if (!copyResult.success) {
+        throw new Error(copyResult.error ?? "Kopie konnte nicht gesendet werden.");
+      }
     }
 
     return NextResponse.json({ message: "E-Mail wurde gesendet." });

@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 /**
- * Live verification for panda-bande-events.de
+ * Live verification for pb-kinderevents.de
  * Usage: node scripts/live-verify.mjs [baseUrl]
  * Exit 0 = all automated checks passed, 1 = failures
  */
-const BASE = process.argv[2] || "https://panda-bande-events.de";
+const BASE = process.argv[2] || "https://www.pb-kinderevents.de";
 const SESSION = `live-verify-${Date.now()}`;
 const PLACEHOLDER_EMAIL = "info@pb-kinderevents.de";
 const PLACEHOLDER_LOCATION = "NRW · bundesweit im Einsatz";

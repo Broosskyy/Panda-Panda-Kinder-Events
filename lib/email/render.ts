@@ -4,6 +4,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
 import { applyTemplateVariables } from "@/lib/email/variables";
 import { getEmailSettings } from "@/lib/email/sender";
+import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
 
 /** Standard-Variablen für E-Mail-Vorlagen aus CMS-Settings */
 export async function buildEmailVariableContext(
@@ -70,18 +71,7 @@ export async function renderEmailFromTemplate(
   const subject = applyTemplateVariables(template.subject, vars);
   const bodyHtml = applyTemplateVariables(template.body_html, vars);
   const bodyText = applyTemplateVariables(template.body_text || template.body_html.replace(/<[^>]+>/g, ""), vars);
-
-  const settings = await fetchSiteSettings();
-  const { wrapEmailHtml } = await import("@/lib/email/html");
-  const html = wrapEmailHtml({
-    baseUrl: getSiteUrl(),
-    logoUrl: resolveBrandLogo(settings.branding, "email"),
-    companyName: vars.company_name,
-    primaryColor: resolvePrimaryColor(settings.branding),
-    bodyHtml,
-    footerHtml: `<p style="margin:8px 0 0;font-size:12px;color:#888;">${vars.company_phone} · ${vars.company_email}</p>
-      <p style="margin:4px 0 0;font-size:12px;color:#888;"><a href="${vars.company_website}" style="color:${resolvePrimaryColor(settings.branding)};">${vars.company_website}</a></p>`,
-  });
+  const html = await wrapBrandedEmailHtml(bodyHtml, vars.company_name);
 
   return { subject, html, text: bodyText };
 }

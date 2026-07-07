@@ -26,7 +26,7 @@ import type {
   SiteSettingsBundle,
 } from "@/lib/cms/types";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
-import { EmailSettingsPanel } from "@/components/admin/email/EmailSettingsPanel";
+import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/EmailSettingsShell";
 
 interface EmailStatusResponse {
   resendConfigured: boolean;
@@ -46,21 +46,6 @@ interface SystemStatusResponse {
 }
 
 const VALID_TABS = new Set<string>(CONTROL_CENTER_TABS.map((t) => t.id));
-
-const DOMAIN_STATUS_LABELS: Record<string, string> = {
-  test: "Resend-Testdomain",
-  verified: "Domain verifiziert",
-  pending: "Verifizierung ausstehend",
-  failed: "Verifizierung fehlgeschlagen",
-  not_configured: "Nicht konfiguriert",
-};
-
-const RESEND_LEVEL_VARIANT: Record<string, "success" | "warning" | "danger" | "muted"> = {
-  ok: "success",
-  warn: "warning",
-  error: "danger",
-  optional: "muted",
-};
 
 const SYSTEM_LEVEL_VARIANT: Record<SystemStatusLevel, "success" | "warning" | "danger"> = {
   ok: "success",
@@ -82,6 +67,7 @@ export function SettingsView() {
   const searchParams = useSearchParams();
   const rawTab = searchParams.get("tab") ?? "business";
   const tab: ControlCenterTab = VALID_TABS.has(rawTab) ? (rawTab as ControlCenterTab) : "business";
+  const emailTab = parseEmailSubTab(searchParams.get("emailTab"));
 
   const [business, setBusiness] = useState<SiteBusinessSettings | null>(null);
   const [branding, setBranding] = useState<SiteBrandingSettings | null>(null);
@@ -464,82 +450,29 @@ export function SettingsView() {
 
       {!settingsLoading && !settingsError && tab === "email" && email ? (
         <AdminCard title="E-Mail">
-          {usesTestDomain ? (
-            <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <strong>Resend-Testdomain aktiv — noch nicht produktionsreif.</strong> E-Mails werden über{" "}
-              <code className="rounded bg-white/60 px-1">onboarding@resend.dev</code> versendet. Empfänger sind auf
-              verifizierte Adressen beschränkt. Nach Domain-Verifizierung in Resend wird automatisch die konfigurierte
-              Absenderadresse verwendet.
-            </div>
-          ) : (
-            <div className="mb-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-text-primary">
-              <strong>Eigene Domain aktiv.</strong> E-Mails werden über{" "}
-              <code className="rounded bg-bg-secondary px-1">{emailStatus?.resolved.from}</code> versendet.
-            </div>
-          )}
-
-          {!emailStatus?.resendConfigured ? (
-            <p className="mb-4 text-sm text-accent-heart">
-              <strong>RESEND_API_KEY</strong> ist nicht gesetzt — E-Mail-Versand ist deaktiviert.
-            </p>
-          ) : null}
-
-          <div className="mb-4 space-y-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
-            <div>
-              <p className="font-semibold text-text-primary">E-Mail Versand (Sending)</p>
-              <p className="mt-1 text-text-muted">
-                {emailStatus?.sendingSetup?.canSend
-                  ? "Versand ist konfiguriert."
-                  : emailStatus?.sendingSetup?.blockReason ?? "Versand-Status wird geladen…"}
-              </p>
-              <p className="mt-1 text-text-secondary">
-                Domain: {DOMAIN_STATUS_LABELS[emailStatus?.domain.status ?? "not_configured"] ?? "Unbekannt"}
-                {emailStatus?.domain.domain ? ` — ${emailStatus.domain.domain}` : ""}
-              </p>
-              {emailStatus?.domain.message ? (
-                <p className="mt-1 text-text-muted">{emailStatus.domain.message}</p>
-              ) : null}
-            </div>
-
-            <ul className="space-y-2">
-              {(emailStatus?.sendingSetup?.sending ?? []).map((item) => (
-                <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
-                  <span className="text-text-secondary">{item.label}</span>
-                  <AdminStatusBadge
-                    label={item.level === "ok" ? "OK" : item.level === "optional" ? "Optional" : item.level === "warn" ? "Hinweis" : "Fehler"}
-                    variant={RESEND_LEVEL_VARIANT[item.level] ?? "muted"}
-                  />
-                </li>
-              ))}
-            </ul>
-
-            <div className="border-t border-border pt-4">
-              <p className="font-semibold text-text-primary">Empfang (Receiving, optional)</p>
-              <ul className="mt-2 space-y-2">
-                {(emailStatus?.sendingSetup?.receiving ?? []).map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
-                    <span className="text-text-secondary">{item.message}</span>
-                    <AdminStatusBadge label="Optional" variant="muted" />
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <p className="text-text-secondary">
-              Aktueller Absender: <strong>{emailStatus?.resolved.from ?? "—"}</strong>
-            </p>
-            <p className="text-text-secondary">
-              Reply-To: <strong>{emailStatus?.resolved.replyTo ?? "—"}</strong>
-            </p>
-            <AdminButton variant="secondary" className="mt-1" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadEmailStatus()}>
-              Status prüfen
-            </AdminButton>
-          </div>
-
-          <EmailSettingsPanel
+          <EmailSettingsShell
             email={email}
+            emailTab={emailTab}
             testTo={testTo}
             resendConfigured={Boolean(emailStatus?.resendConfigured)}
+            usesTestDomain={usesTestDomain}
+            emailStatusBanner={
+              emailTab === "general" ? (
+                <>
+                  {usesTestDomain ? (
+                    <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                      <strong>Resend-Testdomain aktiv.</strong> Für den Livegang Domain in Resend verifizieren — dann
+                      wird automatisch eure Firmenadresse verwendet.
+                    </div>
+                  ) : null}
+                  {!emailStatus?.resendConfigured ? (
+                    <p className="mb-4 text-sm text-accent-heart">
+                      <strong>E-Mail-Dienst nicht verbunden</strong> — automatischer Versand ist deaktiviert.
+                    </p>
+                  ) : null}
+                </>
+              ) : undefined
+            }
             onEmailField={setEmailField}
             onTestToChange={setTestTo}
             onSendTest={() => void sendTest()}

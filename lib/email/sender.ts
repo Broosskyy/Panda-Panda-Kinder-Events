@@ -61,6 +61,9 @@ function mergeEmailSettings(raw: SiteEmailSettings, contactEmail: string): SiteE
     inquiryRecipient,
     adminNotificationEmail: merged.adminNotificationEmail || companyEmail,
     reviewRecipient: merged.reviewRecipient?.trim() || merged.adminNotificationEmail || companyEmail,
+    signature: { ...defaults.signature, ...(merged.signature ?? {}) },
+    branding: { ...defaults.branding, ...(merged.branding ?? {}) },
+    testMode: { ...defaults.testMode, ...(merged.testMode ?? {}) },
   };
 }
 
@@ -162,9 +165,9 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
 
 export async function resolveEmailSender(settings?: SiteEmailSettings): Promise<ResolvedEmailSender> {
   const email = settings ?? (await getEmailSettings());
-  const senderName = email.senderName || email.companyName;
+  const senderName = email.branding?.senderName?.trim() || email.senderName || email.companyName;
   const domainCheck = await checkResendDomainStatus(email.senderEmail);
-  const replyTo = email.replyTo || email.senderEmail;
+  const replyTo = email.branding?.replyTo?.trim() || email.replyTo || email.senderEmail;
 
   if (domainCheck.status === "verified" && !isResendTestDomain(email.senderEmail)) {
     const fromEmail = email.senderEmail.trim();

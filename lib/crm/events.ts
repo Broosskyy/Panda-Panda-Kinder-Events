@@ -21,7 +21,10 @@ export async function logCustomerEvent(
 export async function fetchCustomerHistory(customerId: string) {
   const supabase = getSupabaseAdmin();
 
-  const [events, bookings, quotes, invoices] = await Promise.all([
+  const customerRes = await supabase.from("crm_customers").select("name, email").eq("id", customerId).maybeSingle();
+  const customerName = customerRes.data?.name?.trim() ?? "";
+
+  const [events, bookings, quotes, invoices, reviews] = await Promise.all([
     supabase
       .from("crm_customer_events")
       .select("*")
@@ -37,19 +40,31 @@ export async function fetchCustomerHistory(customerId: string) {
       .from("crm_quotes")
       .select("id, quote_number, title, status, total_cents, created_at")
       .eq("customer_id", customerId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false }),
     supabase
       .from("crm_invoices")
       .select("id, invoice_number, title, status, total_cents, created_at")
       .eq("customer_id", customerId)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false }),
+    customerName
+      ? supabase
+          .from("reviews")
+          .select("id, name, event_type, rating, text, created_at, approved")
+          .eq("approved", true)
+          .ilike("name", customerName)
+          .order("created_at", { ascending: false })
+          .limit(20)
+      : Promise.resolve({ data: [], error: null }),
   ]);
 
   return {
     events: events.data ?? [],
     bookings: bookings.data ?? [],
-    quotes: quotes.data ?? [],
-    invoices: invoices.data ?? [],
+    quotes: (quotes.data ?? []).filter((row) => !(row as { archived_at?: string | null }).archived_at),
+    invoices: (invoices.data ?? []).filter((row) => !(row as { archived_at?: string | null }).archived_at),
+    reviews: reviews.data ?? [],
   };
 }
 

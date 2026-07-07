@@ -92,6 +92,10 @@ export const ADMIN_CONFIRM = {
   archiveInvoice: "Diese Rechnung wird archiviert und standardmäßig ausgeblendet.\n\nFortfahren?",
   cancelInvoice:
     "Diese Rechnung wird storniert. Der Status wechselt auf „Storniert“.\n\nFortfahren?",
+  archiveCustomer:
+    "Dieser Kunde wird archiviert (Status: inaktiv) und bleibt in Anfragen, Angeboten und Rechnungen verknüpft.\n\nFortfahren?",
+  deleteCustomer:
+    "Dieser Kunde wird dauerhaft gelöscht. Das ist nur möglich, wenn keine Anfragen, Angebote oder Rechnungen verknüpft sind.\n\nFortfahren?",
 } as const;
 
 export function confirmDanger(message: string): boolean {

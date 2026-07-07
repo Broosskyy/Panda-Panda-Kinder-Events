@@ -141,7 +141,7 @@ export function BookingsView() {
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 {b.customer_id ? (
                   <Link
-                    href={`/admin/kunden`}
+                    href={`/admin/kunden?id=${b.customer_id}`}
                     className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
                   >
                     Kunde verknüpft

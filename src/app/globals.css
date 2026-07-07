@@ -1172,6 +1172,21 @@ img {
   }
 }
 
+@media (max-width: 1023px) {
+  .admin-customer-split .admin-customer-detail {
+    position: relative;
+    z-index: 20;
+    margin-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+.admin-customer-detail .admin-input,
+.admin-customer-detail textarea {
+  max-width: 100%;
+}
+
+/* ── Admin sidebar desktop ── */
+
 .admin-sidebar-desktop {
   display: none;
   width: 16rem;

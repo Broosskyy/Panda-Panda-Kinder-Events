@@ -43,9 +43,9 @@ function themeStyles(tokens: EmailDesignTokens): string {
   return `
     @media only screen and (max-width: 600px) {
       .email-card { width: 100% !important; }
-      .email-inner { padding: 22px 18px !important; }
-      .email-header { padding: 24px 18px 18px !important; }
-      .email-footer { padding: 18px !important; }
+      .email-inner { padding: 24px 20px !important; }
+      .email-header { padding: 28px 20px 20px !important; }
+      .email-footer { padding: 20px !important; }
     }${darkBlock}`;
 }
 
@@ -75,20 +75,20 @@ export function wrapEmailHtml(opts: EmailLayoutOptions): string {
   ${colorSchemeMeta(tokens)}
   <style>${themeStyles(tokens)}</style>
 </head>
-<body class="email-body" style="margin:0;padding:0;background:${tokens.pageBackground};font-family:${tokens.fontFamily};color:${tokens.text};">
-  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${tokens.pageBackground};padding:28px 14px;">
+<body class="email-body" style="margin:0;padding:0;background:${tokens.pageBackground};font-family:${tokens.fontFamily};color:${tokens.text};-webkit-text-size-adjust:100%;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${tokens.pageBackground};padding:32px 16px;">
     <tr><td align="center">
-      <table width="100%" class="email-card" cellpadding="0" cellspacing="0" role="presentation" style="max-width:${maxWidth};background:${tokens.cardBackground};border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(46,46,42,.08);border:1px solid ${tokens.border};">
+      <table width="100%" class="email-card" cellpadding="0" cellspacing="0" role="presentation" style="max-width:${maxWidth};background:${tokens.cardBackground};border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(47,47,47,0.06);border:1px solid ${tokens.border};">
         ${headerImage}
-        <tr><td class="email-header" style="padding:32px 32px 24px;text-align:center;border-bottom:1px solid ${tokens.border};background:linear-gradient(180deg, ${tokens.accent} 0%, ${tokens.cardBackground} 100%);">
+        <tr><td class="email-header" style="padding:32px 32px 24px;text-align:center;background:${tokens.cardBackground};">
           ${logoHeader}
         </td></tr>
-        <tr><td class="email-inner" style="padding:32px;color:${tokens.text};font-size:15px;line-height:1.7;">
+        <tr><td class="email-inner" style="padding:0 32px 32px;color:${tokens.text};font-size:16px;line-height:1.65;">
           ${opts.bodyHtml}
         </td></tr>
-        <tr><td class="email-footer" style="padding:24px 32px;border-top:1px solid ${tokens.border};background:${tokens.accent};">
+        <tr><td class="email-footer" style="padding:24px 32px 28px;border-top:1px solid ${tokens.border};background:${tokens.cardBackground};">
           <p style="margin:0 0 4px;font-size:13px;font-weight:600;color:${tokens.primary};">Mit freundlichen Grüßen</p>
-          <p class="email-muted" style="margin:0;font-size:13px;color:${tokens.textMuted};">${opts.companyName}</p>
+          <p class="email-muted" style="margin:0;font-size:13px;color:${tokens.textMuted};">${opts.companyName.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</p>
           ${signatureBlock}
           ${opts.footerHtml ?? ""}
         </td></tr>
@@ -110,9 +110,9 @@ export function buildEmailCtaButton(
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-  return `<table cellpadding="0" cellspacing="0" role="presentation" style="margin:28px 0;">
-    <tr><td align="center" style="border-radius:9999px;background:${buttonColor};">
-      <a href="${safeHref}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:${buttonText};text-decoration:none;border-radius:9999px;">${safeLabel}</a>
+  return `<table cellpadding="0" cellspacing="0" role="presentation" style="margin:24px auto;">
+    <tr><td align="center" style="border-radius:999px;background:${buttonColor};">
+      <a href="${safeHref}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:600;color:${buttonText};text-decoration:none;border-radius:999px;font-family:Arial,Helvetica,sans-serif;">${safeLabel}</a>
     </td></tr>
   </table>`;
 }
@@ -133,8 +133,8 @@ export function buildEmailInfoBox(
           .replace(/>/g, "&gt;")}</td></tr>`,
     )
     .join("");
-  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${accentColor};border:1px solid ${borderColor};border-radius:16px;margin:24px 0;">
-    <tr><td style="padding:18px 20px;">
+  return `<table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:${accentColor};border:1px solid ${borderColor};border-radius:12px;margin:20px 0;">
+    <tr><td style="padding:16px 20px;">
       <table width="100%" cellpadding="0" cellspacing="0" role="presentation">${rows}</table>
     </td></tr>
   </table>`;

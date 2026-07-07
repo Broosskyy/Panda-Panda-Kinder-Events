@@ -8,9 +8,11 @@ export async function getEmailBrandingSettings(): Promise<SiteEmailBrandingSetti
   const settings = await fetchSiteSettings();
   const emailBranding = settings.email.branding;
   const business = settings.business;
+  const rawLogo =
+    emailBranding.logoUrl?.trim() || resolveBrandLogo(settings.branding, "email") || "/assets/Logo.png";
   return {
     ...emailBranding,
-    logoUrl: emailBranding.logoUrl?.trim() || resolveBrandLogo(settings.branding, "email") || "/assets/Logo.png",
+    logoUrl: resolveEmailImageUrl(rawLogo) ?? getDefaultEmailLogoUrl(),
     faviconUrl: emailBranding.faviconUrl?.trim() || settings.branding.faviconUrl || "",
     primaryColor: emailBranding.primaryColor?.trim() || settings.branding.primaryColor || SYSTEM_EMAIL_DEFAULTS.primary,
     companyName: emailBranding.companyName?.trim() || settings.email.companyName || business.companyName,

@@ -1,34 +1,16 @@
 import { resolveImageUrl } from "@/lib/cms/resolve-image";
-import { getSiteUrl } from "@/lib/site-url";
-import { SYSTEM_EMAIL_DEFAULTS } from "@/lib/email/brand-tokens";
+import {
+  getDefaultEmailLogoUrl,
+  getEmailAssetBaseUrl,
+  isUnsafeEmailAssetUrl,
+} from "@/lib/email/asset-url";
 
-export const EMAIL_ASSET_BASE_FALLBACK = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") || "";
-
-/** Öffentliche Basis-URL für E-Mail-Bilder (immer HTTPS, nie localhost). */
-export function getEmailAssetBaseUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (fromEnv && /^https?:\/\//i.test(fromEnv)) {
-    const normalized = fromEnv.replace(/\/$/, "");
-    if (!/localhost|127\.0\.0\.1/i.test(normalized)) {
-      return normalized;
-    }
-  }
-
-  try {
-    const site = getSiteUrl().replace(/\/$/, "");
-    if (/^https?:\/\//i.test(site) && !/localhost|127\.0\.0\.1/i.test(site)) {
-      return site;
-    }
-  } catch {
-    // ignore
-  }
-
-  if (EMAIL_ASSET_BASE_FALLBACK && /^https?:\/\//i.test(EMAIL_ASSET_BASE_FALLBACK)) {
-    return EMAIL_ASSET_BASE_FALLBACK.replace(/\/$/, "");
-  }
-
-  return "https://pb-kinderevents.de";
-}
+export {
+  EMAIL_ASSET_BASE_DEFAULT,
+  EMAIL_LOGO_DEFAULT_URL,
+  getDefaultEmailLogoUrl,
+  getEmailAssetBaseUrl,
+} from "@/lib/email/asset-url";
 
 function isAbsoluteHttpUrl(value: string): boolean {
   return /^https?:\/\//i.test(value);
@@ -40,18 +22,23 @@ function looksLikeSiteAssetsPath(value: string): boolean {
 
 function normalizeLogoPath(path: string): string {
   const trimmed = path.trim();
-  if (/logo\.png$/i.test(trimmed) && !/Logo\.png$/.test(trimmed)) {
-    return trimmed.replace(/logo\.png$/i, "Logo.png");
+  if (trimmed === "/logo.png" || trimmed === "logo.png" || trimmed === "/Logo.png") {
+    return "/assets/Logo.png";
   }
-  if (trimmed === "/logo.png" || trimmed === "logo.png") {
+  if (/logo\.png$/i.test(trimmed) && !/assets\/Logo\.png$/i.test(trimmed)) {
     return "/assets/Logo.png";
   }
   return trimmed;
 }
 
+function isLogoAssetPath(path: string): boolean {
+  return /\/assets\/logo\.png$/i.test(path) || path === "/assets/Logo.png" || /^logo\.png$/i.test(path);
+}
+
 /**
  * Wandelt CMS-/Branding-Bildpfade in öffentliche absolute URLs um.
- * Kein base64, keine relativen Pfade in der Ausgabe.
+ * Relative Logo-Pfade → EMAIL_ASSET_BASE_URL (www.pb-kinderevents.de).
+ * Vercel-Preview-URLs werden verworfen und neu aufgelöst.
  */
 export function resolveEmailImageUrl(
   path: string | null | undefined,
@@ -60,22 +47,35 @@ export function resolveEmailImageUrl(
   const trimmed = normalizeLogoPath(path ?? "");
   if (!trimmed) return null;
   if (trimmed.startsWith("data:")) return null;
-  if (isAbsoluteHttpUrl(trimmed)) return trimmed;
+
+  if (isAbsoluteHttpUrl(trimmed)) {
+    if (isUnsafeEmailAssetUrl(trimmed)) {
+      try {
+        const pathname = new URL(trimmed).pathname;
+        if (isLogoAssetPath(pathname)) return getDefaultEmailLogoUrl();
+        return resolveEmailImageUrl(pathname, getEmailAssetBaseUrl());
+      } catch {
+        return isLogoAssetPath(trimmed) ? getDefaultEmailLogoUrl() : null;
+      }
+    }
+    return trimmed;
+  }
+
+  if (isLogoAssetPath(trimmed.startsWith("/") ? trimmed : `/${trimmed}`)) {
+    return getDefaultEmailLogoUrl();
+  }
 
   if (looksLikeSiteAssetsPath(trimmed)) {
     const storagePath = trimmed.replace(/^\//, "");
     const fromStorage = resolveImageUrl("site-assets", storagePath);
-    if (fromStorage) return fromStorage;
+    if (fromStorage && !isUnsafeEmailAssetUrl(fromStorage)) return fromStorage;
   }
 
   const base = (baseUrl ?? getEmailAssetBaseUrl()).replace(/\/$/, "");
   const normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
-  return `${base}${normalized}`;
-}
-
-/** Standard-Logo-URL — absolute HTTPS from CMS path or site URL */
-export function getDefaultEmailLogoUrl(baseUrl?: string): string {
-  return resolveEmailImageUrl("/assets/Logo.png", baseUrl) ?? `${(baseUrl ?? getEmailAssetBaseUrl()).replace(/\/$/, "")}/assets/Logo.png`;
+  const resolved = `${base}${normalized}`;
+  if (isUnsafeEmailAssetUrl(resolved)) return null;
+  return resolved;
 }
 
 function escapeHtml(value: string): string {
@@ -86,23 +86,18 @@ function escapeHtml(value: string): string {
     .replace(/"/g, "&quot;");
 }
 
-/** Logo-Block: Bild mit absoluter URL oder Text-Fallback ohne broken image. */
+/** Logo-Block: feste Produktions-URL oder CMS-Logo — nie Vercel-Preview */
 export function buildEmailLogoHeaderHtml(opts: {
   logoUrl: string | null | undefined;
   companyName: string;
   baseUrl?: string;
   accentColor?: string;
 }): string {
-  const absolute = resolveEmailImageUrl(opts.logoUrl, opts.baseUrl) ?? getDefaultEmailLogoUrl(opts.baseUrl);
-  const companyName = opts.companyName?.trim() || "Ihr Unternehmen";
-  const color = opts.accentColor ?? SYSTEM_EMAIL_DEFAULTS.primary;
-  const width = SYSTEM_EMAIL_DEFAULTS.logoWidth;
+  const resolved = opts.logoUrl ? resolveEmailImageUrl(opts.logoUrl, opts.baseUrl) : null;
+  const absolute = resolved && !isUnsafeEmailAssetUrl(resolved) ? resolved : getDefaultEmailLogoUrl();
+  const companyName = opts.companyName?.trim() || "Panda-Bande Kinderevents";
 
-  if (!absolute) {
-    return `<p style="margin:0;font-size:22px;font-weight:700;color:${color};letter-spacing:.02em;">${escapeHtml(companyName)}</p>`;
-  }
-
-  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName)}" width="${width}" style="display:block;margin:0 auto;max-width:${width}px;width:${width}px;height:auto;border:0;object-fit:contain;" />`;
+  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName)}" width="180" style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto;" />`;
 }
 
 export function buildEmailHeaderImageRow(
@@ -110,7 +105,7 @@ export function buildEmailHeaderImageRow(
   baseUrl?: string,
 ): string {
   const absolute = resolveEmailImageUrl(headerImageUrl, baseUrl);
-  if (!absolute) return "";
+  if (!absolute || isUnsafeEmailAssetUrl(absolute)) return "";
 
-  return `<tr><td style="padding:0;"><img src="${escapeHtml(absolute)}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;" /></td></tr>`;
+  return `<tr><td style="padding:0;"><img src="${escapeHtml(absolute)}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;" /></td></tr>`;
 }

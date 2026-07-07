@@ -14,6 +14,7 @@ import {
   type AdminNavGroup,
 } from "@/lib/admin/nav";
 import { resolveAdminIcon } from "@/lib/admin/icons";
+import { AdminPageHelp } from "@/components/admin/ui/AdminHelpBlock";
 
 const MOBILE_BOTTOM_NAV = ADMIN_NAV_GROUPS.flatMap((g) => g.items).filter((item) =>
   (MOBILE_BOTTOM_NAV_HREFS as readonly string[]).includes(item.href),
@@ -137,7 +138,7 @@ export function AdminSidebar() {
       <aside className="admin-sidebar-desktop" aria-label="Admin Navigation">
         <div className="admin-sidebar-brand">
           <Logo context="admin" linked={false} />
-          <p className="mt-2 text-xs text-text-muted">CMS Admin</p>
+          <p className="mt-2 text-xs text-text-muted">Verwaltung</p>
         </div>
         <div className="admin-sidebar-notifications hidden md:flex">
           <AdminNotificationCenter />
@@ -166,7 +167,7 @@ export function AdminSidebar() {
         </button>
         <div className="flex flex-col items-center">
           <Logo context="admin" linked={false} />
-          <p className="mt-1 text-[10px] uppercase tracking-wider text-text-muted">CMS</p>
+          <p className="mt-1 text-[10px] uppercase tracking-wider text-text-muted">Admin</p>
         </div>
         <AdminNotificationCenter />
       </header>
@@ -258,17 +259,7 @@ export function AdminPageHeader({
         </div>
         {children ? <div className="admin-page-actions">{children}</div> : null}
       </div>
-      {helpItems?.length ? (
-        <div className="admin-page-help-wrap">
-          {/* AdminPageHelp imported in views to avoid circular deps — optional inline */}
-          <ul className="admin-page-help-list" aria-label="Was kann ich hier machen?">
-            <li className="admin-page-help-label">Was kann ich hier machen?</li>
-            {helpItems.slice(0, 3).map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+      {helpItems?.length ? <AdminPageHelp items={helpItems} /> : null}
     </div>
   );
 }

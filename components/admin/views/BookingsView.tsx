@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { BookingStatus } from "@/lib/supabase/admin";
 import { Inbox, UserPlus } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
@@ -95,6 +96,10 @@ export function BookingsView() {
   return (
     <div>
       <AdminPageHeader {...page} />
+
+      <AdminHelpBlock title="Tipp" variant="tip" className="mb-6">
+        Neue Anfragen kommen vom Kontaktformular auf der Website. Setze den Status und lege bei Bedarf direkt einen Kunden an — Notizen sind nur intern sichtbar.
+      </AdminHelpBlock>
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Name, E-Mail oder Event suchen…" />
         <AdminFilterSelect

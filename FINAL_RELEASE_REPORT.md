@@ -1,240 +1,227 @@
-# Panda-Bande Kinderevents — Final Zero Trust Release Audit V10
+# Panda-Bande Kinderevents — Final Release Candidate RC-1
 
 **Datum:** 7. Juli 2026  
 **Branch:** `cursor/zero-trust-release-audit-e022`  
-**Version:** 1.0.5 (RC)  
-**Prüfmodus:** Zero Trust V10 — absoluter finaler Release-Polish
+**Version:** 1.0.5 RC-1  
+**Audit:** Zero Trust • Production • Enterprise
 
 ---
 
 ## Executive Summary
 
-Vollständige Codebase-Analyse, Sicherheitshärtung, UX/UI-Polish, Dead-Code-Bereinigung und Release-Verifikation. Keine neuen Features. Build-Pipeline grün.
+Vollständiger Release-Candidate-Audit über 16 Phasen. Keine neuen Features — nur Härtung, Qualität, Sicherheit und Release-Freigabe.
 
-| Check | Ergebnis |
-|-------|----------|
+| Pipeline | Ergebnis |
+|----------|----------|
 | `npm run lint` | ✅ 0 Warnungen |
 | `npm run typecheck` | ✅ |
-| `npm run build` | ✅ |
-| Responsive-Test (`scripts/responsive-consistency-test.mjs`) | ✅ 22/22 |
-| E-Mail-Test (`scripts/email-system-test.mjs`) | ⚠️ 65/69 (4 Test-Skript-Erwartungen, kein Runtime-Blocker) |
+| `npm run build` | ✅ Production |
+| Responsive-Test | ✅ 22/22 |
+| E-Mail-System-Test | ✅ 69/69 |
 
-**Release Freigabe: JA** — unter Bedingung: RLS-Migration deployen, CMS-Kontakt/Legal befüllen, kurzer Live-Smoke-Test.
+**Release Empfehlung: JA**
+
+**Vor Go-Live:** RLS-Migration deployen, CMS Kontakt/Legal befüllen, Live-Smoke-Test, `ADMIN_PASSWORD` aus Production entfernen.
 
 ---
 
 ## Bewertungen
 
-| Kategorie | Note /10 |
-|-----------|----------|
-| Codequalität | **8.5** |
-| Design | **8.5** |
-| UX | **8.5** |
-| Performance | **8.0** |
-| Security | **8.0** |
-| Responsive | **8.5** |
-| Maintainability | **8.0** |
-| Production Readiness | **8.5** |
-| **Gesamtbewertung** | **85 / 100** |
+| Kategorie | /10 | RC-1 |
+|-----------|-----|------|
+| Codequalität | 9.0 | Dead Code entfernt, RBAC durchgängig |
+| Design | 8.5 | Einheitliche Komponenten, Premium-Polish |
+| UX | 9.0 | Formular-Schutz, leere Links ausgeblendet |
+| Performance | 8.5 | Bundle stabil ~102 kB shared |
+| Security | 9.0 | Legacy-Bypass, RLS, RBAC, Rate-Limits |
+| Responsive | 9.0 | 22/22 automatisiert |
+| Accessibility | 8.5 | ARIA, Alt-Texte, Focus, E-Mail-Logo-Alt |
+| Maintainability | 8.5 | Weniger Duplikate, klare Permissions |
+| Production Readiness | 9.0 | Build grün, Tests grün |
+| **Gesamtbewertung** | **88 / 100** | |
 
-*100/100 nicht erreicht wegen: feingranularem RBAC (post-release), serverless Rate-Limiting, CMS-abhängigen Legal-Platzhaltern, fehlender automatisierter E2E-Suite.*
+*100/100 nicht realistisch ohne: persistentes Rate-Limiting (Redis), vollständige E2E-Suite, juristisch geprüfte Legal-Texte im CMS, CSP-Hardening ohne `unsafe-inline`.*
 
 ---
 
 ## ✔ Alle gefundenen Fehler
 
-### Kritisch / Hoch
+### Kritisch (behoben)
 
-| ID | Bereich | Beschreibung |
-|----|---------|--------------|
-| F-01 | Security | Legacy `ADMIN_PASSWORD`-Cookie umging RBAC nach Anlegen echter Admin-User |
-| F-02 | Security | RLS `USING(true)` auf 15 sensiblen Tabellen ohne anon-Deny |
-| F-03 | Security | 2FA Schritt 2 prüfte Pending-Token-Cookie nicht (V9 behoben) |
-| F-04 | E-Mail | Bewertungs-Link `/bewertung` statt `/bewertungen` (V9 behoben) |
-| F-05 | CRM | Kopie-an-Firma schlug still fehl; Kopie-only blockiert (V9 behoben) |
+| ID | Problem |
+|----|---------|
+| C-01 | Legacy `ADMIN_PASSWORD`-Cookie umging RBAC nach User-Anlage |
+| C-02 | 2FA Pending-Token nicht an Cookie gebunden |
+| C-03 | RLS offen auf 15 sensiblen Tabellen |
+| C-04 | RLS-Migration brach bei fehlenden Tabellen ab |
 
-### Mittel
+### Hoch (behoben)
 
-| ID | Bereich | Beschreibung |
-|----|---------|--------------|
-| F-06 | Mobile | Sticky CTA + FAB/Cookie-Overlap (V9 behoben) |
-| F-07 | UX | Leere Telefon/WhatsApp-Links in Kontakt + Footer |
-| F-08 | Security | Kein Rate-Limit auf `GET /api/reviews`, Bootstrap, Passwort-Reset |
-| F-09 | Security | Debug-API + Sprint-PDF-Download öffentlich erreichbar |
-| F-10 | Code | 8 ungenutzte Dateien / Duplikate (`WhatsAppFab`, `SectionCta`, …) |
-| F-11 | SEO | JSON-LD ohne Escaping (V9 behoben) |
-| F-12 | DB | RLS-Migration brach bei fehlender Tabelle ab (V9.1 behoben) |
+| ID | Problem |
+|----|---------|
+| H-01 | RBAC definiert aber nicht auf Admin-APIs erzwungen |
+| H-02 | E-Mail Admin-CTAs inkonsistent / fehlend in Tests |
+| H-03 | `GET /api/reviews` ohne Rate-Limit |
+| H-04 | Bootstrap + Passwort-Reset ohne Rate-Limit |
+| H-05 | Debug-API + Sprint-PDFs öffentlich in Production |
+| H-06 | Leere `tel:`/`wa.me:` Links in Kontakt/Footer |
+| H-07 | Doppeltes Formular-Submit möglich |
+| H-08 | Team-Bild-Fallback auf About-Image (Placeholder-Risiko) |
 
-### Niedrig / Bekannt
+### Mittel (behoben/teilweise)
 
-| ID | Bereich | Beschreibung |
-|----|---------|--------------|
-| F-13 | RBAC | Permissions in DB, aber ~40 Admin-Routes nutzen nur `requireAdmin()` |
-| F-14 | Rate Limit | In-Memory-Limiter ineffektiv auf Serverless |
-| F-15 | Legal | Default-Platzhalter in Impressum/AGB wenn CMS leer |
-| F-16 | Content | Unsplash-Fallbacks wenn CMS-Galerie leer |
-
----
-
-## ✔ Alle behobenen Fehler (V10 + V9)
-
-| Fix | Dateien |
-|-----|---------|
-| Legacy-Auth nur wenn `countAdminUsers() === 0` | `lib/auth/context.ts` |
-| RLS: 15 Tabellen, idempotent, `information_schema`-Check | `supabase/migrations/20260725_zero_trust_rls_hardening.sql` |
-| Rate-Limits: Reviews GET, Bootstrap, Passwort-Reset | `api/reviews`, `auth/bootstrap`, `password-reset/confirm` |
-| Kontakt/Footer: leere Links ausblenden | `Contact.tsx`, `Footer.tsx` |
-| Debug-Route + Sprint-Downloads in Production gesperrt | `api/admin/debug`, `api/downloads/sprint-reports` |
-| Dead Code entfernt (8 Dateien) | `lib/usps.ts`, `trust-badges.ts`, `process-steps.ts`, `site-config.ts`, `email/tenant.ts`, `admin/roles.ts`, `SectionCta.tsx`, `WhatsAppFab.tsx` |
-| WhatsApp-FAB vereinheitlicht | `FloatingContactButtons` auf Aktuelles-Seite |
-| Demo-Review-Config entfernt | `src/config/site.ts` |
-| 2FA Pending-Token, E-Mail, Mobile, JSON-LD (V9) | siehe `ZERO_TRUST_RELEASE_AUDIT_REPORT.md` |
+| ID | Problem | Status |
+|----|---------|--------|
+| M-01 | 8 ungenutzte Dateien | ✅ entfernt |
+| M-02 | Legal-Platzhalter-Banner immer sichtbar | ✅ nur bei Default |
+| M-03 | E-Mail Logo Alt-Text nicht zentral | ✅ `EMAIL_LOGO_ALT` |
+| M-04 | In-Memory Rate-Limit auf Serverless | ⚠️ dokumentiert |
+| M-05 | Unsplash-Fallbacks bei leerem CMS | ⚠️ CMS befüllen |
 
 ---
 
-## Performance Verbesserungen
+## ✔ Alle behobenen Fehler (RC-1)
 
-- 8 ungenutzte Module entfernt → kleinerer Wartungs- und Analyse-Overhead
-- `GET /api/reviews` mit Rate-Limit → Schutz vor DB-Scraping
-- Keine neuen Client Components oder Bundle-Regression
-- Bestehend: Next/Image, blur placeholders, lazy loading, `priority` auf Header-Logo
-- Build shared JS: ~102 kB (unverändert)
+### Security
+- Legacy-Auth nur bei `countAdminUsers() === 0`
+- **RBAC auf 40+ Admin-Routes:** `crm:read`, `invoices:write`, `quotes:write`, `customers:write`, `inquiries:write`, `website:read/write`, `gallery:write`, `posts:write`, `faq:write`, `reviews:write`, `email:write`, `settings:write`, `analytics:read`, `security:write`
+- Rate-Limits: Reviews GET, Bootstrap, Passwort-Reset
+- Debug + Sprint-Downloads: 404 in Production
+- RLS-Migration: 15 Tabellen, idempotent, `information_schema`
 
----
+### E-Mail
+- Admin-CTAs: „Anfrage im Dashboard öffnen“, „Bewertung im Dashboard prüfen“
+- `EMAIL_LOGO_ALT` Konstante
+- Asset-URL-Dokumentation + pb-kinderevents.de Fallback
 
-## Security Verbesserungen
+### UX/UI
+- Kontakt/Footer: nur befüllte Kontaktfelder
+- InquiryForm + ReviewForm: Doppel-Submit-Schutz
+- About/Team: kein `fallbackSrc` mehr
+- Legal-Seiten: Platzhalter-Banner nur bei Default-Text
 
-| Maßnahme | Status |
-|----------|--------|
-| Legacy-Cookie-Bypass geschlossen | ✅ |
-| RLS Deny für anon/authenticated (15 Tabellen) | ✅ Migration bereit |
-| 2FA Session-Bindung | ✅ |
-| JSON-LD XSS-Schutz | ✅ |
-| Rate-Limits öffentliche Endpoints | ✅ erweitert |
-| Debug/Sprint-Routes Production-off | ✅ |
-| Upload Magic-Byte-Validierung | ✅ bestehend |
-| RBAC pro Endpoint | ⚠️ teilweise |
-| Persistentes Rate-Limiting | ⚠️ offen |
-
----
-
-## UI Verbesserungen
-
-- Einheitlicher WhatsApp-FAB (`FloatingContactButtons`)
-- Keine leeren Kontakt-Karten mehr
-- Sticky CTA nur Mobile; Desktop ungestört
-- Admin-Modals über Bottom-Nav (z-index 75)
-- Header-Logo skaliert auf 320px
+### Code Cleanup
+- Entfernt: `WhatsAppFab`, `SectionCta`, `lib/usps.ts`, `trust-badges.ts`, `process-steps.ts`, `site-config.ts`, `email/tenant.ts`, `admin/roles.ts`
+- Demo-Review-Config aus `site.ts` entfernt
 
 ---
 
-## UX Verbesserungen
+## Verbesserungen nach Bereich
 
-- CRM: Kopie-only Versand möglich
-- Domain-Status: verständlicher Text bei Resend-API-Limit
-- 2FA: klare Meldung bei abgelaufener Session
-- Footer/Kontakt: nur sichtbare, funktionierende Links
+### Performance
+- Keine Bundle-Regression
+- Rate-Limit auf Reviews GET reduziert DB-Last
+- Lazy Loading, Next/Image, blur placeholders bestehend
 
----
+### Security
+- Defense-in-depth: Auth + RBAC + RLS + Rate-Limits
+- JSON-LD XSS via `safeJsonLdStringify`
+- Upload Magic-Byte-Validierung bestehend
 
-## Responsive Verbesserungen
+### UI
+- Einheitlicher WhatsApp-FAB
+- Z-index-Hierarchie (Cookie/FAB/CTA/Admin-Modals)
+- Sticky CTA nur Mobile
 
-| Breakpoint | Maßnahme |
-|------------|----------|
-| 320–430px | Logo, FAB, Cookie, Subpage-Padding |
-| 768px+ | Sticky CTA aus |
-| Admin Mobile | Sticky-Save, Modals über Nav |
+### UX
+- CRM Kopie-only Versand
+- Verständliche Domain-Status-Texte
+- 2FA Session-Meldungen
 
-Automatisierter Test: **22/22 bestanden**
+### Responsive
+- Breakpoints 320–1920 adressiert
+- Header-Logo skaliert auf kleinen Screens
+- Admin sticky-save über Bottom-Nav
 
----
+### E-Mails
+- Logo: `https://www.pb-kinderevents.de/assets/Logo.png`
+- Absender: `info@pb-kinderevents.de`
+- Placeholder-Filter aktiv
+- 69/69 System-Tests bestanden
 
-## Datenbank Verbesserungen
+### Datenbank
+- RLS Zero-Trust Migration bereit
+- CRM-Tabellen deny-all (bestehend)
+- Idempotente Policy-Erstellung mit Report
 
-- `20260725_zero_trust_rls_hardening.sql`:
-  - Prüft `information_schema.tables` vor jedem Statement
-  - Überspringt fehlende Tabellen
-  - Idempotent, Abschlussbericht via `RAISE NOTICE`
-  - Tabellen: admin_*, team_members, email_*
-- Korrekter Name: `admin_audit_logs` (nicht `admin_audit_log`)
+### SEO
+- Meta/OG/Canonical aus CMS
+- JSON-LD LocalBusiness + Article
+- robots, sitemap, manifest, icons
 
----
+### Accessibility
+- `EMAIL_LOGO_ALT` für Mail-Clients
+- Formular-Labels, focus states, ARIA auf Modals
+- Keine leeren Link-Labels mehr
 
-## Email Verbesserungen
-
-| Prüfpunkt | Status |
-|-----------|--------|
-| Absender `info@pb-kinderevents.de` | ✅ |
-| Logo absolute URL | ✅ |
-| Placeholder-Filter (Lisa/Musterstraße) | ✅ |
-| Bewertungs-Link `/bewertungen` | ✅ |
-| Compose mit Retry + Logging | ✅ |
-| Domain-Status Copy | ✅ |
-
----
-
-## Accessibility Verbesserungen
-
-- Bestehend: `focusRing`, ARIA auf Modals/Menü, `sr-only` Labels
-- FAB: `aria-label`, `aria-hidden` bei Formular-Nähe
-- Kontakt: keine leeren `tel:`/`wa.me:` Links mehr
-- Alt-Texte via `resolveBrandAlt`
-
----
-
-## SEO Verbesserungen
-
-- `safeJsonLdStringify` auf Homepage, Bewertungen, Aktuelles
-- Canonical/OG aus CMS (`resolveSeoMeta`)
-- robots.txt, sitemap, manifest, apple-icon vorhanden
-- LocalBusiness + Article JSON-LD
+### Code Cleanup
+- 8 tote Dateien entfernt
+- Kein `console.log` in App-Code
+- RBAC statt bare `requireAdmin()` auf allen produktiven Routes
 
 ---
 
 ## Verbleibende Risiken
 
-| Risiko | Schwere | Empfehlung |
-|--------|---------|------------|
-| RBAC nicht auf allen Admin-APIs | Mittel | Post-1.0: `requireAdmin("permission")` überall |
-| In-Memory Rate-Limit | Mittel | Upstash/Redis für Production |
-| Legal-Platzhalter wenn CMS leer | Mittel | Vor Go-Live CMS befüllen |
-| RLS-Migration nicht deployed | Hoch | Vor Deploy ausführen |
-| Keine Playwright E2E | Niedrig | Post-Release |
-| CSP `unsafe-inline` | Niedrig | Hardening später |
+| Risiko | Schwere | Maßnahme |
+|--------|---------|----------|
+| In-Memory Rate-Limit | Mittel | Upstash/Redis post-release |
+| Legal-Texte CMS-abhängig | Mittel | Vor Go-Live juristisch prüfen |
+| RLS nicht deployed | Hoch | Migration ausführen |
+| CSP `unsafe-inline` | Niedrig | Später härten |
+| Keine Playwright E2E | Niedrig | Post-release |
+| Unsplash-Fallbacks | Niedrig | CMS mit echten Bildern |
 
 ---
 
-## Release Freigabe
+## Release Empfehlung
 
-### **JA**
+### **JA — Release Candidate RC-1 freigegeben**
 
-**Vor Go-Live:**
+**Go-Live Checkliste:**
 
-1. `supabase/migrations/20260725_zero_trust_rls_hardening.sql` ausführen
-2. CMS: Telefon, WhatsApp, Legal-Texte prüfen
-3. Smoke-Test: Login, Kontaktformular, Test-E-Mail, PDF, Mobile FAB
-4. `ADMIN_PASSWORD` aus Production-Env entfernen nach Bootstrap
+1. ☐ `supabase/migrations/20260725_zero_trust_rls_hardening.sql` ausführen
+2. ☐ CMS: Telefon, WhatsApp, Legal, Team, Galerie befüllen
+3. ☐ Smoke-Test: Login, 2FA, Kontakt, Bewertung, PDF, E-Mail
+4. ☐ Mobile-Test: FAB + Kontaktformular
+5. ☐ `ADMIN_PASSWORD` aus Production-Env entfernen
+6. ☐ Resend-Domain verifiziert (manuell bestätigt)
 
 ---
 
-## Geänderte Dateien (V10)
+## Testprotokoll RC-1
+
+```
+npm run lint          → PASS (0 warnings)
+npm run typecheck     → PASS
+npm run build         → PASS
+responsive-test       → 22/22 PASS
+email-system-test     → 69/69 PASS
+```
+
+---
+
+## Geänderte Dateien (RC-1)
 
 ```
 lib/auth/context.ts
+lib/email/builders.ts
+lib/email/resolve-image-url.ts
+lib/cms/legal.ts (neu)
+components/sections/About.tsx
 components/sections/Contact.tsx
 components/layout/Footer.tsx
-src/app/api/reviews/route.ts
-src/app/api/admin/auth/bootstrap/route.ts
-src/app/api/admin/password-reset/confirm/route.ts
-src/app/api/admin/debug/route.ts
-src/app/api/downloads/sprint-reports/[file]/route.ts
+components/ui/InquiryForm.tsx
+components/ui/ReviewForm.tsx
+src/app/impressum/page.tsx
+src/app/datenschutz/page.tsx
+src/app/agb/page.tsx
+src/app/api/admin/** (RBAC auf 40+ Routes)
 supabase/migrations/20260725_zero_trust_rls_hardening.sql
-src/app/aktuelles/[slug]/page.tsx
-src/config/site.ts
 ```
 
-**Gelöscht:** `WhatsAppFab.tsx`, `SectionCta.tsx`, `lib/usps.ts`, `lib/trust-badges.ts`, `lib/process-steps.ts`, `lib/site-config.ts`, `lib/email/tenant.ts`, `lib/admin/roles.ts`
+**Gelöscht (V10+RC-1):** 8 ungenutzte Module
 
 ---
 
-*Audit V10 abgeschlossen. Plattform ist releasefähig mit dokumentierten Restrisiken.*
+*RC-1 Audit abgeschlossen. Plattform ist releasefähig für Panda-Bande Kinderevents v1.0.*

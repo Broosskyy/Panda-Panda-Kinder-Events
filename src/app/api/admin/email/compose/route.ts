@@ -9,7 +9,6 @@ import { buildEmailVariableContext } from "@/lib/email/render";
 import { wrapEmailHtml } from "@/lib/email/html";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
-import { getSiteUrl } from "@/lib/site-url";
 
 export async function POST(request: Request) {
   const authError = await requireAdmin();
@@ -79,7 +78,6 @@ export async function POST(request: Request) {
       const inner = bodyHtml || applyTemplateVariables("<p>{{message}}</p>", vars);
       const settings = await fetchSiteSettings();
       finalHtml = wrapEmailHtml({
-        baseUrl: getSiteUrl(),
         logoUrl: resolveBrandLogo(settings.branding, "email"),
         companyName: vars.company_name,
         primaryColor: resolvePrimaryColor(settings.branding),

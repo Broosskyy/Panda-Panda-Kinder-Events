@@ -15,6 +15,7 @@ import {
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
 import { wrapEmailHtml } from "@/lib/email/html";
+import { getEmailAssetBaseUrl } from "@/lib/email/resolve-image-url";
 import type { BusinessProfile } from "@/lib/crm/company";
 
 export {
@@ -172,7 +173,6 @@ export async function sendInquiryNotification(data: InquiryEmailData): Promise<I
         return {
           subject: applyEmailTemplate(emailSettings.inquiryAutoReplySubject, templateVars),
           html: wrapEmailHtml({
-            baseUrl: getSiteUrl(),
             logoUrl,
             companyName,
             primaryColor,
@@ -379,7 +379,6 @@ function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): 
   const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
   const company = opts.company;
   const brand = BRAND.themeColor;
-  const baseUrl = company?.website || getSiteUrl();
   const logoUrl = company?.logoUrl || BRAND.master;
 
   const bodyHtml = `
@@ -404,7 +403,13 @@ function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): 
       : "",
   ].join("");
 
-  return wrapEmailHtml({ baseUrl, logoUrl, companyName, bodyHtml, footerHtml });
+  return wrapEmailHtml({
+    baseUrl: getEmailAssetBaseUrl(),
+    logoUrl,
+    companyName,
+    bodyHtml,
+    footerHtml,
+  });
 }
 
 export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
@@ -523,8 +528,10 @@ export async function sendTransactionalEmail(opts: {
 
 export async function sendTestEmail(to: string) {
   const emailSettings = await getEmailSettings();
+  const settings = await fetchSiteSettings();
   const sender = await resolveEmailSender(emailSettings);
   const companyName = emailSettings.companyName;
+  const logoUrl = resolveBrandLogo(settings.branding, "email");
 
   const text = `Dies ist eine Test-E-Mail von ${companyName}.
 
@@ -536,10 +543,9 @@ ${sender.domainStatus === "verified" ? "Die Produktionsdomain ist verifiziert." 
 Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
 
   const html = wrapEmailHtml({
-    baseUrl: getSiteUrl(),
-    logoUrl: BRAND.master,
+    logoUrl,
     companyName,
-    primaryColor: BRAND.themeColor,
+    primaryColor: resolvePrimaryColor(settings.branding),
     bodyHtml: `<p>Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
     <table style="background:#f8f7f4;border-radius:12px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
       <tr><td><strong>Absender:</strong> ${sender.displayFrom}</td></tr>

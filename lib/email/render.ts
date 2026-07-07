@@ -1,7 +1,8 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { getBusinessProfile } from "@/lib/crm/company";
-import { getSiteUrl } from "@/lib/site-url";
 import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
+import { getSiteUrl } from "@/lib/site-url";
+import { getEmailAssetBaseUrl, resolveEmailImageUrl } from "@/lib/email/resolve-image-url";
 import { applyTemplateVariables } from "@/lib/email/variables";
 import { getEmailSettings } from "@/lib/email/sender";
 import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
@@ -43,7 +44,9 @@ export async function buildEmailVariableContext(
     reset_link: "",
     rating: "",
     submitted_at: "",
-    logo_url: resolveBrandLogo(settings.branding, "email"),
+    logo_url:
+      resolveEmailImageUrl(resolveBrandLogo(settings.branding, "email"), getEmailAssetBaseUrl()) ??
+      `${getEmailAssetBaseUrl()}/assets/Logo.png`,
     primary_color: resolvePrimaryColor(settings.branding),
     tagline: settings.branding.tagline || "Kinderevents",
     slogan: settings.branding.slogan || settings.business.slogan || "",

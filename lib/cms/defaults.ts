@@ -1,5 +1,6 @@
 import { BRAND } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
+import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 import { SITE_URL_PLACEHOLDER } from "@/lib/site-url";
 import { navigation } from "@/lib/navigation";
 import type { SiteSettingsBundle } from "./types";
@@ -280,28 +281,46 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   email: {
     companyName: siteConfig.name,
     senderName: siteConfig.name,
-    senderEmail: siteConfig.contact.email,
-    replyTo: siteConfig.contact.email,
-    copyToEmail: siteConfig.contact.email,
-    quoteCopyTo: siteConfig.contact.email,
-    invoiceCopyTo: siteConfig.contact.email,
-    inquiryRecipient: siteConfig.contact.email,
+    senderEmail: DEFAULT_COMPANY_EMAIL,
+    replyTo: DEFAULT_COMPANY_EMAIL,
+    companyEmail: DEFAULT_COMPANY_EMAIL,
+    copyToEmail: DEFAULT_COMPANY_EMAIL,
+    quoteCopyTo: DEFAULT_COMPANY_EMAIL,
+    invoiceCopyTo: DEFAULT_COMPANY_EMAIL,
+    inquiryRecipient: DEFAULT_COMPANY_EMAIL,
     inquiryCopyTo: "",
-    adminNotificationEmail: siteConfig.contact.email,
+    adminNotificationEmail: DEFAULT_COMPANY_EMAIL,
     inquiryAutoReplyEnabled: true,
-    inquiryAutoReplySubject: "Eure Anfrage bei Panda-Bande — wir melden uns",
+    inquiryAutoReplySubject: "Eure Anfrage bei {{company_name}} — wir melden uns",
     inquiryAutoReplyText:
       "Hallo {{customer_name}},\n\nvielen Dank für eure Anfrage.\n\nWir freuen uns sehr über euer Interesse an Panda-Bande.\n\nWir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.\n\nBis bald ❤️\nEuer Panda-Bande Team",
+    inquiryAdminSubject: "Neue Anfrage — {{event_type}} ({{customer_name}})",
+    inquiryAdminText:
+      "Neue Kontaktanfrage über die Website.\n\nName: {{customer_name}}\nTelefon: {{customer_phone}}\nE-Mail: {{customer_email}}\nEventart: {{event_type}}\nDatum: {{event_date}}\nKinder: {{children_count}}\n\nNachricht:\n{{message}}",
+    reviewRecipient: DEFAULT_COMPANY_EMAIL,
+    reviewRequestSubject: "Wie war euer Event mit uns? — {{company_name}}",
+    reviewRequestText:
+      "Hallo {{customer_name}},\n\nwir hoffen, ihr hattet einen wunderschönen Tag!\n\nWenn ihr möchtet, freuen wir uns über eine kurze Bewertung:\n{{review_link}}\n\nHerzliche Grüße\nEuer Panda-Bande Team",
+    reviewAdminSubject: "Neue Bewertung — {{event_type}} ({{customer_name}})",
+    reviewAdminText:
+      "Neue Bewertung eingegangen.\n\nName: {{customer_name}}\nAnlass: {{event_type}}\nBewertung: {{rating}} / 5\n\nText:\n{{message}}",
     quoteSenderEmail: "",
     quoteReplyTo: "",
-    quoteSubjectTemplate: "Angebot {number} — {company}",
-    quoteEmailBody: "",
+    quoteSubjectTemplate: "Angebot {{quote_number}} — {{company_name}}",
+    quoteEmailBody:
+      "Guten Tag {{customer_name}},\n\nanbei unser Angebot {{quote_number}}.\nGesamtbetrag: {{total_amount}}\n\nBei Fragen melden Sie sich gerne.",
     invoiceSenderEmail: "",
     invoiceReplyTo: "",
-    invoiceSubjectTemplate: "Rechnung {number} — {company}",
-    invoiceEmailBody: "",
+    invoiceSubjectTemplate: "Rechnung {{invoice_number}} — {{company_name}}",
+    invoiceEmailBody:
+      "Guten Tag {{customer_name}},\n\nanbei Ihre Rechnung {{invoice_number}}.\nGesamtbetrag: {{total_amount}}\nFällig: {{due_date}}\n\nBei Fragen melden Sie sich gerne.",
+    crmCopyToCompanyEnabled: true,
     passwordResetSenderEmail: "",
+    passwordResetSubject: "Passwort zurücksetzen — {{company_name}}",
+    passwordResetText:
+      "Hallo {{admin_name}},\n\nSie haben eine Passwort-Zurücksetzung angefordert.\n\nKlicken Sie hier: {{reset_link}}\n\nDer Link ist 1 Stunde gültig und kann nur einmal verwendet werden.",
     securityNotificationSender: "",
+    securityAlertsEnabled: true,
     loginAlertRecipient: "",
     applicationEmail: "",
     applicationCopyTo: "",

@@ -108,13 +108,13 @@ export const ADMIN_PAGE_META = {
     ],
   },
   emails: {
-    title: "E-Mails",
-    description: "E-Mails verfassen, Vorlagen bearbeiten und Versand protokollieren.",
-    whereVisible: "Versand nutzt die Einstellungen unter E-Mail & Versand.",
+    title: "E-Mail-Protokoll",
+    description: "E-Mail-Vorlagen bearbeiten, testen und den Versand protokollieren.",
+    whereVisible: "Versand nutzt die Einstellungen unter Einstellungen → E-Mail.",
     help: [
-      "Einzel-E-Mails an Kunden senden.",
-      "Vorlagen für Angebote, Rechnungen und Anfragen anpassen.",
-      "Versandhistorie im Protokoll nachverfolgen.",
+      "Vorlagen für Anfragen, Bewertungen, Angebote und Rechnungen anpassen.",
+      "Testmail senden und auf Standard zurücksetzen.",
+      "Versandhistorie mit Status „Gesendet“ oder „Fehlgeschlagen“.",
     ],
   },
   kunden: {

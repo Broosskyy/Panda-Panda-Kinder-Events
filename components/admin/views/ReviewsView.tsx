@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Star } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, Star } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import {
   AdminButton,
@@ -51,6 +51,9 @@ export function ReviewsView() {
   const [lightboxItems, setLightboxItems] = useState<LightboxItem[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [requestEmail, setRequestEmail] = useState("");
+  const [requestName, setRequestName] = useState("");
+  const [requestEventType, setRequestEventType] = useState("");
   const { toast, withLoading, reviewPublished, reviewSaved, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("bewertungen");
   const empty = ADMIN_EMPTY_STATES.reviews;
@@ -214,9 +217,67 @@ export function ReviewsView() {
     if (ok && !review.approved) reviewPublished();
   };
 
+  const sendReviewRequest = async () => {
+    if (!requestEmail.trim() || !requestName.trim()) {
+      return showError("Bitte E-Mail und Name eingeben.");
+    }
+    await withLoading(
+      (async () => {
+        const res = await fetch("/api/admin/email/review-request", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: requestEmail.trim(),
+            customerName: requestName.trim(),
+            eventType: requestEventType.trim() || undefined,
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
+        toast(data.message ?? "Bewertungsanfrage gesendet.");
+        setRequestEmail("");
+        setRequestName("");
+        setRequestEventType("");
+      })(),
+    );
+  };
+
   return (
     <div className="review-admin-page">
       <AdminPageHeader {...page} />
+
+      <AdminCard title="Bewertungsanfrage per E-Mail" className="mb-6">
+        <p className="mb-4 text-sm text-text-muted">
+          Sende Kunden eine freundliche E-Mail mit Link zur Bewertungsseite. Text und Betreff kannst du unter
+          Einstellungen → E-Mail oder in den Vorlagen anpassen.
+        </p>
+        <div className="grid gap-3 md:grid-cols-3">
+          <input
+            className="admin-input"
+            type="email"
+            placeholder="kunde@beispiel.de"
+            value={requestEmail}
+            onChange={(e) => setRequestEmail(e.target.value)}
+          />
+          <input
+            className="admin-input"
+            placeholder="Name des Kunden"
+            value={requestName}
+            onChange={(e) => setRequestName(e.target.value)}
+          />
+          <input
+            className="admin-input"
+            placeholder="Anlass (optional)"
+            value={requestEventType}
+            onChange={(e) => setRequestEventType(e.target.value)}
+          />
+        </div>
+        <div className="mt-3">
+          <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendReviewRequest()}>
+            Bewertungsanfrage senden
+          </AdminButton>
+        </div>
+      </AdminCard>
 
       <AdminFilterBar>
         <AdminFilterSelect

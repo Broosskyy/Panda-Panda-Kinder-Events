@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { RefreshCw, Send } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
@@ -19,7 +19,6 @@ import type {
   SiteBrandingSettings,
   SiteBusinessSettings,
   SiteContactSettings,
-  SiteEmailCustomAddresses,
   SiteEmailSettings,
   SiteInvoiceSettings,
   SiteLegalSettings,
@@ -27,6 +26,7 @@ import type {
   SiteSettingsBundle,
 } from "@/lib/cms/types";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
+import { EmailSettingsPanel } from "@/components/admin/email/EmailSettingsPanel";
 
 interface EmailStatusResponse {
   resendConfigured: boolean;
@@ -55,13 +55,6 @@ const DOMAIN_STATUS_LABELS: Record<string, string> = {
   not_configured: "Nicht konfiguriert",
 };
 
-const CUSTOM_ADDRESS_LABELS: { key: keyof SiteEmailCustomAddresses; label: string }[] = [
-  { key: "info", label: "info@" },
-  { key: "kontakt", label: "kontakt@" },
-  { key: "rechnung", label: "rechnung@" },
-  { key: "angebote", label: "angebote@" },
-];
-
 const RESEND_LEVEL_VARIANT: Record<string, "success" | "warning" | "danger" | "muted"> = {
   ok: "success",
   warn: "warning",
@@ -83,10 +76,6 @@ const SYSTEM_LEVEL_LABEL: Record<SystemStatusLevel, string> = {
 
 function tabHref(id: ControlCenterTab): string {
   return id === "business" ? "/admin/einstellungen" : `/admin/einstellungen?tab=${id}`;
-}
-
-function SectionHeading({ children }: { children: ReactNode }) {
-  return <p className="mb-3 mt-6 border-t border-border pt-6 text-sm font-semibold text-text-primary">{children}</p>;
 }
 
 export function SettingsView() {
@@ -214,14 +203,6 @@ export function SettingsView() {
   const setEmailField = <K extends keyof SiteEmailSettings>(key: K, value: SiteEmailSettings[K]) => {
     if (!email) return;
     setEmail({ ...email, [key]: value });
-  };
-
-  const setCustomAddress = (key: keyof SiteEmailCustomAddresses, value: string) => {
-    if (!email) return;
-    setEmail({
-      ...email,
-      customAddresses: { ...email.customAddresses, [key]: value },
-    });
   };
 
   const setInvoiceField = <K extends keyof SiteInvoiceSettings>(key: K, value: SiteInvoiceSettings[K]) => {
@@ -482,7 +463,7 @@ export function SettingsView() {
       ) : null}
 
       {!settingsLoading && !settingsError && tab === "email" && email ? (
-        <AdminCard title="E-Mail & Versand">
+        <AdminCard title="E-Mail">
           {usesTestDomain ? (
             <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
               <strong>Resend-Testdomain aktiv — noch nicht produktionsreif.</strong> E-Mails werden über{" "}
@@ -555,146 +536,15 @@ export function SettingsView() {
             </AdminButton>
           </div>
 
-          <SectionHeading>Allgemein</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Firmenname (E-Mail)" hint="Wird in E-Mail-Templates verwendet">
-              <input className="admin-input" value={email.companyName} onChange={(e) => setEmailField("companyName", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Absendername" required hint="Wird im From-Feld angezeigt">
-              <input className="admin-input" value={email.senderName} onChange={(e) => setEmailField("senderName", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Absender-E-Mail" tooltip="resendDomain" required hint="z. B. info@panda-bande-events.de — muss in Resend verifiziert sein.">
-              <input className="admin-input" type="email" value={email.senderEmail} onChange={(e) => setEmailField("senderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Reply-To-Adresse" tooltip="replyTo" required hint="Adresse für Antworten der Empfänger.">
-              <input className="admin-input" type="email" value={email.replyTo} onChange={(e) => setEmailField("replyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Kopie-an-Adresse" hint="Allgemeine Kopie bei CRM-Versand">
-              <input className="admin-input" type="email" value={email.copyToEmail} onChange={(e) => setEmailField("copyToEmail", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <p className="mb-2 mt-4 text-sm font-medium text-text-primary">Gewünschte E-Mail-Adressen</p>
-          <p className="mb-4 text-xs text-text-muted">
-            Mailboxen müssen beim Domain-/Mailanbieter eingerichtet werden. Das Dashboard kann die Adresse verwenden,
-            sobald Domain und Resend verifiziert sind.
-          </p>
-          <div className="grid gap-3 md:grid-cols-2">
-            {CUSTOM_ADDRESS_LABELS.map(({ key, label }) => (
-              <AdminFormField key={key} label={label}>
-                <input
-                  className="admin-input"
-                  placeholder={`${label}ihre-domain.de`}
-                  value={email.customAddresses?.[key] ?? ""}
-                  onChange={(e) => setCustomAddress(key, e.target.value)}
-                />
-              </AdminFormField>
-            ))}
-          </div>
-
-          <SectionHeading>Kontaktformular</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Kontaktformular-Empfänger" hint="Neue Anfragen von der Website" className="md:col-span-2">
-              <input className="admin-input" type="email" value={email.inquiryRecipient} onChange={(e) => setEmailField("inquiryRecipient", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Kontaktformular-Kopie an">
-              <input className="admin-input" type="email" value={email.inquiryCopyTo} onChange={(e) => setEmailField("inquiryCopyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Admin-Benachrichtigung">
-              <input className="admin-input" type="email" value={email.adminNotificationEmail} onChange={(e) => setEmailField("adminNotificationEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Auto-Antwort aktiv" className="md:col-span-2">
-              <label className="admin-checkbox-row">
-                <input type="checkbox" checked={email.inquiryAutoReplyEnabled} onChange={(e) => setEmailField("inquiryAutoReplyEnabled", e.target.checked)} />
-                <span>Automatische Bestätigung an Anfragende senden</span>
-              </label>
-            </AdminFormField>
-            <AdminFormField label="Auto-Antwort Betreff" className="md:col-span-2">
-              <input className="admin-input" value={email.inquiryAutoReplySubject} onChange={(e) => setEmailField("inquiryAutoReplySubject", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Auto-Antwort Text" className="md:col-span-2">
-              <textarea className="admin-input min-h-20" value={email.inquiryAutoReplyText} onChange={(e) => setEmailField("inquiryAutoReplyText", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <SectionHeading>Angebote</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Angebots-Kopie an">
-              <input className="admin-input" type="email" value={email.quoteCopyTo} onChange={(e) => setEmailField("quoteCopyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots-Absender" hint="Leer = Standard-Absender">
-              <input className="admin-input" type="email" value={email.quoteSenderEmail} onChange={(e) => setEmailField("quoteSenderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots Reply-To">
-              <input className="admin-input" type="email" value={email.quoteReplyTo} onChange={(e) => setEmailField("quoteReplyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots-Betreff-Vorlage" hint="Platzhalter: {number}, {company}">
-              <input className="admin-input" value={email.quoteSubjectTemplate} onChange={(e) => setEmailField("quoteSubjectTemplate", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots-E-Mail-Text" className="md:col-span-2">
-              <textarea className="admin-input min-h-20" value={email.quoteEmailBody} onChange={(e) => setEmailField("quoteEmailBody", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <SectionHeading>Rechnungen</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Rechnungs-Kopie an">
-              <input className="admin-input" type="email" value={email.invoiceCopyTo} onChange={(e) => setEmailField("invoiceCopyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs-Absender" hint="Leer = Standard-Absender">
-              <input className="admin-input" type="email" value={email.invoiceSenderEmail} onChange={(e) => setEmailField("invoiceSenderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs Reply-To">
-              <input className="admin-input" type="email" value={email.invoiceReplyTo} onChange={(e) => setEmailField("invoiceReplyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs-Betreff-Vorlage" hint="Platzhalter: {number}, {company}">
-              <input className="admin-input" value={email.invoiceSubjectTemplate} onChange={(e) => setEmailField("invoiceSubjectTemplate", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs-E-Mail-Text" className="md:col-span-2">
-              <textarea className="admin-input min-h-20" value={email.invoiceEmailBody} onChange={(e) => setEmailField("invoiceEmailBody", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <SectionHeading>Security</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Passwort-Reset Absender">
-              <input className="admin-input" type="email" value={email.passwordResetSenderEmail} onChange={(e) => setEmailField("passwordResetSenderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Sicherheits-Benachrichtigung Absender">
-              <input className="admin-input" type="email" value={email.securityNotificationSender} onChange={(e) => setEmailField("securityNotificationSender", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Login-Alert Empfänger">
-              <input className="admin-input" type="email" value={email.loginAlertRecipient} onChange={(e) => setEmailField("loginAlertRecipient", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Bewerbungs-E-Mail">
-              <input className="admin-input" type="email" value={email.applicationEmail} onChange={(e) => setEmailField("applicationEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Bewerbungs-Kopie an" className="md:col-span-2">
-              <input className="admin-input" type="email" value={email.applicationCopyTo} onChange={(e) => setEmailField("applicationCopyTo", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <p className="mt-4 text-xs text-text-muted">
-            Anleitung: <code className="rounded bg-bg-secondary px-1">docs/EMAIL_DOMAIN_SETUP.md</code>
-          </p>
-
-          <div className="mt-6 border-t border-border pt-6">
-            <p className="mb-3 text-sm font-semibold text-text-primary">Test-E-Mail senden</p>
-            <div className="flex flex-wrap gap-2">
-              <input
-                className="admin-input min-w-[16rem] flex-1"
-                type="email"
-                placeholder="empfaenger@beispiel.de"
-                value={testTo}
-                onChange={(e) => setTestTo(e.target.value)}
-              />
-              <AdminButton variant="secondary" icon={<Send className="h-4 w-4" />} onClick={() => void sendTest()} disabled={!emailStatus?.resendConfigured}>
-                Test-E-Mail senden
-              </AdminButton>
-            </div>
-          </div>
-
-          <AdminStickySave label={`${ADMIN_BTN.save} — E-Mail`} onSave={() => void saveSection("email", email)} />
+          <EmailSettingsPanel
+            email={email}
+            testTo={testTo}
+            resendConfigured={Boolean(emailStatus?.resendConfigured)}
+            onEmailField={setEmailField}
+            onTestToChange={setTestTo}
+            onSendTest={() => void sendTest()}
+            onSave={() => void saveSection("email", email)}
+          />
         </AdminCard>
       ) : null}
 

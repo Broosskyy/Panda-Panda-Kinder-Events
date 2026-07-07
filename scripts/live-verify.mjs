@@ -6,7 +6,7 @@
  */
 const BASE = process.argv[2] || "https://panda-bande-events.de";
 const SESSION = `live-verify-${Date.now()}`;
-const PLACEHOLDER_EMAIL = "hallo@panda-bande-events.de";
+const PLACEHOLDER_EMAIL = "info@pb-kinderevents.de";
 const PLACEHOLDER_LOCATION = "NRW · bundesweit im Einsatz";
 
 const results = [];

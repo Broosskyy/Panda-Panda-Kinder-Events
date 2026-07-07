@@ -49,6 +49,8 @@ for (const file of [
   "lib/email/render.ts",
   "lib/email/log.ts",
   "lib/email/sender.ts",
+  "lib/email/resolve-content.ts",
+  "lib/email/constants.ts",
 ]) {
   try {
     read(file);
@@ -66,17 +68,23 @@ if (transport.includes("MAX_ATTEMPTS") && transport.includes("sendEmailWithRetry
   fail("Retry logic missing in transport");
 }
 
-// 4. Inquiry uses HTML admin + auto-reply
+// 4. Inquiry uses CMS resolve + transport
 const emailTs = read("lib/email.ts");
-if (emailTs.includes("buildInquiryAdminEmail") && emailTs.includes("sendEmailWithRetry")) {
-  ok("Inquiry notification uses branded HTML + transport");
+if (emailTs.includes("resolveEmailContent") && emailTs.includes("sendEmailWithRetry")) {
+  ok("Inquiry notification uses CMS resolve + transport");
 } else {
   fail("Inquiry notification not fully wired");
 }
 
-// 5. Review uses HTML admin
-if (emailTs.includes("buildReviewAdminEmail")) ok("Review admin HTML builder wired");
-else fail("Review admin HTML missing");
+// 5. Review + request emails
+if (emailTs.includes("sendReviewNotification") && emailTs.includes("sendReviewRequestEmail")) {
+  ok("Review admin + request emails wired");
+} else {
+  fail("Review emails missing");
+}
+
+if (emailTs.includes("sendPasswordResetEmail")) ok("Password reset uses CMS template");
+else fail("Password reset CMS integration missing");
 
 // 6. All sends log via transport
 if (emailTs.includes("sendEmailWithRetry") && !emailTs.includes("resend.emails.send")) {
@@ -87,18 +95,25 @@ if (emailTs.includes("sendEmailWithRetry") && !emailTs.includes("resend.emails.s
   fail("email.ts may bypass transport logging");
 }
 
-// 7. Premium auto-reply template
+// 7. CMS templates
 const templates = read("lib/email/templates-db.ts");
-if (templates.includes("Wir freuen uns sehr über euer Interesse") && templates.includes("Bis bald")) {
-  ok("Premium inquiry-auto-reply template");
+if (templates.includes("inquiry-admin") && templates.includes("review-request") && templates.includes("review-admin")) {
+  ok("Core CMS email templates present");
 } else {
-  fail("inquiry-auto-reply template not premium");
+  fail("Core CMS templates missing");
 }
 
-// 8. Defaults: auto-reply enabled
+if (templates.includes("resetEmailTemplateToDefault")) ok("Template reset function");
+else fail("Template reset missing");
+
+// 8. Defaults: production email + auto-reply
 const defaults = read("lib/cms/defaults.ts");
+const constants = read("lib/email/constants.ts");
 if (defaults.includes("inquiryAutoReplyEnabled: true")) ok("Auto-reply enabled by default");
 else fail("Auto-reply not enabled by default");
+
+if (constants.includes("info@pb-kinderevents.de")) ok("Production fallback email constant");
+else fail("DEFAULT_COMPANY_EMAIL missing");
 
 // 9. Inquiry route: no silent email failure when DB fails
 const inquiry = read("src/app/api/inquiry/route.ts");
@@ -122,7 +137,15 @@ if (builders.includes("Anfrage im Dashboard öffnen") && builders.includes("Bewe
   fail("Admin email CTAs missing");
 }
 
-// 11. Documentation
+// 11. Admin UI
+try {
+  read("components/admin/email/EmailSettingsPanel.tsx");
+  ok("EmailSettingsPanel exists");
+} catch {
+  fail("EmailSettingsPanel missing");
+}
+
+// 12. Documentation
 try {
   read("EMAIL_SETUP.md");
   ok("EMAIL_SETUP.md exists");

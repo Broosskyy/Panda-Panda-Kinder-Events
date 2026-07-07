@@ -3,6 +3,7 @@ import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { resolveImageUrl } from "./resolve-image";
 import { mergeBankFromLegacy, mergeInvoiceFromLegacy, syncLegacyBusinessFields } from "./settings-compat";
 import { sanitizeAboutIntro, sanitizeGenderedRole } from "./content-quality";
+import { cleanEmailDisplayValue } from "@/lib/email/placeholder-filter";
 import type {
   SiteSectionHeading,
   SiteSectionsSettings,
@@ -196,27 +197,47 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
       signature: {
         ...defaults.email.signature,
         ...(base.email?.signature ?? {}),
-        companyName:
+        companyName: cleanEmailDisplayValue(
           base.email?.signature?.companyName?.trim() ||
-          base.email?.companyName?.trim() ||
-          business.companyName?.trim() ||
-          defaults.email.signature.companyName,
-        phone: base.email?.signature?.phone?.trim() || (contact.phone?.trim() && !contact.phone.includes("000000") ? contact.phone : "") || "",
-        website: base.email?.signature?.website?.trim() || business.website?.trim() || defaults.email.signature.website,
-        instagram: base.email?.signature?.instagram?.trim() || contact.instagram || defaults.email.signature.instagram,
-        whatsapp: base.email?.signature?.whatsapp?.trim() || contact.whatsapp || defaults.email.signature.whatsapp,
-        address:
+            base.email?.companyName?.trim() ||
+            business.companyName?.trim() ||
+            defaults.email.signature.companyName,
+        ),
+        contactPerson: cleanEmailDisplayValue(base.email?.signature?.contactPerson),
+        phone: cleanEmailDisplayValue(
+          base.email?.signature?.phone?.trim() ||
+            (contact.phone?.trim() && !contact.phone.includes("000000") ? contact.phone : ""),
+        ),
+        mobile: cleanEmailDisplayValue(base.email?.signature?.mobile),
+        website: cleanEmailDisplayValue(
+          base.email?.signature?.website?.trim() || business.website?.trim() || defaults.email.signature.website,
+        ),
+        instagram: cleanEmailDisplayValue(
+          base.email?.signature?.instagram?.trim() || contact.instagram || defaults.email.signature.instagram,
+        ),
+        whatsapp: cleanEmailDisplayValue(
+          base.email?.signature?.whatsapp?.trim() || contact.whatsapp || defaults.email.signature.whatsapp,
+        ),
+        address: cleanEmailDisplayValue(
           base.email?.signature?.address?.trim() ||
-          [business.street, business.zip, business.city].filter(Boolean).join(", ") ||
-          defaults.email.signature.address,
+            [business.street, business.zip, business.city].filter(Boolean).join(", ") ||
+            defaults.email.signature.address,
+        ),
         logoUrl: base.email?.signature?.logoUrl?.trim() || branding.emailLogoUrl || defaults.email.signature.logoUrl,
-        openingHours:
+        openingHours: cleanEmailDisplayValue(
           base.email?.signature?.openingHours?.trim() ||
-          contact.openingHours?.trim() ||
-          defaults.email.signature.openingHours,
-        youtube: base.email?.signature?.youtube?.trim() || defaults.email.signature.youtube,
-        facebook: base.email?.signature?.facebook?.trim() || contact.facebook || defaults.email.signature.facebook,
-        tiktok: base.email?.signature?.tiktok?.trim() || contact.tiktok || defaults.email.signature.tiktok,
+            contact.openingHours?.trim() ||
+            defaults.email.signature.openingHours,
+        ),
+        youtube: cleanEmailDisplayValue(base.email?.signature?.youtube?.trim() || defaults.email.signature.youtube),
+        facebook: cleanEmailDisplayValue(
+          base.email?.signature?.facebook?.trim() || contact.facebook || defaults.email.signature.facebook,
+        ),
+        tiktok: cleanEmailDisplayValue(
+          base.email?.signature?.tiktok?.trim() || contact.tiktok || defaults.email.signature.tiktok,
+        ),
+        footerText: cleanEmailDisplayValue(base.email?.signature?.footerText),
+        freeText: cleanEmailDisplayValue(base.email?.signature?.freeText),
       },
       branding: {
         ...defaults.email.branding,

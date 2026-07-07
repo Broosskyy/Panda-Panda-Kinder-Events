@@ -1,6 +1,6 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
-import { getEmailAssetBaseUrl, getDefaultEmailLogoUrl } from "@/lib/email/resolve-image-url";
-import { resolveEmailBranding, type ResolvedEmailBranding } from "@/lib/email/branding";
+import { resolveEmailBranding, resolveEmailLogoForSend, type ResolvedEmailBranding } from "@/lib/email/branding";
+import { getEmailAssetBaseUrl } from "@/lib/email/asset-url";
 import { buildEmailSignatureFooter } from "@/lib/email/signature";
 import { wrapEmailHtml } from "@/lib/email/html";
 
@@ -26,7 +26,7 @@ export async function wrapBrandedEmailHtml(
 
   return wrapEmailHtml({
     baseUrl: getEmailAssetBaseUrl(),
-    logoUrl: branding.logoUrl || getDefaultEmailLogoUrl(),
+    logoUrl: resolveEmailLogoForSend(branding.logoUrl),
     companyName: name,
     headerImageUrl: branding.headerImageUrl,
     branding,

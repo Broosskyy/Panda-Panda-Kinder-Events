@@ -1,12 +1,12 @@
 /** System-wide email defaults when CMS branding fields are empty (tenant-agnostic) */
 export const SYSTEM_EMAIL_DEFAULTS = {
-  pageBackground: "#F8F6F1",
+  pageBackground: "#F7F3EA",
   cardBackground: "#FFFFFF",
-  primary: "#4F5638",
-  text: "#2E2E2A",
-  textMuted: "#6F6F66",
-  border: "#E6E1D8",
-  accent: "#F1EEE7",
+  primary: "#6B7A3A",
+  text: "#2F2F2F",
+  textMuted: "#6B6B6B",
+  border: "#E8E2D6",
+  accent: "#F4F6EE",
   buttonText: "#FFFFFF",
   fontFamily: "Helvetica, Arial, sans-serif",
   logoWidth: 180,

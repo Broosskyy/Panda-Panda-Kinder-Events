@@ -536,12 +536,12 @@ Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
         ? `<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:12px;">${DOMAIN_MANUAL_CONFIRM_MESSAGE}</p>`
         : '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:12px;">Test-E-Mail zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.</p>';
 
-  const bodyHtml = `<p style="margin:0 0 16px;font-size:16px;">Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
-    <table cellpadding="0" cellspacing="0" role="presentation" style="background:#F1EEE7;border:1px solid #E6E1D8;border-radius:16px;padding:16px;margin:16px 0;width:100%;max-width:480px;">
+  const bodyHtml = `<p style="margin:0 0 16px;font-size:16px;line-height:1.65;">Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
+    <table cellpadding="0" cellspacing="0" role="presentation" style="background:#F4F6EE;border:1px solid #E8E2D6;border-radius:12px;padding:16px 20px;margin:16px 0;width:100%;max-width:480px;">
       <tr><td style="padding:6px 0;font-size:14px;"><strong>Absender:</strong> ${sender.displayFrom}</td></tr>
       <tr><td style="padding:6px 0;font-size:14px;"><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
       <tr><td style="padding:6px 0;font-size:14px;"><strong>Domain:</strong> ${domainStatusLabel}</td></tr>
-      <tr><td style="padding:6px 0;font-size:14px;"><strong>Logo:</strong> ${getDefaultEmailLogoUrl()}</td></tr>
+      <tr><td style="padding:6px 0;font-size:14px;"><strong>Logo:</strong> geladen ✓</td></tr>
     </table>
     ${domainBanner}
     <p style="color:#6F6F66;font-size:13px;margin:16px 0 0;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`;

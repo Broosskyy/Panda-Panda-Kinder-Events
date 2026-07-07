@@ -14,10 +14,10 @@ export const ADMIN_GLOBAL_QUICK_ACTIONS: AdminQuickAction[] = [
 ];
 
 export const DASHBOARD_QUICK_ACTIONS: AdminQuickAction[] = [
-  { href: "/admin/anfragen", label: "Neue Anfrage ansehen", iconKey: "Inbox", description: "Kontaktformular-Anfragen prüfen" },
-  { href: "/admin/beitraege", label: "Neuer Beitrag", iconKey: "Newspaper" },
-  { href: "/admin/galerie", label: "Bild hochladen", iconKey: "Image" },
-  { href: "/admin/kunden", label: "Kunde anlegen", iconKey: "Users" },
+  { href: "/admin/anfragen", label: "Neue Anfrage öffnen", iconKey: "Inbox", description: "Kontaktformular-Anfragen prüfen" },
+  { href: "/admin/bewertungen", label: "Bewertungen prüfen", iconKey: "Star", description: "Neue Bewertungen freigeben" },
+  { href: "/admin/galerie", label: "Galerie verwalten", iconKey: "Image", description: "Galeriebilder hochladen" },
+  { href: "/admin/beitraege", label: "Blog öffnen", iconKey: "Newspaper", description: "Beiträge verfassen" },
+  { href: "/admin/kunden", label: "CRM öffnen", iconKey: "Users", description: "Kunden verwalten" },
   { href: "/admin/angebote", label: "Angebot erstellen", iconKey: "FileText" },
-  { href: "/admin/rechnungen", label: "Rechnung erstellen", iconKey: "Receipt" },
 ];

@@ -11,9 +11,11 @@ import {
   Shield,
   Star,
   Users,
+  Mail,
 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminEmptyState } from "@/components/admin/ui";
+import { useAdminNotificationsContext } from "@/components/admin/AdminNotificationsProvider";
 import type { AdminActivityItem } from "@/lib/admin/activity";
 import { DASHBOARD_QUICK_ACTIONS } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
@@ -41,15 +43,17 @@ function StatCard({
   href,
   icon: Icon,
   sublabel,
+  highlight,
 }: {
   label: string;
   value: number | string;
   href?: string;
   icon: React.ComponentType<{ className?: string }>;
   sublabel?: string;
+  highlight?: boolean;
 }) {
   const inner = (
-    <div className={`admin-stat-card h-full ${href ? "admin-stat-card-link" : ""}`}>
+    <div className={`admin-stat-card h-full ${href ? "admin-stat-card-link" : ""} ${highlight ? "admin-stat-card-highlight" : ""}`}>
       <div className="flex items-center justify-between gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
           <Icon className="h-5 w-5 text-primary" aria-hidden />
@@ -76,6 +80,7 @@ function analyticsUnavailable(stats: AdminAnalyticsDashboard | null): boolean {
 }
 
 export function DashboardView() {
+  const { period, badgeCounts } = useAdminNotificationsContext();
   const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
   const [emailUsesTestDomain, setEmailUsesTestDomain] = useState<boolean | null>(null);
@@ -152,6 +157,44 @@ export function DashboardView() {
       </section>
 
       <section className="admin-dashboard-section">
+        <h2 className="admin-dashboard-section-title">Vorgänge</h2>
+        <div className="admin-stat-grid">
+          <StatCard
+            label="Neue Anfragen"
+            value={period.bookingsToday}
+            href="/admin/anfragen"
+            icon={Inbox}
+            sublabel={`Heute · ${period.bookingsWeek} diese Woche · ${period.bookingsTotal} gesamt`}
+            highlight={badgeCounts.bookings > 0}
+          />
+          <StatCard
+            label="Offene Bewertungen"
+            value={period.reviewsPending}
+            href="/admin/bewertungen"
+            icon={Star}
+            sublabel={`${period.reviewsToday} heute · ${period.reviewsWeek} diese Woche · ${period.reviewsTotal} gesamt`}
+            highlight={badgeCounts.reviews > 0}
+          />
+          <StatCard
+            label="Interessenten"
+            value={period.customersLeads}
+            href="/admin/kunden"
+            icon={Users}
+            sublabel="Unbearbeitete Kontakte"
+            highlight={badgeCounts.customers > 0}
+          />
+          <StatCard
+            label="E-Mail-Fehler"
+            value={period.emailsFailed}
+            href="/admin/emails"
+            icon={Mail}
+            sublabel="Letzte 7 Tage"
+            highlight={badgeCounts.emails > 0}
+          />
+        </div>
+      </section>
+
+      <section className="admin-dashboard-section">
         <h2 className="admin-dashboard-section-title">Statistik</h2>
         <div className="admin-stat-grid">
           <StatCard
@@ -218,8 +261,8 @@ export function DashboardView() {
       <section className="admin-dashboard-section">
         <h2 className="admin-dashboard-section-title">Website</h2>
         <div className="admin-stat-grid">
-          <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} />
-          <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} />
+          <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} highlight={(stats?.bookings.new ?? 0) > 0} />
+          <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} highlight={(stats?.reviews.pending ?? 0) > 0} />
           <StatCard label="Beiträge" value={stats?.postsCount ?? "—"} href="/admin/beitraege" icon={Newspaper} />
           <StatCard label="Galerie-Bilder" value={stats?.galleryCount ?? "—"} href="/admin/galerie" icon={Image} />
         </div>

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Calendar, Heart, Star } from "lucide-react";
+import { Calendar, Heart, ShieldCheck } from "lucide-react";
 import { ICON_STROKE } from "@/lib/design";
 import type { SiteHeroSettings, SiteTrustBadgesSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
@@ -7,7 +7,6 @@ import { resolveContentIcon } from "@/lib/cms/icons";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
 import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
-import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { StarRating } from "@/components/ui/StarRating";
 import { PORTRAIT_BLUR_DATA_URL } from "@/lib/image-placeholder";
 
@@ -43,38 +42,34 @@ export function Hero({
           <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:max-w-lg lg:py-6 xl:max-w-xl">
             {rating && rating.count > 0 ? (
               <div className="hero-rating-pill mb-5 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-4 py-2 shadow-sm backdrop-blur-sm sm:mb-6">
-                <StarRating rating={Math.round(rating.average)} size="sm" />
+                <StarRating rating={Math.round(rating.average * 2) / 2} size="sm" />
                 <span className="text-sm font-semibold text-text-primary">
                   {rating.average.toFixed(1).replace(".", ",")} / 5
                 </span>
                 <span className="text-sm text-text-muted">
-                  ({rating.count} {rating.count === 1 ? "Bewertung" : "Bewertungen"})
+                  · {rating.count} {rating.count === 1 ? "Bewertung" : "Bewertungen"}
                 </span>
               </div>
             ) : (
               <div className="hero-rating-pill mb-5 inline-flex items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-4 py-2 shadow-sm backdrop-blur-sm sm:mb-6">
-                <div className="flex text-primary" aria-hidden>
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <Star key={i} className="h-4 w-4 fill-current" strokeWidth={0} />
-                  ))}
-                </div>
-                <span className="text-sm font-medium text-text-secondary">Vertrauen von Familien in NRW</span>
+                <ShieldCheck className="h-4 w-4 text-primary" aria-hidden />
+                <span className="text-sm font-medium text-text-secondary">Liebevoll betreut · persönlich · in NRW</span>
               </div>
             )}
 
-            <p className="font-accent break-words text-xl leading-snug text-primary sm:text-[1.75rem] md:text-[2rem] md:leading-tight">
-              {hero.tagline}{" "}
-              <span className="text-accent-heart" aria-hidden>
-                ♡
-              </span>
-            </p>
-            <h1 className="font-heading mt-6 text-[2rem] font-bold leading-[1.08] tracking-tight text-text-primary sm:mt-8 sm:text-[2.65rem] md:text-5xl lg:mt-10 lg:text-[3.5rem] lg:leading-[1.05] xl:text-[3.65rem]">
+            <h1 className="font-heading text-[2rem] font-bold leading-[1.1] tracking-tight text-text-primary sm:text-[2.65rem] md:text-5xl lg:text-[3.5rem] lg:leading-[1.05] xl:text-[3.65rem]">
               {hero.headline}
             </h1>
-            <p className="mt-6 max-w-md text-base leading-relaxed text-text-secondary sm:mt-8 sm:max-w-lg sm:text-lg sm:leading-8 md:text-xl md:leading-9">
+
+            <p className="font-accent mt-5 text-lg leading-snug text-primary sm:mt-6 sm:text-xl md:text-[1.35rem] md:leading-snug">
+              {hero.tagline}
+            </p>
+
+            <p className="mt-5 max-w-md text-base leading-relaxed text-text-secondary sm:mt-6 sm:max-w-lg sm:text-lg sm:leading-8 md:text-xl md:leading-9">
               {hero.subtitle}
             </p>
-            <div className="mt-10 flex flex-col gap-3 sm:mt-12 sm:flex-row sm:items-center sm:gap-4">
+
+            <div className="mt-8 flex flex-col gap-3 sm:mt-10 sm:flex-row sm:items-center sm:gap-4">
               <Button
                 href="#kontakt"
                 size="lg"
@@ -93,11 +88,16 @@ export function Hero({
                 {hero.ctaSecondary}
               </Button>
             </div>
-            <div className="mt-10 grid grid-cols-2 gap-3 border-t border-border/40 pt-8 sm:mt-14 sm:gap-4 sm:pt-10 md:grid-cols-4 lg:gap-6">
+
+            <p className="mt-4 text-sm text-text-muted sm:mt-5">
+              Unverbindlich · persönliche Rückmeldung · individuell geplant
+            </p>
+
+            <div className="mt-8 grid grid-cols-2 gap-3 border-t border-border/40 pt-8 sm:mt-10 sm:gap-4 sm:pt-10 md:grid-cols-4 lg:gap-6">
               {badges.map((badge) => {
                 const Icon = resolveContentIcon(badge.iconKey);
                 return (
-                  <div key={badge.text} className="trust-chip">
+                  <div key={badge.text} className="trust-chip trust-chip-static">
                     <div className="trust-chip-icon">
                       <Icon className="h-5 w-5 text-primary md:h-6 md:w-6" strokeWidth={ICON_STROKE} aria-hidden />
                     </div>
@@ -110,7 +110,7 @@ export function Hero({
             </div>
           </div>
 
-          <ScrollReveal delay={150} className="relative order-2 lg:-mr-4 lg:order-none xl:-mr-8">
+          <div className="relative order-2 lg:-mr-4 lg:order-none xl:-mr-8">
             <div className="hero-image-wrap relative aspect-[5/6] w-full max-h-[min(48vh,20rem)] overflow-hidden sm:aspect-[4/5] sm:max-h-none">
               <Image
                 src={heroImage}
@@ -124,7 +124,7 @@ export function Hero({
                 unoptimized={heroImage.includes("supabase.co")}
               />
             </div>
-          </ScrollReveal>
+          </div>
         </div>
       </Container>
     </section>

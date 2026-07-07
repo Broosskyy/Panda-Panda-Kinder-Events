@@ -135,7 +135,7 @@ export function Services({
                 document.getElementById("kontakt")?.scrollIntoView({ behavior: "smooth" });
               }}
             >
-              Jetzt Termin anfragen
+              Beratung anfragen
             </Button>
           </div>
         </div>

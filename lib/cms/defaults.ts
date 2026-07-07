@@ -9,13 +9,14 @@ const HERO_IMAGE_DEFAULT =
 
 export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   hero: {
-    tagline: siteConfig.tagline,
-    headline: siteConfig.name,
-    subtitle: "Liebevolle Kinderbetreuung für eure besonderen Momente.",
-    ctaPrimary: "Jetzt anfragen",
-    ctaSecondary: "Unsere Leistungen",
+    tagline: "Kinder in guten Händen — ihr feiert in Ruhe.",
+    headline: "Liebevolle Kinderbetreuung, auf die ihr euch verlassen könnt",
+    subtitle:
+      "Für Hochzeiten, Geburtstage und Familienfeiern in NRW und bundesweit. Wir begleiten eure Kinder mit Geduld und Herz — damit ihr euch auf euren Tag konzentrieren könnt.",
+    ctaPrimary: "Unverbindlich anfragen",
+    ctaSecondary: "So begleiten wir euch",
     imageUrl: HERO_IMAGE_DEFAULT,
-    badgeQuote: "Jedes Kind verdient einen Tag voller Abenteuer.",
+    badgeQuote: "Jedes Kind verdient einen Tag voller Geborgenheit.",
   },
   contact: {
     phone: siteConfig.contact.phone,
@@ -30,7 +31,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
     tiktok: "",
     location: siteConfig.contact.location,
     mapsUrl: "https://maps.google.com/?q=NRW+Deutschland",
-    responseTime: "Antwort innerhalb von 24 Stunden",
+    responseTime: "Persönliche Rückmeldung innerhalb von 24 Stunden",
     openingHours: "Mo–Fr 9–18 Uhr · Termine nach Vereinbarung",
   },
   about: {
@@ -51,7 +52,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   },
   navigation: {
     items: navigation.map((item) => ({ label: item.label, href: item.href })),
-    ctaLabel: "Jetzt anfragen",
+    ctaLabel: "Unverbindlich anfragen",
     ctaLabelShort: "Anfragen",
   },
   branding: {
@@ -78,55 +79,61 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   },
   trustBadges: {
     items: [
-      { iconKey: "Award", text: "Antwort innerhalb 24h" },
-      { iconKey: "MapPin", text: "NRW & Umgebung" },
-      { iconKey: "Calendar", text: "Flexible Buchung" },
-      { iconKey: "Sparkles", text: "Individuelle Betreuung" },
+      { iconKey: "Clock", text: "Antwort innerhalb 24h" },
+      { iconKey: "Heart", text: "Liebevoll & individuell" },
+      { iconKey: "MapPin", text: "NRW & bundesweit" },
+      { iconKey: "ShieldCheck", text: "Unverbindlich & persönlich" },
     ],
   },
+  publicStats: {
+    eventsCount: 0,
+    childrenCount: 0,
+    recommendationPercent: 0,
+    yearsExperience: 0,
+  },
   usps: {
-    title: "Warum Panda-Bande?",
-    subtitle: "Vertrauen, Herzlichkeit und professionelle Kinderbetreuung — für euer besonderes Event.",
+    title: "Warum Familien uns vertrauen",
+    subtitle: "Weil eure Kinder in guten Händen sind — und ihr euren Tag in Ruhe genießen könnt.",
     items: [
-      { iconKey: "Users", title: "Erfahrenes Team", description: "Geschulte Betreuerinnen mit Herz und Erfahrung bei Events jeder Größe." },
-      { iconKey: "Heart", title: "Liebevoll", description: "Jedes Kind wird individuell wahrgenommen — mit Geduld, Wärme und Einfühlungsvermögen." },
-      { iconKey: "Shield", title: "Zuverlässig", description: "Pünktlich, vorbereitet und verlässlich — damit ihr entspannt feiern könnt." },
-      { iconKey: "Calendar", title: "Flexible Buchung", description: "Kurzfristige Anfragen, individuelle Zeiten und passende Teamgrößen." },
-      { iconKey: "MapPin", title: "NRW & Umgebung", description: "Einsatz in NRW und bundesweit — wir kommen zu eurer Location." },
-      { iconKey: "Sparkles", title: "Individuelle Betreuung", description: "Programme nach Alter, Wünschen und Rahmen eures Events." },
+      { iconKey: "Users", title: "Ein Team mit Herz", description: "Geschulte Betreuerinnen, die Kinder wirklich sehen — mit Geduld, Wärme und Erfahrung." },
+      { iconKey: "Heart", title: "Liebevoll begleitet", description: "Jedes Kind wird individuell wahrgenommen. Kein Massenprogramm, sondern echte Aufmerksamkeit." },
+      { iconKey: "Shield", title: "Verlässlich an eurer Seite", description: "Pünktlich, vorbereitet und ruhig im Hintergrund — damit ihr entspannt feiern könnt." },
+      { iconKey: "Calendar", title: "Flexibel geplant", description: "Kurzfristige Anfragen, individuelle Zeiten und eine Teamgröße, die zu eurem Event passt." },
+      { iconKey: "MapPin", title: "Vor Ort in NRW", description: "Wir kommen zu euch — in NRW und auf Wunsch bundesweit, direkt an eurer Location." },
+      { iconKey: "Sparkles", title: "Individuell für euch", description: "Programm, Material und Ablauf passen wir an Alter, Wünsche und Rahmen eures Festes an." },
     ],
   },
   process: {
-    title: "So läuft es ab",
-    subtitle: "Von der ersten Anfrage bis zu glücklichen Kindern — in fünf Schritten.",
-    speechBubble: "Wir kümmern uns um den Rest!",
+    title: "So einfach geht's",
+    subtitle: "In fünf ruhigen Schritten zu einem entspannten Event für die ganze Familie.",
+    speechBubble: "Ihr feiert — wir kümmern uns um den Rest.",
     steps: [
-      { number: 1, title: "Anfrage", description: "Ihr sendet uns eure Wünsche — kostenlos und unverbindlich.", iconKey: "PartyPopper" },
-      { number: 2, title: "Beratung", description: "Wir besprechen Programm, Teamgröße und Ablauf persönlich.", iconKey: "MessageCircle" },
-      { number: 3, title: "Planung", description: "Gemeinsam planen wir Material, Zeiten und Betreuung.", iconKey: "Calendar" },
-      { number: 4, title: "Event", description: "Unsere Panda-Bande sorgt vor Ort für strahlende Kinderaugen.", iconKey: "Users" },
-      { number: 5, title: "Glückliche Kinder", description: "Zufriedene Kinder, entspannte Eltern — Mission erfüllt!", iconKey: "Heart" },
+      { number: 1, title: "Anfrage", description: "Ihr erzählt uns von eurem Anlass — kostenlos und ganz unverbindlich.", iconKey: "PartyPopper" },
+      { number: 2, title: "Beratung", description: "Persönlich besprechen wir Programm, Teamgröße und Ablauf — mit echtem Ansprechpartner.", iconKey: "MessageCircle" },
+      { number: 3, title: "Planung", description: "Gemeinsam stimmen wir Material, Zeiten und Betreuung auf euer Event ab.", iconKey: "Calendar" },
+      { number: 4, title: "Event", description: "Vor Ort sorgt unsere Panda-Bande für strahlende Kinderaugen — ihr feiert in Ruhe.", iconKey: "Users" },
+      { number: 5, title: "Glückliche Kinder", description: "Zufriedene Kinder, entspannte Eltern — genau so soll es sein.", iconKey: "Heart" },
     ],
   },
   sections: {
     usps: {
-      title: "Warum Panda-Bande?",
-      subtitle: "Professionelle Betreuung mit echter Herzlichkeit — für unvergessliche Momente.",
+      title: "Warum Familien uns vertrauen",
+      subtitle: "Weil eure Kinder in guten Händen sind — und ihr euren Tag in Ruhe genießen könnt.",
     },
     services: {
-      title: "Unsere Leistungen",
-      subtitle: "Von der Hochzeit bis zum Kindergeburtstag — wir gestalten unvergessliche Momente.",
+      title: "Was wir für euch möglich machen",
+      subtitle: "Von der Hochzeit bis zum Kindergeburtstag — liebevoll betreut, individuell geplant.",
     },
     process: {
-      title: "So einfach buchst du uns",
-      subtitle: "In fünf Schritten zu eurem unvergesslichen Event.",
+      title: "So einfach geht's",
+      subtitle: "In fünf ruhigen Schritten zu einem entspannten Event für die ganze Familie.",
     },
     gallery: {
-      title: "Einblicke in unsere Arbeit",
-      subtitle: "Echte Momente, echte Freude — so sieht Panda-Bande aus.",
+      title: "Echte Momente",
+      subtitle: "Ein Blick in unsere Arbeit — Freude, Geborgenheit und kleine Abenteuer.",
     },
     testimonials: {
-      title: "Das sagen Eltern",
+      title: "Stimmen von Familien",
       subtitle: "Echte Rückmeldungen — freigegeben nach Prüfung durch unser Team.",
     },
     about: {
@@ -146,8 +153,8 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
       subtitle: "Die Menschen hinter der Panda-Bande — mit Herz für kleine Abenteurer.",
     },
     contact: {
-      title: "Jetzt unverbindlich anfragen",
-      subtitle: "Erzählt uns von eurem Event — wir melden uns schnellstmöglich bei euch.",
+      title: "Lasst uns euer Event planen",
+      subtitle: "Erzählt uns von eurem Anlass — wir melden uns persönlich und unverbindlich bei euch.",
     },
   },
   publicTeam: {

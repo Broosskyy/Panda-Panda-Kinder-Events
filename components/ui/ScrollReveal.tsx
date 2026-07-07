@@ -38,7 +38,15 @@ export function ScrollReveal({ children, className = "", delay = 0 }: ScrollReve
     );
 
     observer.observe(el);
-    return () => observer.disconnect();
+
+    const fallback = window.setTimeout(() => {
+      el.classList.add("visible");
+    }, 2500);
+
+    return () => {
+      observer.disconnect();
+      window.clearTimeout(fallback);
+    };
   }, [delay]);
 
   return (

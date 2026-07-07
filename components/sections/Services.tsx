@@ -1,8 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
+import { focusRing } from "@/lib/a11y";
 import type { Service } from "@/lib/services";
 import type { SiteSectionHeading } from "@/lib/cms/types";
 import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
@@ -28,6 +29,20 @@ export function Services({
 }: ServicesProps) {
   const safeHeading = resolveSectionHeading(heading, "services");
   const [active, setActive] = useState<Service | null>(null);
+
+  useEffect(() => {
+    if (!active) return;
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActive(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [active]);
 
   if (!items?.length) return null;
 
@@ -95,7 +110,12 @@ export function Services({
         <div className="service-modal-root" role="dialog" aria-modal="true" aria-label={active.title}>
           <button type="button" className="service-modal-backdrop" onClick={() => setActive(null)} aria-label="Schließen" />
           <div className="service-modal-panel">
-            <button type="button" className="service-modal-close" onClick={() => setActive(null)} aria-label="Schließen">
+            <button
+              type="button"
+              className={`service-modal-close ${focusRing}`}
+              onClick={() => setActive(null)}
+              aria-label="Dialog schließen"
+            >
               <X className="h-5 w-5" />
             </button>
             {active.imageUrl ? (
@@ -115,7 +135,7 @@ export function Services({
                 document.getElementById("kontakt")?.scrollIntoView({ behavior: "smooth" });
               }}
             >
-              Jetzt Termin anfragen
+              Beratung anfragen
             </Button>
           </div>
         </div>

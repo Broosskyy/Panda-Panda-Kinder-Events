@@ -101,6 +101,9 @@ export function Gallery({
                       blurDataURL={PORTRAIT_BLUR_DATA_URL}
                       unoptimized={image.src.includes("supabase.co")}
                     />
+                    {image.category && image.category !== "Alle" ? (
+                      <span className="gallery-tile-label">{image.category}</span>
+                    ) : null}
                   </button>
                 </ScrollReveal>
               </li>

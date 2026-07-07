@@ -15,6 +15,13 @@ import type { EmailLogRecord, EmailTemplateRecord } from "@/lib/cms/types";
 
 type Tab = "compose" | "templates" | "log";
 
+const EMAIL_LOG_STATUS: Record<string, string> = {
+  sent: "Gesendet",
+  failed: "Fehlgeschlagen",
+  queued: "Warteschlange",
+  bounced: "Zugestellt fehlgeschlagen",
+};
+
 export function EmailsView() {
   const { toast, withLoading, emailSent, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("emails");
@@ -236,7 +243,9 @@ export function EmailsView() {
                 <li key={log.id} className="py-3 text-sm">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <span className="font-medium text-text-primary">{log.subject}</span>
-                    <span className={log.status === "sent" ? "text-primary" : "text-accent-heart"}>{log.status}</span>
+                    <span className={log.status === "sent" ? "text-primary" : "text-accent-heart"}>
+                      {EMAIL_LOG_STATUS[log.status] ?? log.status}
+                    </span>
                   </div>
                   <p className="text-text-muted">{log.recipient}</p>
                   <p className="text-xs text-text-muted">

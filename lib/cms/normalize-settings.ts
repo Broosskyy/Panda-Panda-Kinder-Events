@@ -113,6 +113,7 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
           ? base.trustBadges.items
           : defaults.trustBadges.items,
     },
+    publicStats: mergeRecord(defaults.publicStats, base.publicStats),
     usps: {
       ...defaults.usps,
       ...(base.usps ?? {}),

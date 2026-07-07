@@ -3,9 +3,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminLoadingCard } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
-import { ADMIN_MSG } from "@/lib/admin/messages";
 import { SERVICE_ICON_KEYS } from "@/lib/cms/icons";
 import type { SiteSectionHeading, SiteSettingsBundle } from "@/lib/cms/types";
 
@@ -23,20 +23,29 @@ const SECTION_LABELS: Record<keyof SiteSettingsBundle["sections"], string> = {
 };
 
 export function ContentView() {
-  const { toast, withLoading, savedCms, imageUploaded, saveFailed } = useAdminMessages();
+  const { withLoading, savedCms, imageUploaded, saveFailed, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("inhalte");
   const [settings, setSettings] = useState<SiteSettingsBundle | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/settings");
-    if (!res.ok) throw new Error("Laden fehlgeschlagen");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? "Inhalte konnten nicht geladen werden.");
+    }
     const data = await res.json();
     setSettings(data.settings);
+    setLoadError(null);
   }, []);
 
   useEffect(() => {
-    void withLoading(load());
-  }, [load, withLoading]);
+    void withLoading(load().catch((err) => {
+      const message = err instanceof Error ? err.message : "Inhalte konnten nicht geladen werden.";
+      setLoadError(message);
+      showError("Inhalte konnten nicht geladen werden.", message, "Bitte Seite neu laden.");
+    }));
+  }, [load, withLoading, showError]);
 
   const saveSection = async (
     section: keyof SiteSettingsBundle,
@@ -90,7 +99,25 @@ export function ContentView() {
     });
   };
 
-  if (!settings) return null;
+  if (loadError) {
+    return (
+      <div>
+        <AdminPageHeader {...page} />
+        <AdminCard>
+          <p className="text-sm text-text-muted">{loadError}</p>
+        </AdminCard>
+      </div>
+    );
+  }
+
+  if (!settings) {
+    return (
+      <div>
+        <AdminPageHeader {...page} />
+        <AdminLoadingCard message="Inhalte werden geladen…" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -98,7 +125,7 @@ export function ContentView() {
 
       <AdminCard title="Logo & Branding">
         <p className="text-sm text-text-muted">
-          Logo-Einstellungen finden Sie unter{" "}
+          Logo-Einstellungen findest du unter{" "}
           <a href="/admin/einstellungen?tab=branding" className="font-medium text-primary underline">
             Einstellungen → Branding
           </a>

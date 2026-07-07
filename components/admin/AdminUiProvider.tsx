@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { ADMIN_MSG } from "@/lib/admin/messages";
 
 type ToastType = "success" | "error" | "info";
 
@@ -58,8 +59,13 @@ export function AdminUiProvider({ children }: { children: ReactNode }) {
         ))}
       </div>
       {loading && (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-text-primary/20 backdrop-blur-sm">
-          <div className="rounded-2xl bg-bg-card px-8 py-6 shadow-xl">Lädt...</div>
+        <div
+          className="fixed inset-0 z-[90] flex items-center justify-center bg-text-primary/20 backdrop-blur-sm"
+          role="status"
+          aria-live="polite"
+          aria-busy="true"
+        >
+          <div className="rounded-2xl bg-bg-card px-8 py-6 shadow-xl">{ADMIN_MSG.loading}</div>
         </div>
       )}
     </AdminUiContext.Provider>

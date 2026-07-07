@@ -114,7 +114,6 @@ export function PostsView() {
     const data = await res.json();
     if (!res.ok) {
       toast(data.error ?? ADMIN_MSG.uploadFailed, "error");
-      console.error("uploadHero:", data);
       return;
     }
     setDraft((d) => ({ ...d, hero_image_path: data.path, hero_image_url: data.url }));

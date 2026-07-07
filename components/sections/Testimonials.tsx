@@ -131,9 +131,9 @@ function ReviewCard({
           </div>
         </div>
         {review.verified ? (
-          <span className="hidden shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-3 py-2 text-xs font-semibold text-primary sm:inline-flex">
-            <BadgeCheck className="h-4 w-4" aria-hidden />
-            Verifizierte Buchung
+          <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1.5 text-[0.6875rem] font-semibold text-primary sm:px-3 sm:py-2 sm:text-xs">
+            <BadgeCheck className="h-3.5 w-3.5 sm:h-4 sm:w-4" aria-hidden />
+            <span className="sr-only sm:not-sr-only">Verifiziert</span>
           </span>
         ) : null}
       </div>
@@ -147,10 +147,11 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
 
   const average = reviews.reduce((sum, r) => sum + r.rating, 0) / count;
   const displayAverage = average.toFixed(1).replace(".", ",");
+  const displayStars = Math.round(average * 2) / 2;
 
   return (
     <div className="mb-8 flex flex-col items-center gap-3 text-center sm:mb-12 md:mb-16">
-      <StarRating rating={5} size="xl" />
+      <StarRating rating={displayStars} size="xl" />
       <div className="flex items-baseline gap-2">
         <span className="font-heading text-4xl font-bold text-text-primary sm:text-5xl md:text-6xl">{displayAverage}</span>
         <span className="text-xl text-text-muted">/ 5</span>

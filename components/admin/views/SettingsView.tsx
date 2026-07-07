@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { RefreshCw, Send } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminStatusBadge } from "@/components/admin/ui";
+import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
@@ -105,11 +105,15 @@ export function SettingsView() {
   const [emailStatus, setEmailStatus] = useState<EmailStatusResponse | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
+  const [settingsError, setSettingsError] = useState<string | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(true);
   const [testTo, setTestTo] = useState("");
   const { withLoading, saved, testEmailSent, error: showError } = useAdminMessages();
   const settingsPage = adminPageHeaderProps("einstellungen");
 
   const loadSettings = useCallback(async () => {
+    setSettingsLoading(true);
+    setSettingsError(null);
     const res = await fetch("/api/admin/settings");
     const data = await res.json();
     if (res.ok) {
@@ -122,8 +126,13 @@ export function SettingsView() {
       setBank(settings.bank);
       setSeo(settings.seo);
       setLegal(settings.legal);
+    } else {
+      const message = data.error ?? "Einstellungen konnten nicht geladen werden.";
+      setSettingsError(message);
+      showError("Einstellungen konnten nicht geladen werden.", message, "Bitte Seite neu laden oder Support kontaktieren.");
     }
-  }, []);
+    setSettingsLoading(false);
+  }, [showError]);
 
   const loadEmailStatus = useCallback(async () => {
     const res = await fetch("/api/admin/email/status");
@@ -273,7 +282,14 @@ export function SettingsView() {
         ))}
       </nav>
 
-      {tab === "business" && business ? (
+      {settingsLoading ? <AdminLoadingCard message="Einstellungen werden geladen…" /> : null}
+      {settingsError ? (
+        <AdminCard>
+          <p className="text-sm text-text-muted">{settingsError}</p>
+        </AdminCard>
+      ) : null}
+
+      {!settingsLoading && !settingsError && tab === "business" && business ? (
         <AdminCard title="Unternehmensdaten">
           <p className="mb-4 text-sm text-text-muted">
             Diese Daten erscheinen auf Rechnungen, Angeboten (PDF), E-Mails und im Impressum.
@@ -323,7 +339,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "branding" && branding ? (
+      {!settingsLoading && !settingsError && tab === "branding" && branding ? (
         <AdminCard title="Branding">
           <p className="mb-4 text-sm text-text-muted">
             Verwalte Logo, Markenname, Farben und Favicons. Änderungen wirken auf Website, CMS, PDFs und E-Mails.
@@ -414,7 +430,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "contact" && contact ? (
+      {!settingsLoading && !settingsError && tab === "contact" && contact ? (
         <AdminCard title="Kontakt & Social Media">
           <p className="mb-4 text-sm text-text-muted">Kontaktdaten und Social-Media-Links für die öffentliche Website.</p>
           <div className="grid gap-4 md:grid-cols-2">
@@ -465,7 +481,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "email" && email ? (
+      {!settingsLoading && !settingsError && tab === "email" && email ? (
         <AdminCard title="E-Mail & Versand">
           {usesTestDomain ? (
             <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
@@ -682,7 +698,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "invoice" && invoice ? (
+      {!settingsLoading && !settingsError && tab === "invoice" && invoice ? (
         <AdminCard title="Rechnungen & Angebote">
           <div className="mb-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
             <p className="font-semibold text-text-primary">Nummern-Vorschau</p>
@@ -789,7 +805,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "bank" && bank ? (
+      {!settingsLoading && !settingsError && tab === "bank" && bank ? (
         <AdminCard title="Bank & Steuerdaten">
           <p className="mb-4 text-sm text-text-muted">Bankverbindung und Steuerangaben für Rechnungen und PDFs.</p>
           <div className="grid gap-4 md:grid-cols-2">
@@ -831,7 +847,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "seo" && seo && business ? (
+      {!settingsLoading && !settingsError && tab === "seo" && seo && business ? (
         <AdminCard title="Domain & SEO">
           <div className="mb-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
             <p className="font-semibold text-text-primary">Sitemap-URL</p>
@@ -896,7 +912,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "legal" && legal ? (
+      {!settingsLoading && !settingsError && tab === "legal" && legal ? (
         <AdminCard title="Rechtliches">
           <div className="mb-6 rounded-xl border-2 border-amber-400/60 bg-amber-50 px-4 py-4 text-sm text-amber-950">
             <p className="font-bold">⚠ Platzhalter-Hinweis</p>
@@ -947,7 +963,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {tab === "system" ? (
+      {!settingsLoading && !settingsError && tab === "system" ? (
         <AdminCard title="Systemstatus">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-sm text-text-muted">Read-only Übersicht über Konfiguration und Systemzustand.</p>

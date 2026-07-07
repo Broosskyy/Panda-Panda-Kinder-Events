@@ -9,7 +9,7 @@ interface StickyCtaBarProps {
 }
 
 export function StickyCtaBar({
-  label = "Jetzt unverbindlich anfragen",
+  label = "Unverbindlich anfragen",
   sublabel = "Bereit für euer Event?",
 }: StickyCtaBarProps) {
   const [visible, setVisible] = useState(false);

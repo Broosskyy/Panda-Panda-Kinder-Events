@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import Image from "next/image";
-import { ChevronLeft, ChevronRight, ZoomIn, ZoomOut, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, Loader2, X, ZoomIn, ZoomOut } from "lucide-react";
 import { focusRing } from "@/lib/a11y";
 import { StarRating } from "@/components/ui/StarRating";
 
@@ -31,15 +31,20 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
   const touchStartX = useRef<number | null>(null);
   const [current, setCurrent] = useState(index);
   const [zoomed, setZoomed] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const item = items[current];
   const hasMultiple = items.length > 1;
+  const hasCaption = Boolean(
+    item?.name || item?.title || item?.category || item?.description || item?.reviewText || item?.date,
+  );
 
   const goTo = useCallback(
     (next: number) => {
       const clamped = Math.max(0, Math.min(items.length - 1, next));
       setCurrent(clamped);
       setZoomed(false);
+      setImageLoaded(false);
       onIndexChange?.(clamped);
     },
     [items.length, onIndexChange],
@@ -51,6 +56,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
   useEffect(() => {
     setCurrent(index);
     setZoomed(false);
+    setImageLoaded(false);
   }, [index]);
 
   useEffect(() => {
@@ -75,7 +81,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
 
   return (
     <div
-      className="lightbox-root fixed inset-0 z-[100] flex items-end justify-center bg-text-primary/90 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+      className="lightbox-overlay"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
@@ -85,30 +91,34 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
         Bildansicht: {item.alt}
       </p>
 
-      <div className="absolute right-3 top-3 z-20 flex gap-2 sm:right-4 sm:top-4">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setZoomed((z) => !z);
-          }}
-          className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:h-12 sm:w-12 ${focusRing}`}
-          aria-label={zoomed ? "Zoom verkleinern" : "Zoom vergrößern"}
-        >
-          {zoomed ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}
-        </button>
-        <button
-          ref={closeRef}
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onClose();
-          }}
-          className={`flex h-11 w-11 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 sm:h-12 sm:w-12 ${focusRing}`}
-          aria-label="Bildansicht schließen"
-        >
-          <X className="h-6 w-6" aria-hidden />
-        </button>
+      <div className="lightbox-toolbar" onClick={(e) => e.stopPropagation()}>
+        {hasMultiple ? (
+          <span className="lightbox-counter-pill" aria-live="polite">
+            {current + 1} / {items.length}
+          </span>
+        ) : (
+          <span />
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setZoomed((z) => !z)}
+            className={`lightbox-control-btn ${focusRing}`}
+            aria-label={zoomed ? "Zoom verkleinern" : "Zoom vergrößern"}
+            aria-pressed={zoomed}
+          >
+            {zoomed ? <ZoomOut className="h-5 w-5" /> : <ZoomIn className="h-5 w-5" />}
+          </button>
+          <button
+            ref={closeRef}
+            type="button"
+            onClick={onClose}
+            className={`lightbox-control-btn ${focusRing}`}
+            aria-label="Bildansicht schließen"
+          >
+            <X className="h-5 w-5" aria-hidden />
+          </button>
+        </div>
       </div>
 
       {hasMultiple ? (
@@ -120,7 +130,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
               prev();
             }}
             disabled={current === 0}
-            className={`absolute left-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-30 sm:left-4 sm:h-12 sm:w-12 ${focusRing}`}
+            className={`lightbox-nav-btn lightbox-nav-prev ${focusRing}`}
             aria-label="Vorheriges Bild"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -132,7 +142,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
               next();
             }}
             disabled={current >= items.length - 1}
-            className={`absolute right-2 top-1/2 z-20 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white/15 text-white transition-colors hover:bg-white/25 disabled:opacity-30 sm:right-4 sm:h-12 sm:w-12 ${focusRing}`}
+            className={`lightbox-nav-btn lightbox-nav-next ${focusRing}`}
             aria-label="Nächstes Bild"
           >
             <ChevronRight className="h-6 w-6" />
@@ -141,7 +151,7 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
       ) : null}
 
       <div
-        className="lightbox-panel relative flex max-h-[92dvh] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl bg-bg-card sm:max-h-[90vh] sm:rounded-2xl"
+        className="lightbox-stage"
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => {
           touchStartX.current = e.touches[0]?.clientX ?? null;
@@ -156,56 +166,54 @@ export function Lightbox({ items, index, onClose, onIndexChange }: LightboxProps
           touchStartX.current = null;
         }}
       >
-        <div
-          className={`relative min-h-[40dvh] max-h-[65dvh] w-full flex-1 overflow-auto bg-bg-secondary sm:min-h-[20rem] sm:max-h-[70vh] ${
-            zoomed ? "cursor-zoom-out" : "cursor-zoom-in"
-          }`}
-          onClick={(e) => {
-            e.stopPropagation();
-            setZoomed((z) => !z);
-          }}
-        >
-          <div className={`relative h-full min-h-[40dvh] w-full transition-transform duration-300 ${zoomed ? "scale-[1.5] origin-center" : ""}`}>
-            <Image
-              src={item.src}
-              alt={item.alt}
-              fill
-              className="object-contain p-2"
-              sizes="(max-width: 768px) 100vw, 896px"
-              unoptimized={item.src.includes("supabase.co")}
-              priority
-              draggable={false}
-            />
+        {!imageLoaded ? (
+          <div className="lightbox-loader" aria-hidden>
+            <Loader2 className="h-8 w-8 animate-spin text-white/80" />
           </div>
-        </div>
+        ) : null}
 
-        <div className="shrink-0 border-t border-border/60 px-4 py-4 sm:px-6 sm:py-5">
+        <button
+          type="button"
+          className={`lightbox-image-frame ${zoomed ? "is-zoomed" : ""}`}
+          onClick={() => setZoomed((z) => !z)}
+          aria-label={zoomed ? "Zoom verkleinern" : "Zoom vergrößern"}
+          aria-pressed={zoomed}
+        >
+          <Image
+            src={item.src}
+            alt={item.alt}
+            fill
+            className={`lightbox-image ${imageLoaded ? "is-visible" : ""}`}
+            sizes="(max-width: 768px) 100vw, 90vw"
+            unoptimized={item.src.includes("supabase.co")}
+            priority
+            draggable={false}
+            onLoad={() => setImageLoaded(true)}
+          />
+        </button>
+      </div>
+
+      {hasCaption ? (
+        <div className="lightbox-caption" onClick={(e) => e.stopPropagation()}>
           {item.name ? (
             <div className="mb-2 flex flex-wrap items-center gap-3">
-              <p className="font-heading text-lg font-bold text-text-primary">{item.name}</p>
+              <p className="font-heading text-base font-bold text-white sm:text-lg">{item.name}</p>
               {typeof item.rating === "number" ? <StarRating rating={item.rating} size="sm" /> : null}
             </div>
           ) : null}
-          {item.date ? <p className="mb-1 text-xs text-text-muted">{item.date}</p> : null}
-          {item.title ? <p className="font-semibold text-text-primary">{item.title}</p> : null}
+          {item.date ? <p className="mb-1 text-xs text-white/70">{item.date}</p> : null}
+          {item.title ? <p className="font-medium text-white">{item.title}</p> : null}
           {item.category ? (
-            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-primary">{item.category}</p>
+            <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-white/75">{item.category}</p>
           ) : null}
-          {item.description ? (
-            <p className="mt-2 text-sm leading-relaxed text-text-secondary">{item.description}</p>
-          ) : null}
+          {item.description ? <p className="mt-2 text-sm leading-relaxed text-white/85">{item.description}</p> : null}
           {item.reviewText ? (
-            <blockquote className="mt-2 text-sm leading-relaxed text-text-secondary sm:text-base">
+            <blockquote className="mt-2 text-sm leading-relaxed text-white/90 sm:text-base">
               &ldquo;{item.reviewText}&rdquo;
             </blockquote>
           ) : null}
-          {hasMultiple ? (
-            <p className="mt-3 text-xs text-text-muted">
-              {current + 1} / {items.length}
-            </p>
-          ) : null}
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

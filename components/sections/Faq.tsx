@@ -62,7 +62,7 @@ export function Faq({
                   aria-labelledby={buttonId}
                   className={`faq-panel grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "faq-panel-open" : "faq-panel-closed"}`}
                 >
-                  <div className="overflow-hidden">
+                  <div className="overflow-hidden" aria-hidden={!isOpen}>
                     <p className="pb-1 pt-4 max-w-prose text-base leading-relaxed text-text-secondary sm:pt-5 sm:text-lg sm:leading-8">
                       {faq.answer}
                     </p>

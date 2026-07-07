@@ -79,6 +79,28 @@ function normalizeHeroSettings(hero: SiteHeroSettings): SiteHeroSettings {
   return { ...hero, imageUrl };
 }
 
+function mergePublicTeamSettings(
+  cmsValue: unknown,
+  hasKey: boolean,
+): SiteSettingsBundle["publicTeam"] {
+  const defaults = DEFAULT_SITE_SETTINGS.publicTeam;
+  if (!hasKey || !cmsValue || typeof cmsValue !== "object") {
+    return { ...defaults, items: [] };
+  }
+
+  const validated = validateSiteSettingsSection("publicTeam", cmsValue);
+  if (!validated.ok) {
+    const obj = cmsValue as Record<string, unknown>;
+    return {
+      title: String(obj.title ?? "").trim() || defaults.title,
+      subtitle: String(obj.subtitle ?? "").trim(),
+      items: [],
+    };
+  }
+
+  return { ...(validated.value as SiteSettingsBundle["publicTeam"]), items: [] };
+}
+
 function filterPlaceholderItems<T extends { text?: string; title?: string; description?: string; question?: string; answer?: string }>(
   items: T[],
 ): T[] {
@@ -189,12 +211,7 @@ function buildSettingsFromRows(
     invoice: cmsSection("invoice", DEFAULT_SITE_SETTINGS.invoice, byKey.get("invoice"), byKey.has("invoice")),
     seo: cmsSection("seo", DEFAULT_SITE_SETTINGS.seo, byKey.get("seo"), byKey.has("seo")),
     legal: cmsSection("legal", DEFAULT_SITE_SETTINGS.legal, byKey.get("legal"), byKey.has("legal")),
-    publicTeam: cmsSection(
-      "publicTeam",
-      DEFAULT_SITE_SETTINGS.publicTeam,
-      byKey.get("publicTeam"),
-      byKey.has("publicTeam"),
-    ),
+    publicTeam: mergePublicTeamSettings(byKey.get("publicTeam"), byKey.has("publicTeam")),
   };
   } catch (err) {
     console.error("buildSettingsFromRows:", err);

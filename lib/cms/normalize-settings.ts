@@ -78,14 +78,14 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
           return {
             name,
             role,
-            description: m.description?.trim() || defaults.publicTeam.items[0]?.description || "",
+            description: m.description?.trim() || "",
             imageUrl:
               resolveImageUrl("site-assets", m.imageUrl?.trim()) ||
               m.imageUrl?.trim() ||
               "",
           };
         })
-      : defaults.publicTeam.items;
+      : [];
 
   const aboutRaw = mergeRecord(defaults.about, base.about);
   const founderName = aboutRaw.founderName?.trim() || defaults.about.founderName;

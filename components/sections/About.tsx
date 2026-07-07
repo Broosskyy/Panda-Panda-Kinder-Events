@@ -14,9 +14,6 @@ import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-const TEAM_IMAGE_FALLBACK = DEFAULT_SITE_SETTINGS.publicTeam.items[0]?.imageUrl?.trim()
-  || DEFAULT_SITE_SETTINGS.about.imageUrl;
-
 interface AboutProps {
   about?: SiteAboutSettings;
   team?: SitePublicTeamSettings;
@@ -25,14 +22,15 @@ interface AboutProps {
 
 export function About({
   about = DEFAULT_SITE_SETTINGS.about,
-  team = DEFAULT_SITE_SETTINGS.publicTeam,
+  team,
   heading,
 }: AboutProps) {
   const safeHeading = resolveSectionHeading(heading, "about");
   const aboutImage = about.imageUrl?.trim() || DEFAULT_SITE_SETTINGS.about.imageUrl;
   const contactName = about.founderName?.trim() || "Panda-Bande Team";
-  const teamItems = team.items?.filter((m) => m.name?.trim() && m.role?.trim()) ?? [];
-  const teamHeading = team.title?.trim() || "Unser Team";
+  const teamItems = team?.items?.filter((m) => m.name?.trim() && m.role?.trim()) ?? [];
+  const teamHeading = team?.title?.trim() || "Unser Team";
+  const teamSubtitle = team?.subtitle?.trim();
 
   return (
     <section id="ueber-uns" className="section-padding bg-bg-secondary/20">
@@ -106,16 +104,16 @@ export function About({
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
                 {teamHeading}
               </h3>
-              {team.subtitle ? (
+              {teamSubtitle ? (
                 <p className="mx-auto mt-3 max-w-2xl text-center text-base text-text-secondary sm:text-lg">
-                  {team.subtitle}
+                  {teamSubtitle}
                 </p>
               ) : null}
             </ScrollReveal>
 
             <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
               {teamItems.map((member, i) => (
-                <li key={`${member.name}-${i}`}>
+                <li key={`${member.name}-${member.role}-${i}`}>
                   <ScrollReveal delay={i * 80}>
                     <Card className="team-card h-full overflow-hidden !p-0" padding="sm" hover>
                       <div className="team-card-image relative aspect-[4/5] w-full overflow-hidden bg-bg-secondary">
@@ -123,7 +121,6 @@ export function About({
                           src={member.imageUrl}
                           name={member.name}
                           role={member.role}
-                          fallbackSrc={TEAM_IMAGE_FALLBACK}
                         />
                       </div>
                       <div className="p-5 md:p-6">

@@ -1,4 +1,5 @@
 import { fetchSiteSettings, saveSiteSettings } from "@/lib/cms/data";
+import { sanitizeGenderedRole } from "@/lib/cms/content-quality";
 import { resolveImageUrl } from "@/lib/cms/resolve-image";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import { listTeamMembers } from "@/lib/team/db";
@@ -13,8 +14,8 @@ export async function syncTeamMembersToPublicCms(): Promise<void> {
     title: settings.publicTeam.title,
     subtitle: settings.publicTeam.subtitle,
     items: visible.map((m) => ({
-      name: m.name,
-      role: m.position || m.title || "",
+      name: m.name.trim(),
+      role: sanitizeGenderedRole(m.name, (m.position || m.title || "").trim()),
       description: m.description ?? "",
       imageUrl: resolveImageUrl("site-assets", m.profile_image_url) ?? m.profile_image_url ?? "",
     })),

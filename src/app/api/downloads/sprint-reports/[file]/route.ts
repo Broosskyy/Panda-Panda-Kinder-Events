@@ -16,6 +16,10 @@ export async function GET(
   _request: Request,
   { params }: { params: Promise<{ file: string }> }
 ) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Nicht gefunden." }, { status: 404 });
+  }
+
   const { file } = await params;
 
   if (!ALLOWED.has(file)) {

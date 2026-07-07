@@ -42,18 +42,6 @@ export const siteConfig = {
     address: "",
     isPlaceholder: true,
   },
-
-  reviews: {
-    showDemoReviews: false,
-    demoData: [
-      {
-        stars: 5,
-        text: "Demo-Bewertung — nicht öffentlich sichtbar.",
-        author: "Demo Nutzer",
-        event: "Hochzeit",
-      },
-    ],
-  },
 } as const;
 
 export type SiteConfig = typeof siteConfig;

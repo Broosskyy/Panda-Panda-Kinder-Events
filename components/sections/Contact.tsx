@@ -17,43 +17,62 @@ interface ContactProps {
 }
 
 function buildContactLinks(contact: SiteContactSettings) {
-  return [
-    {
-      href: `tel:${contact.phone.replace(/\s/g, "")}`,
-      icon: Phone,
-      label: "Telefon",
-      value: contact.phone,
-      external: false,
-    },
-    {
-      href: `https://wa.me/${contact.whatsapp}`,
-      icon: MessageCircle,
-      label: "WhatsApp",
-      value: contact.phone,
-      external: true,
-    },
-    {
-      href: contact.instagram,
-      icon: Instagram,
-      label: "Instagram",
-      value: contact.instagramHandle,
-      external: true,
-    },
-    {
-      href: `mailto:${contact.email}`,
-      icon: Mail,
-      label: "E-Mail",
-      value: contact.email,
-      external: false,
-    },
-    {
-      href: contact.mapsUrl?.trim() || `https://maps.google.com/?q=${encodeURIComponent(contact.location)}`,
-      icon: MapPin,
-      label: "Standort",
-      value: contact.location,
-      external: true,
-    },
+  const phone = contact.phone?.trim() ?? "";
+  const whatsapp = contact.whatsapp?.trim() ?? "";
+  const email = contact.email?.trim() ?? "";
+  const instagram = contact.instagram?.trim() ?? "";
+  const instagramHandle = contact.instagramHandle?.trim() ?? "Instagram";
+  const location = contact.location?.trim() ?? "";
+
+  const links = [
+    phone
+      ? {
+          href: `tel:${phone.replace(/\s/g, "")}`,
+          icon: Phone,
+          label: "Telefon",
+          value: phone,
+          external: false,
+        }
+      : null,
+    whatsapp
+      ? {
+          href: `https://wa.me/${whatsapp}`,
+          icon: MessageCircle,
+          label: "WhatsApp",
+          value: phone || "WhatsApp schreiben",
+          external: true,
+        }
+      : null,
+    instagram
+      ? {
+          href: instagram,
+          icon: Instagram,
+          label: "Instagram",
+          value: instagramHandle,
+          external: true,
+        }
+      : null,
+    email
+      ? {
+          href: `mailto:${email}`,
+          icon: Mail,
+          label: "E-Mail",
+          value: email,
+          external: false,
+        }
+      : null,
+    location
+      ? {
+          href: contact.mapsUrl?.trim() || `https://maps.google.com/?q=${encodeURIComponent(location)}`,
+          icon: MapPin,
+          label: "Standort",
+          value: location,
+          external: true,
+        }
+      : null,
   ] as const;
+
+  return links.filter((link): link is NonNullable<typeof link> => link !== null);
 }
 
 export function Contact({

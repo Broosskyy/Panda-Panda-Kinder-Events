@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
 import { countAdminUsers, createUser, listRoles } from "@/lib/auth/users";
 import { hashPassword } from "@/lib/auth/password";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
 const schema = z.object({
@@ -21,6 +22,15 @@ function passwordsMatch(input: string, expected: string): boolean {
 
 /** Bootstrap first admin when no users exist — requires legacy ADMIN_PASSWORD */
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const limited = rateLimit(`bootstrap:${ip}`, 5, 15 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Zu viele Versuche. Bitte später erneut versuchen." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   const userCount = await countAdminUsers();
   if (userCount > 0) {
     return NextResponse.json({ error: "Bootstrap nicht verfügbar." }, { status: 403 });

@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { WhatsAppFab } from "@/components/layout/WhatsAppFab";
+import { FloatingContactButtons } from "@/components/layout/FloatingContactButtons";
 import { Container } from "@/components/ui/Container";
 import { fetchPostBySlug, fetchSiteSettings } from "@/lib/cms/data";
 import { articleJsonLd, buildPageMetadata } from "@/lib/seo";
@@ -91,7 +91,7 @@ export default async function PostPage({ params }: PageProps) {
         </Container>
       </main>
       <Footer contact={settings.contact} footer={settings.footer} />
-      <WhatsAppFab contact={settings.contact} />
+      <FloatingContactButtons contact={settings.contact} />
     </>
   );
 }

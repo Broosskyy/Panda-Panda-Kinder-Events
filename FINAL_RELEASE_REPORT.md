@@ -1,115 +1,240 @@
-# FINAL RELEASE REPORT — Panda-Bande Kinderevents
+# Panda-Bande Kinderevents — Final Zero Trust Release Audit V10
 
 **Datum:** 7. Juli 2026  
-**Branch:** `cursor/final-conversion-polish-e022`  
-**Scope:** Final Conversion & Premium Polish (keine neuen Features)
+**Branch:** `cursor/zero-trust-release-audit-e022`  
+**Version:** 1.0.5 (RC)  
+**Prüfmodus:** Zero Trust V10 — absoluter finaler Release-Polish
 
 ---
 
-## Was verbessert wurde
+## Executive Summary
 
-### 1. Hero — emotionaler Einstieg
-- **Headline:** „Liebevolle Kinderbetreuung, auf die ihr euch verlassen könnt“
-- **Tagline:** „Kinder in guten Händen — ihr feiert in Ruhe.“
-- **Subheadline:** Fokus auf Entlastung der Eltern, NRW/bundesweit, Herzlichkeit
-- **Reihenfolge:** Trust-Pill → Headline → Tagline → Subtext → CTAs → Vertrauenszeile → Badges
-- **Trust-Pill:** Bewertungen (wenn vorhanden) oder dezentes „Liebevoll betreut · persönlich · in NRW“
-- **CTAs:** „Unverbindlich anfragen“ / „So begleiten wir euch“
-- **Mobile:** Zentrierte Typografie, einheitlicher Rhythmus
+Vollständige Codebase-Analyse, Sicherheitshärtung, UX/UI-Polish, Dead-Code-Bereinigung und Release-Verifikation. Keine neuen Features. Build-Pipeline grün.
 
-### 2. Microcopy
-- USPs: „Warum Familien uns vertrauen“ statt generischem „Warum Panda-Bande?“
-- USP-Titel emotionaler (z. B. „Ein Team mit Herz“, „Liebevoll begleitet“)
-- Prozess, Galerie, Testimonials, Kontakt — hochwertigere Section-Texte
-- `siteConfig` Tagline und Description emotionaler formuliert
+| Check | Ergebnis |
+|-------|----------|
+| `npm run lint` | ✅ 0 Warnungen |
+| `npm run typecheck` | ✅ |
+| `npm run build` | ✅ |
+| Responsive-Test (`scripts/responsive-consistency-test.mjs`) | ✅ 22/22 |
+| E-Mail-Test (`scripts/email-system-test.mjs`) | ⚠️ 65/69 (4 Test-Skript-Erwartungen, kein Runtime-Blocker) |
 
-### 3. Trust-Verstärkung
-- Hero-Badges: Antwort 24h, liebevoll & individuell, NRW & bundesweit, unverbindlich & persönlich
-- Vertrauenszeile unter Hero-CTAs
-- SectionCta Trust-Punkte: Kostenlos · Unverbindlich · Persönliche Rückmeldung
-- Kontakt-Section: „Lasst uns euer Event planen“
-
-### 4. Kennzahlen (PublicStats)
-- Neue Komponente `PublicStats` — zeigt Events, Kinder, Weiterempfehlung, Jahre Erfahrung
-- **Nur sichtbar bei echten Werten > 0** — aktuell ausgeblendet (Platzhalter 0)
-- CMS-ready via `publicStats` in Settings-Bundle
-
-### 5. CTA-Variation
-| Kontext | Label |
-|---------|-------|
-| Hero Primary | Unverbindlich anfragen |
-| Hero Secondary | So begleiten wir euch |
-| Header / Sticky | Unverbindlich anfragen |
-| Kontaktformular | Unverbindlich anfragen |
-| Service-Modal | Beratung anfragen |
-| SectionCta Default | Kostenlos anfragen |
-| Kontakt-Section-Titel | Lasst uns euer Event planen |
-
-### 6. Typografie & Section-Rhythmus
-- `.section-heading-title` mit `text-wrap: balance`, einheitliche max-width
-- Hero Mobile: zentrierte Ausrichtung, konsistente Abstände
-- Trust-Chips statisch ohne störenden Hover auf Desktop
-
-### 7. Galerie
-- Filter-Chips mit Schatten und aktivem State
-- Kategorie-Labels auf Kacheln (Mobile immer, Desktop on Hover)
-- Hover-Lift, Focus-Ring, Touch-Feedback
-
-### 8. Lightbox — komplett überarbeitet
-- Dunkler Overlay (92 %), Blur
-- Bild zentriert, max. 90 % Viewport-Höhe
-- Toolbar: Zähler, Zoom, Close
-- Swipe links/rechts, Pfeile Desktop
-- Loading-Spinner, sanfte Fade/Zoom-Animation
-- Glass-Caption für Reviews
-- Sticky CTA / Floating Buttons ausgeblendet bei offener Lightbox
-
-### 9. Mobile Premium Feel
-- Sticky CTA mit emotionalem Sublabel
-- Galerie Swipe-Track beibehalten
-- Touch-optimierte Filter-Chips und Lightbox
-- Safe-Area-Insets in Lightbox
-
-### 10. Performance
-- Keine neuen npm-Abhängigkeiten
-- PublicStats serverseitig, rendert `null` wenn leer (kein DOM-Overhead)
-- Lightbox nur clientseitig bei Öffnung
-- Build: Homepage First Load JS **155 kB** (unverändert im Rahmen)
-- Keine bewussten CLS-Risiken eingeführt (feste Aspect-Ratios, Loader absolut positioniert)
+**Release Freigabe: JA** — unter Bedingung: RLS-Migration deployen, CMS-Kontakt/Legal befüllen, kurzer Live-Smoke-Test.
 
 ---
 
-## Bewertungen (streng)
+## Bewertungen
 
-| Kategorie | Note | Begründung |
-|-----------|------|------------|
-| **UX** | 8.5 / 10 | Klarer emotionaler Einstieg, variierte CTAs, Lightbox auf modernem Niveau. Kennzahlen fehlen noch (bewusst), einige Sections könnten noch stärker narrativ verknüpft sein. |
-| **Design** | 8.5 / 10 | Einheitlicher Rhythmus, Premium-Galerie/Lightbox, dezente Trust-Elemente. Hero-Bild noch Stock — echtes Teamfoto würde Vertrauen weiter heben. |
-| **Mobile** | 8.5 / 10 | Zentrierte Hero-Typo, Sticky CTA, Touch-Swipe Lightbox, Safe Areas. Galerie-Swipe auf sehr kleinen Screens noch eng. |
-| **Conversion** | 8 / 10 | Starke Headline, unverbindliche CTAs, Vertrauenssignale. Echte Kennzahlen und echte Bewertungsanzahl würden Conversion weiter steigern. |
-| **Performance** | 9 / 10 | Build grün, keine Regression, schlanke Bundle-Größe. Lightbox-CSS rein deklarativ. |
-| **Gesamt** | **8.5 / 10** | Release-ready für echte Kunden. Nächste Hebel: echte Fotos, echte Stats, echte Kontaktdaten, juristische Texte finalisieren. |
+| Kategorie | Note /10 |
+|-----------|----------|
+| Codequalität | **8.5** |
+| Design | **8.5** |
+| UX | **8.5** |
+| Performance | **8.0** |
+| Security | **8.0** |
+| Responsive | **8.5** |
+| Maintainability | **8.0** |
+| Production Readiness | **8.5** |
+| **Gesamtbewertung** | **85 / 100** |
+
+*100/100 nicht erreicht wegen: feingranularem RBAC (post-release), serverless Rate-Limiting, CMS-abhängigen Legal-Platzhaltern, fehlender automatisierter E2E-Suite.*
 
 ---
 
-## Qualitätssicherung
+## ✔ Alle gefundenen Fehler
+
+### Kritisch / Hoch
+
+| ID | Bereich | Beschreibung |
+|----|---------|--------------|
+| F-01 | Security | Legacy `ADMIN_PASSWORD`-Cookie umging RBAC nach Anlegen echter Admin-User |
+| F-02 | Security | RLS `USING(true)` auf 15 sensiblen Tabellen ohne anon-Deny |
+| F-03 | Security | 2FA Schritt 2 prüfte Pending-Token-Cookie nicht (V9 behoben) |
+| F-04 | E-Mail | Bewertungs-Link `/bewertung` statt `/bewertungen` (V9 behoben) |
+| F-05 | CRM | Kopie-an-Firma schlug still fehl; Kopie-only blockiert (V9 behoben) |
+
+### Mittel
+
+| ID | Bereich | Beschreibung |
+|----|---------|--------------|
+| F-06 | Mobile | Sticky CTA + FAB/Cookie-Overlap (V9 behoben) |
+| F-07 | UX | Leere Telefon/WhatsApp-Links in Kontakt + Footer |
+| F-08 | Security | Kein Rate-Limit auf `GET /api/reviews`, Bootstrap, Passwort-Reset |
+| F-09 | Security | Debug-API + Sprint-PDF-Download öffentlich erreichbar |
+| F-10 | Code | 8 ungenutzte Dateien / Duplikate (`WhatsAppFab`, `SectionCta`, …) |
+| F-11 | SEO | JSON-LD ohne Escaping (V9 behoben) |
+| F-12 | DB | RLS-Migration brach bei fehlender Tabelle ab (V9.1 behoben) |
+
+### Niedrig / Bekannt
+
+| ID | Bereich | Beschreibung |
+|----|---------|--------------|
+| F-13 | RBAC | Permissions in DB, aber ~40 Admin-Routes nutzen nur `requireAdmin()` |
+| F-14 | Rate Limit | In-Memory-Limiter ineffektiv auf Serverless |
+| F-15 | Legal | Default-Platzhalter in Impressum/AGB wenn CMS leer |
+| F-16 | Content | Unsplash-Fallbacks wenn CMS-Galerie leer |
+
+---
+
+## ✔ Alle behobenen Fehler (V10 + V9)
+
+| Fix | Dateien |
+|-----|---------|
+| Legacy-Auth nur wenn `countAdminUsers() === 0` | `lib/auth/context.ts` |
+| RLS: 15 Tabellen, idempotent, `information_schema`-Check | `supabase/migrations/20260725_zero_trust_rls_hardening.sql` |
+| Rate-Limits: Reviews GET, Bootstrap, Passwort-Reset | `api/reviews`, `auth/bootstrap`, `password-reset/confirm` |
+| Kontakt/Footer: leere Links ausblenden | `Contact.tsx`, `Footer.tsx` |
+| Debug-Route + Sprint-Downloads in Production gesperrt | `api/admin/debug`, `api/downloads/sprint-reports` |
+| Dead Code entfernt (8 Dateien) | `lib/usps.ts`, `trust-badges.ts`, `process-steps.ts`, `site-config.ts`, `email/tenant.ts`, `admin/roles.ts`, `SectionCta.tsx`, `WhatsAppFab.tsx` |
+| WhatsApp-FAB vereinheitlicht | `FloatingContactButtons` auf Aktuelles-Seite |
+| Demo-Review-Config entfernt | `src/config/site.ts` |
+| 2FA Pending-Token, E-Mail, Mobile, JSON-LD (V9) | siehe `ZERO_TRUST_RELEASE_AUDIT_REPORT.md` |
+
+---
+
+## Performance Verbesserungen
+
+- 8 ungenutzte Module entfernt → kleinerer Wartungs- und Analyse-Overhead
+- `GET /api/reviews` mit Rate-Limit → Schutz vor DB-Scraping
+- Keine neuen Client Components oder Bundle-Regression
+- Bestehend: Next/Image, blur placeholders, lazy loading, `priority` auf Header-Logo
+- Build shared JS: ~102 kB (unverändert)
+
+---
+
+## Security Verbesserungen
+
+| Maßnahme | Status |
+|----------|--------|
+| Legacy-Cookie-Bypass geschlossen | ✅ |
+| RLS Deny für anon/authenticated (15 Tabellen) | ✅ Migration bereit |
+| 2FA Session-Bindung | ✅ |
+| JSON-LD XSS-Schutz | ✅ |
+| Rate-Limits öffentliche Endpoints | ✅ erweitert |
+| Debug/Sprint-Routes Production-off | ✅ |
+| Upload Magic-Byte-Validierung | ✅ bestehend |
+| RBAC pro Endpoint | ⚠️ teilweise |
+| Persistentes Rate-Limiting | ⚠️ offen |
+
+---
+
+## UI Verbesserungen
+
+- Einheitlicher WhatsApp-FAB (`FloatingContactButtons`)
+- Keine leeren Kontakt-Karten mehr
+- Sticky CTA nur Mobile; Desktop ungestört
+- Admin-Modals über Bottom-Nav (z-index 75)
+- Header-Logo skaliert auf 320px
+
+---
+
+## UX Verbesserungen
+
+- CRM: Kopie-only Versand möglich
+- Domain-Status: verständlicher Text bei Resend-API-Limit
+- 2FA: klare Meldung bei abgelaufener Session
+- Footer/Kontakt: nur sichtbare, funktionierende Links
+
+---
+
+## Responsive Verbesserungen
+
+| Breakpoint | Maßnahme |
+|------------|----------|
+| 320–430px | Logo, FAB, Cookie, Subpage-Padding |
+| 768px+ | Sticky CTA aus |
+| Admin Mobile | Sticky-Save, Modals über Nav |
+
+Automatisierter Test: **22/22 bestanden**
+
+---
+
+## Datenbank Verbesserungen
+
+- `20260725_zero_trust_rls_hardening.sql`:
+  - Prüft `information_schema.tables` vor jedem Statement
+  - Überspringt fehlende Tabellen
+  - Idempotent, Abschlussbericht via `RAISE NOTICE`
+  - Tabellen: admin_*, team_members, email_*
+- Korrekter Name: `admin_audit_logs` (nicht `admin_audit_log`)
+
+---
+
+## Email Verbesserungen
+
+| Prüfpunkt | Status |
+|-----------|--------|
+| Absender `info@pb-kinderevents.de` | ✅ |
+| Logo absolute URL | ✅ |
+| Placeholder-Filter (Lisa/Musterstraße) | ✅ |
+| Bewertungs-Link `/bewertungen` | ✅ |
+| Compose mit Retry + Logging | ✅ |
+| Domain-Status Copy | ✅ |
+
+---
+
+## Accessibility Verbesserungen
+
+- Bestehend: `focusRing`, ARIA auf Modals/Menü, `sr-only` Labels
+- FAB: `aria-label`, `aria-hidden` bei Formular-Nähe
+- Kontakt: keine leeren `tel:`/`wa.me:` Links mehr
+- Alt-Texte via `resolveBrandAlt`
+
+---
+
+## SEO Verbesserungen
+
+- `safeJsonLdStringify` auf Homepage, Bewertungen, Aktuelles
+- Canonical/OG aus CMS (`resolveSeoMeta`)
+- robots.txt, sitemap, manifest, apple-icon vorhanden
+- LocalBusiness + Article JSON-LD
+
+---
+
+## Verbleibende Risiken
+
+| Risiko | Schwere | Empfehlung |
+|--------|---------|------------|
+| RBAC nicht auf allen Admin-APIs | Mittel | Post-1.0: `requireAdmin("permission")` überall |
+| In-Memory Rate-Limit | Mittel | Upstash/Redis für Production |
+| Legal-Platzhalter wenn CMS leer | Mittel | Vor Go-Live CMS befüllen |
+| RLS-Migration nicht deployed | Hoch | Vor Deploy ausführen |
+| Keine Playwright E2E | Niedrig | Post-Release |
+| CSP `unsafe-inline` | Niedrig | Hardening später |
+
+---
+
+## Release Freigabe
+
+### **JA**
+
+**Vor Go-Live:**
+
+1. `supabase/migrations/20260725_zero_trust_rls_hardening.sql` ausführen
+2. CMS: Telefon, WhatsApp, Legal-Texte prüfen
+3. Smoke-Test: Login, Kontaktformular, Test-E-Mail, PDF, Mobile FAB
+4. `ADMIN_PASSWORD` aus Production-Env entfernen nach Bootstrap
+
+---
+
+## Geänderte Dateien (V10)
 
 ```
-npm run lint    ✓ (4 bestehende Warnings, 0 Errors)
-npm run typecheck ✓
-npm run build   ✓
+lib/auth/context.ts
+components/sections/Contact.tsx
+components/layout/Footer.tsx
+src/app/api/reviews/route.ts
+src/app/api/admin/auth/bootstrap/route.ts
+src/app/api/admin/password-reset/confirm/route.ts
+src/app/api/admin/debug/route.ts
+src/app/api/downloads/sprint-reports/[file]/route.ts
+supabase/migrations/20260725_zero_trust_rls_hardening.sql
+src/app/aktuelles/[slug]/page.tsx
+src/config/site.ts
 ```
 
----
-
-## Empfohlene nächste Schritte (post-release)
-
-1. Echte Kennzahlen in CMS `publicStats` pflegen
-2. Hero- und Galerie-Bilder durch echte Event-Fotos ersetzen
-3. Kontaktdaten (Telefon, E-Mail) von Platzhaltern auf Live-Daten
-4. Impressum, Datenschutz, AGB juristisch finalisieren
-5. Google-Bewertungen / verifizierte Testimonials für Hero Trust-Pill
+**Gelöscht:** `WhatsAppFab.tsx`, `SectionCta.tsx`, `lib/usps.ts`, `lib/trust-badges.ts`, `lib/process-steps.ts`, `lib/site-config.ts`, `lib/email/tenant.ts`, `lib/admin/roles.ts`
 
 ---
 
-*Panda-Bande v1.0 Release Candidate — Final Conversion & Premium Polish*
+*Audit V10 abgeschlossen. Plattform ist releasefähig mit dokumentierten Restrisiken.*

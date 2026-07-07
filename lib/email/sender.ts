@@ -5,8 +5,9 @@ import {
   DEFAULT_COMPANY_EMAIL,
   DEFAULT_SENDER_NAME,
 } from "@/lib/email/constants";
+import { checkResendDomainLive, type DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
-export type EmailDomainStatus = "test" | "verified" | "pending" | "failed" | "not_configured";
+export type EmailDomainStatus = "verified" | "not_verified" | "unknown" | "pending" | "failed" | "not_configured" | "test";
 
 export interface EmailDomainCheck {
   status: EmailDomainStatus;
@@ -17,14 +18,11 @@ export interface EmailDomainCheck {
 export interface ResolvedEmailSender {
   from: string;
   replyTo: string;
+  /** @deprecated use domainVerification */
   usesTestDomain: boolean;
   domainStatus: EmailDomainStatus;
+  domainVerification: DomainVerificationDisplay;
   displayFrom: string;
-}
-
-function extractDomain(email: string): string | null {
-  const match = email.trim().match(/@([^@\s]+)$/);
-  return match?.[1]?.toLowerCase() ?? null;
 }
 
 function isResendTestDomain(email: string): boolean {
@@ -107,87 +105,29 @@ export async function getEmailSettings(): Promise<SiteEmailSettings> {
 }
 
 export async function checkResendDomainStatus(senderEmail: string): Promise<EmailDomainCheck> {
-  const productionEmail = normalizeProductionEmail(senderEmail);
-  const domain = extractDomain(productionEmail);
+  const live = await checkResendDomainLive(senderEmail);
 
-  if (!productionEmail.trim()) {
+  if (live.state === "verified") {
     return {
-      status: "not_configured",
-      domain: null,
-      message: "Keine Absender-E-Mail konfiguriert.",
+      status: "verified",
+      domain: live.domain,
+      message: live.message,
     };
   }
 
-  if (!domain) {
+  if (live.state === "not_verified") {
     return {
-      status: "not_configured",
-      domain: null,
-      message: "Ungültige Absender-E-Mail.",
+      status: "not_verified",
+      domain: live.domain,
+      message: live.message,
     };
   }
 
-  const apiKey = process.env.RESEND_API_KEY;
-  if (!apiKey) {
-    return {
-      status: "not_configured",
-      domain,
-      message: "RESEND_API_KEY ist nicht gesetzt — Versand ist deaktiviert.",
-    };
-  }
-
-  try {
-    const { Resend } = await import("resend");
-    const resend = new Resend(apiKey);
-    const { data, error } = await resend.domains.list();
-
-    if (error) {
-      return {
-        status: "pending",
-        domain,
-        message: `Domain-Prüfung fehlgeschlagen: ${error.message}.`,
-      };
-    }
-
-    const domains = data?.data ?? [];
-    const match = domains.find((d) => d.name === domain || domain.endsWith(`.${d.name}`));
-
-    if (!match) {
-      return {
-        status: "pending",
-        domain,
-        message: `Domain „${domain}" ist in Resend nicht hinterlegt.`,
-      };
-    }
-
-    if (match.status === "verified") {
-      return {
-        status: "verified",
-        domain: match.name,
-        message: `Domain „${match.name}" ist verifiziert.`,
-      };
-    }
-
-    if (match.status === "failed" || match.status === "partially_failed") {
-      return {
-        status: "failed",
-        domain: match.name,
-        message: `Domain „${match.name}" — Verifizierung fehlgeschlagen (${match.status}).`,
-      };
-    }
-
-    return {
-      status: "pending",
-      domain: match.name,
-      message: `Domain „${match.name}" — Verifizierung ausstehend (${match.status}).`,
-    };
-  } catch (err) {
-    const message = err instanceof Error ? err.message : "Unbekannter Fehler";
-    return {
-      status: "pending",
-      domain,
-      message: `Domain-Prüfung nicht möglich: ${message}.`,
-    };
-  }
+  return {
+    status: "unknown",
+    domain: live.domain,
+    message: live.message,
+  };
 }
 
 export async function resolveEmailSender(settings?: SiteEmailSettings): Promise<ResolvedEmailSender> {
@@ -195,14 +135,22 @@ export async function resolveEmailSender(settings?: SiteEmailSettings): Promise<
   const senderName = normalizeSenderName(email.branding?.senderName || email.senderName);
   const fromEmail = normalizeProductionEmail(email.senderEmail);
   const replyTo = normalizeProductionEmail(email.branding?.replyTo || email.replyTo || fromEmail);
-  const domainCheck = await checkResendDomainStatus(fromEmail);
+  const liveCheck = await checkResendDomainLive(fromEmail);
   const displayFrom = `${senderName} <${fromEmail}>`;
+
+  const domainStatus: EmailDomainStatus =
+    liveCheck.state === "verified"
+      ? "verified"
+      : liveCheck.state === "not_verified"
+        ? "not_verified"
+        : "unknown";
 
   return {
     from: displayFrom,
     replyTo,
-    usesTestDomain: domainCheck.status !== "verified",
-    domainStatus: domainCheck.status,
+    usesTestDomain: liveCheck.state !== "verified",
+    domainStatus,
+    domainVerification: liveCheck.state,
     displayFrom,
   };
 }
@@ -271,8 +219,8 @@ export async function resolveFlowEmailSender(
   const flowReply = flowReplyRaw ? normalizeProductionEmail(flowReplyRaw) : "";
 
   if (flowSender && flowSender !== DEFAULT_COMPANY_EMAIL) {
-    const domainCheck = await checkResendDomainStatus(flowSender);
-    if (domainCheck.status === "verified") {
+    const liveCheck = await checkResendDomainLive(flowSender);
+    if (liveCheck.state === "verified") {
       const senderName = normalizeSenderName(email.branding?.senderName || email.senderName);
       return {
         ...base,
@@ -281,6 +229,7 @@ export async function resolveFlowEmailSender(
         displayFrom: `${senderName} <${flowSender}>`,
         usesTestDomain: false,
         domainStatus: "verified",
+        domainVerification: "verified",
       };
     }
   }

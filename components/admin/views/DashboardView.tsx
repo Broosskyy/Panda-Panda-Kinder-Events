@@ -21,6 +21,8 @@ import { DASHBOARD_QUICK_ACTIONS } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
+import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
+import { DomainVerificationBanner } from "@/components/admin/email/DomainVerificationBanner";
 import type { AdminAnalyticsDashboard } from "@/lib/analytics/types";
 
 function formatRelativeTime(dateStr: string) {
@@ -83,7 +85,7 @@ export function DashboardView() {
   const { period, badgeCounts } = useAdminNotificationsContext();
   const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
-  const [emailUsesTestDomain, setEmailUsesTestDomain] = useState<boolean | null>(null);
+  const [domainVerification, setDomainVerification] = useState<DomainVerificationDisplay | null>(null);
   const [emailTestMode, setEmailTestMode] = useState<{ enabled: boolean; address: string } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
@@ -92,15 +94,15 @@ export function DashboardView() {
     Promise.all([
       fetch("/api/admin/dashboard").then((r) => r.json()),
       fetch("/api/admin/activity").then((r) => r.json()),
-      fetch("/api/admin/email/status").then((r) => r.json()),
+      fetch("/api/admin/email/status", { cache: "no-store" }).then((r) => r.json()),
       fetch("/api/admin/settings").then((r) => r.json()),
     ])
       .then(([dashboardData, activityData, emailData, settingsData]) => {
         if (dashboardData.error) throw new Error(dashboardData.error);
         setStats(dashboardData);
         setActivity(activityData.activity ?? []);
-        if (emailData.resolved) {
-          setEmailUsesTestDomain(Boolean(emailData.resolved.usesTestDomain));
+        if (emailData.domainLive?.state || emailData.resolved?.domainVerification) {
+          setDomainVerification(emailData.domainLive?.state ?? emailData.resolved.domainVerification);
         }
         const testMode = settingsData.settings?.email?.testMode;
         if (testMode?.enabled) {
@@ -141,16 +143,8 @@ export function DashboardView() {
         </div>
       ) : null}
 
-      {emailUsesTestDomain ? (
-        <div className="rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          <strong>E-Mail: Domain noch nicht verifiziert.</strong> Versand nutzt{" "}
-          <code className="rounded bg-white/60 px-1">info@pb-kinderevents.de</code> — bitte{" "}
-          <strong>pb-kinderevents.de</strong> in Resend verifizieren unter{" "}
-          <Link href="/admin/einstellungen?tab=email" className="font-semibold underline">
-            Einstellungen → E-Mail
-          </Link>
-          .
-        </div>
+      {domainVerification ? (
+        <DomainVerificationBanner className="mb-4" state={domainVerification} />
       ) : null}
 
       {loading ? (

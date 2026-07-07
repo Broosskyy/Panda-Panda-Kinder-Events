@@ -28,18 +28,31 @@ import type {
 } from "@/lib/cms/types";
 import type { SystemStatusItem } from "@/lib/admin/system-status";
 import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/EmailSettingsShell";
+import { DomainVerificationBanner } from "@/components/admin/email/DomainVerificationBanner";
 import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
+import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
 interface EmailStatusResponse {
   resendConfigured: boolean;
   domain: { status: string; domain: string | null; message: string };
+  domainLive?: {
+    state: DomainVerificationDisplay;
+    message: string;
+    label: string;
+  };
   sendingSetup?: {
     canSend: boolean;
     blockReason?: string;
     sending: Array<{ id: string; label: string; level: string; message: string }>;
     receiving: Array<{ id: string; label: string; level: string; message: string }>;
   };
-  resolved: { from: string; replyTo: string; usesTestDomain: boolean; domainStatus: string };
+  resolved: {
+    from: string;
+    replyTo: string;
+    usesTestDomain: boolean;
+    domainStatus: string;
+    domainVerification?: DomainVerificationDisplay;
+  };
 }
 
 interface SystemStatusResponse {
@@ -126,7 +139,7 @@ export function SettingsView() {
   }, [applySettingsBundle, showError]);
 
   const loadEmailStatus = useCallback(async () => {
-    const res = await fetch("/api/admin/email/status");
+    const res = await fetch("/api/admin/email/status", { cache: "no-store" });
     const data = await res.json();
     if (res.ok) setEmailStatus(data);
   }, []);
@@ -227,7 +240,8 @@ export function SettingsView() {
     setLegal({ ...legal, [key]: value });
   };
 
-  const usesTestDomain = emailStatus?.resolved.usesTestDomain ?? false;
+  const domainVerification: DomainVerificationDisplay =
+    emailStatus?.domainLive?.state ?? emailStatus?.resolved.domainVerification ?? "unknown";
 
   const sitemapUrl = useMemo(() => {
     if (!seo || !business) return "";
@@ -474,17 +488,15 @@ export function SettingsView() {
             emailTab={emailTab}
             testTo={testTo}
             resendConfigured={Boolean(emailStatus?.resendConfigured)}
-            usesTestDomain={usesTestDomain}
+            domainVerification={domainVerification}
             emailStatusBanner={
               emailTab === "general" ? (
                 <>
-                  {usesTestDomain ? (
-                    <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-                      <strong>Domain noch nicht verifiziert.</strong> Versand nutzt{" "}
-                      <code className="rounded bg-white/60 px-1">info@pb-kinderevents.de</code> — bitte Domain{" "}
-                      <strong>pb-kinderevents.de</strong> in Resend verifizieren.
-                    </div>
-                  ) : null}
+                  <DomainVerificationBanner
+                    className="mb-4"
+                    state={domainVerification}
+                    message={emailStatus?.domainLive?.message}
+                  />
                   {!emailStatus?.resendConfigured ? (
                     <p className="mb-4 text-sm text-accent-heart">
                       <strong>E-Mail-Dienst nicht verbunden</strong> — automatischer Versand ist deaktiviert.

@@ -1,5 +1,6 @@
 import { getEmailSettings } from "@/lib/email/sender";
 import { getResendSendingSetup } from "@/lib/email/resend-status";
+import { checkResendDomainLive } from "@/lib/email/resend-domain-check";
 import { listEmailLogs } from "@/lib/email/log";
 import { isEmailTestModeActive } from "@/lib/email/test-mode";
 import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
@@ -20,6 +21,18 @@ export async function getEmailSystemStatus(): Promise<{
   const items: SystemStatusItem[] = [];
   const email = await getEmailSettings();
   const resendOk = Boolean(process.env.RESEND_API_KEY);
+  const liveDomain = await checkResendDomainLive(email.senderEmail);
+
+  items.push({
+    id: "resend_domain_live",
+    label: "Resend Domain (Live-Check)",
+    level: liveDomain.state === "verified" ? "ok" : liveDomain.state === "unknown" ? "warn" : "error",
+    message: `${liveDomain.label}${liveDomain.message ? ` — ${liveDomain.message}` : ""}`,
+    action:
+      liveDomain.state === "verified"
+        ? undefined
+        : "Resend Dashboard prüfen: Domain pb-kinderevents.de verifizieren.",
+  });
 
   items.push({
     id: "domain_connected",

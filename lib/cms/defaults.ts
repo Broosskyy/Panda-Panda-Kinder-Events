@@ -160,14 +160,7 @@ export const DEFAULT_SITE_SETTINGS: SiteSettingsBundle = {
   publicTeam: {
     title: "Unser Team",
     subtitle: "Liebevolle Betreuung mit Erfahrung.",
-    items: [
-      {
-        name: "Panda-Bande Team",
-        role: "Persönliche Ansprechpartnerin",
-        description: "Liebevolle Betreuung mit Erfahrung.",
-        imageUrl: "",
-      },
-    ],
+    items: [],
   },
   business: {
     companyName: siteConfig.name,

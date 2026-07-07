@@ -47,7 +47,7 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   usps: ["title", "subtitle"],
   process: ["title", "subtitle", "speechBubble"],
   sections: [],
-  publicTeam: ["title", "subtitle"],
+  publicTeam: ["title"],
   business: ["companyName", "email"],
   email: ["senderName", "senderEmail", "replyTo"],
   bank: [],
@@ -137,19 +137,25 @@ function validateArraySection(
 
   if (section === "publicTeam") {
     const items = obj.items;
-    if (!hasNonEmptyItems(items)) {
-      return { ok: false, error: "Mindestens ein Teammitglied erforderlich." };
+    if (!Array.isArray(items)) {
+      return { ok: false, error: "Ungültige Team-Daten." };
     }
-    const missing = REQUIRED_FIELDS.publicTeam.filter((field) => !String(obj[field] ?? "").trim());
-    if (missing.length > 0) {
-      return { ok: false, error: `Pflichtfelder fehlen: ${missing.join(", ")}` };
+    if (!String(obj.title ?? "").trim()) {
+      return { ok: false, error: "Team-Titel fehlt." };
     }
-    for (const member of items as { name?: string; role?: string; description?: string }[]) {
+    for (const member of items as { name?: string; role?: string }[]) {
       if (!String(member.name ?? "").trim() || !String(member.role ?? "").trim()) {
         return { ok: false, error: "Alle Teammitglieder brauchen Name und Rolle." };
       }
     }
-    return { ok: true, value: value as SiteSettingsBundle["publicTeam"] };
+    return {
+      ok: true,
+      value: {
+        title: String(obj.title).trim(),
+        subtitle: String(obj.subtitle ?? "").trim(),
+        items: items as SiteSettingsBundle["publicTeam"]["items"],
+      },
+    };
   }
 
   if (section === "sections") {

@@ -336,6 +336,34 @@ if (aboutSection.includes("Liebevolle Betreuung mit Erfahrung") && !aboutSection
   fail("About section still shows gendered founder copy");
 }
 
+const teamPublic = read("lib/team/public.ts");
+const aboutPage = read("components/sections/About.tsx");
+const defaultsFile = read("lib/cms/defaults.ts");
+
+if (teamPublic.includes("fetchPublicTeamMembers") && teamPublic.includes("team_members")) {
+  ok("Public team loads from team_members table");
+} else {
+  fail("Public team does not query team_members");
+}
+
+if (defaultsFile.includes("items: []") && defaultsFile.match(/publicTeam:[\s\S]*?items: \[\]/)) {
+  ok("Default publicTeam has no placeholder members");
+} else {
+  fail("Default publicTeam still contains placeholder members");
+}
+
+if (!aboutPage.includes("DEFAULT_SITE_SETTINGS.publicTeam") && !aboutPage.includes("fallbackSrc")) {
+  ok("About team section has no public placeholder fallbacks");
+} else {
+  fail("About team section still uses placeholder fallbacks");
+}
+
+if (read("src/app/page.tsx").includes("fetchPublicTeam()")) {
+  ok("Homepage loads team via fetchPublicTeam");
+} else {
+  fail("Homepage still uses settings.publicTeam for members");
+}
+
 if (emailSystemStatus.includes('id: "email_test"') && emailSystemStatus.includes("computeStatusSummary")) {
   ok("Email system status has test email item + overall summary");
 } else {

@@ -28,6 +28,7 @@ import type {
 } from "@/lib/cms/types";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
 import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/EmailSettingsShell";
+import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
 
 interface EmailStatusResponse {
   resendConfigured: boolean;
@@ -48,18 +49,6 @@ interface SystemStatusResponse {
 
 const VALID_TABS = new Set<string>(CONTROL_CENTER_TABS.map((t) => t.id));
 
-const SYSTEM_LEVEL_VARIANT: Record<SystemStatusLevel, "success" | "warning" | "danger"> = {
-  ok: "success",
-  warn: "warning",
-  error: "danger",
-};
-
-const SYSTEM_LEVEL_LABEL: Record<SystemStatusLevel, string> = {
-  ok: "OK",
-  warn: "Hinweis",
-  error: "Fehler",
-};
-
 function tabHref(id: ControlCenterTab): string {
   return id === "business" ? "/admin/einstellungen" : `/admin/einstellungen?tab=${id}`;
 }
@@ -69,6 +58,7 @@ export function SettingsView() {
   const rawTab = searchParams.get("tab") ?? "business";
   const tab: ControlCenterTab = VALID_TABS.has(rawTab) ? (rawTab as ControlCenterTab) : "business";
   const emailTab = parseEmailSubTab(searchParams.get("emailTab"));
+  const systemTab = parseSystemSubTab(searchParams.get("systemTab"));
 
   const [business, setBusiness] = useState<SiteBusinessSettings | null>(null);
   const [branding, setBranding] = useState<SiteBrandingSettings | null>(null);
@@ -778,48 +768,19 @@ export function SettingsView() {
       {!settingsLoading && tab === "system" ? (
         <AdminCard title="Systemstatus">
           <div className="mb-4 flex items-center justify-between gap-3">
-            <p className="text-sm text-text-muted">Read-only Übersicht über Konfiguration und Systemzustand.</p>
-            <AdminButton variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadSystemStatus()}>
-              Aktualisieren
-            </AdminButton>
+            <p className="text-sm text-text-muted">Übersicht über Konfiguration, Systemzustand und Datensicherung.</p>
+            {systemTab === "health" ? (
+              <AdminButton variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadSystemStatus()}>
+                Aktualisieren
+              </AdminButton>
+            ) : null}
           </div>
 
-          {systemError ? <p className="mb-4 text-sm font-medium text-accent-heart">{systemError}</p> : null}
-
-          {systemStatus ? (
-            <>
-              <div className="mb-4 flex flex-wrap gap-2">
-                <AdminStatusBadge label={`${systemStatus.summary.ok} OK`} variant="success" />
-                <AdminStatusBadge label={`${systemStatus.summary.warn} Hinweise`} variant="warning" />
-                <AdminStatusBadge label={`${systemStatus.summary.error} Fehler`} variant="danger" />
-              </div>
-              <ul className="space-y-3">
-                {systemStatus.items.map((item) => (
-                  <li key={item.id} className="rounded-xl border border-border bg-bg-secondary/30 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="font-medium text-text-primary">{item.label}</p>
-                      <AdminStatusBadge label={SYSTEM_LEVEL_LABEL[item.level]} variant={SYSTEM_LEVEL_VARIANT[item.level]} />
-                    </div>
-                    <p className="mt-1 text-sm text-text-secondary">{item.message}</p>
-                    {item.action ? <p className="mt-1 text-xs text-text-muted">{item.action}</p> : null}
-                  </li>
-                ))}
-              </ul>
-            </>
-          ) : !systemError ? (
-            <p className="text-sm text-text-muted">Status wird geladen…</p>
-          ) : null}
-
-          <div className="mt-6 border-t border-border pt-6">
-            <p className="text-sm text-text-secondary">
-              Admin-Benutzer und 2FA verwaltest du unter{" "}
-              <Link href="/admin/sicherheit/benutzer" className="text-primary underline">
-                Sicherheit → Benutzer & Rollen
-              </Link>
-              . Legacy-Zugang per <code className="rounded bg-bg-secondary px-1">ADMIN_PASSWORD</code>, solange kein
-              Benutzer existiert.
-            </p>
-          </div>
+          <SystemSettingsShell
+            systemTab={systemTab}
+            systemStatus={systemStatus}
+            systemError={systemError}
+          />
         </AdminCard>
       ) : null}
     </div>

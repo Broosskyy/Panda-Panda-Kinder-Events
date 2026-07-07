@@ -219,6 +219,8 @@ export interface SiteEmailSettings {
   senderName: string;
   senderEmail: string;
   replyTo: string;
+  /** Zentrale Firmen-E-Mail für Kopien und als Fallback */
+  companyEmail: string;
   copyToEmail: string;
   quoteCopyTo: string;
   invoiceCopyTo: string;
@@ -228,6 +230,13 @@ export interface SiteEmailSettings {
   inquiryAutoReplyEnabled: boolean;
   inquiryAutoReplySubject: string;
   inquiryAutoReplyText: string;
+  inquiryAdminSubject: string;
+  inquiryAdminText: string;
+  reviewRecipient: string;
+  reviewRequestSubject: string;
+  reviewRequestText: string;
+  reviewAdminSubject: string;
+  reviewAdminText: string;
   quoteSenderEmail: string;
   quoteReplyTo: string;
   quoteSubjectTemplate: string;
@@ -236,8 +245,12 @@ export interface SiteEmailSettings {
   invoiceReplyTo: string;
   invoiceSubjectTemplate: string;
   invoiceEmailBody: string;
+  crmCopyToCompanyEnabled: boolean;
   passwordResetSenderEmail: string;
+  passwordResetSubject: string;
+  passwordResetText: string;
   securityNotificationSender: string;
+  securityAlertsEnabled: boolean;
   loginAlertRecipient: string;
   applicationEmail: string;
   applicationCopyTo: string;

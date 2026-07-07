@@ -1,4 +1,5 @@
 import { BRAND } from "@/lib/brand";
+import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 
 /**
  * Zentrale Website-Konfiguration — Panda-Bande Kinderevents
@@ -27,7 +28,7 @@ export const siteConfig = {
       whatsapp: true,
       location: true,
     },
-    email: "hallo@panda-bande-events.de",
+    email: DEFAULT_COMPANY_EMAIL,
     whatsapp: "491700000000",
     instagram:
       "https://www.instagram.com/pandabande_kinderevents?igsh=aDhoZmVnNHlibTZn",

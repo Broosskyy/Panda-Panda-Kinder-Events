@@ -25,12 +25,12 @@ export async function POST(request: Request) {
     const result = await sendTestEmail(parsed.data.to);
     return NextResponse.json({
       success: true,
-      message: `Test-E-Mail an ${parsed.data.to} gesendet.`,
+      message: "Test-E-Mail wurde erfolgreich gesendet.",
       usesTestDomain: result.sender.usesTestDomain,
       from: result.sender.displayFrom,
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Test-E-Mail konnte nicht gesendet werden.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const message = err instanceof Error ? err.message : "Unbekannter Fehler";
+    return NextResponse.json({ error: `E-Mail konnte nicht gesendet werden. Grund: ${message}` }, { status: 500 });
   }
 }

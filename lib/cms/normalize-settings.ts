@@ -152,11 +152,29 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
         ...defaults.email.customAddresses,
         ...(base.email?.customAddresses ?? {}),
       },
+      companyEmail:
+        base.email?.companyEmail?.trim() ||
+        base.email?.copyToEmail?.trim() ||
+        defaults.email.companyEmail,
       inquiryCopyTo: base.email?.inquiryCopyTo ?? defaults.email.inquiryCopyTo,
       adminNotificationEmail:
         base.email?.adminNotificationEmail?.trim() ||
         base.email?.copyToEmail?.trim() ||
         defaults.email.adminNotificationEmail,
+      reviewRecipient:
+        base.email?.reviewRecipient?.trim() ||
+        base.email?.adminNotificationEmail?.trim() ||
+        defaults.email.reviewRecipient,
+      inquiryAdminSubject: base.email?.inquiryAdminSubject?.trim() || defaults.email.inquiryAdminSubject,
+      inquiryAdminText: base.email?.inquiryAdminText?.trim() || defaults.email.inquiryAdminText,
+      reviewRequestSubject: base.email?.reviewRequestSubject?.trim() || defaults.email.reviewRequestSubject,
+      reviewRequestText: base.email?.reviewRequestText?.trim() || defaults.email.reviewRequestText,
+      reviewAdminSubject: base.email?.reviewAdminSubject?.trim() || defaults.email.reviewAdminSubject,
+      reviewAdminText: base.email?.reviewAdminText?.trim() || defaults.email.reviewAdminText,
+      passwordResetSubject: base.email?.passwordResetSubject?.trim() || defaults.email.passwordResetSubject,
+      passwordResetText: base.email?.passwordResetText?.trim() || defaults.email.passwordResetText,
+      crmCopyToCompanyEnabled: base.email?.crmCopyToCompanyEnabled ?? defaults.email.crmCopyToCompanyEnabled,
+      securityAlertsEnabled: base.email?.securityAlertsEnabled ?? defaults.email.securityAlertsEnabled,
     },
     publicTeam,
   };

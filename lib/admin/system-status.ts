@@ -4,6 +4,8 @@ import { fetchSiteSettings } from "@/lib/cms/data";
 import { resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
 import { getSiteUrl } from "@/lib/site-url";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
+import { listEmailLogs } from "@/lib/email/log";
+import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 
 export type SystemStatusLevel = "ok" | "warn" | "error";
 
@@ -41,11 +43,34 @@ export async function getSystemStatus(): Promise<{
 
   const resendOk = Boolean(process.env.RESEND_API_KEY);
   items.push({
+    id: "email_ready",
+    label: "E-Mail-Versand bereit",
+    level: resendOk ? "ok" : "error",
+    message: resendOk
+      ? "Resend ist verbunden — automatische Website-E-Mails können versendet werden."
+      : "E-Mail-Versand ist deaktiviert, weil der Versand-Dienst nicht verbunden ist.",
+    action: resendOk ? undefined : "RESEND_API_KEY in den Server-Einstellungen setzen.",
+  });
+
+  items.push({
     id: "resend",
     label: "Resend verbunden",
     level: resendOk ? "ok" : "error",
-    message: resendOk ? "RESEND_API_KEY ist gesetzt." : "E-Mail-Versand deaktiviert.",
+    message: resendOk ? "Versand-Dienst (Resend) ist eingerichtet." : "Versand-Dienst fehlt.",
     action: resendOk ? undefined : "RESEND_API_KEY in Vercel setzen.",
+  });
+
+  const mainEmail =
+    settings.email.senderEmail?.trim() ||
+    settings.email.companyEmail?.trim() ||
+    settings.contact.email?.trim() ||
+    DEFAULT_COMPANY_EMAIL;
+  items.push({
+    id: "main_email",
+    label: "Hauptadresse gesetzt",
+    level: mainEmail.includes("@") ? "ok" : "warn",
+    message: mainEmail.includes("@") ? `Hauptadresse: ${mainEmail}` : "Keine Haupt-E-Mail-Adresse hinterlegt.",
+    action: mainEmail.includes("@") ? undefined : "Einstellungen → E-Mail → Absender-E-Mail setzen.",
   });
 
   if (resendOk) {
@@ -101,6 +126,39 @@ export async function getSystemStatus(): Promise<{
     message: senderSet ? settings.email.senderEmail : "Absender-E-Mail fehlt.",
     action: senderSet ? undefined : "Einstellungen → E-Mail → Absender-E-Mail.",
   });
+
+  try {
+    const logs = await listEmailLogs(20);
+    const lastTest = logs.find((l) => l.template_slug === "test" && l.status === "sent");
+    items.push({
+      id: "email_test",
+      label: "Test-E-Mail erfolgreich",
+      level: lastTest ? "ok" : resendOk ? "warn" : "warn",
+      message: lastTest
+        ? `Letzte erfolgreiche Testmail: ${new Date(lastTest.created_at).toLocaleString("de-DE")}`
+        : resendOk
+          ? "Noch keine erfolgreiche Testmail im Protokoll — Test unter Einstellungen → E-Mail senden."
+          : "Test erst möglich, wenn der Versand-Dienst verbunden ist.",
+      action: lastTest ? undefined : "Einstellungen → E-Mail → Test-E-Mail senden.",
+    });
+
+    const lastFailed = logs.find((l) => l.status === "failed");
+    items.push({
+      id: "email_last_error",
+      label: "Letzter Fehler",
+      level: lastFailed ? "error" : "ok",
+      message: lastFailed
+        ? `${lastFailed.subject}: ${lastFailed.error_message ?? "Unbekannter Fehler"}`
+        : "Keine fehlgeschlagenen E-Mails im aktuellen Protokoll.",
+    });
+  } catch {
+    items.push({
+      id: "email_test",
+      label: "Test-E-Mail erfolgreich",
+      level: "warn",
+      message: "Protokoll konnte nicht gelesen werden.",
+    });
+  }
 
   const bank = settings.bank;
   const invoiceReady = Boolean(

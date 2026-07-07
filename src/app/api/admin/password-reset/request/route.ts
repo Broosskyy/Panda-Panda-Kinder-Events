@@ -3,7 +3,7 @@ import { z } from "zod";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { findUserByIdentifier } from "@/lib/auth/users";
 import { createPasswordResetToken } from "@/lib/auth/password-reset";
-import { sendTransactionalEmail } from "@/lib/email";
+import { sendPasswordResetEmail } from "@/lib/email";
 
 const requestSchema = z.object({
   email: z.string().email(),
@@ -31,10 +31,10 @@ export async function POST(request: Request) {
     const resetUrl = `${baseUrl}/admin/passwort-reset?token=${token}`;
 
     try {
-      await sendTransactionalEmail({
+      await sendPasswordResetEmail({
         to: user.email,
-        subject: "Passwort zurücksetzen — Panda-Bande CMS",
-        html: `<p>Hallo ${user.display_name},</p><p><a href="${resetUrl}">Passwort zurücksetzen</a></p><p>Link gültig für 1 Stunde, einmal verwendbar.</p>`,
+        adminName: user.display_name,
+        resetUrl,
       });
     } catch {
       // Do not reveal email delivery failures

@@ -70,7 +70,7 @@ function ReviewCard({
 
   return (
     <Card className="review-card flex h-full flex-col" padding="md" hover>
-      <StarRating rating={review.rating} size="xl" className="mb-5 sm:mb-7" />
+      <StarRating rating={review.rating} size="xl" className="mb-5 justify-center sm:mb-7 sm:justify-start" />
 
       <blockquote className="flex-1 font-heading text-base leading-relaxed tracking-tight text-text-primary sm:text-lg md:text-xl md:leading-9">
         &ldquo;{review.text}&rdquo;
@@ -291,7 +291,7 @@ export function Testimonials({
         <div
           ref={formRef}
           id="bewertung-form"
-          className="section-container--narrow form-chrome-safe section-content-gap"
+          className="review-form-shell section-container--narrow form-chrome-safe section-content-gap"
         >
           <ScrollReveal>
             <ReviewForm privacyHint={privacyHint} />

@@ -92,7 +92,7 @@ export function About({
         </div>
 
         <ScrollReveal>
-          <div className="mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
+          <div className="about-contact-card mt-8 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-5 sm:mt-10 sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Ansprechpartnerin</p>
             <p className="mt-2 font-heading text-xl font-bold text-text-primary">{about.founderName}</p>
             <p className="mt-1 text-sm text-text-secondary">Gründerin &amp; persönliche Ansprechpartnerin für euer Event</p>
@@ -100,7 +100,7 @@ export function About({
         </ScrollReveal>
 
         {teamItems.length > 0 ? (
-          <div className="mt-14 sm:mt-20">
+          <div id="unser-team" className="mt-14 sm:mt-20">
             <ScrollReveal>
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
                 {teamHeading}

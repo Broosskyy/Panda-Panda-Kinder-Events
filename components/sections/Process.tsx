@@ -51,7 +51,7 @@ export function Process({
                     ) : null}
 
                     <ScrollReveal delay={index * 80} className="relative z-10 w-full lg:flex lg:flex-col lg:items-center">
-                      <div className="process-step-row flex gap-5 pl-1 lg:flex-col lg:items-center lg:pl-0">
+                      <div className="process-step-row flex gap-5 lg:flex-col lg:items-center lg:pl-0">
                         <div className="step-circle relative z-10 h-11 w-11 shrink-0 text-sm sm:h-12 sm:w-12 sm:text-base lg:h-12 lg:w-12">
                           {step.number}
                         </div>

@@ -68,6 +68,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       pdfBuffer: pdfBytes,
       copyToBusiness,
       company,
+      relatedQuoteId: id,
+      relatedCustomerId: quote.customer_id,
     });
 
     await markQuoteSent(id);

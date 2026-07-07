@@ -15,12 +15,23 @@ const DEFAULT_TEMPLATES: Omit<EmailTemplateRecord, "id" | "created_at" | "update
   },
   {
     slug: "inquiry-auto-reply",
-    name: "Kontaktformular Auto-Reply",
-    subject: "Vielen Dank für Ihre Anfrage — {{company_name}}",
-    body_html:
-      "<p>Guten Tag {{customer_name}},</p><p>vielen Dank für Ihre Anfrage. Wir melden uns innerhalb von 24 Stunden.</p>",
-    body_text:
-      "Guten Tag {{customer_name}},\n\nvielen Dank für Ihre Anfrage. Wir melden uns innerhalb von 24 Stunden.",
+    name: "Kontaktformular Bestätigung",
+    subject: "Eure Anfrage bei {{company_name}} — wir melden uns",
+    body_html: `<p>Hallo {{customer_name}},</p>
+<p>vielen Dank für eure Anfrage.</p>
+<p>Wir freuen uns sehr über euer Interesse an Panda-Bande.</p>
+<p>Wir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.</p>
+<p>Bis bald ❤️<br/><strong>Euer Panda-Bande Team</strong></p>`,
+    body_text: `Hallo {{customer_name}},
+
+vielen Dank für eure Anfrage.
+
+Wir freuen uns sehr über euer Interesse an Panda-Bande.
+
+Wir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.
+
+Bis bald ❤️
+Euer Panda-Bande Team`,
     area: "inquiry",
     is_active: true,
     is_default: true,

@@ -110,7 +110,13 @@ export async function POST(request: Request) {
     if (isResendConfigured()) {
       try {
         const { sendReviewNotification } = await import("@/lib/email");
-        await sendReviewNotification({ name: stripHtml(name), eventType, rating, text: stripHtml(text) });
+        await sendReviewNotification({
+          name: stripHtml(name),
+          eventType,
+          rating,
+          text: stripHtml(text),
+          submittedAt: new Date().toLocaleString("de-DE"),
+        });
       } catch (emailErr) {
         safeApiError("Review notification email:", emailErr, "");
       }

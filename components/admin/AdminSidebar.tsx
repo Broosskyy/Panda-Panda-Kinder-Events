@@ -5,6 +5,8 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import { AdminNavBadge, AdminNotificationCenter } from "@/components/admin/AdminNotificationCenter";
+import { useAdminNotificationsContext } from "@/components/admin/AdminNotificationsProvider";
 import {
   ADMIN_NAV_GROUPS,
   MOBILE_BOTTOM_NAV_HREFS,
@@ -21,10 +23,12 @@ function NavGroupSection({
   group,
   pathname,
   onNavigate,
+  badgeForHref,
 }: {
   group: AdminNavGroup;
   pathname: string;
   onNavigate?: () => void;
+  badgeForHref: (href: string) => number;
 }) {
   return (
     <div className="admin-nav-group">
@@ -33,6 +37,7 @@ function NavGroupSection({
         {group.items.map(({ href, label, iconKey, mobileLabel }) => {
           const Icon = resolveAdminIcon(iconKey);
           const active = isAdminNavActive(pathname, href);
+          const badge = badgeForHref(href);
           return (
             <Link
               key={href}
@@ -41,7 +46,8 @@ function NavGroupSection({
               className={`admin-nav-link ${active ? "admin-nav-link-active" : ""}`}
             >
               <Icon className="admin-nav-icon shrink-0" aria-hidden />
-              <span>{mobileLabel ?? label}</span>
+              <span className="min-w-0 flex-1 truncate">{mobileLabel ?? label}</span>
+              <AdminNavBadge count={badge} />
             </Link>
           );
         })}
@@ -52,8 +58,26 @@ function NavGroupSection({
 
 export function AdminSidebar() {
   const pathname = usePathname();
+  const { badgeCounts, markTypeRead } = useAdminNotificationsContext();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollYRef = useRef(0);
+
+  const badgeForHref = (href: string) => {
+    const base = href.split("?")[0];
+    if (base === "/admin/anfragen") return badgeCounts.bookings;
+    if (base === "/admin/bewertungen") return badgeCounts.reviews;
+    if (base === "/admin/kunden") return badgeCounts.customers;
+    if (base === "/admin/emails") return badgeCounts.emails;
+    return 0;
+  };
+
+  useEffect(() => {
+    const base = pathname?.split("?")[0];
+    if (base === "/admin/anfragen") markTypeRead("booking");
+    if (base === "/admin/bewertungen") markTypeRead("review");
+    if (base === "/admin/kunden") markTypeRead("customer");
+    if (base === "/admin/emails") markTypeRead("email");
+  }, [pathname, markTypeRead]);
 
   useEffect(() => {
     setDrawerOpen(false);
@@ -96,7 +120,13 @@ export function AdminSidebar() {
   const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
       {ADMIN_NAV_GROUPS.map((group) => (
-        <NavGroupSection key={group.id} group={group} pathname={pathname} onNavigate={onNavigate} />
+        <NavGroupSection
+          key={group.id}
+          group={group}
+          pathname={pathname}
+          onNavigate={onNavigate}
+          badgeForHref={badgeForHref}
+        />
       ))}
     </>
   );
@@ -108,6 +138,9 @@ export function AdminSidebar() {
         <div className="admin-sidebar-brand">
           <Logo context="admin" linked={false} />
           <p className="mt-2 text-xs text-text-muted">CMS Admin</p>
+        </div>
+        <div className="admin-sidebar-notifications hidden md:flex">
+          <AdminNotificationCenter />
         </div>
         <nav className="admin-sidebar-nav">
           <NavContent />
@@ -135,9 +168,7 @@ export function AdminSidebar() {
           <Logo context="admin" linked={false} />
           <p className="mt-1 text-[10px] uppercase tracking-wider text-text-muted">CMS</p>
         </div>
-        <button type="button" onClick={logout} className="admin-icon-btn text-text-muted" aria-label="Abmelden">
-          <LogOut className="h-4 w-4" />
-        </button>
+        <AdminNotificationCenter />
       </header>
 
       {/* Mobile drawer */}
@@ -169,6 +200,7 @@ export function AdminSidebar() {
         {MOBILE_BOTTOM_NAV.map(({ href, label, iconKey, mobileLabel }) => {
           const Icon = resolveAdminIcon(iconKey);
           const active = isAdminNavActive(pathname, href);
+          const badge = badgeForHref(href);
           const displayLabel =
             mobileLabel ??
             (href === "/admin"
@@ -182,7 +214,10 @@ export function AdminSidebar() {
                     : label);
           return (
             <Link key={href} href={href} className={`admin-bottom-nav-item ${active ? "admin-bottom-nav-item-active" : ""}`}>
-              <Icon className="admin-bottom-nav-icon" aria-hidden />
+              <span className="relative">
+                <Icon className="admin-bottom-nav-icon" aria-hidden />
+                {badge > 0 ? <span className="admin-bottom-nav-badge">{badge > 9 ? "9+" : badge}</span> : null}
+              </span>
               <span>{displayLabel}</span>
             </Link>
           );

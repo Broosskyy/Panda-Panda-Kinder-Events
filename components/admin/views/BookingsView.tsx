@@ -42,7 +42,7 @@ export function BookingsView() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
-  const { toast, saved, saveFailed, fromApi } = useAdminMessages();
+  const { toast, saveFailed, fromApi } = useAdminMessages();
   const page = adminPageHeaderProps("anfragen");
   const empty = ADMIN_EMPTY_STATES.bookings;
 

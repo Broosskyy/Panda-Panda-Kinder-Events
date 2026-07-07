@@ -186,6 +186,10 @@ export function getInquiryRecipient(settings: SiteEmailSettings): string {
   );
 }
 
+export function getAdminNotificationRecipient(settings: SiteEmailSettings): string {
+  return settings.adminNotificationEmail?.trim() || getInquiryRecipient(settings);
+}
+
 export function getCopyEmailForDocument(settings: SiteEmailSettings, type: "quote" | "invoice"): string {
   if (type === "quote" && settings.quoteCopyTo?.trim()) return settings.quoteCopyTo.trim();
   if (type === "invoice" && settings.invoiceCopyTo?.trim()) return settings.invoiceCopyTo.trim();

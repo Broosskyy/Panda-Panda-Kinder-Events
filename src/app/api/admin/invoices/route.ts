@@ -20,7 +20,7 @@ function parseView(value: string | null): CrmListView {
 }
 
 export async function GET(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("crm:read");
   if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
@@ -37,7 +37,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("invoices:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("invoices:write");
   if (authError) return authError;
 
   const ctx = await getAdminContext();
@@ -130,7 +130,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("invoices:write");
   if (authError) return authError;
 
   const ctx = await getAdminContext();

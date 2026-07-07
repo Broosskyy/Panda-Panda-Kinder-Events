@@ -55,7 +55,7 @@ function redactForAudit(value: unknown): unknown {
 }
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("website:read");
   if (authError) return authError;
 
   const settings = await fetchSiteSettings();
@@ -63,7 +63,7 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("settings:write");
   if (authError) return authError;
 
   const ctx = await getAdminContext();

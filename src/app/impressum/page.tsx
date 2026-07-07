@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { fetchSiteSettings } from "@/lib/cms/data";
+import { isDefaultLegalPlaceholder } from "@/lib/cms/legal";
 import { formatBusinessAddress } from "@/lib/crm/company";
 
 export const dynamic = "force-dynamic";
@@ -24,9 +25,11 @@ export default async function ImpressumPage() {
         </Link>
         <h1 className="font-heading mt-6 text-3xl font-bold text-text-primary">Impressum</h1>
 
-        <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          <strong>Hinweis:</strong> {legal.placeholderNotice}
-        </p>
+        {isDefaultLegalPlaceholder(legal.placeholderNotice) ? (
+          <p className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+            <strong>Hinweis:</strong> {legal.placeholderNotice}
+          </p>
+        ) : null}
 
         <div className="mt-8 space-y-6 text-text-secondary">
           <section>

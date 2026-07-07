@@ -26,6 +26,7 @@ export function InquiryForm({ privacyHint }: InquiryFormProps) {
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setIsSubmitting(true);
     setErrors({});
     setSubmitError("");

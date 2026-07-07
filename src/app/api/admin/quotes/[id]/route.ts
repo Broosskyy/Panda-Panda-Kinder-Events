@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { getQuoteWithDetails } from "@/lib/crm/db";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("crm:read");
   if (authError) return authError;
 
   const { id } = await params;

@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { resetEmailTemplateToDefault } from "@/lib/email/templates-db";
 
 export async function POST(_request: Request, context: { params: Promise<{ slug: string }> }) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const { slug } = await context.params;

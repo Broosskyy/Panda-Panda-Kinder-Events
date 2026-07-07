@@ -10,7 +10,7 @@ import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
 import { sendEmailWithRetry } from "@/lib/email/transport";
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   if (!isResendConfigured()) {

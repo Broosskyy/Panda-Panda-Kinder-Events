@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { getSystemStatus } from "@/lib/admin/system-status";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("website:read");
   if (authError) return authError;
 
   try {

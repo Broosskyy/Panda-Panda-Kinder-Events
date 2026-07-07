@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { listEmailLogs } from "@/lib/email/log";
 
 export async function GET(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const { searchParams } = new URL(request.url);

@@ -4,7 +4,7 @@ import { createCustomerFromBooking } from "@/lib/crm/db";
 import { createCustomerFromBookingSchema } from "@/lib/crm/schemas";
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("customers:write");
   if (authError) return authError;
 
   const body = await request.json();

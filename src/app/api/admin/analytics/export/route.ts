@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { analyticsToCsv, fetchFullAnalyticsDashboard } from "@/lib/analytics/full-stats";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("analytics:read");
   if (authError) return authError;
 
   try {

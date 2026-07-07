@@ -8,7 +8,7 @@ const testSchema = z.object({
 });
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   if (!isResendConfigured()) {

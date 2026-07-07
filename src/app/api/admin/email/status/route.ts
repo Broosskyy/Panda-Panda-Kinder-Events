@@ -9,7 +9,7 @@ import { isTestEmailLog } from "@/lib/email/domain-status-copy";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const settings = await getEmailSettings();

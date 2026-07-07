@@ -6,7 +6,7 @@ import { deleteStorageFile, sanitizeUploadFolder, uploadImage, validateStoragePa
 const VALID_BUCKETS: StorageBucket[] = ["gallery", "reviews", "site-assets"];
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("website:write");
   if (authError) return authError;
 
   try {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("website:write");
   if (authError) return authError;
 
   const { bucket, path } = await request.json();

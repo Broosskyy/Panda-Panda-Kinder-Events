@@ -10,7 +10,7 @@ import { getEmailSettings, getCopyEmailForDocument, isResendConfigured, sendCrmD
 import { getResendSendingSetup } from "@/lib/email/resend-status";
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("invoices:write");
   if (authError) return authError;
 
   const { id } = await params;

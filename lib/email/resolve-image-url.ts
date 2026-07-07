@@ -5,6 +5,15 @@ import {
   isUnsafeEmailAssetUrl,
 } from "@/lib/email/asset-url";
 
+/** Alt-Text für E-Mail-Logos (Barrierefreiheit in Mail-Clients) */
+export const EMAIL_LOGO_ALT = "Panda-Bande Kinderevents";
+
+/**
+ * E-Mail-Bilder nutzen EMAIL_ASSET_BASE_URL / https://www.pb-kinderevents.de —
+ * nicht NEXT_PUBLIC_SITE_URL (Vercel-Preview-Schutz).
+ * Produktions-Fallback: https://pb-kinderevents.de
+ */
+
 export {
   EMAIL_ASSET_BASE_DEFAULT,
   EMAIL_LOGO_DEFAULT_URL,
@@ -97,7 +106,7 @@ export function buildEmailLogoHeaderHtml(opts: {
   const absolute = resolved && !isUnsafeEmailAssetUrl(resolved) ? resolved : getDefaultEmailLogoUrl();
   const companyName = opts.companyName?.trim() || "Panda-Bande Kinderevents";
 
-  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName)}" width="180" style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto;" />`;
+  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName || EMAIL_LOGO_ALT)}" width="180" style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto;" />`;
 }
 
 export function buildEmailHeaderImageRow(

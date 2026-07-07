@@ -13,7 +13,7 @@ import { writeAuditLog } from "@/lib/auth/audit";
 
 /** Personal 2FA — any authenticated multi-user admin can manage their own 2FA. */
 async function requirePersonalAuth() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("security:write");
   if (authError) return { error: authError, ctx: null };
   const adminCtx = await getAdminContext();
   if (!adminCtx?.userId) {

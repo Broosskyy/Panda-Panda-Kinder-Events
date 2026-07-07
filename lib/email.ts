@@ -19,6 +19,7 @@ export {
   getCopyEmailForDocument,
   getEmailSettings,
   getInquiryRecipient,
+  getAdminNotificationRecipient,
   resolveEmailSender,
   resolveFlowEmailSender,
   applyEmailTemplate,
@@ -133,6 +134,47 @@ export async function sendInquiryNotification(data: InquiryEmailData) {
       status: "sent",
     });
   }
+}
+
+interface ReviewNotificationData {
+  name: string;
+  eventType: string;
+  rating: number;
+  text: string;
+}
+
+export async function sendReviewNotification(data: ReviewNotificationData) {
+  const resend = getResendClient();
+  const emailSettings = await getEmailSettings();
+  const sender = await resolveEmailSender(emailSettings);
+  const { getAdminNotificationRecipient } = await import("@/lib/email/sender");
+  const to = getAdminNotificationRecipient(emailSettings);
+  const subject = `Neue Bewertung — ${data.eventType} (${data.name})`;
+
+  const lines = [
+    `Name: ${data.name}`,
+    `Anlass: ${data.eventType}`,
+    `Bewertung: ${data.rating} von 5 Sternen`,
+    `Text: ${data.text}`,
+    "",
+    "Bitte im Admin unter Bewertungen prüfen und freigeben.",
+  ];
+
+  await resend.emails.send({
+    from: sender.from,
+    to,
+    replyTo: sender.replyTo,
+    subject,
+    text: `Neue Bewertung über die Website:\n\n${lines.join("\n")}`,
+  });
+
+  const { logEmailSend } = await import("@/lib/email/log");
+  await logEmailSend({
+    recipient: to,
+    subject,
+    area: "review",
+    status: "sent",
+  });
 }
 
 interface CrmDocumentEmailOptions {

@@ -7,6 +7,7 @@ import { reviewSchema } from "@/lib/validation";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { stripHtml, validateSpamGuard } from "@/lib/spam-guard";
 import { safeApiError } from "@/lib/api-error";
+import { isResendConfigured } from "@/lib/email";
 
 export const dynamic = "force-dynamic";
 
@@ -106,6 +107,15 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Bewertung konnte nicht gespeichert werden." }, { status: 500 });
     }
 
+    if (isResendConfigured()) {
+      try {
+        const { sendReviewNotification } = await import("@/lib/email");
+        await sendReviewNotification({ name: stripHtml(name), eventType, rating, text: stripHtml(text) });
+      } catch (emailErr) {
+        safeApiError("Review notification email:", emailErr, "");
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: "Vielen Dank! Eure Bewertung wurde eingereicht und wird nach Prüfung veröffentlicht.",
@@ -129,6 +139,7 @@ export async function GET() {
         "id, name, event_type, rating, text, created_at, profile_image_url, event_image_url, admin_reply, verified",
       )
       .eq("approved", true)
+      .order("sort_order", { ascending: true })
       .order("created_at", { ascending: false });
 
     if (error) {

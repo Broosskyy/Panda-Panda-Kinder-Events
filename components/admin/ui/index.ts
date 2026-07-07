@@ -5,6 +5,7 @@ export { AdminFilterBar, AdminFilterSelect } from "./AdminFilterBar";
 export { AdminFormField } from "./AdminFormField";
 export { AdminHelpBlock, AdminPageHelp } from "./AdminHelpBlock";
 export { AdminSearchInput } from "./AdminSearchInput";
-export { AdminStatusBadge, crmDocumentStatusVariant, postStatusVariant, reviewStatusVariant } from "./AdminStatusBadge";
+export { AdminStatusBadge, crmDocumentStatusVariant, getReviewDisplayStatus, postStatusVariant, reviewStatusVariant } from "./AdminStatusBadge";
+export { ReviewAdminImages } from "./ReviewAdminImages";
 export { AdminStickySave } from "./AdminStickySave";
 export { AdminTooltip } from "./AdminTooltip";

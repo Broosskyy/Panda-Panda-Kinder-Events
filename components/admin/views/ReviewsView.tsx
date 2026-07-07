@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Star } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
@@ -9,8 +8,10 @@ import {
   AdminEmptyState,
   AdminFilterBar,
   AdminFilterSelect,
+  AdminLoadingCard,
   AdminStatusBadge,
-  reviewStatusVariant,
+  getReviewDisplayStatus,
+  ReviewAdminImages,
 } from "@/components/admin/ui";
 import { Lightbox, type LightboxItem } from "@/components/ui/Lightbox";
 import { StarRating } from "@/components/ui/StarRating";
@@ -45,6 +46,7 @@ function formatReviewDate(dateStr: string) {
 
 export function ReviewsView() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
   const [lightboxItems, setLightboxItems] = useState<LightboxItem[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -53,13 +55,15 @@ export function ReviewsView() {
   const page = adminPageHeaderProps("bewertungen");
   const empty = ADMIN_EMPTY_STATES.reviews;
 
-  const load = () =>
-    fetch("/api/admin/reviews")
-      .then((r) => r.json())
-      .then((d) => setReviews(d.reviews ?? []));
+  const load = async () => {
+    const res = await fetch("/api/admin/reviews");
+    const d = await res.json();
+    setReviews(d.reviews ?? []);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const sortedReviews = useMemo(
@@ -104,9 +108,7 @@ export function ReviewsView() {
           fd.append("folder", type === "profile" ? "profiles" : "events");
           const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
           const upData = await up.json();
-          if (!up.ok) {
-            throw new Error(upData.error ?? "Upload fehlgeschlagen");
-          }
+          if (!up.ok) throw new Error(upData.error ?? "Upload fehlgeschlagen");
 
           const res = await fetch("/api/admin/reviews", {
             method: "PATCH",
@@ -213,7 +215,7 @@ export function ReviewsView() {
   };
 
   return (
-    <div>
+    <div className="review-admin-page">
       <AdminPageHeader {...page} />
 
       <AdminFilterBar>
@@ -229,7 +231,9 @@ export function ReviewsView() {
         />
       </AdminFilterBar>
 
-      {filtered.length === 0 ? (
+      {loading ? (
+        <AdminLoadingCard message="Bewertungen werden geladen…" />
+      ) : filtered.length === 0 ? (
         <AdminEmptyState
           icon={Star}
           title={reviews.length === 0 ? empty.title : "Keine Bewertungen gefunden"}
@@ -238,18 +242,19 @@ export function ReviewsView() {
           actionHref={reviews.length === 0 ? empty.actionHref : undefined}
         />
       ) : (
-        <div className="space-y-4">
+        <div className="review-admin-list">
           {filtered.map((r) => {
             const isEditing = editingId === r.id;
             const globalIdx = sortedReviews.findIndex((s) => s.id === r.id);
+            const status = getReviewDisplayStatus(r);
 
             return (
-              <AdminCard key={r.id}>
-                <div className="flex flex-wrap gap-4">
-                  <div className="flex shrink-0 flex-col gap-1">
+              <AdminCard key={r.id} className="review-admin-card">
+                <div className="review-admin-card-header">
+                  <div className="review-admin-sort">
                     <AdminButton
                       variant="secondary"
-                      className="!min-h-9 !px-2"
+                      className="review-admin-sort-btn"
                       disabled={globalIdx === 0}
                       icon={<ChevronUp className="h-4 w-4" />}
                       onClick={() => void moveReview(r.id, "up")}
@@ -259,7 +264,7 @@ export function ReviewsView() {
                     </AdminButton>
                     <AdminButton
                       variant="secondary"
-                      className="!min-h-9 !px-2"
+                      className="review-admin-sort-btn"
                       disabled={globalIdx === sortedReviews.length - 1}
                       icon={<ChevronDown className="h-4 w-4" />}
                       onClick={() => void moveReview(r.id, "down")}
@@ -268,173 +273,137 @@ export function ReviewsView() {
                       <span className="sr-only">Nach unten</span>
                     </AdminButton>
                   </div>
-
-                  <div className="flex flex-wrap gap-3">
-                    {r.profile_image_url ? (
-                      <button
-                        type="button"
-                        className="relative h-16 w-16 shrink-0 overflow-hidden rounded-full"
-                        onClick={() => openImageLightbox(r, "profile")}
-                        aria-label="Profilbild vergrößern"
-                      >
-                        <Image
-                          src={r.profile_image_url}
-                          alt=""
-                          fill
-                          className="object-cover"
-                          unoptimized={r.profile_image_url.includes("supabase.co")}
-                        />
-                      </button>
-                    ) : null}
-                    {r.event_image_url ? (
-                      <button
-                        type="button"
-                        className="relative h-24 w-36 shrink-0 overflow-hidden rounded-xl"
-                        onClick={() => openImageLightbox(r, "event")}
-                        aria-label="Eventfoto vergrößern"
-                      >
-                        <Image
-                          src={r.event_image_url}
-                          alt="Eventfoto"
-                          fill
-                          className="object-cover"
-                          unoptimized={r.event_image_url.includes("supabase.co")}
-                        />
-                      </button>
+                  <div className="review-admin-status-row">
+                    <AdminStatusBadge label={status.label} variant={status.variant} />
+                    {r.verified && status.label !== "Verifiziert" ? (
+                      <AdminStatusBadge label="Verifiziert" variant="success" />
                     ) : null}
                   </div>
+                </div>
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        {isEditing ? (
-                          <div className="space-y-3">
-                            <input
-                              className="admin-input"
-                              defaultValue={r.name}
-                              placeholder="Name"
-                              onBlur={(e) => {
-                                if (e.target.value !== r.name) void patch(r.id, { name: e.target.value });
-                              }}
-                            />
-                            <input
-                              className="admin-input"
-                              defaultValue={r.event_type}
-                              placeholder="Anlass"
-                              onBlur={(e) => {
-                                if (e.target.value !== r.event_type) void patch(r.id, { event_type: e.target.value });
-                              }}
-                            />
-                            <div>
-                              <p className="admin-form-label mb-1">Sterne</p>
-                              <div className="flex flex-wrap items-center gap-2">
-                                <StarRating rating={r.rating} size="sm" />
-                                <select
-                                  className="admin-input w-auto"
-                                  defaultValue={String(r.rating)}
-                                  onChange={(e) => void patch(r.id, { rating: Number(e.target.value) })}
-                                >
-                                  {[5, 4, 3, 2, 1].map((n) => (
-                                    <option key={n} value={n}>
-                                      {n} Sterne
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                            <textarea
-                              className="admin-input min-h-24"
-                              defaultValue={r.text}
-                              placeholder="Bewertungstext"
-                              onBlur={(e) => {
-                                if (e.target.value !== r.text) void patch(r.id, { text: e.target.value });
-                              }}
-                            />
-                          </div>
-                        ) : (
-                          <>
-                            <p className="font-semibold text-text-primary">
-                              {r.name} — {r.event_type}
-                            </p>
-                            <div className="mt-1 flex flex-wrap items-center gap-2">
-                              <StarRating rating={r.rating} size="sm" />
-                              <p className="text-xs text-text-muted">
-                                {formatReviewDate(r.created_at)}
-                                {r.verified ? " · Verifiziert" : ""}
-                              </p>
-                            </div>
-                            <p className="mt-2 text-sm text-text-secondary">&ldquo;{r.text}&rdquo;</p>
-                          </>
-                        )}
-                      </div>
-                      <AdminStatusBadge
-                        label={r.approved ? "Veröffentlicht" : "Ausstehend"}
-                        variant={reviewStatusVariant(r.approved)}
-                      />
-                    </div>
+                <ReviewAdminImages
+                  profileUrl={r.profile_image_url}
+                  eventUrl={r.event_image_url}
+                  name={r.name}
+                  onOpen={(type) => openImageLightbox(r, type)}
+                />
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <label className="admin-btn-secondary cursor-pointer text-xs">
-                        Profilbild
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void uploadReviewImage(r.id, file, "profile");
-                            e.target.value = "";
-                          }}
-                        />
-                      </label>
-                      <label className="admin-btn-secondary cursor-pointer text-xs">
-                        Eventfoto
-                        <input
-                          type="file"
-                          accept="image/jpeg,image/png,image/webp"
-                          className="hidden"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) void uploadReviewImage(r.id, file, "event");
-                            e.target.value = "";
-                          }}
-                        />
-                      </label>
-                    </div>
-
-                    <div className="mt-4">
-                      <label className="admin-form-label mb-1 block">Antwort von Panda-Bande</label>
-                      <textarea
-                        defaultValue={r.admin_reply ?? ""}
-                        rows={2}
-                        className="admin-input min-h-20"
-                        placeholder="Antwort schreiben..."
+                <div className="review-admin-body">
+                  {isEditing ? (
+                    <div className="review-admin-edit-fields">
+                      <input
+                        className="admin-input"
+                        defaultValue={r.name}
+                        placeholder="Name"
                         onBlur={(e) => {
-                          if (e.target.value !== (r.admin_reply ?? "")) {
-                            void patch(r.id, { admin_reply: e.target.value });
-                          }
+                          if (e.target.value !== r.name) void patch(r.id, { name: e.target.value });
+                        }}
+                      />
+                      <input
+                        className="admin-input"
+                        defaultValue={r.event_type}
+                        placeholder="Anlass"
+                        onBlur={(e) => {
+                          if (e.target.value !== r.event_type) void patch(r.id, { event_type: e.target.value });
+                        }}
+                      />
+                      <div>
+                        <p className="admin-form-label mb-1">Sterne</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <StarRating rating={r.rating} size="sm" />
+                          <select
+                            className="admin-input w-full max-w-[10rem]"
+                            defaultValue={String(r.rating)}
+                            onChange={(e) => void patch(r.id, { rating: Number(e.target.value) })}
+                          >
+                            {[5, 4, 3, 2, 1].map((n) => (
+                              <option key={n} value={n}>
+                                {n} Sterne
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+                      <textarea
+                        className="admin-input min-h-24 w-full"
+                        defaultValue={r.text}
+                        placeholder="Bewertungstext"
+                        onBlur={(e) => {
+                          if (e.target.value !== r.text) void patch(r.id, { text: e.target.value });
                         }}
                       />
                     </div>
+                  ) : (
+                    <>
+                      <p className="review-admin-name">
+                        {r.name} <span className="text-text-muted">·</span> {r.event_type}
+                      </p>
+                      <div className="review-admin-meta">
+                        <StarRating rating={r.rating} size="sm" />
+                        <span className="text-xs text-text-muted">{formatReviewDate(r.created_at)}</span>
+                      </div>
+                      <blockquote className="review-admin-quote">&ldquo;{r.text}&rdquo;</blockquote>
+                    </>
+                  )}
+                </div>
 
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <AdminButton
-                        variant="secondary"
-                        onClick={() => setEditingId(isEditing ? null : r.id)}
-                      >
-                        {isEditing ? ADMIN_BTN.close : ADMIN_BTN.edit}
-                      </AdminButton>
-                      <AdminButton variant={r.approved ? "secondary" : "primary"} onClick={() => void toggleApproved(r)}>
-                        {r.approved ? "Veröffentlichung zurückziehen" : "Veröffentlichen"}
-                      </AdminButton>
-                      <AdminButton variant="secondary" onClick={() => void patch(r.id, { verified: !r.verified })}>
-                        {r.verified ? "Verifizierung entfernen" : "Als verifiziert markieren"}
-                      </AdminButton>
-                      <AdminButton variant="danger" onClick={() => void remove(r.id)}>
-                        {ADMIN_BTN.delete}
-                      </AdminButton>
-                    </div>
-                  </div>
+                <div className="review-admin-uploads">
+                  <label className="review-admin-upload-btn">
+                    Profilbild
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadReviewImage(r.id, file, "profile");
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <label className="review-admin-upload-btn">
+                    Eventfoto
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) void uploadReviewImage(r.id, file, "event");
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <div className="review-admin-reply">
+                  <label className="admin-form-label mb-1 block">Antwort von Panda-Bande</label>
+                  <textarea
+                    defaultValue={r.admin_reply ?? ""}
+                    rows={3}
+                    className="admin-input min-h-[5.5rem] w-full"
+                    placeholder="Antwort schreiben…"
+                    onBlur={(e) => {
+                      if (e.target.value !== (r.admin_reply ?? "")) {
+                        void patch(r.id, { admin_reply: e.target.value });
+                      }
+                    }}
+                  />
+                </div>
+
+                <div className="review-admin-actions">
+                  <AdminButton variant="secondary" onClick={() => setEditingId(isEditing ? null : r.id)}>
+                    {isEditing ? ADMIN_BTN.close : ADMIN_BTN.edit}
+                  </AdminButton>
+                  <AdminButton variant={r.approved ? "secondary" : "primary"} onClick={() => void toggleApproved(r)}>
+                    {r.approved ? "Zurückziehen" : "Veröffentlichen"}
+                  </AdminButton>
+                  <AdminButton variant="secondary" onClick={() => void patch(r.id, { verified: !r.verified })}>
+                    {r.verified ? "Verifizierung entfernen" : "Verifizieren"}
+                  </AdminButton>
+                  <AdminButton variant="danger" onClick={() => void remove(r.id)}>
+                    {ADMIN_BTN.delete}
+                  </AdminButton>
                 </div>
               </AdminCard>
             );

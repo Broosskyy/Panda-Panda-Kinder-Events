@@ -41,6 +41,28 @@ export function reviewStatusVariant(approved: boolean): AdminStatusBadgeVariant 
   return approved ? "success" : "warning";
 }
 
+export interface ReviewDisplayStatus {
+  label: string;
+  variant: AdminStatusBadgeVariant;
+}
+
+export function getReviewDisplayStatus(review: {
+  approved: boolean;
+  verified: boolean;
+  admin_reply: string | null;
+}): ReviewDisplayStatus {
+  if (!review.approved) {
+    return { label: "Wartet auf Prüfung", variant: "warning" };
+  }
+  if (review.admin_reply?.trim()) {
+    return { label: "Beantwortet", variant: "default" };
+  }
+  if (review.verified) {
+    return { label: "Verifiziert", variant: "success" };
+  }
+  return { label: "Veröffentlicht", variant: "success" };
+}
+
 export function postStatusVariant(published: boolean): AdminStatusBadgeVariant {
   return published ? "success" : "muted";
 }

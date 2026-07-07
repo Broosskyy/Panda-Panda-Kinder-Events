@@ -1,6 +1,7 @@
 import { fetchSiteSettings } from "@/lib/cms/data";
 import type { SiteEmailSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
 
 export const RESEND_TEST_FROM = "onboarding@resend.dev";
 
@@ -37,18 +38,32 @@ function mergeEmailSettings(raw: SiteEmailSettings, contactEmail: string): SiteE
     merged.inquiryRecipient ||
     merged.notificationEmail ||
     process.env.INQUIRY_NOTIFICATION_EMAIL ||
+    merged.companyEmail ||
     merged.copyToEmail ||
     merged.replyTo ||
-    contactEmail;
+    contactEmail ||
+    DEFAULT_COMPANY_EMAIL;
+
+  const companyEmail =
+    merged.companyEmail?.trim() ||
+    merged.copyToEmail?.trim() ||
+    merged.replyTo?.trim() ||
+    inquiryRecipient ||
+    DEFAULT_COMPANY_EMAIL;
 
   return {
     ...merged,
-    replyTo: merged.replyTo || merged.senderEmail || contactEmail,
-    copyToEmail: merged.copyToEmail || inquiryRecipient,
-    quoteCopyTo: merged.quoteCopyTo || merged.copyToEmail || inquiryRecipient,
-    invoiceCopyTo: merged.invoiceCopyTo || merged.copyToEmail || inquiryRecipient,
+    companyEmail,
+    replyTo: merged.replyTo || merged.senderEmail || companyEmail,
+    copyToEmail: merged.copyToEmail || companyEmail,
+    quoteCopyTo: merged.quoteCopyTo || merged.copyToEmail || companyEmail,
+    invoiceCopyTo: merged.invoiceCopyTo || merged.copyToEmail || companyEmail,
     inquiryRecipient,
-    adminNotificationEmail: merged.adminNotificationEmail || merged.copyToEmail || inquiryRecipient,
+    adminNotificationEmail: merged.adminNotificationEmail || companyEmail,
+    reviewRecipient: merged.reviewRecipient?.trim() || merged.adminNotificationEmail || companyEmail,
+    signature: { ...defaults.signature, ...(merged.signature ?? {}) },
+    branding: { ...defaults.branding, ...(merged.branding ?? {}) },
+    testMode: { ...defaults.testMode, ...(merged.testMode ?? {}) },
   };
 }
 
@@ -150,9 +165,9 @@ export async function checkResendDomainStatus(senderEmail: string): Promise<Emai
 
 export async function resolveEmailSender(settings?: SiteEmailSettings): Promise<ResolvedEmailSender> {
   const email = settings ?? (await getEmailSettings());
-  const senderName = email.senderName || email.companyName;
+  const senderName = email.branding?.senderName?.trim() || email.senderName || email.companyName;
   const domainCheck = await checkResendDomainStatus(email.senderEmail);
-  const replyTo = email.replyTo || email.senderEmail;
+  const replyTo = email.branding?.replyTo?.trim() || email.replyTo || email.senderEmail;
 
   if (domainCheck.status === "verified" && !isResendTestDomain(email.senderEmail)) {
     const fromEmail = email.senderEmail.trim();
@@ -188,6 +203,10 @@ export function getInquiryRecipient(settings: SiteEmailSettings): string {
 
 export function getAdminNotificationRecipient(settings: SiteEmailSettings): string {
   return settings.adminNotificationEmail?.trim() || getInquiryRecipient(settings);
+}
+
+export function getReviewRecipient(settings: SiteEmailSettings): string {
+  return settings.reviewRecipient?.trim() || getAdminNotificationRecipient(settings);
 }
 
 export function getCopyEmailForDocument(settings: SiteEmailSettings, type: "quote" | "invoice"): string {

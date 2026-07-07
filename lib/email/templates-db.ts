@@ -15,16 +15,93 @@ const DEFAULT_TEMPLATES: Omit<EmailTemplateRecord, "id" | "created_at" | "update
   },
   {
     slug: "inquiry-auto-reply",
-    name: "Kontaktformular Auto-Reply",
-    subject: "Vielen Dank für Ihre Anfrage — {{company_name}}",
-    body_html:
-      "<p>Guten Tag {{customer_name}},</p><p>vielen Dank für Ihre Anfrage. Wir melden uns innerhalb von 24 Stunden.</p>",
-    body_text:
-      "Guten Tag {{customer_name}},\n\nvielen Dank für Ihre Anfrage. Wir melden uns innerhalb von 24 Stunden.",
+    name: "Anfrage: Bestätigung an Kunde",
+    subject: "Eure Anfrage bei {{company_name}} — wir melden uns",
+    body_html: `<p>Hallo {{customer_name}},</p>
+<p>vielen Dank für eure Anfrage.</p>
+<p>Wir freuen uns sehr über euer Interesse an Panda-Bande.</p>
+<p>Wir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.</p>
+<p>Bis bald ❤️<br/><strong>Euer Panda-Bande Team</strong></p>`,
+    body_text: `Hallo {{customer_name}},
+
+vielen Dank für eure Anfrage.
+
+Wir freuen uns sehr über euer Interesse an Panda-Bande.
+
+Wir prüfen eure Anfrage persönlich und melden uns schnellstmöglich zurück.
+
+Bis bald ❤️
+Euer Panda-Bande Team`,
     area: "inquiry",
     is_active: true,
     is_default: true,
     variables: ["company_name", "customer_name"],
+  },
+  {
+    slug: "inquiry-admin",
+    name: "Anfrage: Benachrichtigung an Admin",
+    subject: "Neue Anfrage — {{event_type}} ({{customer_name}})",
+    body_html: `<p><strong>Neue Kontaktanfrage über die Website</strong></p>
+<p>Name: {{customer_name}}<br/>Telefon: {{customer_phone}}<br/>E-Mail: {{customer_email}}<br/>Eventart: {{event_type}}<br/>Datum: {{event_date}}<br/>Kinder: {{children_count}}</p>
+<p><strong>Nachricht:</strong><br/>{{message}}</p>`,
+    body_text: `Neue Kontaktanfrage über die Website
+
+Name: {{customer_name}}
+Telefon: {{customer_phone}}
+E-Mail: {{customer_email}}
+Eventart: {{event_type}}
+Datum: {{event_date}}
+Kinder: {{children_count}}
+
+Nachricht:
+{{message}}`,
+    area: "inquiry",
+    is_active: true,
+    is_default: true,
+    variables: ["customer_name", "customer_phone", "customer_email", "event_type", "event_date", "children_count", "message"],
+  },
+  {
+    slug: "review-request",
+    name: "Bewertungsanfrage",
+    subject: "Wie war euer Event mit uns? — {{company_name}}",
+    body_html: `<p>Hallo {{customer_name}},</p>
+<p>wir hoffen, ihr hattet einen wunderschönen Tag!</p>
+<p>Wenn ihr möchtet, freuen wir uns über eine kurze Bewertung:</p>
+<p><a href="{{review_link}}">Jetzt Bewertung abgeben</a></p>
+<p>Herzliche Grüße<br/><strong>Euer Panda-Bande Team</strong></p>`,
+    body_text: `Hallo {{customer_name}},
+
+wir hoffen, ihr hattet einen wunderschönen Tag!
+
+Wenn ihr möchtet, freuen wir uns über eine kurze Bewertung:
+{{review_link}}
+
+Herzliche Grüße
+Euer Panda-Bande Team`,
+    area: "review",
+    is_active: true,
+    is_default: true,
+    variables: ["company_name", "customer_name", "review_link"],
+  },
+  {
+    slug: "review-admin",
+    name: "Neue Bewertung an Admin",
+    subject: "Neue Bewertung — {{event_type}} ({{customer_name}})",
+    body_html: `<p><strong>Neue Bewertung eingegangen</strong></p>
+<p>Name: {{customer_name}}<br/>Anlass: {{event_type}}<br/>Bewertung: {{rating}} / 5</p>
+<p><strong>Text:</strong><br/>{{message}}</p>`,
+    body_text: `Neue Bewertung eingegangen
+
+Name: {{customer_name}}
+Anlass: {{event_type}}
+Bewertung: {{rating}} / 5
+
+Text:
+{{message}}`,
+    area: "review",
+    is_active: true,
+    is_default: true,
+    variables: ["customer_name", "event_type", "rating", "message"],
   },
   {
     slug: "quote-send",
@@ -53,14 +130,23 @@ const DEFAULT_TEMPLATES: Omit<EmailTemplateRecord, "id" | "created_at" | "update
   },
   {
     slug: "password-reset",
-    name: "Passwort zurücksetzen",
+    name: "Passwort vergessen",
     subject: "Passwort zurücksetzen — {{company_name}}",
-    body_html: "<p>Guten Tag,</p><p>Sie haben eine Passwort-Zurücksetzung angefordert.</p>",
-    body_text: "Guten Tag,\n\nSie haben eine Passwort-Zurücksetzung angefordert.",
+    body_html: `<p>Hallo {{admin_name}},</p>
+<p>Sie haben eine Passwort-Zurücksetzung angefordert.</p>
+<p><a href="{{reset_link}}">Passwort zurücksetzen</a></p>
+<p>Der Link ist 1 Stunde gültig und kann nur einmal verwendet werden.</p>`,
+    body_text: `Hallo {{admin_name}},
+
+Sie haben eine Passwort-Zurücksetzung angefordert.
+
+Klicken Sie hier: {{reset_link}}
+
+Der Link ist 1 Stunde gültig und kann nur einmal verwendet werden.`,
     area: "password_reset",
     is_active: true,
     is_default: true,
-    variables: ["company_name"],
+    variables: ["company_name", "admin_name", "reset_link"],
   },
   {
     slug: "security-login",
@@ -154,4 +240,30 @@ export async function deleteEmailTemplate(slug: string): Promise<void> {
   if (!isSupabaseConfigured()) return;
   const supabase = getSupabaseAdmin();
   await supabase.from("email_templates").delete().eq("slug", slug);
+}
+
+export function getDefaultTemplateBySlug(slug: string): Omit<EmailTemplateRecord, "id" | "created_at" | "updated_at"> | null {
+  return DEFAULT_TEMPLATES.find((t) => t.slug === slug) ?? null;
+}
+
+export async function resetEmailTemplateToDefault(slug: string): Promise<EmailTemplateRecord> {
+  const defaults = getDefaultTemplateBySlug(slug);
+  if (!defaults) throw new Error(`Keine Standard-Vorlage für „${slug}".`);
+
+  if (!isSupabaseConfigured()) {
+    const now = new Date().toISOString();
+    return { ...defaults, id: `fallback-reset-${slug}`, created_at: now, updated_at: now };
+  }
+
+  return upsertEmailTemplate({
+    slug: defaults.slug,
+    name: defaults.name,
+    subject: defaults.subject,
+    body_html: defaults.body_html,
+    body_text: defaults.body_text,
+    area: defaults.area,
+    is_active: defaults.is_active,
+    is_default: defaults.is_default,
+    variables: defaults.variables,
+  });
 }

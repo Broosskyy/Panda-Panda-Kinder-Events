@@ -37,7 +37,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     items: [
       { href: "/admin/anfragen", label: "Anfragen", iconKey: "Inbox" },
       { href: "/admin/bewertungen", label: "Bewertungen", iconKey: "Star" },
-      { href: "/admin/emails", label: "E-Mails", iconKey: "Mail" },
+      { href: "/admin/emails", label: "E-Mail-Protokoll", iconKey: "Mail" },
     ],
   },
   {

@@ -189,6 +189,11 @@ export interface EmailLogRecord {
   related_customer_id: string | null;
   related_quote_id: string | null;
   related_invoice_id: string | null;
+  original_recipient?: string | null;
+  sender_from?: string | null;
+  body_preview?: string | null;
+  opened_at?: string | null;
+  tenant_id?: string | null;
   created_at: string;
 }
 
@@ -214,11 +219,66 @@ export interface SiteEmailCustomAddresses {
   angebote: string;
 }
 
+/** Alias-Eintrag (CMS-Fallback; primär in email_aliases Tabelle) */
+export interface SiteEmailAliasRecord {
+  id: string;
+  aliasAddress: string;
+  forwardTo: string;
+  description: string;
+  isActive: boolean;
+  sortOrder?: number;
+  tenantId?: string | null;
+}
+
+export interface SiteEmailSignatureSettings {
+  companyName: string;
+  contactPerson: string;
+  phone: string;
+  mobile: string;
+  website: string;
+  instagram: string;
+  facebook: string;
+  tiktok: string;
+  whatsapp: string;
+  address: string;
+  logoUrl: string;
+  impressumUrl: string;
+  privacyUrl: string;
+  footerText: string;
+  freeText: string;
+  showSocialIcons: boolean;
+}
+
+export interface SiteEmailBrandingSettings {
+  logoUrl: string;
+  headerImageUrl: string;
+  primaryColor: string;
+  secondaryColor: string;
+  buttonColor: string;
+  textColor: string;
+  footerColor: string;
+  fontFamily: string;
+  showSocialIcons: boolean;
+  companyName: string;
+  senderName: string;
+  replyTo: string;
+}
+
+export type EmailTestModePrefix = "TEST" | "STAGING" | "DEV";
+
+export interface SiteEmailTestModeSettings {
+  enabled: boolean;
+  testAddress: string;
+  subjectPrefix: EmailTestModePrefix;
+}
+
 export interface SiteEmailSettings {
   companyName: string;
   senderName: string;
   senderEmail: string;
   replyTo: string;
+  /** Zentrale Firmen-E-Mail für Kopien und als Fallback */
+  companyEmail: string;
   copyToEmail: string;
   quoteCopyTo: string;
   invoiceCopyTo: string;
@@ -228,6 +288,13 @@ export interface SiteEmailSettings {
   inquiryAutoReplyEnabled: boolean;
   inquiryAutoReplySubject: string;
   inquiryAutoReplyText: string;
+  inquiryAdminSubject: string;
+  inquiryAdminText: string;
+  reviewRecipient: string;
+  reviewRequestSubject: string;
+  reviewRequestText: string;
+  reviewAdminSubject: string;
+  reviewAdminText: string;
   quoteSenderEmail: string;
   quoteReplyTo: string;
   quoteSubjectTemplate: string;
@@ -236,12 +303,19 @@ export interface SiteEmailSettings {
   invoiceReplyTo: string;
   invoiceSubjectTemplate: string;
   invoiceEmailBody: string;
+  crmCopyToCompanyEnabled: boolean;
   passwordResetSenderEmail: string;
+  passwordResetSubject: string;
+  passwordResetText: string;
   securityNotificationSender: string;
+  securityAlertsEnabled: boolean;
   loginAlertRecipient: string;
   applicationEmail: string;
   applicationCopyTo: string;
   customAddresses: SiteEmailCustomAddresses;
+  signature: SiteEmailSignatureSettings;
+  branding: SiteEmailBrandingSettings;
+  testMode: SiteEmailTestModeSettings;
   /** @deprecated use inquiryRecipient */
   notificationEmail?: string;
 }

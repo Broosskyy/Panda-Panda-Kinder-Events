@@ -3,30 +3,46 @@ import { getBusinessProfile } from "@/lib/crm/company";
 import { getSiteUrl } from "@/lib/site-url";
 import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
 import { applyTemplateVariables } from "@/lib/email/variables";
+import { getEmailSettings } from "@/lib/email/sender";
+import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
 
 /** Standard-Variablen für E-Mail-Vorlagen aus CMS-Settings */
 export async function buildEmailVariableContext(
   overrides: Record<string, string | number | null | undefined> = {},
 ): Promise<Record<string, string>> {
-  const [settings, business] = await Promise.all([fetchSiteSettings(), getBusinessProfile()]);
+  const [settings, business, emailSettings] = await Promise.all([
+    fetchSiteSettings(),
+    getBusinessProfile(),
+    getEmailSettings(),
+  ]);
 
   const base: Record<string, string> = {
-    company_name: business.companyName || settings.branding.brandName || "Panda-Bande",
-    company_email: business.email || settings.contact.email,
+    company_name: business.companyName || settings.branding.brandName || emailSettings.companyName || "Panda-Bande",
+    company_email: emailSettings.companyEmail || business.email || settings.contact.email,
     company_phone: business.phone || settings.contact.phone,
     company_website: business.website || getSiteUrl(),
     customer_name: "",
     customer_email: "",
+    customer_phone: "",
+    name: "",
     quote_number: "",
     invoice_number: "",
     total_amount: "",
+    total: "",
     due_date: "",
     payment_terms: business.invoiceSettings?.paymentInfoText || "",
     iban: business.iban || "",
     bic: business.bic || "",
     appointment_date: "",
+    event_type: "",
+    event_date: "",
+    children_count: "",
     message: "",
     admin_name: "",
+    review_link: "",
+    reset_link: "",
+    rating: "",
+    submitted_at: "",
     logo_url: resolveBrandLogo(settings.branding, "email"),
     primary_color: resolvePrimaryColor(settings.branding),
     tagline: settings.branding.tagline || "Kinderevents",
@@ -36,6 +52,9 @@ export async function buildEmailVariableContext(
   for (const [key, value] of Object.entries(overrides)) {
     if (value != null) base[key] = String(value);
   }
+
+  if (base.customer_name && !base.name) base.name = base.customer_name.split(/\s+/)[0] || base.customer_name;
+  if (base.name && !base.customer_name) base.customer_name = base.name;
 
   return base;
 }
@@ -52,17 +71,7 @@ export async function renderEmailFromTemplate(
   const subject = applyTemplateVariables(template.subject, vars);
   const bodyHtml = applyTemplateVariables(template.body_html, vars);
   const bodyText = applyTemplateVariables(template.body_text || template.body_html.replace(/<[^>]+>/g, ""), vars);
-
-  const settings = await fetchSiteSettings();
-  const { wrapEmailHtml } = await import("@/lib/email/html");
-  const html = wrapEmailHtml({
-    baseUrl: getSiteUrl(),
-    logoUrl: resolveBrandLogo(settings.branding, "email"),
-    companyName: vars.company_name,
-    primaryColor: resolvePrimaryColor(settings.branding),
-    bodyHtml,
-    footerHtml: `<p style="margin:8px 0 0;font-size:12px;color:#888;">${vars.company_phone} · ${vars.company_email}</p>`,
-  });
+  const html = await wrapBrandedEmailHtml(bodyHtml, vars.company_name);
 
   return { subject, html, text: bodyText };
 }

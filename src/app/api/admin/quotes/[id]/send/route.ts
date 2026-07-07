@@ -15,7 +15,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const { id } = await params;
   const body = await request.json().catch(() => ({}));
-  const copyToBusiness = Boolean(body.copyToBusiness ?? true);
+  const emailSettings = await getEmailSettings();
+  const copyToBusiness = Boolean(body.copyToBusiness ?? emailSettings.crmCopyToCompanyEnabled !== false);
 
   if (!isResendConfigured()) {
     return NextResponse.json(
@@ -68,6 +69,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       pdfBuffer: pdfBytes,
       copyToBusiness,
       company,
+      relatedQuoteId: id,
+      relatedCustomerId: quote.customer_id,
     });
 
     await markQuoteSent(id);

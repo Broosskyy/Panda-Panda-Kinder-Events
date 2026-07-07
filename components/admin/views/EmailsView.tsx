@@ -1,39 +1,61 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Eye, Mail, Save, Send } from "lucide-react";
+import { Eye, Mail, RotateCcw, Save } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
+import { EmailVariableHelp } from "@/components/admin/email/EmailVariableHelp";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
-import { EMAIL_VARIABLE_HINTS } from "@/lib/email/variables";
 import type { EmailLogRecord, EmailTemplateRecord } from "@/lib/cms/types";
 
-type Tab = "compose" | "templates" | "log";
+type Tab = "templates" | "log";
 
 const EMAIL_LOG_STATUS: Record<string, string> = {
   sent: "Gesendet",
   failed: "Fehlgeschlagen",
-  queued: "Warteschlange",
-  bounced: "Zugestellt fehlgeschlagen",
+  queued: "Wartet",
+  bounced: "Fehlgeschlagen",
 };
 
+const TEMPLATE_PURPOSES: Record<string, string> = {
+  "inquiry-auto-reply": "Diese E-Mail erhält ein Kunde automatisch nach einer Anfrage.",
+  "inquiry-admin": "Diese Nachricht erhält ihr, wenn eine neue Kontaktanfrage eingeht.",
+  "review-request": "Wird versendet, wenn ihr im Admin eine Bewertungsanfrage an Kunden schickt.",
+  "review-admin": "Diese Adresse bekommt eine Nachricht, wenn eine neue Bewertung eingeht.",
+  "quote-send": "Text beim Versand eines Angebots per E-Mail (PDF wird angehängt).",
+  "invoice-send": "Text beim Versand einer Rechnung per E-Mail (PDF wird angehängt).",
+  "password-reset": "E-Mail für Admin-Benutzer, die ihr Passwort vergessen haben.",
+  "general-message": "Allgemeine freie Nachricht an Kunden.",
+  "security-login": "Optionaler Hinweis bei Admin-Anmeldungen.",
+};
+
+const CORE_TEMPLATES = [
+  "inquiry-auto-reply",
+  "inquiry-admin",
+  "review-request",
+  "review-admin",
+  "quote-send",
+  "invoice-send",
+  "password-reset",
+] as const;
+
 export function EmailsView() {
-  const { toast, withLoading, emailSent, error: showError } = useAdminMessages();
+  const { toast, withLoading, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("emails");
   const emptyLog = ADMIN_EMPTY_STATES.emailLogs;
-  const [tab, setTab] = useState<Tab>("compose");
+  const [tab, setTab] = useState<Tab>("templates");
   const [templates, setTemplates] = useState<EmailTemplateRecord[]>([]);
   const [logs, setLogs] = useState<EmailLogRecord[]>([]);
-  const [to, setTo] = useState("");
+  const [selectedSlug, setSelectedSlug] = useState<string>("inquiry-auto-reply");
   const [subject, setSubject] = useState("");
-  const [bodyHtml, setBodyHtml] = useState("<p>Guten Tag {{customer_name}},</p><p>{{message}}</p>");
-  const [templateSlug, setTemplateSlug] = useState("general-message");
-  const [copyTo, setCopyTo] = useState("");
+  const [bodyHtml, setBodyHtml] = useState("");
+  const [isActive, setIsActive] = useState(true);
+  const [testTo, setTestTo] = useState("");
   const [preview, setPreview] = useState(false);
 
   const load = useCallback(async () => {
@@ -51,41 +73,27 @@ export function EmailsView() {
     void withLoading(load());
   }, [load, withLoading]);
 
-  const applyTemplate = (slug: string) => {
-    const t = templates.find((x) => x.slug === slug);
+  useEffect(() => {
+    if (templates.length === 0) return;
+    const t = templates.find((x) => x.slug === selectedSlug) ?? templates[0];
     if (!t) return;
-    setTemplateSlug(slug);
     setSubject(t.subject);
     setBodyHtml(t.body_html);
-  };
+    setIsActive(t.is_active);
+  }, [templates, selectedSlug]);
 
-  const sendEmail = async (test = false) => {
-    if (!to.trim()) return showError("Bitte Empfänger eingeben.");
-    await withLoading(
-      (async () => {
-        const res = await fetch("/api/admin/email/compose", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            to: to.trim(),
-            subject,
-            bodyHtml,
-            templateSlug,
-            copyTo: copyTo.trim() || undefined,
-            area: test ? "test" : "general",
-          }),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? ADMIN_MSG.sendFailed);
-        if (test) toast(ADMIN_MSG.testEmailSent);
-        else emailSent();
-        await load();
-      })(),
-    );
+  const selectTemplate = (slug: string) => {
+    const t = templates.find((x) => x.slug === slug);
+    if (!t) return;
+    setSelectedSlug(slug);
+    setSubject(t.subject);
+    setBodyHtml(t.body_html);
+    setIsActive(t.is_active);
+    setPreview(false);
   };
 
   const saveTemplate = async () => {
-    const t = templates.find((x) => x.slug === templateSlug);
+    const t = templates.find((x) => x.slug === selectedSlug);
     if (!t) return;
     await withLoading(
       (async () => {
@@ -98,7 +106,7 @@ export function EmailsView() {
             subject,
             body_html: bodyHtml,
             area: t.area,
-            is_active: t.is_active,
+            is_active: isActive,
             is_default: t.is_default,
             variables: t.variables,
           }),
@@ -111,6 +119,47 @@ export function EmailsView() {
     );
   };
 
+  const resetTemplate = async () => {
+    await withLoading(
+      (async () => {
+        const res = await fetch(`/api/admin/email/templates/${encodeURIComponent(selectedSlug)}/reset`, {
+          method: "POST",
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Zurücksetzen fehlgeschlagen");
+        toast(data.message ?? "Vorlage zurückgesetzt.");
+        await load();
+      })(),
+    );
+  };
+
+  const sendTest = async () => {
+    if (!testTo.trim()) return showError("Bitte Empfänger eingeben.");
+    await withLoading(
+      (async () => {
+        const res = await fetch("/api/admin/email/compose", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            to: testTo.trim(),
+            subject,
+            bodyHtml,
+            templateSlug: selectedSlug,
+            area: "test",
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? ADMIN_MSG.sendFailed);
+        toast("Test-E-Mail wurde erfolgreich gesendet.");
+        await load();
+      })(),
+    );
+  };
+
+  const coreTemplates = CORE_TEMPLATES.map((slug) => templates.find((t) => t.slug === slug)).filter(Boolean) as EmailTemplateRecord[];
+  const otherTemplates = templates.filter((t) => !CORE_TEMPLATES.includes(t.slug as (typeof CORE_TEMPLATES)[number]));
+  const selected = templates.find((t) => t.slug === selectedSlug) ?? templates[0];
+
   return (
     <>
       <AdminPageHeader {...page} />
@@ -118,9 +167,8 @@ export function EmailsView() {
       <nav className="mb-6 flex flex-wrap gap-2">
         {(
           [
-            ["compose", "Verfassen"],
             ["templates", "Vorlagen"],
-            ["log", "Protokoll"],
+            ["log", "E-Mail-Protokoll"],
           ] as const
         ).map(([id, label]) => (
           <button
@@ -136,103 +184,104 @@ export function EmailsView() {
         ))}
       </nav>
 
-      {tab === "compose" ? (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <AdminCard title="Neue E-Mail">
-            <div className="grid gap-4">
-              <AdminFormField label="Vorlage">
-                <select
-                  className="admin-input"
-                  value={templateSlug}
-                  onChange={(e) => applyTemplate(e.target.value)}
-                >
-                  {templates.map((t) => (
-                    <option key={t.slug} value={t.slug}>
-                      {t.name}
-                    </option>
+      {tab === "templates" ? (
+        <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
+          <AdminCard title="Vorlagen">
+            <ul className="space-y-2">
+              {coreTemplates.map((t) => (
+                <li key={t.slug}>
+                  <button
+                    type="button"
+                    onClick={() => selectTemplate(t.slug)}
+                    className={`w-full rounded-lg px-3 py-2 text-left text-sm ${
+                      selectedSlug === t.slug ? "bg-primary/10 font-semibold text-primary" : "text-text-secondary hover:bg-bg-secondary"
+                    }`}
+                  >
+                    {t.name}
+                    {!t.is_active ? <span className="ml-1 text-xs text-text-muted">(inaktiv)</span> : null}
+                  </button>
+                </li>
+              ))}
+              {otherTemplates.length > 0 ? (
+                <>
+                  <li className="pt-2 text-xs font-semibold uppercase tracking-wide text-text-muted">Weitere</li>
+                  {otherTemplates.map((t) => (
+                    <li key={t.slug}>
+                      <button
+                        type="button"
+                        onClick={() => selectTemplate(t.slug)}
+                        className={`w-full rounded-lg px-3 py-2 text-left text-sm ${
+                          selectedSlug === t.slug ? "bg-primary/10 font-semibold text-primary" : "text-text-secondary hover:bg-bg-secondary"
+                        }`}
+                      >
+                        {t.name}
+                      </button>
+                    </li>
                   ))}
-                </select>
-              </AdminFormField>
-              <AdminFormField label="Empfänger" required>
-                <input className="admin-input" type="email" value={to} onChange={(e) => setTo(e.target.value)} />
-              </AdminFormField>
-              <AdminFormField label="Kopie an (optional)">
-                <input className="admin-input" type="email" value={copyTo} onChange={(e) => setCopyTo(e.target.value)} />
-              </AdminFormField>
-              <AdminFormField label="Betreff">
-                <input className="admin-input" value={subject} onChange={(e) => setSubject(e.target.value)} />
-              </AdminFormField>
-              <AdminFormField label="Nachricht (HTML)">
-                <textarea
-                  className="admin-input min-h-40 font-mono text-sm"
-                  value={bodyHtml}
-                  onChange={(e) => setBodyHtml(e.target.value)}
-                />
-              </AdminFormField>
-              <p className="text-xs text-text-muted">
-                Variablen: {EMAIL_VARIABLE_HINTS.map((v) => `{{${v}}}`).join(", ")}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <AdminButton variant="primary" icon={<Send className="h-4 w-4" />} onClick={() => void sendEmail()}>
-                  {ADMIN_BTN.send}
-                </AdminButton>
-                <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendEmail(true)}>
-                  Test senden
-                </AdminButton>
-                <AdminButton variant="ghost" icon={<Eye className="h-4 w-4" />} onClick={() => setPreview((p) => !p)}>
-                  Vorschau
-                </AdminButton>
-              </div>
-            </div>
+                </>
+              ) : null}
+            </ul>
           </AdminCard>
 
-          <AdminCard title={preview ? "Vorschau" : "Hinweise"}>
-            {preview ? (
-              <div
-                className="prose prose-sm max-w-none rounded-xl border border-border bg-bg-secondary p-4"
-                dangerouslySetInnerHTML={{ __html: bodyHtml }}
-              />
+          <AdminCard title={selected?.name ?? "Vorlage bearbeiten"}>
+            {selected ? (
+              <div className="grid gap-4">
+                <p className="text-sm text-text-muted">
+                  {TEMPLATE_PURPOSES[selected.slug] ?? "E-Mail-Vorlage für automatischen oder manuellen Versand."}
+                </p>
+                <AdminFormField label="Aktiv">
+                  <label className="admin-checkbox-row">
+                    <input type="checkbox" checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+                    <span>Vorlage ist aktiv (inaktive Vorlagen werden übersprungen — CMS-Texte greifen dann)</span>
+                  </label>
+                </AdminFormField>
+                <AdminFormField label="Betreff">
+                  <input className="admin-input" value={subject} onChange={(e) => setSubject(e.target.value)} />
+                </AdminFormField>
+                <AdminFormField label="Nachrichtentext (HTML)">
+                  <textarea
+                    className="admin-input min-h-48 font-mono text-sm"
+                    value={bodyHtml}
+                    onChange={(e) => setBodyHtml(e.target.value)}
+                  />
+                </AdminFormField>
+                <EmailVariableHelp compact />
+                <AdminFormField label="Testmail senden an">
+                  <div className="flex flex-wrap gap-2">
+                    <input className="admin-input min-w-[14rem] flex-1" type="email" value={testTo} onChange={(e) => setTestTo(e.target.value)} placeholder="deine@adresse.de" />
+                    <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendTest()}>
+                      Testmail senden
+                    </AdminButton>
+                  </div>
+                </AdminFormField>
+                <div className="flex flex-wrap gap-2">
+                  <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void saveTemplate()}>
+                    {ADMIN_BTN.save}
+                  </AdminButton>
+                  <AdminButton variant="secondary" icon={<RotateCcw className="h-4 w-4" />} onClick={() => void resetTemplate()}>
+                    Auf Standard zurücksetzen
+                  </AdminButton>
+                  <AdminButton variant="ghost" icon={<Eye className="h-4 w-4" />} onClick={() => setPreview((p) => !p)}>
+                    Vorschau {preview ? "ausblenden" : "anzeigen"}
+                  </AdminButton>
+                </div>
+                {preview ? (
+                  <div
+                    className="prose prose-sm max-w-none rounded-xl border border-border bg-bg-secondary p-4"
+                    dangerouslySetInnerHTML={{ __html: bodyHtml }}
+                  />
+                ) : null}
+              </div>
             ) : (
-              <ul className="space-y-2 text-sm text-text-secondary">
-                <li>Logo und Firmenname kommen aus Einstellungen → Branding.</li>
-                <li>Absender und Reply-To unter Einstellungen → E-Mail.</li>
-                <li>Bei nicht verifizierter Resend-Domain wird die Testdomain verwendet.</li>
-              </ul>
+              <p className="text-sm text-text-muted">Keine Vorlage ausgewählt.</p>
             )}
           </AdminCard>
         </div>
       ) : null}
 
-      {tab === "templates" ? (
-        <AdminCard title="E-Mail-Vorlagen">
-          <div className="space-y-4">
-            {templates.map((t) => (
-              <div key={t.slug} className="rounded-xl border border-border p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <p className="font-semibold text-text-primary">{t.name}</p>
-                    <p className="text-xs text-text-muted">
-                      {t.slug} · {t.area} {t.is_default ? "· Standard" : ""}
-                    </p>
-                  </div>
-                  <AdminButton variant="secondary" onClick={() => { applyTemplate(t.slug); setTab("compose"); }}>
-                    Bearbeiten
-                  </AdminButton>
-                </div>
-                <p className="mt-2 text-sm text-text-secondary">Betreff: {t.subject}</p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6">
-            <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void saveTemplate()}>
-              Aktuelle Vorlage speichern
-            </AdminButton>
-          </div>
-        </AdminCard>
-      ) : null}
-
       {tab === "log" ? (
-        <AdminCard title="Gesendete E-Mails">
+        <AdminCard title="E-Mail-Protokoll">
+          <p className="mb-4 text-sm text-text-muted">Alle gesendeten E-Mails werden hier protokolliert — mit Status und Fehlermeldung falls vorhanden.</p>
           {logs.length === 0 ? (
             <p className="text-sm text-text-muted">
               <span className="font-medium text-text-primary">{emptyLog.title}</span> {emptyLog.description}
@@ -248,11 +297,16 @@ export function EmailsView() {
                     </span>
                   </div>
                   <p className="text-text-muted">{log.recipient}</p>
+                  {log.original_recipient && log.original_recipient !== log.recipient ? (
+                    <p className="text-xs text-text-muted">Ursprünglich: {log.original_recipient}</p>
+                  ) : null}
+                  {log.sender_from ? <p className="text-xs text-text-muted">Von: {log.sender_from}</p> : null}
                   <p className="text-xs text-text-muted">
                     {new Date(log.created_at).toLocaleString("de-DE")}
                     {log.template_slug ? ` · ${log.template_slug}` : ""}
+                    {log.area ? ` · ${log.area}` : ""}
                   </p>
-                  {log.error_message ? <p className="text-xs text-accent-heart">{log.error_message}</p> : null}
+                  {log.error_message ? <p className="text-xs text-accent-heart">Grund: {log.error_message}</p> : null}
                 </li>
               ))}
             </ul>

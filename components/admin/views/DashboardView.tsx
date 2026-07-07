@@ -84,6 +84,7 @@ export function DashboardView() {
   const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
   const [emailUsesTestDomain, setEmailUsesTestDomain] = useState<boolean | null>(null);
+  const [emailTestMode, setEmailTestMode] = useState<{ enabled: boolean; address: string } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -92,13 +93,18 @@ export function DashboardView() {
       fetch("/api/admin/dashboard").then((r) => r.json()),
       fetch("/api/admin/activity").then((r) => r.json()),
       fetch("/api/admin/email/status").then((r) => r.json()),
+      fetch("/api/admin/settings").then((r) => r.json()),
     ])
-      .then(([dashboardData, activityData, emailData]) => {
+      .then(([dashboardData, activityData, emailData, settingsData]) => {
         if (dashboardData.error) throw new Error(dashboardData.error);
         setStats(dashboardData);
         setActivity(activityData.activity ?? []);
         if (emailData.resolved) {
           setEmailUsesTestDomain(Boolean(emailData.resolved.usesTestDomain));
+        }
+        const testMode = settingsData.settings?.email?.testMode;
+        if (testMode?.enabled) {
+          setEmailTestMode({ enabled: true, address: testMode.testAddress ?? "" });
         }
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Laden fehlgeschlagen"))
@@ -123,6 +129,16 @@ export function DashboardView() {
         <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
           {error}
         </p>
+      ) : null}
+
+      {emailTestMode?.enabled ? (
+        <div className="rounded-xl border border-amber-400/60 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <strong>⚠ Testmodus aktiv</strong> — Es werden keine echten Kunden angeschrieben. Alle E-Mails gehen an{" "}
+          <strong>{emailTestMode.address || "die konfigurierte Testadresse"}</strong>.{" "}
+          <Link href="/admin/einstellungen?tab=email&emailTab=testmode" className="font-semibold underline">
+            Testmodus verwalten
+          </Link>
+        </div>
       ) : null}
 
       {emailUsesTestDomain ? (

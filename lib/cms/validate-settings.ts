@@ -213,12 +213,14 @@ export function validateSiteSettingsSection(
       return { ok: false, error: "Reply-To-Adresse ist ungültig." };
     }
     const optionalEmails = [
+      email.companyEmail,
       email.copyToEmail,
       email.quoteCopyTo,
       email.invoiceCopyTo,
       email.inquiryRecipient,
       email.inquiryCopyTo,
       email.adminNotificationEmail,
+      email.reviewRecipient,
       email.quoteSenderEmail,
       email.quoteReplyTo,
       email.invoiceSenderEmail,
@@ -226,7 +228,7 @@ export function validateSiteSettingsSection(
       email.loginAlertRecipient,
       email.applicationEmail,
       email.applicationCopyTo,
-      email.notificationEmail,
+      email.testMode?.testAddress,
     ].filter(Boolean);
     for (const addr of optionalEmails) {
       if (addr && !emailPattern.test(addr)) {

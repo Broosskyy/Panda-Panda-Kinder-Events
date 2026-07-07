@@ -93,6 +93,8 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
   if (!contact.mobile?.trim()) contact.mobile = contact.phone;
   if (!contact.whatsappLabel?.trim()) contact.whatsappLabel = "WhatsApp";
 
+  const branding = normalizeBrandingIcons(mergeRecord(defaults.branding, base.branding));
+
   return {
     hero: mergeRecord(defaults.hero, base.hero),
     contact,
@@ -106,7 +108,7 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
           ? base.navigation.items
           : defaults.navigation.items,
     },
-    branding: normalizeBrandingIcons(mergeRecord(defaults.branding, base.branding)),
+    branding,
     trustBadges: {
       items:
         base.trustBadges?.items?.length && base.trustBadges.items.some((i) => i.text?.trim())
@@ -152,11 +154,61 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
         ...defaults.email.customAddresses,
         ...(base.email?.customAddresses ?? {}),
       },
+      companyEmail:
+        base.email?.companyEmail?.trim() ||
+        base.email?.copyToEmail?.trim() ||
+        defaults.email.companyEmail,
       inquiryCopyTo: base.email?.inquiryCopyTo ?? defaults.email.inquiryCopyTo,
       adminNotificationEmail:
         base.email?.adminNotificationEmail?.trim() ||
         base.email?.copyToEmail?.trim() ||
         defaults.email.adminNotificationEmail,
+      reviewRecipient:
+        base.email?.reviewRecipient?.trim() ||
+        base.email?.adminNotificationEmail?.trim() ||
+        defaults.email.reviewRecipient,
+      inquiryAdminSubject: base.email?.inquiryAdminSubject?.trim() || defaults.email.inquiryAdminSubject,
+      inquiryAdminText: base.email?.inquiryAdminText?.trim() || defaults.email.inquiryAdminText,
+      reviewRequestSubject: base.email?.reviewRequestSubject?.trim() || defaults.email.reviewRequestSubject,
+      reviewRequestText: base.email?.reviewRequestText?.trim() || defaults.email.reviewRequestText,
+      reviewAdminSubject: base.email?.reviewAdminSubject?.trim() || defaults.email.reviewAdminSubject,
+      reviewAdminText: base.email?.reviewAdminText?.trim() || defaults.email.reviewAdminText,
+      passwordResetSubject: base.email?.passwordResetSubject?.trim() || defaults.email.passwordResetSubject,
+      passwordResetText: base.email?.passwordResetText?.trim() || defaults.email.passwordResetText,
+      crmCopyToCompanyEnabled: base.email?.crmCopyToCompanyEnabled ?? defaults.email.crmCopyToCompanyEnabled,
+      securityAlertsEnabled: base.email?.securityAlertsEnabled ?? defaults.email.securityAlertsEnabled,
+      signature: {
+        ...defaults.email.signature,
+        ...(base.email?.signature ?? {}),
+        companyName:
+          base.email?.signature?.companyName?.trim() ||
+          base.email?.companyName?.trim() ||
+          business.companyName?.trim() ||
+          defaults.email.signature.companyName,
+        phone: base.email?.signature?.phone?.trim() || contact.phone || defaults.email.signature.phone,
+        website: base.email?.signature?.website?.trim() || business.website?.trim() || defaults.email.signature.website,
+        instagram: base.email?.signature?.instagram?.trim() || contact.instagram || defaults.email.signature.instagram,
+        whatsapp: base.email?.signature?.whatsapp?.trim() || contact.whatsapp || defaults.email.signature.whatsapp,
+        address:
+          base.email?.signature?.address?.trim() ||
+          [business.street, business.zip, business.city].filter(Boolean).join(", ") ||
+          defaults.email.signature.address,
+        logoUrl: base.email?.signature?.logoUrl?.trim() || branding.emailLogoUrl || defaults.email.signature.logoUrl,
+      },
+      branding: {
+        ...defaults.email.branding,
+        ...(base.email?.branding ?? {}),
+        logoUrl: base.email?.branding?.logoUrl?.trim() || branding.emailLogoUrl || branding.logoUrl || defaults.email.branding.logoUrl,
+        primaryColor: base.email?.branding?.primaryColor?.trim() || branding.primaryColor || defaults.email.branding.primaryColor,
+        companyName: base.email?.branding?.companyName?.trim() || base.email?.companyName?.trim() || defaults.email.branding.companyName,
+        senderName: base.email?.branding?.senderName?.trim() || base.email?.senderName?.trim() || defaults.email.branding.senderName,
+        replyTo: base.email?.branding?.replyTo?.trim() || base.email?.replyTo?.trim() || defaults.email.branding.replyTo,
+      },
+      testMode: {
+        ...defaults.email.testMode,
+        ...(base.email?.testMode ?? {}),
+        testAddress: base.email?.testMode?.testAddress?.trim() || defaults.email.testMode.testAddress,
+      },
     },
     publicTeam,
   };

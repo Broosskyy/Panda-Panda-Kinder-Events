@@ -1,8 +1,10 @@
-import { Resend } from "resend";
-import type { BusinessProfile } from "@/lib/crm/company";
 import { BRAND } from "@/lib/brand";
-import { wrapEmailHtml } from "@/lib/email/html";
+import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
+import { fetchSiteSettings } from "@/lib/cms/data";
 import { getSiteUrl } from "@/lib/site-url";
+import { resolveEmailContent } from "@/lib/email/resolve-content";
+import { buildEmailButton } from "@/lib/email/builders";
+import { sendEmailWithRetry } from "@/lib/email/transport";
 import {
   getCopyEmailForDocument,
   getEmailSettings,
@@ -12,6 +14,8 @@ import {
   applyEmailTemplate,
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
+import { wrapEmailHtml } from "@/lib/email/html";
+import type { BusinessProfile } from "@/lib/crm/company";
 
 export {
   RESEND_TEST_FROM,
@@ -20,6 +24,7 @@ export {
   getEmailSettings,
   getInquiryRecipient,
   getAdminNotificationRecipient,
+  getReviewRecipient,
   resolveEmailSender,
   resolveFlowEmailSender,
   applyEmailTemplate,
@@ -27,6 +32,8 @@ export {
 export { getResendSendingSetup } from "@/lib/email/resend-status";
 export type { ResendSendingSetup, ResendStatusItem, ResendStatusLevel } from "@/lib/email/resend-status";
 export type { EmailDomainCheck, EmailDomainStatus, ResolvedEmailSender } from "@/lib/email/sender";
+
+import { Resend } from "resend";
 
 export function isResendConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
@@ -38,102 +45,163 @@ export function getResendClient() {
   return new Resend(apiKey);
 }
 
-/** @deprecated Use resolveEmailSender() — kept for compatibility in tests */
-export async function getFromEmail(): Promise<string> {
-  const resolved = await resolveEmailSender();
-  return resolved.from;
-}
-
 export async function getNotificationEmail(): Promise<string> {
   const settings = await getEmailSettings();
   return getInquiryRecipient(settings);
 }
 
-interface InquiryEmailData {
+function formatSubmittedAt(date = new Date()): string {
+  return date.toLocaleString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+export interface InquiryEmailData {
   name: string;
   phone: string;
   email: string;
   eventType: string;
   date: string;
-  time: string;
-  duration?: string;
-  location: string;
   childrenCount: string;
   message?: string;
+  submittedAt?: string;
 }
 
-export async function sendInquiryNotification(data: InquiryEmailData) {
-  const resend = getResendClient();
+export interface InquiryEmailResult {
+  adminSent: boolean;
+  customerSent: boolean;
+  copySent: boolean;
+  errors: string[];
+}
+
+export async function sendInquiryNotification(data: InquiryEmailData): Promise<InquiryEmailResult> {
   const emailSettings = await getEmailSettings();
   const sender = await resolveEmailSender(emailSettings);
   const to = getInquiryRecipient(emailSettings);
+  const submittedAt = data.submittedAt ?? formatSubmittedAt();
+  const templateVars = {
+    customer_name: data.name,
+    customer_email: data.email,
+    customer_phone: data.phone,
+    event_type: data.eventType,
+    event_date: data.date,
+    children_count: data.childrenCount,
+    message: data.message ?? "",
+    submitted_at: submittedAt,
+  };
+
+  const settings = await fetchSiteSettings();
   const companyName = emailSettings.companyName;
-  const subject = `Neue Anfrage — ${data.eventType} (${data.name})`;
+  const logoUrl = resolveBrandLogo(settings.branding, "email");
+  const primaryColor = resolvePrimaryColor(settings.branding);
+  const branded = { companyName, logoUrl, primaryColor };
 
-  const lines = [
-    `Name: ${data.name}`,
-    `Telefon: ${data.phone}`,
-    `E-Mail: ${data.email}`,
-    `Veranstaltung: ${data.eventType}`,
-    `Datum: ${data.date}`,
-    `Uhrzeit: ${data.time}`,
-    data.duration ? `Dauer: ${data.duration}` : null,
-    `Ort: ${data.location}`,
-    `Anzahl Kinder: ${data.childrenCount}`,
-    data.message ? `Nachricht: ${data.message}` : null,
-  ].filter(Boolean);
+  const { buildInquiryAdminEmail, buildInquiryAutoReplyFallback } = await import("@/lib/email/builders");
 
-  await resend.emails.send({
-    from: sender.from,
-    to,
-    replyTo: data.email,
-    subject,
-    text: `Neue Buchungsanfrage über die Website:\n\n${lines.join("\n")}`,
+  const adminContent = await resolveEmailContent("inquiry-admin", templateVars, () => {
+    const built = buildInquiryAdminEmail({ ...data, submittedAt }, branded);
+    return {
+      subject: applyEmailTemplate(emailSettings.inquiryAdminSubject, templateVars),
+      ...built,
+    };
   });
 
-  if (emailSettings.inquiryCopyTo?.trim()) {
-    await resend.emails.send({
+  const errors: string[] = [];
+  let adminSent = false;
+  let customerSent = false;
+  let copySent = false;
+
+  const adminResult = await sendEmailWithRetry({
+    payload: {
       from: sender.from,
-      to: emailSettings.inquiryCopyTo.trim(),
+      to,
       replyTo: data.email,
-      subject: `[Kopie] ${subject}`,
-      text: `Kopie der Anfrage:\n\n${lines.join("\n")}`,
-    });
-  }
-
-  if (emailSettings.inquiryAutoReplyEnabled && data.email) {
-    const vars = {
-      name: data.name,
-      company: companyName,
-      customer_name: data.name,
-      company_name: companyName,
-    };
-    const { renderEmailFromTemplate } = await import("@/lib/email/render");
-    const rendered = await renderEmailFromTemplate("inquiry-auto-reply", vars);
-    const autoText = rendered?.text
-      ?? applyEmailTemplate(emailSettings.inquiryAutoReplyText, vars);
-    const autoHtml = rendered?.html;
-    const autoSubject = rendered?.subject
-      ?? applyEmailTemplate(emailSettings.inquiryAutoReplySubject, vars);
-
-    await resend.emails.send({
-      from: sender.from,
-      to: data.email,
-      replyTo: sender.replyTo,
-      subject: autoSubject,
-      text: autoText,
-      html: autoHtml,
-    });
-
-    const { logEmailSend } = await import("@/lib/email/log");
-    await logEmailSend({
-      recipient: data.email,
-      subject: autoSubject,
-      templateSlug: "inquiry-auto-reply",
+      subject: adminContent.subject,
+      text: adminContent.text,
+      html: adminContent.html,
+    },
+    log: {
+      recipient: to,
+      subject: adminContent.subject,
+      templateSlug: "inquiry-admin",
       area: "inquiry",
-      status: "sent",
+    },
+  });
+  adminSent = adminResult.success;
+  if (!adminResult.success && adminResult.error) errors.push(`Admin-Benachrichtigung: ${adminResult.error}`);
+
+  if (emailSettings.inquiryCopyTo?.trim()) {
+    const copyTo = emailSettings.inquiryCopyTo.trim();
+    const copyResult = await sendEmailWithRetry({
+      payload: {
+        from: sender.from,
+        to: copyTo,
+        replyTo: data.email,
+        subject: `[Kopie] ${adminContent.subject}`,
+        text: adminContent.text,
+        html: adminContent.html,
+      },
+      log: {
+        recipient: copyTo,
+        subject: `[Kopie] ${adminContent.subject}`,
+        templateSlug: "inquiry-admin",
+        area: "inquiry",
+      },
     });
+    copySent = copyResult.success;
+    if (!copyResult.success && copyResult.error) errors.push(`Kopie: ${copyResult.error}`);
   }
+
+  const shouldAutoReply = emailSettings.inquiryAutoReplyEnabled !== false;
+  if (shouldAutoReply && data.email) {
+    const autoContent = await resolveEmailContent(
+      "inquiry-auto-reply",
+      {
+        ...templateVars,
+        name: data.name.trim().split(/\s+/)[0] || data.name,
+      },
+      () => {
+        const fallback = buildInquiryAutoReplyFallback(data.name);
+        return {
+          subject: applyEmailTemplate(emailSettings.inquiryAutoReplySubject, templateVars),
+          html: wrapEmailHtml({
+            baseUrl: getSiteUrl(),
+            logoUrl,
+            companyName,
+            primaryColor,
+            bodyHtml: fallback.bodyHtml,
+            footerHtml: `<p style="margin:8px 0 0;font-size:12px;color:#888;">${settings.contact.phone} · ${settings.contact.email}</p>`,
+          }),
+          text: fallback.bodyText,
+        };
+      },
+    );
+
+    const customerResult = await sendEmailWithRetry({
+      payload: {
+        from: sender.from,
+        to: data.email,
+        replyTo: sender.replyTo,
+        subject: autoContent.subject,
+        text: autoContent.text,
+        html: autoContent.html,
+      },
+      log: {
+        recipient: data.email,
+        subject: autoContent.subject,
+        templateSlug: "inquiry-auto-reply",
+        area: "inquiry",
+      },
+    });
+    customerSent = customerResult.success;
+    if (!customerResult.success && customerResult.error) errors.push(`Kundenbestätigung: ${customerResult.error}`);
+  }
+
+  return { adminSent, customerSent, copySent, errors };
 }
 
 interface ReviewNotificationData {
@@ -141,40 +209,152 @@ interface ReviewNotificationData {
   eventType: string;
   rating: number;
   text: string;
+  submittedAt?: string;
 }
 
 export async function sendReviewNotification(data: ReviewNotificationData) {
-  const resend = getResendClient();
+  const emailSettings = await getEmailSettings();
+  const settings = await fetchSiteSettings();
+  const sender = await resolveEmailSender(emailSettings);
+  const { getReviewRecipient } = await import("@/lib/email/sender");
+  const to = getReviewRecipient(emailSettings);
+  const submittedAt = data.submittedAt ?? formatSubmittedAt();
+  const templateVars = {
+    customer_name: data.name,
+    event_type: data.eventType,
+    rating: String(data.rating),
+    message: data.text,
+    submitted_at: submittedAt,
+  };
+
+  const { buildReviewAdminEmail } = await import("@/lib/email/builders");
+  const content = await resolveEmailContent("review-admin", templateVars, () => {
+    const built = buildReviewAdminEmail(
+      { ...data, submittedAt },
+      {
+        companyName: emailSettings.companyName,
+        logoUrl: resolveBrandLogo(settings.branding, "email"),
+        primaryColor: resolvePrimaryColor(settings.branding),
+      },
+    );
+    return {
+      subject: applyEmailTemplate(emailSettings.reviewAdminSubject, templateVars),
+      ...built,
+    };
+  });
+
+  const result = await sendEmailWithRetry({
+    payload: {
+      from: sender.from,
+      to,
+      replyTo: sender.replyTo,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+    },
+    log: {
+      recipient: to,
+      subject: content.subject,
+      templateSlug: "review-admin",
+      area: "review",
+    },
+  });
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Bewertungs-Benachrichtigung fehlgeschlagen");
+  }
+
+  return result;
+}
+
+export interface ReviewRequestEmailData {
+  to: string;
+  customerName: string;
+  eventType?: string;
+  reviewLink?: string;
+}
+
+export async function sendReviewRequestEmail(data: ReviewRequestEmailData) {
   const emailSettings = await getEmailSettings();
   const sender = await resolveEmailSender(emailSettings);
-  const { getAdminNotificationRecipient } = await import("@/lib/email/sender");
-  const to = getAdminNotificationRecipient(emailSettings);
-  const subject = `Neue Bewertung — ${data.eventType} (${data.name})`;
+  const reviewLink = data.reviewLink ?? `${getSiteUrl()}/bewertung`;
 
-  const lines = [
-    `Name: ${data.name}`,
-    `Anlass: ${data.eventType}`,
-    `Bewertung: ${data.rating} von 5 Sternen`,
-    `Text: ${data.text}`,
-    "",
-    "Bitte im Admin unter Bewertungen prüfen und freigeben.",
-  ];
-
-  await resend.emails.send({
-    from: sender.from,
-    to,
-    replyTo: sender.replyTo,
-    subject,
-    text: `Neue Bewertung über die Website:\n\n${lines.join("\n")}`,
+  const content = await resolveEmailContent("review-request", {
+    customer_name: data.customerName,
+    customer_email: data.to,
+    event_type: data.eventType ?? "",
+    review_link: reviewLink,
   });
 
-  const { logEmailSend } = await import("@/lib/email/log");
-  await logEmailSend({
-    recipient: to,
-    subject,
-    area: "review",
-    status: "sent",
+  const result = await sendEmailWithRetry({
+    payload: {
+      from: sender.from,
+      to: data.to,
+      replyTo: sender.replyTo,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
+    },
+    log: {
+      recipient: data.to,
+      subject: content.subject,
+      templateSlug: "review-request",
+      area: "review",
+    },
   });
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Bewertungsanfrage konnte nicht gesendet werden");
+  }
+
+  return result;
+}
+
+export async function sendPasswordResetEmail(opts: {
+  to: string;
+  adminName: string;
+  resetUrl: string;
+}) {
+  const emailSettings = await getEmailSettings();
+  const sender = await resolveFlowEmailSender("security", emailSettings);
+  const settings = await fetchSiteSettings();
+  const primaryColor = resolvePrimaryColor(settings.branding);
+
+  const content = await resolveEmailContent("password-reset", {
+    admin_name: opts.adminName,
+    reset_link: opts.resetUrl,
+  });
+
+  let html = content.html;
+  if (!html.includes(opts.resetUrl)) {
+    html = html.replace(
+      "</td></tr>",
+      `${buildEmailButton(opts.resetUrl, "Passwort zurücksetzen", primaryColor)}</td></tr>`,
+    );
+  }
+
+  const result = await sendEmailWithRetry({
+    payload: {
+      from: sender.from,
+      to: opts.to,
+      replyTo: sender.replyTo,
+      subject: content.subject,
+      text: content.text,
+      html,
+    },
+    log: {
+      recipient: opts.to,
+      subject: content.subject,
+      templateSlug: "password-reset",
+      area: "password_reset",
+    },
+  });
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Passwort-E-Mail konnte nicht gesendet werden");
+  }
+
+  return result;
 }
 
 interface CrmDocumentEmailOptions {
@@ -187,6 +367,9 @@ interface CrmDocumentEmailOptions {
   copyToBusiness?: boolean;
   company?: BusinessProfile;
   sender?: ResolvedEmailSender;
+  relatedQuoteId?: string;
+  relatedInvoiceId?: string;
+  relatedCustomerId?: string;
 }
 
 function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): string {
@@ -222,80 +405,82 @@ function buildCrmEmailHtml(opts: CrmDocumentEmailOptions, companyName: string): 
 }
 
 export async function sendCrmDocumentEmail(opts: CrmDocumentEmailOptions) {
-  const resend = getResendClient();
   const emailSettings = await getEmailSettings();
   const flow = opts.documentType === "quote" ? "quote" : "invoice";
   const sender = opts.sender ?? (await resolveFlowEmailSender(flow, emailSettings));
   const label = opts.documentType === "quote" ? "Angebot" : "Rechnung";
   const filename = `${opts.documentNumber}.pdf`;
   const companyName = opts.company?.companyName ?? emailSettings.companyName;
+  const templateSlug = flow === "quote" ? "quote-send" : "invoice-send";
 
-  const subjectTemplate =
-    flow === "quote" ? emailSettings.quoteSubjectTemplate : emailSettings.invoiceSubjectTemplate;
-  const subject = subjectTemplate?.trim()
-    ? applyEmailTemplate(subjectTemplate, {
-        number: opts.documentNumber,
-        company: companyName,
-        customer: opts.customerName,
-      })
-    : `${label} ${opts.documentNumber} — ${companyName}`;
+  const templateVars = {
+    customer_name: opts.customerName,
+    quote_number: opts.documentNumber,
+    invoice_number: opts.documentNumber,
+    total_amount: opts.totalFormatted,
+    total: opts.totalFormatted,
+    due_date: "",
+  };
 
-  const bodyTemplate = flow === "quote" ? emailSettings.quoteEmailBody : emailSettings.invoiceEmailBody;
-  const defaultText = `Guten Tag ${opts.customerName},
-
-anbei erhalten Sie ${opts.documentType === "quote" ? "unser Angebot" : "Ihre Rechnung"} ${opts.documentNumber}.
-
-Gesamtbetrag: ${opts.totalFormatted}
-
-Bei Fragen melden Sie sich gerne.
-
-Mit freundlichen Grüßen
-${companyName}
-${opts.company?.website ?? ""}`.trim();
-
-  const text = bodyTemplate?.trim()
-    ? applyEmailTemplate(bodyTemplate, {
-        number: opts.documentNumber,
-        company: companyName,
-        customer: opts.customerName,
-        total: opts.totalFormatted,
-      })
-    : defaultText;
+  const content = await resolveEmailContent(templateSlug, templateVars, () => ({
+    subject: `${label} ${opts.documentNumber} — ${companyName}`,
+    html: buildCrmEmailHtml(opts, companyName),
+    text: `Guten Tag ${opts.customerName},\n\nanbei ${label} ${opts.documentNumber}.\nGesamtbetrag: ${opts.totalFormatted}`,
+  }));
 
   const attachment = {
     filename,
     content: Buffer.from(opts.pdfBuffer),
   };
 
-  await resend.emails.send({
-    from: sender.from,
-    to: opts.to,
-    replyTo: sender.replyTo,
-    subject,
-    text,
-    html: buildCrmEmailHtml(opts, companyName),
-    attachments: [attachment],
-  });
-
-  const { logEmailSend } = await import("@/lib/email/log");
-  await logEmailSend({
-    recipient: opts.to,
-    subject,
-    templateSlug: opts.documentType === "quote" ? "quote-send" : "invoice-send",
-    area: opts.documentType,
-    status: "sent",
-  });
-
-  if (opts.copyToBusiness) {
-    const copyTo = getCopyEmailForDocument(emailSettings, opts.documentType);
-    await resend.emails.send({
+  const mainResult = await sendEmailWithRetry({
+    payload: {
       from: sender.from,
-      to: copyTo,
-      replyTo: sender.replyTo,
-      subject: `[Kopie] ${label} ${opts.documentNumber} an ${opts.customerName}`,
-      text: `Kopie des versendeten Dokuments ${opts.documentNumber} an ${opts.to}.\n\n${text}`,
-      html: buildCrmEmailHtml(opts, companyName),
+      to: opts.to,
+      replyTo: sender.replyTo || emailSettings.replyTo,
+      subject: content.subject,
+      text: content.text,
+      html: content.html,
       attachments: [attachment],
+    },
+    log: {
+      recipient: opts.to,
+      subject: content.subject,
+      templateSlug,
+      area: opts.documentType,
+      relatedQuoteId: opts.relatedQuoteId,
+      relatedInvoiceId: opts.relatedInvoiceId,
+      relatedCustomerId: opts.relatedCustomerId,
+    },
+  });
+
+  if (!mainResult.success) {
+    throw new Error(mainResult.error ?? "CRM-E-Mail fehlgeschlagen");
+  }
+
+  const shouldCopy =
+    opts.copyToBusiness ?? emailSettings.crmCopyToCompanyEnabled !== false;
+
+  if (shouldCopy) {
+    const copyTo = getCopyEmailForDocument(emailSettings, opts.documentType);
+    await sendEmailWithRetry({
+      payload: {
+        from: sender.from,
+        to: copyTo,
+        replyTo: sender.replyTo,
+        subject: `[Kopie] ${label} ${opts.documentNumber} an ${opts.customerName}`,
+        text: `Kopie des versendeten Dokuments ${opts.documentNumber} an ${opts.to}.\n\n${content.text}`,
+        html: content.html,
+        attachments: [attachment],
+      },
+      log: {
+        recipient: copyTo,
+        subject: `[Kopie] ${label} ${opts.documentNumber}`,
+        templateSlug,
+        area: opts.documentType,
+        relatedQuoteId: opts.relatedQuoteId,
+        relatedInvoiceId: opts.relatedInvoiceId,
+      },
     });
   }
 }
@@ -305,21 +490,35 @@ export async function sendTransactionalEmail(opts: {
   subject: string;
   html: string;
   text?: string;
+  templateSlug?: string;
+  area?: string;
 }) {
-  const resend = getResendClient();
   const sender = await resolveEmailSender();
-  await resend.emails.send({
-    from: sender.from,
-    to: opts.to,
-    replyTo: sender.replyTo,
-    subject: opts.subject,
-    html: opts.html,
-    text: opts.text ?? opts.html.replace(/<[^>]+>/g, ""),
+  const result = await sendEmailWithRetry({
+    payload: {
+      from: sender.from,
+      to: opts.to,
+      replyTo: sender.replyTo,
+      subject: opts.subject,
+      html: opts.html,
+      text: opts.text ?? opts.html.replace(/<[^>]+>/g, ""),
+    },
+    log: {
+      recipient: opts.to,
+      subject: opts.subject,
+      templateSlug: opts.templateSlug ?? "transactional",
+      area: opts.area ?? "general",
+    },
   });
+
+  if (!result.success) {
+    throw new Error(result.error ?? "E-Mail konnte nicht gesendet werden");
+  }
+
+  return result;
 }
 
 export async function sendTestEmail(to: string) {
-  const resend = getResendClient();
   const emailSettings = await getEmailSettings();
   const sender = await resolveEmailSender(emailSettings);
   const companyName = emailSettings.companyName;
@@ -348,14 +547,26 @@ Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
     <p style="color:#888;font-size:13px;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`,
   });
 
-  await resend.emails.send({
-    from: sender.from,
-    to,
-    replyTo: sender.replyTo,
-    subject: `Test-E-Mail — ${companyName}`,
-    text,
-    html,
+  const result = await sendEmailWithRetry({
+    payload: {
+      from: sender.from,
+      to,
+      replyTo: sender.replyTo,
+      subject: `Test-E-Mail — ${companyName}`,
+      text,
+      html,
+    },
+    log: {
+      recipient: to,
+      subject: `Test-E-Mail — ${companyName}`,
+      templateSlug: "test",
+      area: "general",
+    },
   });
+
+  if (!result.success) {
+    throw new Error(`E-Mail konnte nicht gesendet werden. Grund: ${result.error ?? "Unbekannter Fehler"}`);
+  }
 
   return { sender, companyName };
 }

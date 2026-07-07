@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { RefreshCw, Send } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
@@ -11,6 +11,7 @@ import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import { CONTROL_CENTER_TABS, type ControlCenterTab } from "@/lib/cms/settings-compat";
 import { BRAND, withIconVersion } from "@/lib/brand";
 import { formatDocumentNumberPreview, resolvePublicSiteUrl } from "@/lib/cms/resolve-settings";
@@ -19,7 +20,6 @@ import type {
   SiteBrandingSettings,
   SiteBusinessSettings,
   SiteContactSettings,
-  SiteEmailCustomAddresses,
   SiteEmailSettings,
   SiteInvoiceSettings,
   SiteLegalSettings,
@@ -27,6 +27,7 @@ import type {
   SiteSettingsBundle,
 } from "@/lib/cms/types";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
+import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/EmailSettingsShell";
 
 interface EmailStatusResponse {
   resendConfigured: boolean;
@@ -47,28 +48,6 @@ interface SystemStatusResponse {
 
 const VALID_TABS = new Set<string>(CONTROL_CENTER_TABS.map((t) => t.id));
 
-const DOMAIN_STATUS_LABELS: Record<string, string> = {
-  test: "Resend-Testdomain",
-  verified: "Domain verifiziert",
-  pending: "Verifizierung ausstehend",
-  failed: "Verifizierung fehlgeschlagen",
-  not_configured: "Nicht konfiguriert",
-};
-
-const CUSTOM_ADDRESS_LABELS: { key: keyof SiteEmailCustomAddresses; label: string }[] = [
-  { key: "info", label: "info@" },
-  { key: "kontakt", label: "kontakt@" },
-  { key: "rechnung", label: "rechnung@" },
-  { key: "angebote", label: "angebote@" },
-];
-
-const RESEND_LEVEL_VARIANT: Record<string, "success" | "warning" | "danger" | "muted"> = {
-  ok: "success",
-  warn: "warning",
-  error: "danger",
-  optional: "muted",
-};
-
 const SYSTEM_LEVEL_VARIANT: Record<SystemStatusLevel, "success" | "warning" | "danger"> = {
   ok: "success",
   warn: "warning",
@@ -85,14 +64,11 @@ function tabHref(id: ControlCenterTab): string {
   return id === "business" ? "/admin/einstellungen" : `/admin/einstellungen?tab=${id}`;
 }
 
-function SectionHeading({ children }: { children: ReactNode }) {
-  return <p className="mb-3 mt-6 border-t border-border pt-6 text-sm font-semibold text-text-primary">{children}</p>;
-}
-
 export function SettingsView() {
   const searchParams = useSearchParams();
   const rawTab = searchParams.get("tab") ?? "business";
   const tab: ControlCenterTab = VALID_TABS.has(rawTab) ? (rawTab as ControlCenterTab) : "business";
+  const emailTab = parseEmailSubTab(searchParams.get("emailTab"));
 
   const [business, setBusiness] = useState<SiteBusinessSettings | null>(null);
   const [branding, setBranding] = useState<SiteBrandingSettings | null>(null);
@@ -111,28 +87,53 @@ export function SettingsView() {
   const { withLoading, saved, testEmailSent, error: showError } = useAdminMessages();
   const settingsPage = adminPageHeaderProps("einstellungen");
 
+  const applySettingsBundle = useCallback((settings: SiteSettingsBundle) => {
+    setBusiness(settings.business);
+    setBranding(settings.branding);
+    setContact(settings.contact);
+    setEmail(settings.email);
+    setInvoice(settings.invoice);
+    setBank(settings.bank);
+    setSeo(settings.seo);
+    setLegal(settings.legal);
+  }, []);
+
   const loadSettings = useCallback(async () => {
     setSettingsLoading(true);
     setSettingsError(null);
-    const res = await fetch("/api/admin/settings");
-    const data = await res.json();
-    if (res.ok) {
-      const settings = data.settings as SiteSettingsBundle;
-      setBusiness(settings.business);
-      setBranding(settings.branding);
-      setContact(settings.contact);
-      setEmail(settings.email);
-      setInvoice(settings.invoice);
-      setBank(settings.bank);
-      setSeo(settings.seo);
-      setLegal(settings.legal);
-    } else {
+    try {
+      const res = await fetch("/api/admin/settings");
+      const data = (await res.json().catch(() => ({}))) as {
+        settings?: SiteSettingsBundle;
+        error?: string;
+      };
+
+      if (res.ok && data.settings) {
+        applySettingsBundle(data.settings);
+        return;
+      }
+
       const message = data.error ?? "Einstellungen konnten nicht geladen werden.";
       setSettingsError(message);
-      showError("Einstellungen konnten nicht geladen werden.", message, "Bitte Seite neu laden oder Support kontaktieren.");
+      applySettingsBundle(DEFAULT_SITE_SETTINGS);
+      showError(
+        "Einstellungen konnten nicht geladen werden.",
+        message,
+        "Standardwerte werden angezeigt — Sie können diese bearbeiten und speichern.",
+      );
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Netzwerkfehler beim Laden.";
+      setSettingsError(message);
+      applySettingsBundle(DEFAULT_SITE_SETTINGS);
+      showError(
+        "Einstellungen konnten nicht geladen werden.",
+        message,
+        "Standardwerte werden angezeigt — Sie können diese bearbeiten und speichern.",
+      );
+    } finally {
+      setSettingsLoading(false);
     }
-    setSettingsLoading(false);
-  }, [showError]);
+  }, [applySettingsBundle, showError]);
 
   const loadEmailStatus = useCallback(async () => {
     const res = await fetch("/api/admin/email/status");
@@ -216,14 +217,6 @@ export function SettingsView() {
     setEmail({ ...email, [key]: value });
   };
 
-  const setCustomAddress = (key: keyof SiteEmailCustomAddresses, value: string) => {
-    if (!email) return;
-    setEmail({
-      ...email,
-      customAddresses: { ...email.customAddresses, [key]: value },
-    });
-  };
-
   const setInvoiceField = <K extends keyof SiteInvoiceSettings>(key: K, value: SiteInvoiceSettings[K]) => {
     if (!invoice) return;
     setInvoice({ ...invoice, [key]: value });
@@ -285,11 +278,14 @@ export function SettingsView() {
       {settingsLoading ? <AdminLoadingCard message="Einstellungen werden geladen…" /> : null}
       {settingsError ? (
         <AdminCard>
-          <p className="text-sm text-text-muted">{settingsError}</p>
+          <p className="text-sm text-text-muted">
+            Hinweis: {settingsError} Es werden Standardwerte angezeigt — Sie können diese direkt bearbeiten und
+            speichern.
+          </p>
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "business" && business ? (
+      {!settingsLoading && tab === "business" && business ? (
         <AdminCard title="Unternehmensdaten">
           <p className="mb-4 text-sm text-text-muted">
             Diese Daten erscheinen auf Rechnungen, Angeboten (PDF), E-Mails und im Impressum.
@@ -339,7 +335,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "branding" && branding ? (
+      {!settingsLoading && tab === "branding" && branding ? (
         <AdminCard title="Branding">
           <p className="mb-4 text-sm text-text-muted">
             Verwalte Logo, Markenname, Farben und Favicons. Änderungen wirken auf Website, CMS, PDFs und E-Mails.
@@ -430,7 +426,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "contact" && contact ? (
+      {!settingsLoading && tab === "contact" && contact ? (
         <AdminCard title="Kontakt & Social Media">
           <p className="mb-4 text-sm text-text-muted">Kontaktdaten und Social-Media-Links für die öffentliche Website.</p>
           <div className="grid gap-4 md:grid-cols-2">
@@ -481,224 +477,40 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "email" && email ? (
-        <AdminCard title="E-Mail & Versand">
-          {usesTestDomain ? (
-            <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-              <strong>Resend-Testdomain aktiv — noch nicht produktionsreif.</strong> E-Mails werden über{" "}
-              <code className="rounded bg-white/60 px-1">onboarding@resend.dev</code> versendet. Empfänger sind auf
-              verifizierte Adressen beschränkt. Nach Domain-Verifizierung in Resend wird automatisch die konfigurierte
-              Absenderadresse verwendet.
-            </div>
-          ) : (
-            <div className="mb-4 rounded-xl border border-primary/30 bg-primary/10 px-4 py-3 text-sm text-text-primary">
-              <strong>Eigene Domain aktiv.</strong> E-Mails werden über{" "}
-              <code className="rounded bg-bg-secondary px-1">{emailStatus?.resolved.from}</code> versendet.
-            </div>
-          )}
-
-          {!emailStatus?.resendConfigured ? (
-            <p className="mb-4 text-sm text-accent-heart">
-              <strong>RESEND_API_KEY</strong> ist nicht gesetzt — E-Mail-Versand ist deaktiviert.
-            </p>
-          ) : null}
-
-          <div className="mb-4 space-y-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
-            <div>
-              <p className="font-semibold text-text-primary">E-Mail Versand (Sending)</p>
-              <p className="mt-1 text-text-muted">
-                {emailStatus?.sendingSetup?.canSend
-                  ? "Versand ist konfiguriert."
-                  : emailStatus?.sendingSetup?.blockReason ?? "Versand-Status wird geladen…"}
-              </p>
-              <p className="mt-1 text-text-secondary">
-                Domain: {DOMAIN_STATUS_LABELS[emailStatus?.domain.status ?? "not_configured"] ?? "Unbekannt"}
-                {emailStatus?.domain.domain ? ` — ${emailStatus.domain.domain}` : ""}
-              </p>
-              {emailStatus?.domain.message ? (
-                <p className="mt-1 text-text-muted">{emailStatus.domain.message}</p>
-              ) : null}
-            </div>
-
-            <ul className="space-y-2">
-              {(emailStatus?.sendingSetup?.sending ?? []).map((item) => (
-                <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
-                  <span className="text-text-secondary">{item.label}</span>
-                  <AdminStatusBadge
-                    label={item.level === "ok" ? "OK" : item.level === "optional" ? "Optional" : item.level === "warn" ? "Hinweis" : "Fehler"}
-                    variant={RESEND_LEVEL_VARIANT[item.level] ?? "muted"}
-                  />
-                </li>
-              ))}
-            </ul>
-
-            <div className="border-t border-border pt-4">
-              <p className="font-semibold text-text-primary">Empfang (Receiving, optional)</p>
-              <ul className="mt-2 space-y-2">
-                {(emailStatus?.sendingSetup?.receiving ?? []).map((item) => (
-                  <li key={item.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-bg-card px-3 py-2">
-                    <span className="text-text-secondary">{item.message}</span>
-                    <AdminStatusBadge label="Optional" variant="muted" />
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            <p className="text-text-secondary">
-              Aktueller Absender: <strong>{emailStatus?.resolved.from ?? "—"}</strong>
-            </p>
-            <p className="text-text-secondary">
-              Reply-To: <strong>{emailStatus?.resolved.replyTo ?? "—"}</strong>
-            </p>
-            <AdminButton variant="secondary" className="mt-1" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void loadEmailStatus()}>
-              Status prüfen
-            </AdminButton>
-          </div>
-
-          <SectionHeading>Allgemein</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Firmenname (E-Mail)" hint="Wird in E-Mail-Templates verwendet">
-              <input className="admin-input" value={email.companyName} onChange={(e) => setEmailField("companyName", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Absendername" required hint="Wird im From-Feld angezeigt">
-              <input className="admin-input" value={email.senderName} onChange={(e) => setEmailField("senderName", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Absender-E-Mail" tooltip="resendDomain" required hint="z. B. info@panda-bande-events.de — muss in Resend verifiziert sein.">
-              <input className="admin-input" type="email" value={email.senderEmail} onChange={(e) => setEmailField("senderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Reply-To-Adresse" tooltip="replyTo" required hint="Adresse für Antworten der Empfänger.">
-              <input className="admin-input" type="email" value={email.replyTo} onChange={(e) => setEmailField("replyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Kopie-an-Adresse" hint="Allgemeine Kopie bei CRM-Versand">
-              <input className="admin-input" type="email" value={email.copyToEmail} onChange={(e) => setEmailField("copyToEmail", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <p className="mb-2 mt-4 text-sm font-medium text-text-primary">Gewünschte E-Mail-Adressen</p>
-          <p className="mb-4 text-xs text-text-muted">
-            Mailboxen müssen beim Domain-/Mailanbieter eingerichtet werden. Das Dashboard kann die Adresse verwenden,
-            sobald Domain und Resend verifiziert sind.
-          </p>
-          <div className="grid gap-3 md:grid-cols-2">
-            {CUSTOM_ADDRESS_LABELS.map(({ key, label }) => (
-              <AdminFormField key={key} label={label}>
-                <input
-                  className="admin-input"
-                  placeholder={`${label}ihre-domain.de`}
-                  value={email.customAddresses?.[key] ?? ""}
-                  onChange={(e) => setCustomAddress(key, e.target.value)}
-                />
-              </AdminFormField>
-            ))}
-          </div>
-
-          <SectionHeading>Kontaktformular</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Kontaktformular-Empfänger" hint="Neue Anfragen von der Website" className="md:col-span-2">
-              <input className="admin-input" type="email" value={email.inquiryRecipient} onChange={(e) => setEmailField("inquiryRecipient", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Kontaktformular-Kopie an">
-              <input className="admin-input" type="email" value={email.inquiryCopyTo} onChange={(e) => setEmailField("inquiryCopyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Admin-Benachrichtigung">
-              <input className="admin-input" type="email" value={email.adminNotificationEmail} onChange={(e) => setEmailField("adminNotificationEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Auto-Antwort aktiv" className="md:col-span-2">
-              <label className="admin-checkbox-row">
-                <input type="checkbox" checked={email.inquiryAutoReplyEnabled} onChange={(e) => setEmailField("inquiryAutoReplyEnabled", e.target.checked)} />
-                <span>Automatische Bestätigung an Anfragende senden</span>
-              </label>
-            </AdminFormField>
-            <AdminFormField label="Auto-Antwort Betreff" className="md:col-span-2">
-              <input className="admin-input" value={email.inquiryAutoReplySubject} onChange={(e) => setEmailField("inquiryAutoReplySubject", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Auto-Antwort Text" className="md:col-span-2">
-              <textarea className="admin-input min-h-20" value={email.inquiryAutoReplyText} onChange={(e) => setEmailField("inquiryAutoReplyText", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <SectionHeading>Angebote</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Angebots-Kopie an">
-              <input className="admin-input" type="email" value={email.quoteCopyTo} onChange={(e) => setEmailField("quoteCopyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots-Absender" hint="Leer = Standard-Absender">
-              <input className="admin-input" type="email" value={email.quoteSenderEmail} onChange={(e) => setEmailField("quoteSenderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots Reply-To">
-              <input className="admin-input" type="email" value={email.quoteReplyTo} onChange={(e) => setEmailField("quoteReplyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots-Betreff-Vorlage" hint="Platzhalter: {number}, {company}">
-              <input className="admin-input" value={email.quoteSubjectTemplate} onChange={(e) => setEmailField("quoteSubjectTemplate", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Angebots-E-Mail-Text" className="md:col-span-2">
-              <textarea className="admin-input min-h-20" value={email.quoteEmailBody} onChange={(e) => setEmailField("quoteEmailBody", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <SectionHeading>Rechnungen</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Rechnungs-Kopie an">
-              <input className="admin-input" type="email" value={email.invoiceCopyTo} onChange={(e) => setEmailField("invoiceCopyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs-Absender" hint="Leer = Standard-Absender">
-              <input className="admin-input" type="email" value={email.invoiceSenderEmail} onChange={(e) => setEmailField("invoiceSenderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs Reply-To">
-              <input className="admin-input" type="email" value={email.invoiceReplyTo} onChange={(e) => setEmailField("invoiceReplyTo", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs-Betreff-Vorlage" hint="Platzhalter: {number}, {company}">
-              <input className="admin-input" value={email.invoiceSubjectTemplate} onChange={(e) => setEmailField("invoiceSubjectTemplate", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Rechnungs-E-Mail-Text" className="md:col-span-2">
-              <textarea className="admin-input min-h-20" value={email.invoiceEmailBody} onChange={(e) => setEmailField("invoiceEmailBody", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <SectionHeading>Security</SectionHeading>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Passwort-Reset Absender">
-              <input className="admin-input" type="email" value={email.passwordResetSenderEmail} onChange={(e) => setEmailField("passwordResetSenderEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Sicherheits-Benachrichtigung Absender">
-              <input className="admin-input" type="email" value={email.securityNotificationSender} onChange={(e) => setEmailField("securityNotificationSender", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Login-Alert Empfänger">
-              <input className="admin-input" type="email" value={email.loginAlertRecipient} onChange={(e) => setEmailField("loginAlertRecipient", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Bewerbungs-E-Mail">
-              <input className="admin-input" type="email" value={email.applicationEmail} onChange={(e) => setEmailField("applicationEmail", e.target.value)} />
-            </AdminFormField>
-            <AdminFormField label="Bewerbungs-Kopie an" className="md:col-span-2">
-              <input className="admin-input" type="email" value={email.applicationCopyTo} onChange={(e) => setEmailField("applicationCopyTo", e.target.value)} />
-            </AdminFormField>
-          </div>
-
-          <p className="mt-4 text-xs text-text-muted">
-            Anleitung: <code className="rounded bg-bg-secondary px-1">docs/EMAIL_DOMAIN_SETUP.md</code>
-          </p>
-
-          <div className="mt-6 border-t border-border pt-6">
-            <p className="mb-3 text-sm font-semibold text-text-primary">Test-E-Mail senden</p>
-            <div className="flex flex-wrap gap-2">
-              <input
-                className="admin-input min-w-[16rem] flex-1"
-                type="email"
-                placeholder="empfaenger@beispiel.de"
-                value={testTo}
-                onChange={(e) => setTestTo(e.target.value)}
-              />
-              <AdminButton variant="secondary" icon={<Send className="h-4 w-4" />} onClick={() => void sendTest()} disabled={!emailStatus?.resendConfigured}>
-                Test-E-Mail senden
-              </AdminButton>
-            </div>
-          </div>
-
-          <AdminStickySave label={`${ADMIN_BTN.save} — E-Mail`} onSave={() => void saveSection("email", email)} />
+      {!settingsLoading && tab === "email" && email ? (
+        <AdminCard title="E-Mail">
+          <EmailSettingsShell
+            email={email}
+            emailTab={emailTab}
+            testTo={testTo}
+            resendConfigured={Boolean(emailStatus?.resendConfigured)}
+            usesTestDomain={usesTestDomain}
+            emailStatusBanner={
+              emailTab === "general" ? (
+                <>
+                  {usesTestDomain ? (
+                    <div className="mb-4 rounded-xl border border-amber-300/50 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                      <strong>Resend-Testdomain aktiv.</strong> Für den Livegang Domain in Resend verifizieren — dann
+                      wird automatisch eure Firmenadresse verwendet.
+                    </div>
+                  ) : null}
+                  {!emailStatus?.resendConfigured ? (
+                    <p className="mb-4 text-sm text-accent-heart">
+                      <strong>E-Mail-Dienst nicht verbunden</strong> — automatischer Versand ist deaktiviert.
+                    </p>
+                  ) : null}
+                </>
+              ) : undefined
+            }
+            onEmailField={setEmailField}
+            onTestToChange={setTestTo}
+            onSendTest={() => void sendTest()}
+            onSave={() => void saveSection("email", email)}
+          />
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "invoice" && invoice ? (
+      {!settingsLoading && tab === "invoice" && invoice ? (
         <AdminCard title="Rechnungen & Angebote">
           <div className="mb-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
             <p className="font-semibold text-text-primary">Nummern-Vorschau</p>
@@ -805,7 +617,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "bank" && bank ? (
+      {!settingsLoading && tab === "bank" && bank ? (
         <AdminCard title="Bank & Steuerdaten">
           <p className="mb-4 text-sm text-text-muted">Bankverbindung und Steuerangaben für Rechnungen und PDFs.</p>
           <div className="grid gap-4 md:grid-cols-2">
@@ -847,7 +659,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "seo" && seo && business ? (
+      {!settingsLoading && tab === "seo" && seo && business ? (
         <AdminCard title="Domain & SEO">
           <div className="mb-4 rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
             <p className="font-semibold text-text-primary">Sitemap-URL</p>
@@ -912,7 +724,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "legal" && legal ? (
+      {!settingsLoading && tab === "legal" && legal ? (
         <AdminCard title="Rechtliches">
           <div className="mb-6 rounded-xl border-2 border-amber-400/60 bg-amber-50 px-4 py-4 text-sm text-amber-950">
             <p className="font-bold">⚠ Platzhalter-Hinweis</p>
@@ -963,7 +775,7 @@ export function SettingsView() {
         </AdminCard>
       ) : null}
 
-      {!settingsLoading && !settingsError && tab === "system" ? (
+      {!settingsLoading && tab === "system" ? (
         <AdminCard title="Systemstatus">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-sm text-text-muted">Read-only Übersicht über Konfiguration und Systemzustand.</p>

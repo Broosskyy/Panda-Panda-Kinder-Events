@@ -19,6 +19,7 @@
     "test:admin-critical-mobile": "node scripts/admin-critical-mobile-ux-action-bugfix-test.mjs",
     "test:admin-critical-onboarding": "node scripts/admin-critical-onboarding-invites-email-test.mjs",
     "test:admin-pwa-install": "node scripts/admin-pwa-install-real-fix-test.mjs",
+    "test:admin-pwa-action-popups": "node scripts/admin-pwa-action-popups-mobile-test.mjs",
     "test:admin-ui-bugfix": "node scripts/admin-ui-bugfix-pwa-menu-customers-test.mjs",
     "test:admin-services-cms": "node scripts/admin-services-cms-fix-test.mjs",
     "test:admin-onboarding-v2": "node scripts/admin-onboarding-v2-test.mjs",

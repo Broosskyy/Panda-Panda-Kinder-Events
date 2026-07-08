@@ -2,10 +2,12 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Mail, Sparkles, UserPlus, X } from "lucide-react";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
 import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { AdminStatusBadge } from "@/components/admin/ui/AdminStatusBadge";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { describeRoleSlug } from "@/lib/admin/role-descriptions";
 import { invitableRoleSlugs } from "@/lib/auth/invite-permissions";
 import type { AdminRoleSlug } from "@/lib/auth/types";
@@ -28,8 +30,6 @@ interface AdminUserManageDialogProps {
   canInvite: boolean;
   canCreateManually: boolean;
   defaultTab?: ManageTab;
-  toast: (message: string, type?: "success" | "error") => void;
-  withLoading: <T>(promise: Promise<T>) => Promise<T>;
 }
 
 const emptyInvite = () => ({
@@ -71,9 +71,8 @@ export function AdminUserManageDialog({
   canInvite,
   canCreateManually,
   defaultTab = "invite",
-  toast,
-  withLoading,
 }: AdminUserManageDialogProps) {
+  const { showResult, runAction } = useAdminActionFeedback();
   const allowedRoles = useMemo(() => {
     const slugs = invitableRoleSlugs(inviterRole);
     return roles.filter((r) => isActiveRoleSlug(r.slug) && slugs.includes(r.slug));
@@ -113,10 +112,11 @@ export function AdminUserManageDialog({
 
   const sendInvite = async () => {
     if (!inviteForm.firstName || !inviteForm.lastName || !inviteForm.email || !inviteForm.roleId) {
-      return toast("Bitte Vorname, Nachname, E-Mail und Rolle ausfüllen.", "error");
+      return showResult(ACTION_RESULTS.genericError("Bitte Vorname, Nachname, E-Mail und Rolle ausfüllen."));
     }
-    await withLoading(
-      (async () => {
+    const email = inviteForm.email;
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/invites", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -125,35 +125,32 @@ export function AdminUserManageDialog({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Einladung fehlgeschlagen");
         setLastInviteUrl(data.inviteUrl ?? null);
-        if (data.emailSent) {
-          toast("E-Mail erfolgreich versendet.");
-        } else {
-          toast(
-            data.emailError
-              ? `E-Mail konnte nicht versendet werden. ${data.emailError}`
-              : "Einladung erstellt, E-Mail konnte nicht versendet werden.",
-            "error",
-          );
-        }
         setInviteForm(emptyInvite());
         if (allowedRoles[0]) {
           setInviteForm({ ...emptyInvite(), roleId: allowedRoles[0]!.id });
         }
         onSuccess();
-      })(),
-    );
+        return data;
+      },
+      success: (data) => {
+        if (data.emailSent === false && data.emailError) {
+          return ACTION_RESULTS.genericError(`E-Mail konnte nicht versendet werden. ${data.emailError}`);
+        }
+        return ACTION_RESULTS.inviteSent(email);
+      },
+    });
   };
 
   const createManual = async () => {
     if (!manualForm.firstName || !manualForm.lastName || !manualForm.email || !manualForm.roleId) {
-      return toast("Bitte Vorname, Nachname, E-Mail und Rolle ausfüllen.", "error");
+      return showResult(ACTION_RESULTS.genericError("Bitte Vorname, Nachname, E-Mail und Rolle ausfüllen."));
     }
     const password = manualForm.useGeneratedPassword ? generatePassword() : manualForm.password;
     if (!password || password.length < 8) {
-      return toast("Passwort muss mindestens 8 Zeichen haben.", "error");
+      return showResult(ACTION_RESULTS.genericError("Passwort muss mindestens 8 Zeichen haben."));
     }
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/users", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -170,34 +167,32 @@ export function AdminUserManageDialog({
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Benutzer konnte nicht angelegt werden");
-        if (manualForm.sendWelcomeEmail && data.welcomeEmailSent === false) {
-          toast(
-            data.welcomeEmailError
-              ? `E-Mail konnte nicht versendet werden. ${data.welcomeEmailError}`
-              : "Benutzer angelegt, Willkommens-E-Mail konnte nicht versendet werden.",
-            "error",
-          );
-        } else if (manualForm.sendWelcomeEmail && data.welcomeEmailSent) {
-          toast(
-            manualForm.useGeneratedPassword
-              ? `Benutzer angelegt. E-Mail erfolgreich versendet. Temporäres Passwort: ${password}`
-              : "Benutzer angelegt. E-Mail erfolgreich versendet.",
-          );
-        } else {
-          toast(
-            manualForm.useGeneratedPassword
-              ? `Benutzer angelegt. Temporäres Passwort: ${password}`
-              : "Benutzer angelegt.",
-          );
-        }
         setManualForm(emptyManual());
         if (allowedRoles[0]) {
           setManualForm({ ...emptyManual(), roleId: allowedRoles[0]!.id });
         }
         onSuccess();
         onClose();
-      })(),
-    );
+        return { ...data, password, form: manualForm };
+      },
+      success: (result) => {
+        if (result.form.sendWelcomeEmail && result.welcomeEmailSent === false) {
+          const msg = result.welcomeEmailError
+            ? `Benutzer angelegt, aber E-Mail konnte nicht versendet werden. ${result.welcomeEmailError}`
+            : "Benutzer angelegt, Willkommens-E-Mail konnte nicht versendet werden.";
+          return {
+            ...ACTION_RESULTS.userCreated(),
+            status: "warning" as const,
+            message: msg,
+            details: result.form.useGeneratedPassword ? `Temporäres Passwort: ${result.password}` : undefined,
+          };
+        }
+        return {
+          ...ACTION_RESULTS.userCreated(),
+          details: result.form.useGeneratedPassword ? `Temporäres Passwort: ${result.password}` : undefined,
+        };
+      },
+    });
   };
 
   return (
@@ -303,7 +298,7 @@ export function AdminUserManageDialog({
                   className="mt-3"
                   onClick={() => {
                     void navigator.clipboard.writeText(lastInviteUrl);
-                    toast("Link kopiert.");
+                    showResult(ACTION_RESULTS.linkCopied());
                   }}
                 >
                   Link kopieren

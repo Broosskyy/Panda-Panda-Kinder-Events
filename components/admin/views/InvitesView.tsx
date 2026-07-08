@@ -6,7 +6,9 @@ import { Copy, Mail, Plus, RefreshCw, Trash2, XCircle } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminUserManageDialog } from "@/components/admin/AdminUserManageDialog";
 import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
 import { AdminActionMenu, AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import type { AdminRoleSlug } from "@/lib/auth/types";
@@ -70,7 +72,8 @@ export function InvitesView() {
   const [inviterRole, setInviterRole] = useState<AdminRoleSlug>("readonly");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { toast, withLoading } = useAdminMessages();
+  const { toast } = useAdminMessages();
+  const { confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("benutzer");
 
   const load = useCallback(async () => {
@@ -114,57 +117,77 @@ export function InvitesView() {
   }, [searchParams, canInvite]);
 
   const patchInvite = async (id: string, action: "resend" | "revoke" | "copy_link") => {
-    await withLoading(
-      (async () => {
+    if (action === "revoke") {
+      const ok = await confirm({
+        title: "Einladung widerrufen?",
+        message: "Die Einladung ist danach nicht mehr gültig.",
+        destructive: true,
+        audited: true,
+      });
+      if (!ok) return;
+    }
+
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/invites", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id, action }),
         });
         const data = await res.json();
-        if (!res.ok) {
-          toast(data.error ?? "Aktion fehlgeschlagen.", "error");
-          return;
-        }
+        if (!res.ok) throw new Error(data.error ?? "Aktion fehlgeschlagen.");
 
         if (action === "copy_link" && data.inviteUrl) {
           try {
             await navigator.clipboard.writeText(data.inviteUrl);
-            toast("Einladungslink kopiert.");
           } catch {
-            toast("Link erstellt, Zwischenablage nicht verfügbar.", "error");
+            throw new Error("Link erstellt, Zwischenablage nicht verfügbar.");
           }
-        } else if (data.emailSent === false && data.emailError) {
-          toast(`E-Mail konnte nicht versendet werden. ${data.emailError}`, "error");
-        } else if (action === "resend" && data.emailSent) {
-          toast("E-Mail erfolgreich versendet.");
-        } else if (action === "revoke") {
-          toast("Einladung widerrufen.");
-        } else {
-          toast(data.message ?? "Aktion abgeschlossen.");
         }
+
         await load();
-      })(),
-    );
+        return { action, data };
+      },
+      success: ({ action: act, data }) => {
+        if (act === "copy_link") return ACTION_RESULTS.linkCopied();
+        if (act === "resend") {
+          if (data.emailSent === false && data.emailError) {
+            return ACTION_RESULTS.genericError(`E-Mail konnte nicht versendet werden. ${data.emailError}`);
+          }
+          return ACTION_RESULTS.inviteResent();
+        }
+        if (act === "revoke") return ACTION_RESULTS.inviteRevoked();
+        return ACTION_RESULTS.inviteSent();
+      },
+    });
   };
 
   const deleteInvite = async (id: string) => {
-    await withLoading(
-      (async () => {
+    const ok = await confirm({
+      title: "Einladung löschen?",
+      message: "Die Einladung wird dauerhaft entfernt.",
+      destructive: true,
+      audited: true,
+    });
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/invites", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id }),
         });
         const data = await res.json();
-        if (!res.ok) {
-          toast(data.error ?? "Löschen fehlgeschlagen.", "error");
-          return;
-        }
-        toast("Einladung gelöscht.");
+        if (!res.ok) throw new Error(data.error ?? "Löschen fehlgeschlagen.");
         await load();
-      })(),
-    );
+      },
+      success: {
+        title: "Einladung gelöscht",
+        message: "Die Einladung wurde entfernt.",
+        status: "success",
+      },
+    });
   };
 
   const formatDate = (iso: string) => new Date(iso).toLocaleString("de-DE");
@@ -202,8 +225,7 @@ export function InvitesView() {
           id: "delete",
           label: "Löschen",
           icon: <Trash2 className="h-4 w-4" />,
-          confirmMessage: "Einladung wirklich löschen?",
-          onClick: () => deleteInvite(inv.id),
+          onClick: () => void deleteInvite(inv.id),
         },
       ]}
     />
@@ -346,8 +368,6 @@ export function InvitesView() {
         canInvite={canInvite}
         canCreateManually={canCreateManually}
         defaultTab="invite"
-        toast={toast}
-        withLoading={withLoading}
       />
     </div>
   );

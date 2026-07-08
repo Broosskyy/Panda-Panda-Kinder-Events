@@ -1,19 +1,24 @@
 import { NextResponse } from "next/server";
 import { BRAND, withIconVersion } from "@/lib/brand";
 
-export async function GET() {
+const ADMIN_SCOPE = "/admin/";
+
+export async function GET(request: Request) {
+  const origin = new URL(request.url).origin;
   const manifest = {
-    id: "/admin",
+    id: ADMIN_SCOPE,
     name: "Panda-Bande Admin",
     short_name: "Panda Admin",
     description: "Sichere Verwaltung für Panda-Bande Kinderevents",
-    start_url: "/admin",
-    scope: "/admin",
+    start_url: `${origin}/admin`,
+    scope: ADMIN_SCOPE,
     display: "standalone",
+    display_override: ["standalone", "minimal-ui"],
     orientation: "portrait-primary",
     background_color: BRAND.backgroundColor,
     theme_color: BRAND.themeColor,
     lang: "de",
+    prefer_related_applications: false,
     categories: ["business", "productivity"],
     icons: [
       {

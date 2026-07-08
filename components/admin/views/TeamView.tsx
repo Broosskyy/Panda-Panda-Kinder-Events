@@ -6,11 +6,13 @@ import Link from "next/link";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_CONFIRM, ADMIN_MSG } from "@/lib/admin/messages";
 import type { TeamMember, TeamSocialLinks } from "@/lib/cms/types";
 
 const emptyForm = () => ({
@@ -32,7 +34,8 @@ export function TeamView() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const { toast, withLoading, saved, fromApi, teamVisible, teamHidden } = useAdminMessages();
+  const { toast } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("team");
   const empty = ADMIN_EMPTY_STATES.team;
 
@@ -53,8 +56,8 @@ export function TeamView() {
   }, [load]);
 
   const saveSection = async () => {
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/team", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -62,9 +65,9 @@ export function TeamView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        saved();
-      })(),
-    );
+      },
+      success: ACTION_RESULTS.settingsSaved(),
+    });
   };
 
   const openCreate = () => {
@@ -95,10 +98,10 @@ export function TeamView() {
   };
 
   const save = async () => {
-    if (!form.name.trim()) return toast("Name ist ein Pflichtfeld.", "error");
-    if (!form.position.trim()) return toast("Position ist ein Pflichtfeld.", "error");
-    await withLoading(
-      (async () => {
+    if (!form.name.trim()) return showResult(ACTION_RESULTS.genericError("Name ist ein Pflichtfeld."));
+    if (!form.position.trim()) return showResult(ACTION_RESULTS.genericError("Position ist ein Pflichtfeld."));
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/team", {
           method: editingId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -106,13 +109,13 @@ export function TeamView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        saved();
         setShowForm(false);
         setEditingId(null);
         setForm(emptyForm());
         await load();
-      })(),
-    );
+      },
+      success: ACTION_RESULTS.teamSaved(),
+    });
   };
 
   const toggleVisible = async (member: TeamMember) => {
@@ -122,40 +125,67 @@ export function TeamView() {
       body: JSON.stringify({ id: member.id, active: !member.active }),
     });
     const data = await res.json();
-    if (!res.ok) return fromApi(data, "Status konnte nicht geändert werden.");
-    if (member.active) teamHidden();
-    else teamVisible();
+    if (!res.ok) {
+      showResult(ACTION_RESULTS.genericError(data.error ?? "Status konnte nicht geändert werden."));
+      return;
+    }
     await load();
   };
 
   const archive = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.archiveTeam)) return;
-    const res = await fetch("/api/admin/team", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, archived: true, active: false }),
+    const ok = await confirm({
+      title: "Teammitglied archivieren?",
+      message: ADMIN_CONFIRM.archiveTeam.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
     });
-    if (!res.ok) {
-      const data = await res.json();
-      return fromApi(data, "Archivieren fehlgeschlagen.");
-    }
-    toast(ADMIN_MSG.teamArchived);
-    await load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/team", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, archived: true, active: false }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
+        await load();
+      },
+      success: {
+        title: "Teammitglied archiviert",
+        message: ADMIN_MSG.teamArchived,
+        status: "warning",
+      },
+    });
   };
 
   const remove = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.removeTeam)) return;
-    const res = await fetch("/api/admin/team", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+    const ok = await confirm({
+      title: "Teammitglied entfernen?",
+      message: ADMIN_CONFIRM.removeTeam.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
     });
-    if (!res.ok) {
-      const data = await res.json();
-      return fromApi(data, "Entfernen fehlgeschlagen.");
-    }
-    toast(ADMIN_MSG.teamRemoved);
-    await load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/team", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Entfernen fehlgeschlagen.");
+        await load();
+      },
+      success: {
+        title: "Teammitglied entfernt",
+        message: ADMIN_MSG.teamRemoved,
+        status: "success",
+      },
+    });
   };
 
   const activeMembers = members.filter((m) => !m.archived);

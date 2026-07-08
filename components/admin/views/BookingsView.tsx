@@ -18,12 +18,12 @@ import {
 } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/ui/AdminLayout";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
-import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
-import { ADMIN_MSG } from "@/lib/admin/messages";
-import { hasPermission } from "@/lib/auth/permissions";
 import { BOOKING_DELETE_BLOCKED_MESSAGE } from "@/lib/admin/booking-lifecycle";
+import { hasPermission } from "@/lib/auth/permissions";
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
   new: "Neu",
@@ -63,7 +63,7 @@ export function BookingsView() {
   const [search, setSearch] = useState("");
   const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
   const { permissions } = useAdminSession();
-  const { toast, saveFailed, fromApi, error: showError } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("anfragen");
   const empty = ADMIN_EMPTY_STATES.bookings;
   const canWrite = hasPermission(permissions, "inquiries:write");
@@ -83,34 +83,52 @@ export function BookingsView() {
   }, [load]);
 
   const update = async (id: string, updates: { status?: BookingStatus; admin_notes?: string }) => {
-    const res = await fetch("/api/admin/bookings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...updates }),
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/bookings", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, ...updates }),
+        });
+        if (!res.ok) throw new Error("Speichern fehlgeschlagen");
+        await load();
+      },
+      success: ACTION_RESULTS.bookingSaved(),
     });
-    if (res.ok) {
-      toast(ADMIN_MSG.bookingSaved);
-      load();
-    } else saveFailed();
   };
 
   const archiveBooking = async (id: string) => {
-    const res = await fetch("/api/admin/bookings", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, action: "archive" }),
+    const ok = await confirm({
+      title: "Anfrage archivieren?",
+      message: "Die Anfrage wird archiviert und standardmäßig ausgeblendet.",
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return fromApi(data, "Archivierung fehlgeschlagen.");
-    toast("Anfrage archiviert.");
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/bookings", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action: "archive" }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Archivierung fehlgeschlagen.");
+        load();
+      },
+      success: ACTION_RESULTS.bookingArchived(),
+    });
   };
 
   const deleteBooking = async (id: string) => {
-    const confirmed = window.confirm(
-      "Diese Anfrage wird dauerhaft gelöscht. Diese Aktion wird protokolliert.\n\nFortfahren?",
-    );
-    if (!confirmed) return;
+    const ok = await confirm({
+      title: "Anfrage löschen?",
+      message: "Diese Anfrage wird dauerhaft gelöscht.",
+      destructive: true,
+      audited: true,
+    });
+    if (!ok) return;
 
     const res = await fetch("/api/admin/bookings", {
       method: "DELETE",
@@ -119,26 +137,36 @@ export function BookingsView() {
     });
     const data = await res.json();
     if (!res.ok) {
-      return showError(
-        "Anfrage konnte nicht gelöscht werden.",
-        data.error ?? BOOKING_DELETE_BLOCKED_MESSAGE,
-        res.status === 409 ? "Nutze stattdessen Archivieren." : undefined,
+      showResult(
+        ACTION_RESULTS.genericError(
+          data.error ??
+            (res.status === 409 ? BOOKING_DELETE_BLOCKED_MESSAGE : "Anfrage konnte nicht gelöscht werden."),
+        ),
       );
+      return;
     }
-    toast("Anfrage gelöscht.");
+    showResult(ACTION_RESULTS.bookingDeleted());
     load();
   };
 
   const createCustomer = async (bookingId: string) => {
-    const res = await fetch("/api/admin/customers/from-booking", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ booking_id: bookingId }),
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/customers/from-booking", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ booking_id: bookingId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Kunde konnte nicht angelegt werden.");
+        load();
+      },
+      success: {
+        title: "Kunde angelegt",
+        message: "Der Kunde wurde aus der Anfrage erstellt.",
+        status: "success",
+      },
     });
-    const data = await res.json();
-    if (!res.ok) return fromApi(data, "Kunde konnte nicht angelegt werden.");
-    toast(ADMIN_MSG.customerCreated);
-    load();
   };
 
   const filtered = bookings.filter((b) => {

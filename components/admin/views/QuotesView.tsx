@@ -24,12 +24,14 @@ import {
 } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { paginateRows, sortCrmRows, type CrmSortDir, type CrmSortField } from "@/lib/admin/crm-list";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { useAdminPdf } from "@/lib/admin/use-admin-pdf";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_CONFIRM, ADMIN_MSG } from "@/lib/admin/messages";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmCustomer, type CrmDocumentStatus, type CrmLineItem } from "@/lib/crm/types";
 
@@ -137,15 +139,10 @@ export function QuotesView() {
   const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
   const {
     withLoading,
-    quoteCreated,
-    quoteSent,
-    quoteUpdated,
-    quoteArchived,
-    quoteDeleted,
-    invoiceCreated,
     success,
     error: showError,
   } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
   const pageMeta = adminPageHeaderProps("angebote");
   const empty = ADMIN_EMPTY_STATES.quotes;
 
@@ -252,8 +249,8 @@ export function QuotesView() {
         body: JSON.stringify({ id: editingId, ...payload }),
       });
       const data = await res.json();
-      if (!res.ok) return showError("Angebot konnte nicht aktualisiert werden.", data.error);
-      quoteUpdated();
+      if (!res.ok) return showResult(ACTION_RESULTS.genericError(data.error ?? "Angebot konnte nicht aktualisiert werden."));
+      showResult(ACTION_RESULTS.quoteCreated());
     } else {
       const res = await fetch("/api/admin/quotes", {
         method: "POST",
@@ -261,8 +258,8 @@ export function QuotesView() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) return showError("Angebot konnte nicht erstellt werden.", data.error);
-      quoteCreated();
+      if (!res.ok) return showResult(ACTION_RESULTS.genericError(data.error ?? "Angebot konnte nicht erstellt werden."));
+      showResult(ACTION_RESULTS.quoteCreated());
     }
 
     setShowForm(false);
@@ -310,13 +307,13 @@ export function QuotesView() {
         });
         return;
       }
-      quoteSent();
+      showResult(ACTION_RESULTS.quoteSent());
       setSendTarget(null);
       load();
     } catch (err) {
       const message = err instanceof Error ? err.message : ADMIN_MSG.sendFailed;
       setSendError({ message });
-      showError("Die E-Mail konnte nicht versendet werden.", message, "Bitte E-Mail-Einstellungen und Empfänger-Adresse prüfen.");
+      showResult(ACTION_RESULTS.genericError(message));
     } finally {
       setSending(false);
     }
@@ -326,29 +323,55 @@ export function QuotesView() {
   const pdfKey = (id: string, action: "open" | "download") => `${id}-${action}`;
 
   const archiveQuote = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.archiveQuote)) return;
-    const res = await fetch("/api/admin/quotes", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, action: "archive" }),
+    const ok = await confirm({
+      title: "Angebot archivieren?",
+      message: ADMIN_CONFIRM.archiveQuote.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Archivieren fehlgeschlagen.", data.error);
-    quoteArchived();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/quotes", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action: "archive" }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
+        load();
+      },
+      success: {
+        title: "Angebot archiviert",
+        message: "Das Angebot wurde archiviert.",
+        status: "warning",
+      },
+    });
   };
 
   const deleteQuote = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.deleteQuote)) return;
-    const res = await fetch("/api/admin/quotes", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+    const ok = await confirm({
+      title: "Angebot löschen?",
+      message: ADMIN_CONFIRM.deleteQuote,
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Dokument konnte nicht gelöscht werden.", data.error, "Nur Entwürfe oder nicht verknüpfte Angebote können gelöscht werden.");
-    quoteDeleted();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/quotes", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Dokument konnte nicht gelöscht werden.");
+        load();
+      },
+      success: ACTION_RESULTS.quoteDeleted(),
+    });
   };
 
   const duplicateQuote = async (id: string) => {
@@ -366,42 +389,73 @@ export function QuotesView() {
   const bulkArchive = async () => {
     const ids = [...selected];
     if (!ids.length) return;
-    if (!confirmDanger(`Möchten Sie ${ids.length} Angebot(e) archivieren?`)) return;
-    const res = await fetch("/api/admin/quotes", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "bulk_archive", ids }),
+    const ok = await confirm({
+      title: "Angebote archivieren?",
+      message: `Möchten Sie ${ids.length} Angebot(e) archivieren?`,
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Archivieren fehlgeschlagen.", data.error);
-    quoteArchived();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/quotes", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "bulk_archive", ids }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
+        load();
+      },
+      success: {
+        title: "Angebote archiviert",
+        message: "Die ausgewählten Angebote wurden archiviert.",
+        status: "warning",
+      },
+    });
   };
 
   const bulkDelete = async () => {
     const ids = [...selected];
     if (!ids.length) return;
-    if (!confirmDanger(`Möchten Sie ${ids.length} Angebot(e) wirklich löschen?`)) return;
-    const res = await fetch("/api/admin/quotes", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "bulk_delete", ids }),
+    const ok = await confirm({
+      title: "Angebote löschen?",
+      message: `Möchten Sie ${ids.length} Angebot(e) wirklich löschen?`,
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Dokument konnte nicht gelöscht werden.", data.error);
-    quoteDeleted();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/quotes", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "bulk_delete", ids }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Dokument konnte nicht gelöscht werden.");
+        load();
+      },
+      success: ACTION_RESULTS.quoteDeleted(),
+    });
   };
 
   const toInvoice = async (quoteId: string) => {
-    const res = await fetch("/api/admin/invoices", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ quote_id: quoteId }),
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/invoices", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ quote_id: quoteId }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Rechnung konnte nicht erstellt werden.");
+        return data;
+      },
+      success: ACTION_RESULTS.invoiceCreated(),
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Rechnung konnte nicht erstellt werden.", data.error);
-    invoiceCreated(data.invoice?.invoice_number);
   };
 
   const toggleSelect = (id: string) => {

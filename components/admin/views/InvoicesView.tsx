@@ -16,12 +16,14 @@ import {
   crmDocumentStatusVariant,
 } from "@/components/admin/ui";
 import { paginateRows, sortCrmRows, type CrmSortDir, type CrmSortField } from "@/lib/admin/crm-list";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { useAdminPdf } from "@/lib/admin/use-admin-pdf";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_CONFIRM, ADMIN_MSG } from "@/lib/admin/messages";
 import { formatCents } from "@/lib/crm/money";
 import { CRM_STATUS_LABELS, type CrmDocumentStatus } from "@/lib/crm/types";
 
@@ -93,13 +95,8 @@ export function InvoicesView() {
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
-  const {
-    invoiceSent,
-    invoiceArchived,
-    invoiceDeleted,
-    invoiceCancelled,
-    error: showError,
-  } = useAdminMessages();
+  const { error: showError } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
 
   const handlePdfError = useCallback(
     (err: { message: string; detail?: string }) => {
@@ -166,17 +163,13 @@ export function InvoicesView() {
         });
         return;
       }
-      invoiceSent();
+      showResult(ACTION_RESULTS.invoiceSent());
       setSendTarget(null);
       load();
     } catch (err) {
       const message = err instanceof Error ? err.message : ADMIN_MSG.sendFailed;
       setSendError({ message });
-      showError(
-        "Die E-Mail konnte nicht versendet werden.",
-        message,
-        "Bitte E-Mail-Einstellungen und Empfänger-Adresse prüfen.",
-      );
+      showResult(ACTION_RESULTS.genericError(message));
     } finally {
       setSending(false);
     }
@@ -195,84 +188,147 @@ export function InvoicesView() {
       load();
     } else {
       const data = await res.json();
-      showError("Status konnte nicht aktualisiert werden.", data.error, "Bitte erneut versuchen.");
+      showResult(ACTION_RESULTS.genericError(data.error ?? "Status konnte nicht aktualisiert werden."));
     }
   };
 
   const archiveInvoice = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.archiveInvoice)) return;
-    const res = await fetch("/api/admin/invoices", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, action: "archive" }),
+    const ok = await confirm({
+      title: "Rechnung archivieren?",
+      message: ADMIN_CONFIRM.archiveInvoice.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Archivieren fehlgeschlagen.", data.error);
-    invoiceArchived();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/invoices", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action: "archive" }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
+        load();
+      },
+      success: {
+        title: "Rechnung archiviert",
+        message: "Die Rechnung wurde archiviert.",
+        status: "warning",
+      },
+    });
   };
 
   const cancelInvoice = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.cancelInvoice)) return;
-    const res = await fetch("/api/admin/invoices", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, action: "cancel" }),
+    const ok = await confirm({
+      title: "Rechnung stornieren?",
+      message: ADMIN_CONFIRM.cancelInvoice.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Stornieren fehlgeschlagen.", data.error);
-    invoiceCancelled();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/invoices", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action: "cancel" }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Stornieren fehlgeschlagen.");
+        load();
+      },
+      success: ACTION_RESULTS.invoiceCancelled(),
+    });
   };
 
   const deleteInvoice = async (inv: InvoiceRow) => {
     if (inv.status !== "draft") {
-      return showError(
-        "Löschen nicht erlaubt.",
-        "Nur Rechnungs-Entwürfe können gelöscht werden.",
-        "Gesendete oder bezahlte Rechnungen bitte archivieren oder stornieren.",
+      return showResult(
+        ACTION_RESULTS.genericError(
+          "Nur Rechnungs-Entwürfe können gelöscht werden. Gesendete oder bezahlte Rechnungen bitte archivieren oder stornieren.",
+        ),
       );
     }
-    if (!confirmDanger(ADMIN_CONFIRM.deleteInvoiceDraft)) return;
-    const res = await fetch("/api/admin/invoices", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: inv.id }),
+    const ok = await confirm({
+      title: "Rechnung löschen?",
+      message: ADMIN_CONFIRM.deleteInvoiceDraft,
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Dokument konnte nicht gelöscht werden.", data.error);
-    invoiceDeleted();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/invoices", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: inv.id }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Dokument konnte nicht gelöscht werden.");
+        load();
+      },
+      success: ACTION_RESULTS.invoiceDeleted(),
+    });
   };
 
   const bulkArchive = async () => {
     const ids = [...selected];
     if (!ids.length) return;
-    if (!confirmDanger(`Möchten Sie ${ids.length} Rechnung(en) archivieren?`)) return;
-    const res = await fetch("/api/admin/invoices", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "bulk_archive", ids }),
+    const ok = await confirm({
+      title: "Rechnungen archivieren?",
+      message: `Möchten Sie ${ids.length} Rechnung(en) archivieren?`,
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Archivieren fehlgeschlagen.", data.error);
-    invoiceArchived();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/invoices", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "bulk_archive", ids }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
+        load();
+      },
+      success: {
+        title: "Rechnungen archiviert",
+        message: "Die ausgewählten Rechnungen wurden archiviert.",
+        status: "warning",
+      },
+    });
   };
 
   const bulkDelete = async () => {
     const ids = [...selected];
     if (!ids.length) return;
-    if (!confirmDanger(`Möchten Sie ${ids.length} Rechnung(en) wirklich löschen?`)) return;
-    const res = await fetch("/api/admin/invoices", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "bulk_delete", ids }),
+    const ok = await confirm({
+      title: "Rechnungen löschen?",
+      message: `Möchten Sie ${ids.length} Rechnung(en) wirklich löschen?`,
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return showError("Dokument konnte nicht gelöscht werden.", data.error, "Nur Entwürfe können gelöscht werden.");
-    invoiceDeleted();
-    load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/invoices", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "bulk_delete", ids }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Dokument konnte nicht gelöscht werden.");
+        load();
+      },
+      success: ACTION_RESULTS.invoiceDeleted(),
+    });
   };
 
   const toggleSelect = (id: string) => {

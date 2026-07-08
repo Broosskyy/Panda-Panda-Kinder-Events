@@ -17,8 +17,10 @@ import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_CONFIRM, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_CONFIRM } from "@/lib/admin/messages";
 import { CustomerCommunicationTimeline } from "@/components/admin/email/CustomerCommunicationTimeline";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { CRM_CUSTOMER_STATUS_LABELS, type CrmCustomer, type CrmCustomerStatus } from "@/lib/crm/types";
 
 interface CustomerHistory {
@@ -72,7 +74,8 @@ export function CustomersView() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const { customerSaved, saved, fromApi, withLoading, error: showError } = useAdminMessages();
+  const { withLoading, error: showError } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("kunden");
   const empty = ADMIN_EMPTY_STATES.customers;
 
@@ -152,18 +155,22 @@ export function CustomersView() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/customers", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+      await runAction({
+        action: async () => {
+          const res = await fetch("/api/admin/customers", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(form),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Kunde konnte nicht angelegt werden.");
+          setShowForm(false);
+          setForm(emptyForm);
+          await load();
+          if (data.customer?.id) setSelectedId(data.customer.id);
+        },
+        success: ACTION_RESULTS.customerSaved(),
       });
-      const data = await res.json();
-      if (!res.ok) return fromApi(data, "Kunde konnte nicht angelegt werden.");
-      customerSaved();
-      setShowForm(false);
-      setForm(emptyForm);
-      await load();
-      if (data.customer?.id) setSelectedId(data.customer.id);
     } finally {
       setSaving(false);
     }
@@ -177,15 +184,19 @@ export function CustomersView() {
     }
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/customers", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selected.id, ...editForm }),
+      await runAction({
+        action: async () => {
+          const res = await fetch("/api/admin/customers", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: selected.id, ...editForm }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Kunde konnte nicht gespeichert werden.");
+          await load();
+        },
+        success: ACTION_RESULTS.customerSaved(),
       });
-      const data = await res.json();
-      if (!res.ok) return fromApi(data, "Kunde konnte nicht gespeichert werden.");
-      saved();
-      await load();
     } finally {
       setSaving(false);
     }
@@ -193,19 +204,29 @@ export function CustomersView() {
 
   const archiveCustomer = async () => {
     if (!selected) return;
-    if (!confirmDanger(ADMIN_CONFIRM.archiveCustomer)) return;
+    const ok = await confirm({
+      title: "Kunde archivieren?",
+      message: ADMIN_CONFIRM.archiveCustomer.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
+    });
+    if (!ok) return;
 
     setSaving(true);
     try {
-      const res = await fetch("/api/admin/customers", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: selected.id, status: "inactive" }),
+      await runAction({
+        action: async () => {
+          const res = await fetch("/api/admin/customers", {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: selected.id, status: "inactive" }),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
+          await load();
+        },
+        success: ACTION_RESULTS.customerArchived(),
       });
-      const data = await res.json();
-      if (!res.ok) return fromApi(data, "Archivieren fehlgeschlagen.");
-      saved();
-      await load();
     } finally {
       setSaving(false);
     }
@@ -213,7 +234,13 @@ export function CustomersView() {
 
   const deleteCustomer = async () => {
     if (!selected) return;
-    if (!confirmDanger(ADMIN_CONFIRM.deleteCustomer)) return;
+    const ok = await confirm({
+      title: "Kunde löschen?",
+      message: ADMIN_CONFIRM.deleteCustomer.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
+    });
+    if (!ok) return;
 
     setSaving(true);
     try {
@@ -224,16 +251,20 @@ export function CustomersView() {
       });
       const data = await res.json();
       if (res.status === 409 && data.canArchive) {
-        showError(
-          data.error ?? "Löschen nicht möglich",
-          "Nutzen Sie „Archivieren“, um den Kunden zu deaktivieren, ohne verknüpfte Daten zu verlieren.",
+        showResult(
+          ACTION_RESULTS.genericError(
+            "Nutzen Sie „Archivieren“, um den Kunden zu deaktivieren, ohne verknüpfte Daten zu verlieren.",
+          ),
         );
         return;
       }
-      if (!res.ok) return fromApi(data, "Kunde konnte nicht gelöscht werden.");
+      if (!res.ok) {
+        showResult(ACTION_RESULTS.genericError(data.error ?? "Kunde konnte nicht gelöscht werden."));
+        return;
+      }
       setSelectedId(null);
       await load();
-      saved();
+      showResult(ACTION_RESULTS.customerDeleted());
     } finally {
       setSaving(false);
     }

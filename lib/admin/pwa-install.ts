@@ -14,12 +14,16 @@ export type PwaInstallabilityState =
   | "not_installable"
   | "browser_unsupported";
 
+export const PWA_SW_RELOAD_KEY = "pb-admin-pwa-sw-reload-done";
+
 export interface PwaProbeResult {
   state: PwaInstallabilityState;
   manifestLoaded: boolean;
   manifestValid: boolean;
   icons192Ok: boolean;
   icons512Ok: boolean;
+  icons192MimeOk: boolean;
+  icons512MimeOk: boolean;
   serviceWorkerRegistered: boolean;
   serviceWorkerActive: boolean;
   serviceWorkerControlling: boolean;
@@ -27,6 +31,7 @@ export interface PwaProbeResult {
   installPromptAvailable: boolean;
   https: boolean;
   issues: string[];
+  blockers: string[];
   statusLabel: string;
   checkedAt: string;
 }
@@ -140,13 +145,57 @@ export function clearDeferredPrompt(): void {
   }
 }
 
-async function checkIconUrl(path: string): Promise<boolean> {
+async function checkIconUrl(path: string): Promise<{ ok: boolean; mimeOk: boolean }> {
   try {
     const res = await fetch(path, { method: "HEAD", cache: "no-store" });
-    return res.ok;
+    const type = res.headers.get("content-type") ?? "";
+    const mimeOk = type.includes("image/png") || type.includes("image/");
+    return { ok: res.ok, mimeOk: res.ok ? mimeOk : false };
   } catch {
-    return false;
+    return { ok: false, mimeOk: false };
   }
+}
+
+export function explainPwaBlockers(result: PwaProbeResult): string[] {
+  const messages: string[] = [];
+  if (!result.https) messages.push("Die Seite muss über HTTPS erreichbar sein.");
+  if (!result.manifestLoaded) messages.push("Das Web-App-Manifest konnte nicht geladen werden.");
+  if (result.manifestLoaded && !result.manifestValid) {
+    messages.push("Das Manifest ist unvollständig (start_url, scope oder display).");
+  }
+  if (!result.icons192Ok || !result.icons512Ok) {
+    messages.push("Die App-Icons (192×192 / 512×512) sind nicht erreichbar.");
+  }
+  if (result.icons192Ok && !result.icons192MimeOk) {
+    messages.push("Das 192×192-Icon hat keinen gültigen PNG-MIME-Type.");
+  }
+  if (result.icons512Ok && !result.icons512MimeOk) {
+    messages.push("Das 512×512-Icon hat keinen gültigen PNG-MIME-Type.");
+  }
+  if (!result.serviceWorkerRegistered) {
+    messages.push("Kein Service Worker für /admin registriert.");
+  }
+  if (result.serviceWorkerRegistered && !result.serviceWorkerActive) {
+    messages.push("Der Service Worker ist registriert, aber noch nicht aktiv.");
+  }
+  if (result.serviceWorkerActive && !result.serviceWorkerControlling) {
+    messages.push(
+      "Der Service Worker kontrolliert diese Seite noch nicht — Chrome feuert beforeinstallprompt oft erst nach einem Seiten-Reload.",
+    );
+  }
+  if (
+    result.manifestValid &&
+    result.serviceWorkerActive &&
+    result.serviceWorkerControlling &&
+    result.icons192Ok &&
+    result.icons512Ok &&
+    !result.installPromptAvailable
+  ) {
+    messages.push(
+      "Alle technischen Kriterien sind erfüllt, aber Chrome meldet keinen Install-Prompt. Mögliche Ursachen: App bereits installiert, Prompt zuvor abgelehnt, In-App-Browser statt Chrome, oder Chromes Engagement-Heuristik (häufig erst nach erneutem Besuch / längerer Nutzung).",
+    );
+  }
+  return messages;
 }
 
 function buildStatusLabel(state: PwaInstallabilityState, issues: string[]): string {
@@ -158,6 +207,8 @@ function buildStatusLabel(state: PwaInstallabilityState, issues: string[]): stri
     case "browser_unsupported":
       return "Browser nicht unterstützt";
     case "not_installable":
+      if (issues.includes("sw_not_controlling")) return "Service Worker kontrolliert Seite nicht";
+      if (issues.includes("prompt_pending")) return "Install-Prompt noch nicht verfügbar";
       if (issues.includes("manifest_missing")) return "Manifest fehlt";
       if (issues.includes("service_worker_missing")) return "Service Worker fehlt";
       if (issues.includes("icons_missing")) return "Icon fehlt";
@@ -195,8 +246,8 @@ export async function probePwaInstallability(
       };
       manifestValid = Boolean(
         manifest.name &&
-          manifest.start_url === "/admin" &&
-          manifest.scope === "/admin" &&
+          (manifest.start_url === "/admin" || String(manifest.start_url).endsWith("/admin")) &&
+          (manifest.scope === "/admin" || manifest.scope === "/admin/") &&
           manifest.display === "standalone" &&
           Array.isArray(manifest.icons) &&
           manifest.icons.length > 0,
@@ -208,11 +259,15 @@ export async function probePwaInstallability(
     issues.push("manifest_missing");
   }
 
-  const [icons192Ok, icons512Ok] = await Promise.all([
-    checkIconUrl(`${BRAND.assets.icon192}?v=${BRAND.iconVersion}`),
-    checkIconUrl(`${BRAND.assets.icon512}?v=${BRAND.iconVersion}`),
-  ]);
+  const icon192 = await checkIconUrl(`${BRAND.assets.icon192}?v=${BRAND.iconVersion}`);
+  const icon512 = await checkIconUrl(`${BRAND.assets.icon512}?v=${BRAND.iconVersion}`);
+  const icons192Ok = icon192.ok;
+  const icons512Ok = icon512.ok;
+  const icons192MimeOk = icon192.mimeOk;
+  const icons512MimeOk = icon512.mimeOk;
   if (!icons192Ok || !icons512Ok) issues.push("icons_missing");
+  if (icons192Ok && !icons192MimeOk) issues.push("icon192_mime");
+  if (icons512Ok && !icons512MimeOk) issues.push("icon512_mime");
 
   let serviceWorkerRegistered = false;
   let serviceWorkerActive = false;
@@ -228,6 +283,7 @@ export async function probePwaInstallability(
       offlineCapable = serviceWorkerActive;
       if (!serviceWorkerRegistered) issues.push("service_worker_missing");
       else if (!serviceWorkerActive) issues.push("service_worker_inactive");
+      if (serviceWorkerActive && !serviceWorkerControlling) issues.push("sw_not_controlling");
       if (!offlineCapable) issues.push("offline_missing");
     } catch {
       issues.push("service_worker_missing");
@@ -238,6 +294,19 @@ export async function probePwaInstallability(
 
   const standalone = resolvePwaInstalled();
   const installPromptAvailable = Boolean(deferred);
+
+  if (
+    !standalone &&
+    manifestValid &&
+    serviceWorkerActive &&
+    serviceWorkerControlling &&
+    icons192Ok &&
+    icons512Ok &&
+    https &&
+    !installPromptAvailable
+  ) {
+    issues.push("prompt_pending");
+  }
 
   let state: PwaInstallabilityState;
   if (standalone) {
@@ -256,6 +325,8 @@ export async function probePwaInstallability(
     manifestValid,
     icons192Ok,
     icons512Ok,
+    icons192MimeOk,
+    icons512MimeOk,
     serviceWorkerRegistered,
     serviceWorkerActive,
     serviceWorkerControlling,
@@ -263,30 +334,75 @@ export async function probePwaInstallability(
     installPromptAvailable,
     https,
     issues,
+    blockers: explainPwaBlockers({
+      state,
+      manifestLoaded,
+      manifestValid,
+      icons192Ok,
+      icons512Ok,
+      icons192MimeOk,
+      icons512MimeOk,
+      serviceWorkerRegistered,
+      serviceWorkerActive,
+      serviceWorkerControlling,
+      offlineCapable,
+      installPromptAvailable,
+      https,
+      issues,
+      blockers: [],
+      statusLabel: "",
+      checkedAt: "",
+    }),
     statusLabel: buildStatusLabel(state, issues),
     checkedAt: new Date().toISOString(),
   };
 }
 
+const SW_PATHS = ["/admin/sw.js", "/admin-sw.js"] as const;
+
 export async function registerAdminServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
+
+  let reg: ServiceWorkerRegistration | null = null;
+  for (const path of SW_PATHS) {
+    try {
+      reg = await navigator.serviceWorker.register(path, { scope: "/admin/" });
+      break;
+    } catch {
+      continue;
+    }
+  }
+  if (!reg) {
+    console.warn("[pwa] registration failed for all SW paths");
+    return null;
+  }
+
   try {
-    const reg = await navigator.serviceWorker.register("/admin-sw.js", { scope: "/admin" });
-    if (reg.installing) {
+    if (reg.installing || reg.waiting) {
       await new Promise<void>((resolve) => {
-        reg.installing?.addEventListener("statechange", function onChange() {
-          if (reg.installing?.state === "activated" || reg.active) {
-            reg.installing?.removeEventListener("statechange", onChange);
+        const worker = reg?.installing ?? reg?.waiting;
+        const timeout = window.setTimeout(resolve, 4000);
+        worker?.addEventListener("statechange", function onChange() {
+          if (worker.state === "activated" || reg?.active) {
+            worker.removeEventListener("statechange", onChange);
+            window.clearTimeout(timeout);
             resolve();
           }
         });
-        setTimeout(resolve, 3000);
       });
     }
     await navigator.serviceWorker.ready.catch(() => undefined);
-    return reg;
+
+    if (!navigator.serviceWorker.controller && typeof sessionStorage !== "undefined") {
+      const reloaded = sessionStorage.getItem(PWA_SW_RELOAD_KEY) === "1";
+      if (!reloaded && reg.active) {
+        sessionStorage.setItem(PWA_SW_RELOAD_KEY, "1");
+        window.location.reload();
+      }
+    }
   } catch (err) {
-    console.warn("[pwa] registration failed", err);
-    return null;
+    console.warn("[pwa] activation wait failed", err);
   }
+
+  return reg;
 }

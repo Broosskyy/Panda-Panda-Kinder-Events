@@ -16,12 +16,13 @@ import {
 } from "@/components/admin/ui";
 import { Lightbox, type LightboxItem } from "@/components/ui/Lightbox";
 import { StarRating } from "@/components/ui/StarRating";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
-
+import { ADMIN_CONFIRM } from "@/lib/admin/messages";
 interface Review {
   id: string;
   created_at: string;
@@ -57,7 +58,8 @@ export function ReviewsView() {
   const [requestEventType, setRequestEventType] = useState("");
   const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
   const [replyOpen, setReplyOpen] = useState<Set<string>>(new Set());
-  const { toast, withLoading, reviewPublished, reviewSaved, reviewDeleted, reviewRequestSent, error: showError } = useAdminMessages();
+  const { error: showError } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("bewertungen");
   const empty = ADMIN_EMPTY_STATES.reviews;
 
@@ -88,7 +90,7 @@ export function ReviewsView() {
     return true;
   });
 
-  const patch = async (id: string, body: Record<string, unknown>) => {
+  const patch = async (id: string, body: Record<string, unknown>, options?: { silent?: boolean; success?: () => void }) => {
     const res = await fetch("/api/admin/reviews", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -96,63 +98,62 @@ export function ReviewsView() {
     });
     const data = await res.json();
     if (res.ok) {
-      reviewSaved();
       await load();
+      if (!options?.silent) options?.success?.();
       return true;
     }
-    showError("Bewertung konnte nicht gespeichert werden.", data.error, "Bitte Pflichtfelder prüfen und erneut versuchen.");
+    showResult(ACTION_RESULTS.genericError(data.error ?? "Bewertung konnte nicht gespeichert werden."));
     return false;
   };
 
   const uploadReviewImage = async (id: string, file: File, type: "profile" | "event") => {
-    try {
-      await withLoading(
-        (async () => {
-          const fd = new FormData();
-          fd.append("file", file);
-          fd.append("bucket", "reviews");
-          fd.append("folder", type === "profile" ? "profiles" : "events");
-          const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
-          const upData = await up.json();
-          if (!up.ok) throw new Error(upData.error ?? "Upload fehlgeschlagen");
+    await runAction({
+      action: async () => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("bucket", "reviews");
+        fd.append("folder", type === "profile" ? "profiles" : "events");
+        const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const upData = await up.json();
+        if (!up.ok) throw new Error(upData.error ?? "Upload fehlgeschlagen");
 
-          const res = await fetch("/api/admin/reviews", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              id,
-              [type === "profile" ? "profile_image_url" : "event_image_url"]: upData.path,
-            }),
-          });
-          if (!res.ok) throw new Error("Speichern fehlgeschlagen");
-
-          toast(ADMIN_MSG.imageUploaded);
-          await load();
-        })(),
-      );
-    } catch (err) {
-      showError(
-        "Bild konnte nicht geladen werden.",
-        err instanceof Error ? err.message : undefined,
-        "Bitte JPEG, PNG oder WebP unter 5 MB verwenden.",
-      );
-    }
+        const res = await fetch("/api/admin/reviews", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id,
+            [type === "profile" ? "profile_image_url" : "event_image_url"]: upData.path,
+          }),
+        });
+        if (!res.ok) throw new Error("Speichern fehlgeschlagen");
+        await load();
+      },
+      success: ACTION_RESULTS.galleryUploaded(),
+    });
   };
 
   const remove = async (id: string) => {
-    if (!confirmDanger(`${ADMIN_CONFIRM.deleteReview}\n\nDiese Aktion wird protokolliert.`)) return;
-    const res = await fetch("/api/admin/reviews", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+    const ok = await confirm({
+      title: "Bewertung löschen?",
+      message: ADMIN_CONFIRM.deleteReview.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (res.ok) {
-      reviewDeleted();
-      load();
-    } else {
-      showError("Bewertung konnte nicht gelöscht werden.", data.error, "Bitte erneut versuchen.");
-    }
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/reviews", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Bewertung konnte nicht gelöscht werden.");
+        load();
+      },
+      success: ACTION_RESULTS.reviewDeleted(),
+    });
   };
 
   const openImageLightbox = (review: Review, type: "profile" | "event") => {
@@ -208,24 +209,23 @@ export function ReviewsView() {
     ]);
 
     if (resA.ok && resB.ok) {
-      reviewSaved();
       await load();
     } else {
-      showError("Reihenfolge konnte nicht geändert werden.", undefined, "Bitte erneut versuchen.");
+      showResult(ACTION_RESULTS.genericError("Reihenfolge konnte nicht geändert werden."));
     }
   };
 
   const toggleApproved = async (review: Review) => {
-    const ok = await patch(review.id, { approved: !review.approved });
-    if (ok && !review.approved) reviewPublished();
+    const ok = await patch(review.id, { approved: !review.approved }, { silent: true });
+    if (ok && !review.approved) showResult(ACTION_RESULTS.reviewPublished());
   };
 
   const sendReviewRequest = async () => {
     if (!requestEmail.trim() || !requestName.trim()) {
       return showError("Bitte E-Mail und Name eingeben.");
     }
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/email/review-request", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -237,12 +237,16 @@ export function ReviewsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
-        reviewRequestSent();
         setRequestEmail("");
         setRequestName("");
         setRequestEventType("");
-      })(),
-    );
+      },
+      success: {
+        title: "Bewertungsanfrage gesendet",
+        message: "Die Bewertungsanfrage wurde per E-Mail versendet.",
+        status: "success",
+      },
+    });
   };
 
   return (
@@ -316,7 +320,11 @@ export function ReviewsView() {
             const replyDirty = replyValue !== (r.admin_reply ?? "");
             const showReply = replyOpen.has(r.id) || isEditing || Boolean(r.admin_reply);
 
-            const saveReply = () => void patch(r.id, { admin_reply: replyValue });
+            const saveReply = () => {
+              void patch(r.id, { admin_reply: replyValue }, {
+                success: () => showResult(ACTION_RESULTS.reviewReplied()),
+              });
+            };
 
             return (
               <AdminCard key={r.id} className="review-admin-card">

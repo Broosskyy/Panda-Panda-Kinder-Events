@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
-import { ADMIN_CONFIRM, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_CONFIRM } from "@/lib/admin/messages";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 
 interface GalleryItem {
@@ -25,7 +27,8 @@ interface GalleryItem {
 export function GalleryView() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { toast, withLoading, gallerySaved, imageUploaded, imageDeleted, uploading, saveFailed } = useAdminMessages();
+  const { uploading } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("galerie");
   const empty = ADMIN_EMPTY_STATES.gallery;
 
@@ -40,35 +43,31 @@ export function GalleryView() {
 
   const upload = async (file: File) => {
     uploading();
-    try {
-      await withLoading(
-        (async () => {
-          const fd = new FormData();
-          fd.append("file", file);
-          fd.append("bucket", "gallery");
-          fd.append("folder", "images");
-          const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
-          const upData = await up.json();
-          if (!up.ok) throw new Error(upData.error);
+    await runAction({
+      action: async () => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("bucket", "gallery");
+        fd.append("folder", "images");
+        const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const upData = await up.json();
+        if (!up.ok) throw new Error(upData.error ?? "Upload fehlgeschlagen");
 
-          const res = await fetch("/api/admin/gallery", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              storage_path: upData.path,
-              title: file.name.replace(/\.[^.]+$/, ""),
-              alt_text: file.name.replace(/\.[^.]+$/, ""),
-              sort_order: images.length,
-            }),
-          });
-          if (!res.ok) throw new Error("DB Fehler");
-          imageUploaded();
-          await load();
-        })(),
-      );
-    } catch (e) {
-      toast(e instanceof Error ? e.message : "❌ Upload fehlgeschlagen.", "error");
-    }
+        const res = await fetch("/api/admin/gallery", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            storage_path: upData.path,
+            title: file.name.replace(/\.[^.]+$/, ""),
+            alt_text: file.name.replace(/\.[^.]+$/, ""),
+            sort_order: images.length,
+          }),
+        });
+        if (!res.ok) throw new Error("DB Fehler");
+        await load();
+      },
+      success: ACTION_RESULTS.galleryUploaded(),
+    });
   };
 
   const update = async (id: string, updates: Partial<GalleryItem>) => {
@@ -77,23 +76,34 @@ export function GalleryView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, ...updates }),
     });
-    if (res.ok) {
-      gallerySaved();
+    if (!res.ok) {
+      showResult(ACTION_RESULTS.genericError("Speichern fehlgeschlagen."));
+    } else {
       load();
-    } else saveFailed();
+    }
   };
 
   const remove = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.deleteImage)) return;
-    const res = await fetch("/api/admin/gallery", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
+    const ok = await confirm({
+      title: "Bild löschen?",
+      message: ADMIN_CONFIRM.deleteImage.replace(/\n\nFortfahren\?$/, ""),
+      destructive: true,
+      audited: true,
     });
-    if (res.ok) {
-      imageDeleted();
-      load();
-    } else toast("❌ Löschen fehlgeschlagen.", "error");
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/gallery", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        if (!res.ok) throw new Error("Löschen fehlgeschlagen.");
+        load();
+      },
+      success: ACTION_RESULTS.galleryDeleted(),
+    });
   };
 
   return (

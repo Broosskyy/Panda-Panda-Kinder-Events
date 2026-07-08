@@ -6,8 +6,10 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminUserManageDialog } from "@/components/admin/AdminUserManageDialog";
 import { CriticalActionModal } from "@/components/admin/CriticalActionModal";
 import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
 import { AdminActionMenu, AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
@@ -77,7 +79,8 @@ export function UsersView() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<AdminUserPublic | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const { toast, withLoading, fromApi } = useAdminMessages();
+  const { toast } = useAdminMessages();
+  const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("benutzer");
 
   const load = useCallback(async () => {
@@ -122,10 +125,10 @@ export function UsersView() {
 
   const save = async () => {
     if (!form.username || !form.email || !form.displayName || !form.roleId) {
-      return toast("Bitte alle Pflichtfelder ausfüllen.", "error");
+      return showResult(ACTION_RESULTS.genericError("Bitte alle Pflichtfelder ausfüllen."));
     }
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         const payload = {
           ...form,
           teamMemberId: form.teamMemberId || null,
@@ -140,36 +143,70 @@ export function UsersView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(ADMIN_MSG.userSaved);
         setShowForm(false);
         setEditingId(null);
         await load();
-      })(),
-    );
+      },
+      success: editingId ? ACTION_RESULTS.userSaved() : ACTION_RESULTS.userCreated(),
+    });
   };
 
   const toggleActive = async (user: AdminUserPublic) => {
-    const res = await fetch("/api/admin/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: user.id, active: !user.active }),
+    if (user.active) {
+      const ok = await confirm({
+        title: "Benutzer deaktivieren?",
+        message: "Der Benutzer kann sich danach nicht mehr anmelden.",
+        destructive: true,
+        audited: true,
+      });
+      if (!ok) return;
+    }
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: user.id, active: !user.active }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Status konnte nicht geändert werden.");
+        await load();
+        return { wasActive: user.active };
+      },
+      success: (result) =>
+        result.wasActive
+          ? ACTION_RESULTS.userDeactivated()
+          : {
+              title: "Benutzer aktiviert",
+              message: "Der Benutzer kann sich wieder anmelden.",
+              status: "success" as const,
+            },
     });
-    const data = await res.json();
-    if (!res.ok) return fromApi(data, "Status konnte nicht geändert werden.");
-    toast(user.active ? "Benutzer deaktiviert." : "Benutzer aktiviert.");
-    await load();
   };
 
   const reset2fa = async (user: AdminUserPublic) => {
-    const res = await fetch("/api/admin/users", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: user.id, action: "reset2fa" }),
+    const ok = await confirm({
+      title: "2FA zurücksetzen?",
+      message: "Die Zwei-Faktor-Authentifizierung des Benutzers wird zurückgesetzt.",
+      destructive: true,
+      audited: true,
     });
-    const data = await res.json();
-    if (!res.ok) return fromApi(data, "2FA konnte nicht zurückgesetzt werden.");
-    toast("2FA zurückgesetzt.");
-    await load();
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/users", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: user.id, action: "reset2fa" }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "2FA konnte nicht zurückgesetzt werden.");
+        await load();
+      },
+      success: ACTION_RESULTS.twoFaReset(),
+    });
   };
 
   const showAuthenticatedEmpty = !loading && !loadError && users.length === 0 && Boolean(meta?.authenticated);
@@ -450,8 +487,6 @@ export function UsersView() {
         canInvite={Boolean(meta?.canInvite)}
         canCreateManually={Boolean(meta?.canCreateUsers)}
         defaultTab="invite"
-        toast={toast}
-        withLoading={withLoading}
       />
 
       <CriticalActionModal
@@ -475,7 +510,7 @@ export function UsersView() {
           const data = await res.json();
           setDeleteLoading(false);
           if (!res.ok) throw new Error(data.error ?? "Löschen fehlgeschlagen");
-          toast("Benutzer gelöscht.");
+          showResult(ACTION_RESULTS.userDeleted());
           setDeleteTarget(null);
           await load();
         }}

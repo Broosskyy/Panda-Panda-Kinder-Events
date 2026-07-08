@@ -7,6 +7,8 @@ import { AdminButton } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { EmailVariableHelp } from "@/components/admin/email/EmailVariableHelp";
 import { EmailPreviewFrame } from "@/components/admin/email/EmailPreviewFrame";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
@@ -72,7 +74,8 @@ function layoutFromTemplate(t: EmailTemplateRecord): EmailTemplateLayout {
 }
 
 export function EmailsView() {
-  const { toast, withLoading, error: showError } = useAdminMessages();
+  const { withLoading, error: showError } = useAdminMessages();
+  const { runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("emails");
   const emptyLog = ADMIN_EMPTY_STATES.emailLogs;
   const [tab, setTab] = useState<Tab>("templates");
@@ -132,8 +135,8 @@ export function EmailsView() {
   const saveTemplate = async () => {
     const t = templates.find((x) => x.slug === selectedSlug);
     if (!t) return;
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/email/templates", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -152,30 +155,34 @@ export function EmailsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        toast(ADMIN_MSG.templateSaved);
         await load();
-      })(),
-    );
+      },
+      success: ACTION_RESULTS.settingsSaved(),
+    });
   };
 
   const resetTemplate = async () => {
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         const res = await fetch(`/api/admin/email/templates/${encodeURIComponent(selectedSlug)}/reset`, {
           method: "POST",
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Zurücksetzen fehlgeschlagen");
-        toast(data.message ?? "Vorlage zurückgesetzt.");
         await load();
-      })(),
-    );
+      },
+      success: {
+        title: "Vorlage zurückgesetzt",
+        message: "Die Vorlage wurde auf den Standard zurückgesetzt.",
+        status: "success",
+      },
+    });
   };
 
   const sendTestAll = async () => {
     if (!testTo.trim()) return showError("Bitte Empfänger eingeben.");
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         for (const slug of CORE_TEMPLATES) {
           const t = templates.find((x) => x.slug === slug);
           if (!t?.is_active) continue;
@@ -189,18 +196,16 @@ export function EmailsView() {
             throw new Error(data.error ?? `Test für ${slug} fehlgeschlagen`);
           }
         }
-        toast("E-Mail erfolgreich versendet.");
         await load();
-      })(),
-    ).catch((err: unknown) => {
-      toast(err instanceof Error ? err.message : "E-Mail konnte nicht versendet werden.", "error");
+      },
+      success: ACTION_RESULTS.emailTestSent(),
     });
   };
 
   const sendTest = async () => {
     if (!testTo.trim()) return showError("Bitte Empfänger eingeben.");
-    await withLoading(
-      (async () => {
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/email/compose", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -215,11 +220,9 @@ export function EmailsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? ADMIN_MSG.sendFailed);
-        toast("E-Mail erfolgreich versendet.");
         await load();
-      })(),
-    ).catch((err: unknown) => {
-      toast(err instanceof Error ? err.message : "E-Mail konnte nicht versendet werden.", "error");
+      },
+      success: ACTION_RESULTS.emailTestSent(),
     });
   };
 

@@ -84,7 +84,7 @@ export function Contact({
   const contactLinks = buildContactLinks(contact);
 
   return (
-    <section id="kontakt" className="relative section-padding section-warm form-chrome-safe">
+    <section id="kontakt" className="relative section-padding section-warm">
       <FlowerOrnament className="absolute right-4 top-20 hidden h-28 w-28 opacity-25 lg:block" variant="right" />
 
       <Container>
@@ -94,7 +94,7 @@ export function Contact({
 
         <div className="grid gap-4 sm:gap-12 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <ScrollReveal>
-            <Card padding="lg" hover={false} className="form-luxury">
+            <Card padding="lg" hover={false} className="form-luxury form-chrome-safe">
               <InquiryForm privacyHint={privacyHint} />
             </Card>
           </ScrollReveal>

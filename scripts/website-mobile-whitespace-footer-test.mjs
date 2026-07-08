@@ -28,9 +28,13 @@ const css = read("src/app/globals.css");
 const header = read("components/layout/Header.tsx");
 const footer = read("components/layout/Footer.tsx");
 
-if (css.match(/\.section-padding\s*\{[^}]*padding-top:\s*0\.5rem/)) {
-  ok("Mobile base section padding 0.5rem");
+if (css.match(/\.section-padding\s*\{[^}]*padding-top:\s*1rem/)) {
+  ok("Mobile base section padding 1rem");
 } else fail("Mobile base section padding not set");
+
+if (css.includes(".public-main") && css.includes("padding-bottom: 0")) {
+  ok("Public main avoids double chrome padding (footer owns clearance)");
+} else fail("Public main chrome dedup missing");
 
 if (css.includes("#bewertungen") && css.includes("padding-bottom: 0.375rem")) {
   ok("Bewertungen section bottom tightened");
@@ -40,7 +44,7 @@ if (css.includes("#ueber-uns") && css.includes("padding-top: 0.375rem")) {
   ok("Über uns top gap tightened after reviews");
 } else fail("Über uns gap fix missing");
 
-if (css.includes("#kontakt") && css.includes("padding-bottom: 0.375rem")) {
+if (css.includes("#kontakt") && css.includes("padding-bottom: 0.75rem")) {
   ok("Kontakt bottom gap tightened before footer");
 } else fail("Kontakt footer gap fix missing");
 
@@ -60,7 +64,9 @@ if (css.includes("padding-right: max(0.75rem, env(safe-area-inset-right")) {
   ok("Header safe-area right padding");
 } else fail("Header safe-area missing");
 
-if (css.includes("form-chrome-safe") && css.includes("0.5rem + var(--chrome-bottom-mobile)")) {
+if (css.includes("form-luxury.form-chrome-safe") && css.includes("0.5rem + var(--chrome-bottom-mobile)")) {
+  ok("Form chrome padding scoped to contact form");
+} else if (css.includes("form-chrome-safe") && css.includes("0.5rem + var(--chrome-bottom-mobile)")) {
   ok("Sticky CTA chrome padding minimized");
 } else fail("Chrome padding not optimized");
 

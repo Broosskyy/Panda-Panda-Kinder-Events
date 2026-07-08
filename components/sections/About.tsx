@@ -39,7 +39,7 @@ export function About({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid items-start gap-4 sm:gap-14 lg:grid-cols-2 lg:gap-12 xl:gap-20">
+        <div className="grid items-start gap-4 sm:gap-8 lg:grid-cols-2 lg:gap-12 xl:gap-16">
           <ScrollReveal>
             <div className="relative">
               <FlowerOrnament className="pointer-events-none absolute -left-2 -top-4 h-16 w-16 opacity-25 sm:-left-6 sm:-top-6 sm:h-24 sm:w-24 sm:opacity-35" />
@@ -99,7 +99,7 @@ export function About({
         </ScrollReveal>
 
         {teamItems.length > 0 ? (
-          <div id="unser-team" className="mt-6 sm:mt-20">
+          <div id="unser-team" className="mt-6 sm:mt-12 lg:mt-16">
             <ScrollReveal>
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
                 {teamHeading}
@@ -116,7 +116,7 @@ export function About({
                 <li key={`${member.name}-${member.role}-${i}`}>
                   <ScrollReveal delay={i * 80}>
                     <Card className="team-card h-full overflow-hidden !p-0" padding="sm" hover>
-                      <div className="team-card-image relative aspect-[4/3] w-full overflow-hidden bg-bg-secondary sm:aspect-[4/5]">
+                      <div className="team-card-image relative aspect-[4/3] w-full overflow-hidden bg-bg-secondary">
                         <TeamMemberImage
                           src={member.imageUrl}
                           name={member.name}

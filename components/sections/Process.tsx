@@ -27,11 +27,11 @@ export function Process({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid items-center gap-5 lg:grid-cols-[1fr_auto] lg:gap-24">
+        <div className="grid items-center gap-5 lg:grid-cols-[1fr_auto] lg:gap-12 xl:gap-16">
           <div className="relative">
             <div className="timeline-line lg:hidden" aria-hidden />
             <ol
-              className="flex flex-col gap-2.5 sm:gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
+              className="flex flex-col gap-2.5 sm:gap-5 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
               role="list"
             >
               {steps.map((step, index) => {

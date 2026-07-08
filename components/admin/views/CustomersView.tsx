@@ -509,7 +509,7 @@ export function CustomersView() {
           </AdminButton>
         </AdminCard>
       ) : (
-        <div className={`grid gap-6 lg:grid-cols-[minmax(280px,1fr)_minmax(0,1.5fr)] ${selectedId ? "admin-customer-split" : ""}`}>
+        <div className={`grid gap-6 lg:grid-cols-[minmax(280px,1fr)_minmax(0,1.5fr)] xl:grid-cols-[minmax(300px,0.95fr)_minmax(0,1.05fr)] ${selectedId ? "admin-customer-split" : ""}`}>
           <div className={`space-y-3 ${selectedId ? "hidden lg:block" : ""}`}>
             {customers.length === 0 ? (
               <AdminEmptyState

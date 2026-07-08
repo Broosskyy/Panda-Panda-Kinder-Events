@@ -53,6 +53,17 @@ html {
   --chrome-bottom-mobile: calc(
     var(--floating-contact-gap) + var(--floating-contact-size) + 0.5rem
   );
+  /* Shared overlay tokens (public + admin) */
+  --admin-overlay-backdrop: rgba(26, 27, 23, 0.55);
+  --admin-overlay-backdrop-strong: rgba(26, 27, 23, 0.72);
+  --admin-overlay-blur: 4px;
+  --admin-status-success: #4a7c59;
+  --admin-status-success-text: #2d5a3a;
+  --admin-status-warning: #d97706;
+  --admin-status-warning-text: #92400e;
+  --admin-status-danger: #c45c5c;
+  --admin-status-info: #52563e;
+  --admin-status-muted: #575757;
 }
 
 @media (max-width: 767px) {
@@ -1501,6 +1512,18 @@ img {
   --admin-shadow: var(--shadow-sm);
   --admin-bottom-nav-height: calc(3.375rem + env(safe-area-inset-bottom, 0px));
   --admin-mobile-content-pad: calc(var(--admin-bottom-nav-height) + 1.5rem);
+  /* Overlay tokens — single source for modals, drawers, sheets */
+  --admin-overlay-backdrop: rgba(26, 27, 23, 0.55);
+  --admin-overlay-backdrop-strong: rgba(26, 27, 23, 0.72);
+  --admin-overlay-blur: 4px;
+  /* Status color semantics */
+  --admin-status-success: #4a7c59;
+  --admin-status-success-text: #2d5a3a;
+  --admin-status-warning: #d97706;
+  --admin-status-warning-text: #92400e;
+  --admin-status-danger: var(--color-accent-heart);
+  --admin-status-info: var(--color-primary);
+  --admin-status-muted: var(--admin-text-muted);
   background: var(--admin-bg);
   color: var(--admin-text);
 }
@@ -1741,8 +1764,9 @@ img {
 .admin-drawer-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(44, 44, 44, 0.45);
-  backdrop-filter: blur(2px);
+  background: var(--admin-overlay-backdrop);
+  backdrop-filter: blur(var(--admin-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--admin-overlay-blur));
 }
 
 .admin-drawer-panel {
@@ -2263,12 +2287,32 @@ img {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
+  min-height: 2.75rem;
   border-radius: 0.75rem;
   padding: 0.625rem 1rem;
   font-size: 0.875rem;
   font-weight: 600;
-  transition: opacity 0.2s ease, background 0.2s ease, transform 0.2s ease;
+  line-height: 1.2;
+  transition: opacity 0.2s ease, background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
   white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-btn-primary:focus-visible,
+.admin-btn-secondary:focus-visible,
+.admin-btn-danger:focus-visible,
+.admin-btn-ghost:focus-visible,
+.admin-btn-success:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--admin-accent) 40%, transparent);
+  outline-offset: 2px;
+}
+
+.admin-btn-primary:active:not(:disabled),
+.admin-btn-secondary:active:not(:disabled),
+.admin-btn-danger:active:not(:disabled),
+.admin-btn-ghost:active:not(:disabled),
+.admin-btn-success:active:not(:disabled) {
+  transform: scale(0.98);
 }
 
 .admin-btn-primary {
@@ -2294,9 +2338,9 @@ img {
 }
 
 .admin-btn-success {
-  background: color-mix(in srgb, #4a7c59 14%, white);
-  color: #2d5a3a;
-  border: 1px solid color-mix(in srgb, #4a7c59 30%, transparent);
+  background: color-mix(in srgb, var(--admin-status-success) 14%, white);
+  color: var(--admin-status-success-text);
+  border: 1px solid color-mix(in srgb, var(--admin-status-success) 30%, transparent);
 }
 
 .admin-btn-loading {
@@ -2338,27 +2382,69 @@ img {
 }
 
 .admin-status-badge-success {
-  background: color-mix(in srgb, #4a7c59 14%, transparent);
-  color: #3d6649;
+  background: color-mix(in srgb, var(--admin-status-success) 14%, transparent);
+  color: var(--admin-status-success-text);
 }
 
 .admin-status-badge-warning {
-  background: color-mix(in srgb, #d97706 14%, transparent);
-  color: #92400e;
+  background: color-mix(in srgb, var(--admin-status-warning) 14%, transparent);
+  color: var(--admin-status-warning-text);
 }
 
 .admin-status-badge-info {
-  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
-  color: var(--color-primary);
+  background: color-mix(in srgb, var(--admin-status-info) 12%, transparent);
+  color: var(--admin-status-info);
 }
 
 .admin-status-badge-danger {
-  background: color-mix(in srgb, var(--color-accent-heart) 14%, transparent);
-  color: var(--color-accent-heart);
+  background: color-mix(in srgb, var(--admin-status-danger) 14%, transparent);
+  color: var(--admin-status-danger);
 }
 
 .admin-status-badge-muted {
   background: var(--admin-surface-muted);
+  color: var(--admin-status-muted);
+}
+
+/* Alert banners — consistent status messaging */
+.admin-alert {
+  border-radius: 0.75rem;
+  border-width: 1px;
+  border-style: solid;
+  padding: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.45;
+}
+
+.admin-alert-success {
+  border-color: color-mix(in srgb, var(--admin-status-success) 35%, transparent);
+  background: color-mix(in srgb, var(--admin-status-success) 10%, white);
+  color: var(--admin-status-success-text);
+}
+
+.admin-alert-warning {
+  border-color: color-mix(in srgb, var(--admin-status-warning) 35%, transparent);
+  background: color-mix(in srgb, var(--admin-status-warning) 10%, white);
+  color: var(--admin-status-warning-text);
+}
+
+.admin-alert-danger {
+  border-color: color-mix(in srgb, var(--admin-status-danger) 35%, transparent);
+  background: color-mix(in srgb, var(--admin-status-danger) 10%, white);
+  color: var(--admin-status-danger);
+}
+
+.admin-alert-info {
+  border-color: color-mix(in srgb, var(--admin-status-info) 25%, transparent);
+  background: var(--admin-accent-soft);
+  color: var(--admin-text);
+}
+
+.admin-text-body {
+  color: var(--admin-text);
+}
+
+.admin-text-muted {
   color: var(--admin-text-muted);
 }
 
@@ -2754,9 +2840,9 @@ img {
 .admin-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(26, 27, 23, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: var(--admin-overlay-backdrop);
+  backdrop-filter: blur(var(--admin-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--admin-overlay-blur));
 }
 
 .admin-modal-panel {
@@ -3052,9 +3138,9 @@ body.lightbox-open .floating-contact-stack {
 .service-modal-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(26, 27, 23, 0.55);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: var(--admin-overlay-backdrop);
+  backdrop-filter: blur(var(--admin-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--admin-overlay-blur));
 }
 
 .service-modal-panel {
@@ -4255,8 +4341,9 @@ html[data-mobile-menu-open="true"] {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(20, 22, 16, 0.45);
-  backdrop-filter: blur(2px);
+  background: var(--admin-overlay-backdrop);
+  backdrop-filter: blur(var(--admin-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--admin-overlay-blur));
 }
 
 .admin-pwa-help-sheet-panel {
@@ -4619,7 +4706,7 @@ html[data-mobile-menu-open="true"] {
   position: absolute;
   inset: 0;
   border: none;
-  background: rgba(26, 27, 23, 0.72);
+  background: var(--admin-overlay-backdrop-strong);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: admin-action-sheet-fade-in 200ms ease-out;
@@ -4763,8 +4850,9 @@ html[data-mobile-menu-open="true"] {
 .admin-user-manage-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(44, 44, 44, 0.45);
-  backdrop-filter: blur(2px);
+  background: var(--admin-overlay-backdrop);
+  backdrop-filter: blur(var(--admin-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--admin-overlay-blur));
 }
 
 .admin-user-manage-panel {
@@ -4944,8 +5032,9 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
   position: absolute;
   inset: 0;
   border: 0;
-  background: rgba(26, 27, 23, 0.55);
-  backdrop-filter: blur(1px);
+  background: var(--admin-overlay-backdrop);
+  backdrop-filter: blur(var(--admin-overlay-blur));
+  -webkit-backdrop-filter: blur(var(--admin-overlay-blur));
 }
 
 .admin-overlay-modal-panel {
@@ -5035,7 +5124,7 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
 .admin-onboarding-v2-backdrop {
   position: absolute;
   inset: 0;
-  background: rgba(26, 27, 23, 0.72);
+  background: var(--admin-overlay-backdrop-strong);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
 }

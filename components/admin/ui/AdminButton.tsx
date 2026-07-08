@@ -10,7 +10,7 @@ interface AdminButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   rel?: AnchorHTMLAttributes<HTMLAnchorElement>["rel"];
   icon?: ReactNode;
   loading?: boolean;
-  children: ReactNode;
+  children?: ReactNode;
 }
 
 const variantClass: Record<AdminButtonVariant, string> = {
@@ -37,7 +37,7 @@ export function AdminButton({
   const content = (
     <>
       {loading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden /> : icon}
-      {children}
+      {children ?? null}
     </>
   );
 

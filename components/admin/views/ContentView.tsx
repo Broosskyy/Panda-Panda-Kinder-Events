@@ -3,8 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminLoadingCard } from "@/components/admin/ui";
-import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { useAdminUi } from "@/components/admin/AdminUiProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { SERVICE_ICON_KEYS } from "@/lib/cms/icons";
 import type { SiteSectionHeading, SiteSettingsBundle } from "@/lib/cms/types";
@@ -23,7 +26,8 @@ const SECTION_LABELS: Record<keyof SiteSettingsBundle["sections"], string> = {
 };
 
 export function ContentView() {
-  const { withLoading, savedCms, imageUploaded, saveFailed, error: showError } = useAdminMessages();
+  const { withLoading } = useAdminUi();
+  const { runAction, showResult } = useAdminActionFeedback();
   const page = adminPageHeaderProps("inhalte");
   const [settings, setSettings] = useState<SiteSettingsBundle | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -43,9 +47,9 @@ export function ContentView() {
     void withLoading(load().catch((err) => {
       const message = err instanceof Error ? err.message : "Inhalte konnten nicht geladen werden.";
       setLoadError(message);
-      showError("Inhalte konnten nicht geladen werden.", message, "Bitte Seite neu laden.");
+      showResult(ACTION_RESULTS.genericError(message));
     }));
-  }, [load, withLoading, showError]);
+  }, [load, withLoading, showResult]);
 
   const saveSection = async (
     section: keyof SiteSettingsBundle,
@@ -54,34 +58,59 @@ export function ContentView() {
     const payload = value ?? settings?.[section];
     if (!payload) return;
 
-    try {
-      await withLoading(
-        (async () => {
-          const res = await fetch("/api/admin/settings", {
-            method: "PUT",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ section, value: payload }),
-          });
-          const data = await res.json();
-          if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-          savedCms();
-        })(),
-      );
-    } catch (err) {
-      saveFailed(err instanceof Error ? err.message : undefined);
-    }
+    const sectionLabel =
+      section === "sections"
+        ? "Bereichsüberschriften"
+        : section === "navigation"
+          ? "Navigation"
+          : section === "hero"
+            ? "Hero"
+            : section === "trustBadges"
+              ? "Vertrauens-Badges"
+              : section === "usps"
+                ? "USPs"
+                : section === "process"
+                  ? "Buchungsablauf"
+                  : section === "contact"
+                    ? "Kontakt"
+                    : section === "about"
+                      ? "Über uns"
+                      : section === "footer"
+                        ? "Footer"
+                        : String(section);
+
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/settings", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ section, value: payload }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
+        return data;
+      },
+      success: ACTION_RESULTS.contentSaved(sectionLabel),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
   };
 
   const uploadImage = async (file: File, folder: string, onPath: (path: string) => void) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("bucket", "site-assets");
-    fd.append("folder", folder);
-    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen");
-    onPath(data.path);
-    imageUploaded();
+    await runAction({
+      action: async () => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("bucket", "site-assets");
+        fd.append("folder", folder);
+        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen");
+        onPath(data.path);
+        return data;
+      },
+      success: ACTION_RESULTS.imageUploaded(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
   };
 
   const updateSectionHeading = (
@@ -104,7 +133,7 @@ export function ContentView() {
       <div>
         <AdminPageHeader {...page} />
         <AdminCard>
-          <p className="text-sm text-text-muted">{loadError}</p>
+          <p className="text-sm admin-text-muted">{loadError}</p>
         </AdminCard>
       </div>
     );
@@ -124,7 +153,7 @@ export function ContentView() {
       <AdminPageHeader {...page} />
 
       <AdminCard title="Logo & Branding">
-        <p className="text-sm text-text-muted">
+        <p className="text-sm admin-text-muted">
           Logo-Einstellungen findest du unter{" "}
           <a href="/admin/einstellungen?tab=branding" className="font-medium text-primary underline">
             Einstellungen → Branding
@@ -175,21 +204,20 @@ export function ContentView() {
                   setSettings({ ...settings, navigation: { ...settings.navigation, items } });
                 }}
               />
-              <button
-                type="button"
-                className="admin-btn-danger"
+              <AdminButton
+                variant="danger"
+                icon={<Trash2 className="h-4 w-4" />}
                 onClick={() => {
                   const items = settings.navigation.items.filter((_, i) => i !== index);
                   setSettings({ ...settings, navigation: { ...settings.navigation, items } });
                 }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+                aria-label={ADMIN_BTN.delete}
+              />
             </div>
           ))}
-          <button
-            type="button"
-            className="admin-btn-secondary"
+          <AdminButton
+            variant="secondary"
+            icon={<Plus className="h-4 w-4" />}
             onClick={() =>
               setSettings({
                 ...settings,
@@ -200,12 +228,12 @@ export function ContentView() {
               })
             }
           >
-            <Plus className="h-4 w-4" /> Navigationspunkt
-          </button>
+            Navigationspunkt
+          </AdminButton>
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("navigation")}>
-          <Save className="h-4 w-4" /> Navigation speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("navigation")}>
+          Navigation speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="Hero">
@@ -228,14 +256,14 @@ export function ContentView() {
                 if (!file) return;
                 void uploadImage(file, "hero", (path) =>
                   setSettings((s) => (s ? { ...s, hero: { ...s.hero, imageUrl: path } } : s)),
-                ).catch((err) => saveFailed(err instanceof Error ? err.message : undefined));
+                );
               }}
             />
           </label>
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("hero")}>
-          <Save className="h-4 w-4" /> Hero speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("hero")}>
+          Hero speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="Trust Badges">
@@ -266,21 +294,20 @@ export function ContentView() {
                   setSettings({ ...settings, trustBadges: { items } });
                 }}
               />
-              <button
-                type="button"
-                className="admin-btn-danger"
+              <AdminButton
+                variant="danger"
+                icon={<Trash2 className="h-4 w-4" />}
                 onClick={() => {
                   const items = settings.trustBadges.items.filter((_, i) => i !== index);
                   setSettings({ ...settings, trustBadges: { items } });
                 }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </button>
+                aria-label={ADMIN_BTN.delete}
+              />
             </div>
           ))}
-          <button
-            type="button"
-            className="admin-btn-secondary"
+          <AdminButton
+            variant="secondary"
+            icon={<Plus className="h-4 w-4" />}
             onClick={() =>
               setSettings({
                 ...settings,
@@ -290,12 +317,12 @@ export function ContentView() {
               })
             }
           >
-            <Plus className="h-4 w-4" /> Badge hinzufügen
-          </button>
+            Badge hinzufügen
+          </AdminButton>
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("trustBadges")}>
-          <Save className="h-4 w-4" /> Trust Badges speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("trustBadges")}>
+          Trust Badges speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="USP-Karten">
@@ -332,16 +359,15 @@ export function ContentView() {
                     setSettings({ ...settings, usps: { ...settings.usps, items } });
                   }}
                 />
-                <button
-                  type="button"
-                  className="admin-btn-danger"
+                <AdminButton
+                  variant="danger"
+                  icon={<Trash2 className="h-4 w-4" />}
                   onClick={() => {
                     const items = settings.usps.items.filter((_, i) => i !== index);
                     setSettings({ ...settings, usps: { ...settings.usps, items } });
                   }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  aria-label={ADMIN_BTN.delete}
+                />
               </div>
               <textarea
                 className="admin-input mt-2 min-h-20 w-full"
@@ -355,9 +381,9 @@ export function ContentView() {
               />
             </div>
           ))}
-          <button
-            type="button"
-            className="admin-btn-secondary"
+          <AdminButton
+            variant="secondary"
+            icon={<Plus className="h-4 w-4" />}
             onClick={() =>
               setSettings({
                 ...settings,
@@ -371,12 +397,12 @@ export function ContentView() {
               })
             }
           >
-            <Plus className="h-4 w-4" /> USP hinzufügen
-          </button>
+            USP hinzufügen
+          </AdminButton>
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("usps")}>
-          <Save className="h-4 w-4" /> USPs speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("usps")}>
+          USPs speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="Buchungsablauf">
@@ -425,16 +451,15 @@ export function ContentView() {
                     setSettings({ ...settings, process: { ...settings.process, steps } });
                   }}
                 />
-                <button
-                  type="button"
-                  className="admin-btn-danger"
+                <AdminButton
+                  variant="danger"
+                  icon={<Trash2 className="h-4 w-4" />}
                   onClick={() => {
                     const steps = settings.process.steps.filter((_, i) => i !== index);
                     setSettings({ ...settings, process: { ...settings.process, steps } });
                   }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  aria-label={ADMIN_BTN.delete}
+                />
               </div>
               <textarea
                 className="admin-input mt-2 min-h-20 w-full"
@@ -448,9 +473,9 @@ export function ContentView() {
               />
             </div>
           ))}
-          <button
-            type="button"
-            className="admin-btn-secondary"
+          <AdminButton
+            variant="secondary"
+            icon={<Plus className="h-4 w-4" />}
             onClick={() =>
               setSettings({
                 ...settings,
@@ -469,12 +494,12 @@ export function ContentView() {
               })
             }
           >
-            <Plus className="h-4 w-4" /> Schritt hinzufügen
-          </button>
+            Schritt hinzufügen
+          </AdminButton>
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("process")}>
-          <Save className="h-4 w-4" /> Buchungsablauf speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("process")}>
+          Buchungsablauf speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="Sektions-Überschriften">
@@ -499,9 +524,9 @@ export function ContentView() {
             </div>
           ))}
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("sections")}>
-          <Save className="h-4 w-4" /> Überschriften speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("sections")}>
+          Überschriften speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="Kontakt & Social">
@@ -520,9 +545,9 @@ export function ContentView() {
         <p className="mt-3 text-xs text-text-muted">
           WhatsApp-Button und Social-Links im Footer nutzen diese Kontaktdaten.
         </p>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("contact")}>
-          <Save className="h-4 w-4" /> Kontakt speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("contact")}>
+          Kontakt speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="Über die Panda-Bande & Team">
@@ -552,7 +577,7 @@ export function ContentView() {
                   setSettings({ ...settings, about: newAbout });
                   await saveSection("about", newAbout);
                   await load();
-                }).catch((err) => saveFailed(err instanceof Error ? err.message : undefined));
+                });
               }}
             />
           </label>
@@ -561,9 +586,9 @@ export function ContentView() {
             <img src={settings.about.imageUrl} alt="" className="h-40 w-40 rounded-2xl object-cover" />
           ) : null}
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("about")}>
-          <Save className="h-4 w-4" /> Über uns speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("about")}>
+          Über uns speichern
+        </AdminButton>
       </AdminCard>
 
       <AdminCard title="Öffentliches Team">
@@ -583,9 +608,9 @@ export function ContentView() {
           <input className="admin-input md:col-span-2" placeholder="Tagline" value={settings.footer.tagline} onChange={(e) => setSettings({ ...settings, footer: { ...settings.footer, tagline: e.target.value } })} />
           <input className="admin-input md:col-span-2" placeholder="Copyright Name" value={settings.footer.copyrightName} onChange={(e) => setSettings({ ...settings, footer: { ...settings.footer, copyrightName: e.target.value } })} />
         </div>
-        <button type="button" className="admin-btn-primary mt-4" onClick={() => void saveSection("footer")}>
-          <Save className="h-4 w-4" /> Footer speichern
-        </button>
+        <AdminButton variant="primary" className="mt-4" icon={<Save className="h-4 w-4" />} onClick={() => void saveSection("footer")}>
+          Footer speichern
+        </AdminButton>
       </AdminCard>
     </div>
   );

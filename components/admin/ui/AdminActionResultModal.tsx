@@ -13,10 +13,10 @@ interface AdminActionResultModalProps {
 }
 
 function StatusIcon({ status }: { status: ActionResultPayload["status"] }) {
-  if (status === "success") return <CheckCircle2 className="h-6 w-6 text-[#2d5a3a]" aria-hidden />;
-  if (status === "warning") return <AlertTriangle className="h-6 w-6 text-amber-600" aria-hidden />;
-  if (status === "error") return <XCircle className="h-6 w-6 text-red-600" aria-hidden />;
-  return <Info className="h-6 w-6 text-primary" aria-hidden />;
+  if (status === "success") return <CheckCircle2 className="h-6 w-6 text-[var(--admin-status-success-text)]" aria-hidden />;
+  if (status === "warning") return <AlertTriangle className="h-6 w-6 text-[var(--admin-status-warning)]" aria-hidden />;
+  if (status === "error") return <XCircle className="h-6 w-6 text-[var(--admin-status-danger)]" aria-hidden />;
+  return <Info className="h-6 w-6 text-[var(--admin-status-info)]" aria-hidden />;
 }
 
 export function AdminActionResultModal({ open, payload, onClose }: AdminActionResultModalProps) {
@@ -45,7 +45,7 @@ export function AdminActionResultModal({ open, payload, onClose }: AdminActionRe
       <div className="flex items-start gap-3">
         <StatusIcon status={payload.status} />
         <div className="min-w-0">
-          <p className="text-sm leading-relaxed text-text-secondary">{payload.message}</p>
+          <p className="text-sm leading-relaxed admin-text-muted">{payload.message}</p>
           {payload.details ? (
             <div className="mt-3">
               <button

@@ -35,17 +35,17 @@ export function CriticalActionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="critical-action-title">
-      <button type="button" className="absolute inset-0 bg-black/40" onClick={onCancel} aria-label="Schließen" />
-      <div className={`relative z-10 w-full max-w-md rounded-2xl border p-6 shadow-xl ${destructive ? "admin-modal-danger" : "admin-modal-warning"}`}>
+    <div className="admin-overlay-modal-root" role="dialog" aria-modal="true" aria-labelledby="critical-action-title">
+      <button type="button" className="admin-overlay-modal-backdrop" onClick={onCancel} aria-label="Schließen" />
+      <div className={`admin-overlay-modal-panel relative z-10 w-full max-w-md p-6 ${destructive ? "admin-modal-danger" : "admin-modal-warning"}`}>
         <div className="flex items-start gap-3">
-          <ShieldAlert className={`mt-0.5 h-6 w-6 shrink-0 ${destructive ? "text-red-600" : "text-amber-600"}`} aria-hidden />
+          <ShieldAlert className={`mt-0.5 h-6 w-6 shrink-0 ${destructive ? "text-[var(--admin-status-danger)]" : "text-[var(--admin-status-warning)]"}`} aria-hidden />
           <div>
-            <h2 id="critical-action-title" className="font-heading text-lg font-bold text-text-primary">
+            <h2 id="critical-action-title" className="admin-overlay-modal-title">
               {title}
             </h2>
-            <p className="mt-2 text-sm text-text-muted">{description}</p>
-            <p className="mt-2 text-xs text-text-muted">Diese Aktion wird im Aktivitätsprotokoll gespeichert.</p>
+            <p className="mt-2 text-sm admin-text-muted">{description}</p>
+            <p className="mt-2 text-xs admin-text-muted">Diese Aktion wird im Aktivitätsprotokoll gespeichert.</p>
           </div>
         </div>
 

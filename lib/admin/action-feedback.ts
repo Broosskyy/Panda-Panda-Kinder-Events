@@ -196,6 +196,33 @@ export const ACTION_RESULTS = {
     message: "Die FAQ wurde entfernt.",
     status: "success",
   }),
+  contentSaved: (sectionLabel?: string): ActionResultPayload => ({
+    title: "Inhalt gespeichert",
+    message: sectionLabel
+      ? `„${sectionLabel}“ wurde auf der Website veröffentlicht.`
+      : "Die Änderungen sind auf der Website sichtbar.",
+    status: "success",
+  }),
+  postCreated: (): ActionResultPayload => ({
+    title: "Beitrag erstellt",
+    message: "Der Beitrag wurde gespeichert.",
+    status: "success",
+  }),
+  postUpdated: (): ActionResultPayload => ({
+    title: "Beitrag gespeichert",
+    message: "Die Änderungen am Beitrag wurden übernommen.",
+    status: "success",
+  }),
+  postDeleted: (): ActionResultPayload => ({
+    title: "Beitrag gelöscht",
+    message: "Der Beitrag wurde entfernt.",
+    status: "success",
+  }),
+  imageUploaded: (): ActionResultPayload => ({
+    title: "Bild hochgeladen",
+    message: "Das Bild wurde hochgeladen. Bitte speichern Sie die Änderungen.",
+    status: "success",
+  }),
   passwordChanged: (): ActionResultPayload => ({
     title: "Passwort geändert",
     message: "Das Passwort wurde erfolgreich aktualisiert.",

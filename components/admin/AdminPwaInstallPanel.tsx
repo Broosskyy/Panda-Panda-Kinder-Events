@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { CheckCircle2, RefreshCw, Smartphone } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
-import { AdminPwaInstallHelpSheet } from "@/components/admin/AdminPwaInstallHelpSheet";
+import { AdminPwaInstallHelpSheet, ProbeDetails } from "@/components/admin/AdminPwaInstallHelpSheet";
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
 
 interface AdminPwaInstallPanelProps {
@@ -63,17 +63,6 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
     );
   }
 
-  const rows: { label: string; ok: boolean }[] = probeResult
-    ? [
-        { label: "Manifest", ok: probeResult.manifestLoaded && probeResult.manifestValid },
-        { label: "Service Worker aktiv", ok: probeResult.serviceWorkerActive },
-        { label: "SW kontrolliert Seite", ok: probeResult.serviceWorkerControlling },
-        { label: "Icons 192/512", ok: probeResult.icons192Ok && probeResult.icons512Ok },
-        { label: "HTTPS", ok: probeResult.https },
-        { label: "Install-Prompt", ok: probeResult.installPromptAvailable },
-      ]
-    : [];
-
   return (
     <>
       <div className={compact ? "space-y-3" : "space-y-4"}>
@@ -94,16 +83,7 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
         <div className="rounded-xl border border-border bg-bg-secondary/40 p-3 text-sm">
           <p className="font-medium text-text-primary">Status</p>
           <p className="mt-1 text-text-muted">{probeResult?.statusLabel ?? "Wird geprüft…"}</p>
-          {statusChecked && rows.length > 0 ? (
-            <ul className="mt-2 space-y-1 text-xs text-text-muted">
-              {rows.map((row) => (
-                <li key={row.label} className="flex items-center justify-between gap-2">
-                  <span>{row.label}</span>
-                  <span className={row.ok ? "text-[#2d5a3a]" : "text-amber-700"}>{row.ok ? "OK" : "Fehlt"}</span>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+          {statusChecked && probeResult ? <ProbeDetails probeResult={probeResult} /> : null}
           {statusChecked && probeResult?.blockers?.length ? (
             <ul className="mt-3 space-y-1.5 border-t border-border/70 pt-3 text-xs text-text-secondary">
               {probeResult.blockers.map((item) => (
@@ -122,7 +102,7 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
         <div className="flex flex-col gap-2">
           {canInstall ? (
             <AdminButton variant="primary" className="w-full" onClick={() => void install()}>
-              Admin-App installieren
+              App installieren
             </AdminButton>
           ) : (
             <AdminButton variant="secondary" className="w-full" onClick={openInstallHelp}>

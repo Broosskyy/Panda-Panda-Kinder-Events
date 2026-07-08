@@ -154,7 +154,11 @@ export function InvitesView() {
           if (data.emailSent === false && data.emailError) {
             return ACTION_RESULTS.genericError(`E-Mail konnte nicht versendet werden. ${data.emailError}`);
           }
-          return ACTION_RESULTS.inviteResent();
+          return {
+            title: "E-Mail erfolgreich versendet",
+            message: "Die Einladung wurde erneut an den Empfänger geschickt.",
+            status: "success" as const,
+          };
         }
         if (act === "revoke") return ACTION_RESULTS.inviteRevoked();
         return ACTION_RESULTS.inviteSent();

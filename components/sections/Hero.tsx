@@ -101,7 +101,7 @@ export function Hero({
                     <div className="trust-chip-icon">
                       <Icon className="h-5 w-5 text-primary md:h-6 md:w-6" strokeWidth={ICON_STROKE} aria-hidden />
                     </div>
-                    <span className="text-xs font-medium leading-snug text-text-primary sm:text-sm lg:text-[0.9375rem]">
+                    <span className="hero-trust-badge text-xs font-medium leading-snug text-text-primary sm:text-sm lg:text-[0.9375rem]">
                       {badge.text}
                     </span>
                   </div>

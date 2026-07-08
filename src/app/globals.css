@@ -51,8 +51,16 @@ html {
   --floating-contact-size: 3rem;
   --floating-contact-gap: 0.5rem;
   --chrome-bottom-mobile: calc(
-    var(--sticky-cta-bar-height) + var(--floating-contact-gap) + var(--floating-contact-size) + 0.5rem
+    var(--floating-contact-gap) + var(--floating-contact-size) + 0.5rem
   );
+}
+
+@media (max-width: 767px) {
+  html[data-sticky-cta="visible"] {
+    --chrome-bottom-mobile: calc(
+      var(--sticky-cta-bar-height) + var(--floating-contact-gap) + var(--floating-contact-size) + 0.5rem
+    );
+  }
 }
 
 @media (min-width: 640px) {
@@ -674,7 +682,7 @@ img {
   }
 
   #kontakt {
-    padding-bottom: 0.375rem;
+    padding-bottom: 0.75rem;
   }
 
   #kontakt .grid {
@@ -682,7 +690,7 @@ img {
   }
 
   #kontakt .form-luxury {
-    padding: 0.75rem;
+    padding: 1rem;
   }
 
   #kontakt .contact-cards {
@@ -1516,7 +1524,7 @@ img {
   overflow-x: hidden;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
-  padding: 1rem 1rem calc(var(--admin-mobile-content-pad) + 1.5rem);
+  padding: 1rem 1rem calc(var(--admin-mobile-content-pad) + 0.5rem);
 }
 
 @media (min-width: 640px) {
@@ -1697,6 +1705,7 @@ img {
   border-bottom: 1px solid var(--admin-border);
   background: var(--admin-surface);
   padding: 0.75rem 1rem;
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0px));
 }
 
 .admin-icon-btn {
@@ -1806,6 +1815,7 @@ img {
   text-overflow: ellipsis;
   white-space: nowrap;
   padding: 0 0.125rem;
+  font-size: 0.625rem;
 }
 
 .admin-bottom-nav-icon {
@@ -2852,7 +2862,7 @@ img {
 
 .sticky-cta-button {
   min-width: min(100%, 20rem);
-  min-height: 2.5rem !important;
+  min-height: 3rem !important;
   padding-block: 0.625rem;
   font-size: 0.9375rem;
 }
@@ -3037,11 +3047,21 @@ body.lightbox-open .floating-contact-stack {
   width: min(100%, 36rem);
   max-height: min(90dvh, 720px);
   overflow-y: auto;
-  border-radius: 1.25rem;
+  overscroll-behavior: contain;
+  border-radius: 1.25rem 1.25rem 0 0;
   border: 1px solid var(--color-border);
   background: var(--color-bg-card);
-  padding: 1.5rem;
+  padding: 1.25rem;
+  padding-bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
   box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 640px) {
+  .service-modal-panel {
+    border-radius: 1.25rem;
+    padding: 1.5rem;
+    padding-bottom: 1.5rem;
+  }
 }
 
 .service-modal-close {
@@ -4839,6 +4859,10 @@ html[data-admin-pwa-help-sheet="open"] .admin-mobile-header {
   pointer-events: none !important;
 }
 
+html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
+  padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
+}
+
 .admin-overlay-modal-root {
   position: fixed;
   inset: 0;
@@ -5313,7 +5337,7 @@ html[data-admin-pwa-help-sheet="open"] .admin-mobile-header {
 }
 
 .admin-drawer-nav .admin-nav-link {
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: 0.5rem 0.75rem;
   font-size: 0.8125rem;
 }
@@ -5328,5 +5352,122 @@ html[data-admin-pwa-help-sheet="open"] .admin-mobile-header {
 
 .review-admin-actions .admin-action-menu {
   width: 100%;
+}
+
+/* ── Sprint 1: Mobile Final Polish ── */
+
+@media (max-width: 767px) {
+  html {
+    --mobile-space-xs: 0.375rem;
+    --mobile-space-sm: 0.5rem;
+    --mobile-space-md: 0.75rem;
+    --mobile-space-lg: 1rem;
+    --mobile-space-xl: 1.25rem;
+    --mobile-touch-min: 2.75rem;
+    --mobile-touch-lg: 3rem;
+  }
+
+  .admin-input,
+  .admin-input textarea,
+  textarea.admin-input,
+  select.admin-input {
+    font-size: 1rem;
+  }
+
+  .admin-btn-primary,
+  .admin-btn-secondary,
+  .admin-btn-danger,
+  .admin-btn-ghost,
+  .admin-btn-success {
+    min-height: var(--mobile-touch-min);
+  }
+
+  .admin-page-help-toggle {
+    min-height: var(--mobile-touch-min);
+    padding: 0.5rem 0.875rem;
+  }
+
+  .admin-filter-select {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .admin-filter-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-stat-card {
+    min-height: auto;
+    padding: 1rem;
+  }
+
+  .admin-quick-action {
+    min-height: 4.25rem;
+    padding: 0.75rem;
+  }
+
+  .admin-empty-state {
+    padding: 1.25rem 1rem;
+  }
+
+  .admin-page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .admin-page-actions {
+    width: 100%;
+  }
+
+  .admin-page-actions > * {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .admin-sticky-save {
+    bottom: calc(var(--admin-bottom-nav-height) + 1rem);
+  }
+
+  .admin-filter-panel-toggle {
+    min-height: var(--mobile-touch-min);
+    padding: 0.5rem 0.875rem;
+  }
+
+  .admin-notification-mark-all {
+    min-height: var(--mobile-touch-min);
+    padding: 0.5rem 0.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .footer-tap-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--mobile-touch-min);
+    padding-block: 0.375rem;
+  }
+
+  #startseite .hero-trust-badge {
+    font-size: 0.8125rem;
+  }
+
+  #startseite .hero-cta-group {
+    gap: 0.5rem;
+  }
+
+  .swipe-track {
+    gap: 0.75rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .admin-bottom-nav-label {
+    font-size: 0.5625rem;
+  }
+
+  .admin-page-title {
+    font-size: 1.25rem;
+  }
 }
 

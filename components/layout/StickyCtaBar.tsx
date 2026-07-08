@@ -58,6 +58,17 @@ export function StickyCtaBar({
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    const showChrome = visible && !hideForForm && !scrollHidden;
+    if (showChrome) {
+      root.setAttribute("data-sticky-cta", "visible");
+    } else {
+      root.removeAttribute("data-sticky-cta");
+    }
+    return () => root.removeAttribute("data-sticky-cta");
+  }, [visible, hideForForm, scrollHidden]);
+
   if (!visible || hideForForm) return null;
 
   return (
@@ -69,7 +80,7 @@ export function StickyCtaBar({
     >
       <div className="sticky-cta-inner">
         <p className="sticky-cta-text hidden sm:block">{sublabel}</p>
-        <Button href="#kontakt" size="lg" className="sticky-cta-button min-h-[2.5rem] flex-1 sm:flex-none">
+        <Button href="#kontakt" size="lg" className="sticky-cta-button min-h-12 flex-1 sm:flex-none">
           {label}
         </Button>
       </div>

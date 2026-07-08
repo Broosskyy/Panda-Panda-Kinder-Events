@@ -9,7 +9,11 @@ export function CookieSettingsButton() {
   };
 
   return (
-    <button type="button" onClick={reopen} className="text-left transition-opacity duration-300 hover:opacity-85">
+    <button
+      type="button"
+      onClick={reopen}
+      className="footer-tap-link text-left transition-opacity duration-300 hover:opacity-85"
+    >
       Cookie-Einstellungen
     </button>
   );

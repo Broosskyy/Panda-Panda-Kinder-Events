@@ -37,7 +37,7 @@ export function Footer({
 
   return (
     <footer className="footer-premium text-text-inverse">
-      <Container className="footer-inner relative py-3 sm:py-16 md:py-20">
+      <Container className="footer-inner relative py-3 sm:py-10 md:py-16 lg:py-20">
         <div className="footer-grid grid gap-4 sm:gap-14 md:grid-cols-2 lg:grid-cols-4 md:gap-10">
           <div className="flex flex-col items-center md:items-start lg:col-span-1">
             <Logo context="footer" variant="inverse" branding={branding} className="footer-brand-mark" />
@@ -48,9 +48,9 @@ export function Footer({
 
           <div className="text-center md:text-left">
             <p className="footer-col-title mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/60 sm:mb-6">Navigation</p>
-            <nav className="footer-nav flex flex-col gap-2 text-sm sm:gap-3 sm:text-base" aria-label="Footer Navigation">
+            <nav className="footer-nav flex flex-col gap-1 text-sm sm:gap-3 sm:text-base" aria-label="Footer Navigation">
               {FOOTER_NAV.map((item) => (
-                <a key={item.href} href={item.href} className="transition-opacity duration-300 hover:opacity-85">
+                <a key={item.href} href={item.href} className="footer-tap-link transition-opacity duration-300 hover:opacity-85">
                   {item.label}
                 </a>
               ))}
@@ -64,7 +64,7 @@ export function Footer({
               <li>
                 <a
                   href={`tel:${phone.replace(/\s/g, "")}`}
-                  className="inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
+                  className="footer-tap-link inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
                 >
                   <Phone className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
                   {phone}
@@ -75,7 +75,7 @@ export function Footer({
               <li>
                 <a
                   href={`mailto:${email}`}
-                  className="inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
+                  className="footer-tap-link inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
                 >
                   <Mail className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
                   {email}
@@ -88,7 +88,7 @@ export function Footer({
                   href={`https://wa.me/${whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
+                  className="footer-tap-link inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
                 >
                   <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
                   WhatsApp
@@ -101,7 +101,7 @@ export function Footer({
                   href={instagram}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
+                  className="footer-tap-link inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
                 >
                   <Instagram className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
                   {instagramHandle || "Instagram"}
@@ -114,7 +114,7 @@ export function Footer({
                     href={contact.facebook}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
+                    className="footer-tap-link inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
                   >
                     Facebook
                   </a>
@@ -126,7 +126,7 @@ export function Footer({
                   href={mapsHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
+                  className="footer-tap-link inline-flex items-center gap-2.5 transition-opacity duration-300 hover:opacity-85 sm:gap-3"
                 >
                   <MapPin className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
                   {location}
@@ -138,25 +138,29 @@ export function Footer({
 
           <div className="text-center md:text-right">
             <p className="footer-col-title mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/60 sm:mb-6">Rechtliches</p>
-            <nav className="footer-nav flex flex-col gap-2 text-sm sm:gap-4 sm:text-base" aria-label="Rechtliches">
-              <a href="/impressum" className="transition-opacity duration-300 hover:opacity-85">
+            <nav className="footer-nav flex flex-col gap-1 text-sm sm:gap-4 sm:text-base" aria-label="Rechtliches">
+              <a href="/impressum" className="footer-tap-link transition-opacity duration-300 hover:opacity-85">
                 Impressum
               </a>
-              <a href="/datenschutz" className="transition-opacity duration-300 hover:opacity-85">
+              <a href="/datenschutz" className="footer-tap-link transition-opacity duration-300 hover:opacity-85">
                 Datenschutz
               </a>
-              <a href="/agb" className="transition-opacity duration-300 hover:opacity-85">
+              <a href="/agb" className="footer-tap-link transition-opacity duration-300 hover:opacity-85">
                 AGB
               </a>
               <CookieSettingsButton />
             </nav>
             <div className="footer-social mt-4 flex items-center justify-center gap-3 sm:mt-10 md:justify-end">
-              <a href={contact.instagram} target="_blank" rel="noopener noreferrer" className="social-pill" aria-label="Instagram">
-                <Instagram className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
-              </a>
-              <a href={`https://wa.me/${contact.whatsapp}`} target="_blank" rel="noopener noreferrer" className="social-pill" aria-label="WhatsApp">
-                <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
-              </a>
+              {instagram ? (
+                <a href={instagram} target="_blank" rel="noopener noreferrer" className="social-pill" aria-label="Instagram">
+                  <Instagram className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
+                </a>
+              ) : null}
+              {whatsapp ? (
+                <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer" className="social-pill" aria-label="WhatsApp">
+                  <MessageCircle className="h-4 w-4 sm:h-5 sm:w-5" strokeWidth={ICON_STROKE} />
+                </a>
+              ) : null}
             </div>
           </div>
         </div>

@@ -571,6 +571,8 @@ export interface CmsService {
   detail_text?: string;
   image_url?: string;
   button_label?: string;
+  button_link?: string;
+  category?: string;
   price_from?: string;
   highlights?: string[];
   sort_order: number;

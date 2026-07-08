@@ -18,6 +18,7 @@
     "test:admin-real-mobile": "node scripts/admin-real-mobile-ux-test.mjs",
     "test:admin-critical-mobile": "node scripts/admin-critical-mobile-ux-action-bugfix-test.mjs",
     "test:admin-ui-bugfix": "node scripts/admin-ui-bugfix-pwa-menu-customers-test.mjs",
+    "test:admin-services-cms": "node scripts/admin-services-cms-fix-test.mjs",
     "export:cms": "node scripts/export-cms.mjs",
     "export:crm": "node scripts/export-crm.mjs",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",

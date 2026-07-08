@@ -40,6 +40,7 @@ const AREA_OPTIONS = [
   { value: "settings_seo", label: "Domain & SEO" },
   { value: "backup", label: "Backup" },
   { value: "website", label: "Website" },
+  { value: "cms_services", label: "Leistungen" },
 ];
 
 export function AuditView() {

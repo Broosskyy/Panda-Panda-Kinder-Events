@@ -4158,6 +4158,63 @@ body.splash-active {
   to { opacity: 1; }
 }
 
+.admin-services-page {
+  padding-bottom: calc(var(--admin-bottom-nav-height) + 0.5rem);
+}
+
+.admin-services-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-service-card-inner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.875rem;
+}
+
+@media (min-width: 640px) {
+  .admin-service-card-inner {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.admin-service-card-media {
+  flex-shrink: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 0.875rem;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface-muted);
+}
+
+@media (min-width: 640px) {
+  .admin-service-card-media {
+    width: 7.5rem;
+  }
+}
+
+.admin-service-card-image {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
+
+.admin-service-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.admin-service-card-actions .admin-btn {
+  min-height: 2.75rem;
+}
+
 .admin-onboarding-root {
   position: fixed;
   inset: 0;

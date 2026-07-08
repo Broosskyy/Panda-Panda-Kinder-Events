@@ -293,13 +293,11 @@ async function queryCmsServices(): Promise<Service[]> {
       detailText: s.detail_text?.trim() || s.description.trim(),
       imageUrl: s.image_url?.trim() || undefined,
       buttonLabel: s.button_label?.trim() || "Mehr erfahren",
+      buttonLink: s.button_link?.trim() || undefined,
+      category: s.category?.trim() || undefined,
       priceFrom: s.price_from?.trim() || undefined,
       highlights: Array.isArray(s.highlights) ? s.highlights.filter((h) => String(h).trim()) : undefined,
     }));
-}
-
-function hasValidCmsServices(services: Service[]): boolean {
-  return services.length > 0;
 }
 
 export async function fetchCmsServices(): Promise<Service[]> {
@@ -311,7 +309,7 @@ export async function fetchCmsServices(): Promise<Service[]> {
     if (!hasCms) return staticServices;
 
     const cmsServices = await queryCmsServices();
-    return hasValidCmsServices(cmsServices) ? cmsServices : staticServices;
+    return cmsServices;
   } catch (err) {
     console.error("fetchCmsServices:", err);
     return staticServices;

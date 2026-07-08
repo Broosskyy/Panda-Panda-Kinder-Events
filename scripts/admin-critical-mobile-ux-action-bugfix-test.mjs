@@ -67,7 +67,8 @@ if (reviews.includes("Antwort speichern")) ok("Reviews: primary save reply");
 else fail("Reviews primary action missing");
 
 const pwaCard = read("components/admin/dashboard/DashboardPwaInstallCard.tsx");
-if (pwaCard.includes("Admin-App installieren") && pwaCard.includes("Installationsstatus prüfen")) {
+const pwaPanel = read("components/admin/AdminPwaInstallPanel.tsx");
+if (pwaCard.includes("Admin-App installieren") && pwaPanel.includes("Installationsstatus prüfen")) {
   ok("PWA card: always-visible fallback");
 } else fail("PWA card incomplete");
 

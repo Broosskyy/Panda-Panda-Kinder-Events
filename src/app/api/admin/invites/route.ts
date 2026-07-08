@@ -3,13 +3,15 @@ import { z } from "zod";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
 import { getRoleById } from "@/lib/auth/users";
 import { writeAuditLogFromRequest } from "@/lib/auth/audit";
-import { canInviteUsers, canInviteRole } from "@/lib/auth/invite-permissions";
+import { canManageInvites, canInviteRole } from "@/lib/auth/invite-permissions";
 import {
   listInvitations,
   createInvitation,
   revokeInvitation,
   resendInvitation,
   hasPendingInviteForEmail,
+  deleteInvitation,
+  issueInvitationLink,
 } from "@/lib/auth/invitations";
 import { findUserByEmail } from "@/lib/auth/users";
 import { sendAdminInviteEmail } from "@/lib/email";
@@ -18,18 +20,29 @@ import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getRateLimitPolicy } from "@/lib/auth/security-settings";
 
 const createSchema = z.object({
-  displayName: z.string().min(1, "Name erforderlich."),
+  firstName: z.string().min(1, "Vorname erforderlich.").optional(),
+  lastName: z.string().min(1, "Nachname erforderlich.").optional(),
+  displayName: z.string().min(1, "Name erforderlich.").optional(),
   email: z.string().email("Gültige E-Mail erforderlich."),
   roleId: z.string().uuid("Rolle erforderlich."),
   message: z.string().max(2000).optional(),
 });
 
+function resolveDisplayName(data: z.infer<typeof createSchema>): string {
+  if (data.displayName?.trim()) return data.displayName.trim();
+  const first = data.firstName?.trim() ?? "";
+  const last = data.lastName?.trim() ?? "";
+  const combined = `${first} ${last}`.trim();
+  if (!combined) throw new Error("Name erforderlich.");
+  return combined;
+}
+
 export async function GET() {
-  const authError = await requireAdmin("users:read");
+  const authError = await requireAdmin();
   if (authError) return authError;
 
   const ctx = await getAdminContext();
-  if (!ctx || !canInviteUsers(ctx.roleSlug)) {
+  if (!ctx || !canManageInvites(ctx)) {
     return NextResponse.json({ error: "Keine Berechtigung zum Einladen." }, { status: 403 });
   }
 
@@ -49,11 +62,11 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin("users:write");
+  const authError = await requireAdmin();
   if (authError) return authError;
 
   const ctx = await getAdminContext();
-  if (!ctx || !canInviteUsers(ctx.roleSlug)) {
+  if (!ctx || !canManageInvites(ctx)) {
     return NextResponse.json({ error: "Keine Berechtigung zum Einladen." }, { status: 403 });
   }
 
@@ -72,6 +85,13 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     const msg = parsed.error.errors[0]?.message ?? "Ungültige Einladungsdaten.";
     return NextResponse.json({ error: msg }, { status: 400 });
+  }
+
+  let displayName: string;
+  try {
+    displayName = resolveDisplayName(parsed.data);
+  } catch (err) {
+    return NextResponse.json({ error: err instanceof Error ? err.message : "Name erforderlich." }, { status: 400 });
   }
 
   const role = await getRoleById(parsed.data.roleId);
@@ -96,7 +116,7 @@ export async function POST(request: Request) {
   try {
     const { invitation, token } = await createInvitation({
       email: parsed.data.email,
-      displayName: parsed.data.displayName,
+      displayName,
       roleId: parsed.data.roleId,
       invitedBy: ctx.userId,
       message: parsed.data.message,
@@ -125,7 +145,7 @@ export async function POST(request: Request) {
       after: { email: invitation.email },
     });
 
-    return NextResponse.json({ invitation, message: "Einladung gesendet." });
+    return NextResponse.json({ invitation, inviteUrl, message: "Einladung gesendet." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Einladung fehlgeschlagen.";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -133,11 +153,11 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin("users:write");
+  const authError = await requireAdmin();
   if (authError) return authError;
 
   const ctx = await getAdminContext();
-  if (!ctx || !canInviteUsers(ctx.roleSlug)) {
+  if (!ctx || !canManageInvites(ctx)) {
     return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
   }
 
@@ -175,12 +195,53 @@ export async function PATCH(request: Request) {
         entityId: id,
         after: { email: invitation.email },
       });
-      return NextResponse.json({ invitation, message: "Einladung erneut gesendet." });
+      return NextResponse.json({ invitation, inviteUrl, message: "Einladung erneut gesendet." });
+    }
+
+    if (action === "copy_link") {
+      const { invitation, token } = await issueInvitationLink(id);
+      const inviteUrl = `${getSiteUrl()}/admin/einladung/${token}`;
+      await writeAuditLogFromRequest(ctx, request, {
+        action: "invite_link_copied",
+        area: "admin_invites",
+        entityId: id,
+        after: { email: invitation.email },
+      });
+      return NextResponse.json({ invitation, inviteUrl, message: "Einladungslink erstellt." });
     }
 
     return NextResponse.json({ error: "Unbekannte Aktion." }, { status: 400 });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Aktion fehlgeschlagen.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const authError = await requireAdmin();
+  if (authError) return authError;
+
+  const ctx = await getAdminContext();
+  if (!ctx || !canManageInvites(ctx)) {
+    return NextResponse.json({ error: "Keine Berechtigung." }, { status: 403 });
+  }
+
+  const body = await request.json();
+  const { id } = body as { id?: string };
+  if (!id) {
+    return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+  }
+
+  try {
+    await deleteInvitation(id);
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "invite_deleted",
+      area: "admin_invites",
+      entityId: id,
+    });
+    return NextResponse.json({ success: true, message: "Einladung gelöscht." });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

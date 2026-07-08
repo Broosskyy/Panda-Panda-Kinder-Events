@@ -4032,6 +4032,156 @@ body.splash-active {
   background: var(--admin-border);
 }
 
+/* User management dialog */
+.admin-user-manage-root {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .admin-user-manage-root {
+    align-items: center;
+    padding: 1rem;
+  }
+}
+
+.admin-user-manage-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(44, 44, 44, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.admin-user-manage-panel {
+  position: relative;
+  display: flex;
+  max-height: min(96dvh, 100%);
+  width: 100%;
+  flex-direction: column;
+  border-radius: 1.25rem 1.25rem 0 0;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+@media (min-width: 768px) {
+  .admin-user-manage-panel {
+    max-height: min(90dvh, 52rem);
+    width: min(100%, 42rem);
+    border-radius: 1.25rem;
+  }
+}
+
+.admin-user-manage-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--admin-border);
+  padding: 1rem 1.25rem;
+}
+
+.admin-user-manage-close {
+  display: flex;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9999px;
+  color: var(--admin-text-muted);
+}
+
+.admin-user-manage-tabs {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--admin-border);
+  padding: 0.75rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .admin-user-manage-tabs {
+    flex-direction: row;
+  }
+}
+
+.admin-user-manage-tab {
+  display: inline-flex;
+  min-height: 2.75rem;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 0.875rem;
+  border: 1px solid var(--admin-border);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--admin-text-muted);
+}
+
+.admin-user-manage-tab.is-active {
+  border-color: color-mix(in srgb, var(--color-primary) 35%, var(--admin-border));
+  background: var(--admin-accent-soft);
+  color: var(--admin-text);
+}
+
+.admin-user-manage-body {
+  overflow-y: auto;
+  padding: 1rem 1.25rem 1.25rem;
+}
+
+.admin-user-manage-hint {
+  margin-bottom: 1rem;
+  border-radius: 0.875rem;
+  background: var(--admin-accent-soft);
+  padding: 0.75rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--admin-text-muted);
+}
+
+.admin-user-manage-link-box {
+  margin-top: 1rem;
+  border-radius: 0.875rem;
+  border: 1px dashed var(--admin-border);
+  padding: 0.875rem;
+}
+
+.admin-user-manage-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1.25rem;
+}
+
+@media (min-width: 640px) {
+  .admin-user-manage-actions {
+    flex-direction: row;
+  }
+}
+
+.admin-invites-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1rem;
+  border: 1px dashed var(--admin-border);
+  background: var(--admin-surface);
+  padding: 2.5rem 1.5rem;
+  text-align: center;
+}
+
+.admin-invites-empty-icon {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
 .admin-onboarding-root {
   /* legacy — replaced by admin-onboarding-v2-* */
   display: none;

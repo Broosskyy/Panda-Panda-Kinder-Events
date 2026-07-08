@@ -1,19 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Mail, Plus, RefreshCw, XCircle } from "lucide-react";
+import { useSearchParams } from "next/navigation";
+import { Copy, Mail, Plus, RefreshCw, Trash2, XCircle } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminUserManageDialog } from "@/components/admin/AdminUserManageDialog";
 import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
-import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
-import { AdminFormField } from "@/components/admin/ui/AdminFormField";
+import { AdminActionMenu, AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
-import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_MSG } from "@/lib/admin/messages";
-import { describeRoleSlug } from "@/lib/admin/role-descriptions";
-import { invitableRoleSlugs } from "@/lib/auth/invite-permissions";
 import type { AdminRoleSlug } from "@/lib/auth/types";
-import { isActiveRoleSlug } from "@/lib/admin/roles";
 
 interface Role {
   id: string;
@@ -37,7 +33,7 @@ interface Invitation {
 }
 
 const STATUS_LABELS: Record<Invitation["status"], string> = {
-  pending: "Offen",
+  pending: "Ausstehend",
   accepted: "Angenommen",
   expired: "Abgelaufen",
   revoked: "Widerrufen",
@@ -50,20 +46,15 @@ const STATUS_VARIANT: Record<Invitation["status"], "success" | "warning" | "mute
   revoked: "muted",
 };
 
-const emptyForm = () => ({
-  displayName: "",
-  email: "",
-  roleId: "",
-  message: "",
-});
-
 export function InvitesView() {
+  const searchParams = useSearchParams();
   const [invitations, setInvitations] = useState<Invitation[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [canInvite, setCanInvite] = useState(false);
+  const [canCreateManually, setCanCreateManually] = useState(false);
+  const [inviterRole, setInviterRole] = useState<AdminRoleSlug>("readonly");
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState(emptyForm);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const { toast, withLoading, fromApi } = useAdminMessages();
   const page = adminPageHeaderProps("benutzer");
 
@@ -79,51 +70,35 @@ export function InvitesView() {
     if (inviteRes.ok) {
       setInvitations(inviteData.invitations ?? []);
       setCanInvite(Boolean(inviteData.meta?.canInvite));
+      setInviterRole((inviteData.meta?.inviterRole ?? "readonly") as AdminRoleSlug);
     } else if (inviteRes.status === 403) {
       setCanInvite(false);
     } else {
-      toast(inviteData.error ?? ADMIN_MSG.loadFailed, "error");
+      toast(inviteData.error ?? "Einladungen konnten nicht geladen werden.", "error");
     }
 
     if (usersRes.ok) {
-      const inviter = (inviteData.meta?.inviterRole ?? null) as AdminRoleSlug | null;
-      const allowed = inviter ? invitableRoleSlugs(inviter) : [];
-      const allRoles = (usersData.roles ?? []) as Role[];
-      const filtered = allRoles.filter((r) => isActiveRoleSlug(r.slug) && allowed.includes(r.slug));
-      setRoles(filtered);
-      if (!form.roleId && filtered.length) {
-        setForm((f) => ({ ...f, roleId: filtered[0]!.id }));
+      setRoles(usersData.roles ?? []);
+      setCanCreateManually(Boolean(usersData.meta?.canCreateUsers));
+      if (!inviteRes.ok && usersData.meta?.canInvite) {
+        setCanInvite(true);
+        setInviterRole((usersData.meta?.inviterRole ?? "readonly") as AdminRoleSlug);
       }
     }
     setLoading(false);
-  }, [form.roleId, toast]);
+  }, [toast]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  const sendInvite = async () => {
-    if (!form.displayName || !form.email || !form.roleId) {
-      return toast("Bitte Name, E-Mail und Rolle ausfüllen.", "error");
+  useEffect(() => {
+    if (searchParams.get("invite") === "1" && canInvite) {
+      setDialogOpen(true);
     }
-    await withLoading(
-      (async () => {
-        const res = await fetch("/api/admin/invites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(form),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Einladung fehlgeschlagen");
-        toast("Einladung gesendet.");
-        setShowForm(false);
-        setForm(emptyForm());
-        await load();
-      })(),
-    );
-  };
+  }, [searchParams, canInvite]);
 
-  const patchInvite = async (id: string, action: "resend" | "revoke") => {
+  const patchInvite = async (id: string, action: "resend" | "revoke" | "copy_link") => {
     const res = await fetch("/api/admin/invites", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -131,17 +106,79 @@ export function InvitesView() {
     });
     const data = await res.json();
     if (!res.ok) return fromApi(data, "Aktion fehlgeschlagen.");
-    toast(action === "resend" ? "Einladung erneut gesendet." : "Einladung widerrufen.");
+    if (action === "copy_link" && data.inviteUrl) {
+      await navigator.clipboard.writeText(data.inviteUrl);
+      toast("Einladungslink kopiert.");
+    } else {
+      toast(
+        action === "resend"
+          ? "Einladung erneut gesendet."
+          : action === "revoke"
+            ? "Einladung widerrufen."
+            : "Link erstellt.",
+      );
+    }
+    await load();
+  };
+
+  const deleteInvite = async (id: string) => {
+    const res = await fetch("/api/admin/invites", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!res.ok) return fromApi(data, "Löschen fehlgeschlagen.");
+    toast("Einladung gelöscht.");
     await load();
   };
 
   const formatDate = (iso: string) => new Date(iso).toLocaleString("de-DE");
+  const canManage = canInvite || canCreateManually;
+
+  const inviteActions = (inv: Invitation) => (
+    <AdminActionMenu
+      primary={
+        inv.status === "pending"
+          ? {
+              label: "Erneut senden",
+              icon: <RefreshCw className="h-4 w-4" />,
+              onClick: () => patchInvite(inv.id, "resend"),
+            }
+          : undefined
+      }
+      items={[
+        {
+          id: "copy",
+          label: "Link kopieren",
+          icon: <Copy className="h-4 w-4" />,
+          onClick: () => patchInvite(inv.id, "copy_link"),
+          hidden: inv.status === "accepted",
+        },
+        {
+          id: "revoke",
+          label: "Widerrufen",
+          icon: <XCircle className="h-4 w-4" />,
+          onClick: () => patchInvite(inv.id, "revoke"),
+          hidden: inv.status !== "pending",
+        },
+      ]}
+      dangerItems={[
+        {
+          id: "delete",
+          label: "Löschen",
+          icon: <Trash2 className="h-4 w-4" />,
+          onClick: () => deleteInvite(inv.id),
+        },
+      ]}
+    />
+  );
 
   return (
     <div className="space-y-6">
       <AdminPageHeader {...page}>
-        {canInvite ? (
-          <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setShowForm(true)}>
+        {canManage ? (
+          <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setDialogOpen(true)}>
             Benutzer einladen
           </AdminButton>
         ) : null}
@@ -149,80 +186,58 @@ export function InvitesView() {
 
       <UsersSecurityTabs />
 
-      {!canInvite ? (
+      {!canManage ? (
         <AdminCard>
-          <p className="text-sm text-text-muted">
-            Nur Super Admins und Admins dürfen Benutzer einladen.
-          </p>
-        </AdminCard>
-      ) : null}
-
-      {showForm ? (
-        <AdminCard title="Benutzer einladen">
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Name" required>
-              <input className="admin-input" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="E-Mail" required>
-              <input className="admin-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Rolle" required>
-              <select className="admin-input" value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}>
-                {roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.label}</option>
-                ))}
-              </select>
-              {form.roleId ? (
-                <p className="mt-2 text-xs text-text-muted">
-                  {describeRoleSlug(roles.find((r) => r.id === form.roleId)?.slug ?? "")}
-                </p>
-              ) : null}
-            </AdminFormField>
-            <AdminFormField label="Optionale Nachricht" hint="Wird in der Einladungs-E-Mail angezeigt.">
-              <textarea className="admin-input min-h-24" value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} />
-            </AdminFormField>
-          </div>
-          <div className="mt-6 flex gap-2">
-            <AdminButton variant="primary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendInvite()}>
-              Einladung senden
-            </AdminButton>
-            <AdminButton variant="secondary" onClick={() => setShowForm(false)}>{ADMIN_BTN.cancel}</AdminButton>
-          </div>
+          <p className="text-sm text-text-muted">Nur Super Admins und Admins dürfen Benutzer einladen oder anlegen.</p>
         </AdminCard>
       ) : null}
 
       {loading ? (
         <AdminLoadingCard message="Einladungen werden geladen…" />
       ) : invitations.length === 0 ? (
-        <AdminCard>
-          <p className="text-sm text-text-muted">Noch keine Einladungen vorhanden.</p>
-        </AdminCard>
+        <div className="admin-invites-empty">
+          <div className="admin-invites-empty-icon" aria-hidden>
+            📨
+          </div>
+          <h3 className="font-heading text-lg font-semibold text-text-primary">Noch keine Einladungen vorhanden.</h3>
+          <p className="mt-2 max-w-md text-sm text-text-muted">Lade jetzt deinen ersten Mitarbeiter ein.</p>
+          {canManage ? (
+            <AdminButton variant="primary" className="mt-6" icon={<Mail className="h-4 w-4" />} onClick={() => setDialogOpen(true)}>
+              Benutzer einladen
+            </AdminButton>
+          ) : null}
+        </div>
       ) : (
         <>
           <div className="space-y-3 md:hidden">
             {invitations.map((inv) => (
               <AdminCard key={inv.id}>
                 <div className="flex items-start justify-between gap-2">
-                  <div>
+                  <div className="min-w-0">
                     <p className="font-semibold">{inv.display_name}</p>
-                    <p className="text-sm text-text-muted">{inv.email}</p>
+                    <p className="truncate text-sm text-text-muted">{inv.email}</p>
                   </div>
                   <AdminStatusBadge label={STATUS_LABELS[inv.status]} variant={STATUS_VARIANT[inv.status]} />
                 </div>
                 <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-                  <div><dt className="text-text-muted">Rolle</dt><dd>{inv.role_label}</dd></div>
-                  <div><dt className="text-text-muted">Ablauf</dt><dd>{formatDate(inv.expires_at)}</dd></div>
-                </dl>
-                {inv.status === "pending" && canInvite ? (
-                  <div className="mt-3 flex gap-2">
-                    <AdminButton variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void patchInvite(inv.id, "resend")}>
-                      Erneut senden
-                    </AdminButton>
-                    <AdminButton variant="secondary" icon={<XCircle className="h-4 w-4" />} onClick={() => void patchInvite(inv.id, "revoke")}>
-                      Widerrufen
-                    </AdminButton>
+                  <div>
+                    <dt className="text-text-muted">Rolle</dt>
+                    <dd>{inv.role_label}</dd>
                   </div>
-                ) : null}
+                  <div>
+                    <dt className="text-text-muted">Erstellt</dt>
+                    <dd>{formatDate(inv.created_at)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-text-muted">Läuft ab</dt>
+                    <dd>{formatDate(inv.expires_at)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-text-muted">Erstellt von</dt>
+                    <dd>{inv.invited_by_name ?? "—"}</dd>
+                  </div>
+                </dl>
+                {canInvite ? <div className="mt-4">{inviteActions(inv)}</div> : null}
               </AdminCard>
             ))}
           </div>
@@ -231,10 +246,12 @@ export function InvitesView() {
             <table className="admin-users-table w-full text-sm">
               <thead>
                 <tr>
-                  <th className="text-left">E-Mail</th>
+                  <th className="text-left">Name / E-Mail</th>
                   <th className="text-left">Rolle</th>
                   <th className="text-left">Status</th>
-                  <th className="text-left">Ablaufdatum</th>
+                  <th className="text-left">Erstellt von</th>
+                  <th className="text-left">Erstellt am</th>
+                  <th className="text-left">Läuft ab</th>
                   <th className="text-right">Aktionen</th>
                 </tr>
               </thead>
@@ -246,23 +263,14 @@ export function InvitesView() {
                       <p className="text-text-muted">{inv.email}</p>
                     </td>
                     <td>{inv.role_label}</td>
-                    <td><AdminStatusBadge label={STATUS_LABELS[inv.status]} variant={STATUS_VARIANT[inv.status]} /></td>
+                    <td>
+                      <AdminStatusBadge label={STATUS_LABELS[inv.status]} variant={STATUS_VARIANT[inv.status]} />
+                    </td>
+                    <td className="text-text-muted">{inv.invited_by_name ?? "—"}</td>
+                    <td className="text-text-muted">{formatDate(inv.created_at)}</td>
                     <td className="text-text-muted">{formatDate(inv.expires_at)}</td>
                     <td>
-                      <div className="flex justify-end gap-1.5">
-                        {inv.status === "pending" && canInvite ? (
-                          <>
-                            <AdminButton variant="secondary" icon={<RefreshCw className="h-4 w-4" />} onClick={() => void patchInvite(inv.id, "resend")}>
-                              Erneut senden
-                            </AdminButton>
-                            <AdminButton variant="secondary" icon={<XCircle className="h-4 w-4" />} onClick={() => void patchInvite(inv.id, "revoke")}>
-                              Widerrufen
-                            </AdminButton>
-                          </>
-                        ) : (
-                          <span className="text-text-muted">—</span>
-                        )}
-                      </div>
+                      <div className="flex justify-end">{canInvite ? inviteActions(inv) : "—"}</div>
                     </td>
                   </tr>
                 ))}
@@ -271,6 +279,19 @@ export function InvitesView() {
           </AdminCard>
         </>
       )}
+
+      <AdminUserManageDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSuccess={() => void load()}
+        inviterRole={inviterRole}
+        roles={roles}
+        canInvite={canInvite}
+        canCreateManually={canCreateManually}
+        defaultTab="invite"
+        toast={toast}
+        withLoading={withLoading}
+      />
     </div>
   );
 }

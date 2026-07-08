@@ -34,6 +34,8 @@ const help = read("components/admin/AdminPwaInstallHelpSheet.tsx");
 const settings = read("components/admin/AdminAppSettingsCard.tsx");
 const pwaLib = read("lib/admin/pwa-install.ts");
 const css = read("src/app/globals.css");
+const layout = read("src/app/admin/layout.tsx");
+const captureJs = read("public/admin/pwa-capture.js");
 
 if (manifest.includes('short_name: "Panda Admin"')) ok("Manifest short_name is Panda Admin");
 else fail("Manifest short_name incorrect");
@@ -47,6 +49,18 @@ else fail("Manifest content-type missing");
 
 if (early.includes("registerAdminServiceWorker")) ok("Service worker registers early on all admin pages");
 else fail("Early SW registration missing");
+
+if (layout.includes("pwa-capture.js") && layout.includes("beforeInteractive")) {
+  ok("Synchronous pwa-capture.js loaded before React");
+} else fail("Early pwa-capture script missing from admin layout");
+
+if (captureJs.includes("beforeinstallprompt") && captureJs.includes("__pbPwaDeferredPrompt")) {
+  ok("pwa-capture.js stores deferred prompt on window");
+} else fail("pwa-capture.js incomplete");
+
+if (pwaLib.includes("buildPwaDebugStatus") && pwaLib.includes("resetPwaInstallHints")) {
+  ok("PWA debug status + reset hints utility");
+} else fail("PWA debug/reset utilities missing");
 
 if (sw.includes('scope: "/admin"') || sw.includes("/admin/manifest.webmanifest")) {
   ok("Service worker precaches admin shell assets");
@@ -62,8 +76,12 @@ else fail("PWA probe utility missing");
 if (provider.includes("beforeinstallprompt") && provider.includes("installFeedback")) ok("Provider handles prompt + feedback");
 else fail("Provider prompt/feedback incomplete");
 
-if (panel.includes("App installieren") && panel.includes("Installationshilfe öffnen")) ok("Panel has install + help CTAs");
+if (panel.includes("Admin-App installieren") && panel.includes("Installationshilfe öffnen")) ok("Panel has install + help CTAs");
 else fail("Panel CTAs missing");
+
+if (panel.includes("Installationshinweis zurücksetzen") && panel.includes("PwaDebugDetails")) {
+  ok("Panel has reset hints + debug details");
+} else fail("Panel reset/debug incomplete");
 
 if (panel.includes("Installationsstatus prüfen") && panel.includes("ProbeDetails")) ok("Status check shows probe details");
 else fail("Status check UI incomplete");

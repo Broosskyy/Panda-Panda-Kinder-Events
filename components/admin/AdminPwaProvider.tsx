@@ -6,10 +6,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
 import {
+  buildPwaDebugStatus,
   clearDeferredPrompt,
   clearPwaSessionClosed,
   isAndroidDevice,
@@ -21,11 +23,13 @@ import {
   readPwaDontShowAgain,
   readPwaSessionClosed,
   registerAdminServiceWorker,
+  resetPwaInstallHints,
   resolvePwaInstalled,
   storeDeferredPrompt,
   supportsNativePwaInstall,
   takeEarlyCapturedPrompt,
   type BeforeInstallPromptEvent,
+  type PwaDebugStatus,
   type PwaInstallOutcome,
   type PwaProbeResult,
 } from "@/lib/admin/pwa-install";
@@ -47,12 +51,14 @@ interface AdminPwaContextValue {
   isInstalled: boolean;
   hiddenPermanently: boolean;
   probeResult: PwaProbeResult | null;
+  debugStatus: PwaDebugStatus | null;
   installFeedback: PwaInstallFeedback;
   helpOpen: boolean;
   install: () => Promise<PwaInstallOutcome>;
   closeCard: () => void;
   dontShowAgain: () => void;
   checkInstallStatus: () => Promise<PwaProbeResult>;
+  resetInstallHints: () => void;
   openInstallHelp: () => void;
   closeInstallHelp: () => void;
   reopenInstallCard: () => void;
@@ -60,7 +66,12 @@ interface AdminPwaContextValue {
 
 const AdminPwaContext = createContext<AdminPwaContextValue | null>(null);
 
+function syncDeferredFromWindow(): BeforeInstallPromptEvent | null {
+  return takeEarlyCapturedPrompt();
+}
+
 export function AdminPwaProvider({ children }: { children: ReactNode }) {
+  const deferredRef = useRef<BeforeInstallPromptEvent | null>(null);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [installed, setInstalled] = useState(false);
   const [hiddenPermanently, setHiddenPermanently] = useState(false);
@@ -68,24 +79,37 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const [ios] = useState(() => isIosDevice());
   const [android] = useState(() => isAndroidDevice());
   const [probeResult, setProbeResult] = useState<PwaProbeResult | null>(null);
+  const [debugStatus, setDebugStatus] = useState<PwaDebugStatus | null>(null);
   const [forceShowCard, setForceShowCard] = useState(false);
   const [installFeedback, setInstallFeedback] = useState<PwaInstallFeedback>({ type: "idle" });
   const [helpOpen, setHelpOpen] = useState(false);
 
-  const refreshProbe = useCallback(async (prompt: BeforeInstallPromptEvent | null) => {
-    const status = await probePwaInstallability(prompt);
-    setProbeResult(status);
-    if (status.state === "installed") setInstalled(true);
-    return status;
+  const promptDismissedRecently = installFeedback.type === "dismissed";
+
+  const applyDeferred = useCallback((prompt: BeforeInstallPromptEvent | null) => {
+    deferredRef.current = prompt;
+    setDeferred(prompt);
   }, []);
+
+  const refreshProbe = useCallback(
+    async (prompt: BeforeInstallPromptEvent | null) => {
+      const status = await probePwaInstallability(prompt);
+      setProbeResult(status);
+      const debug = await buildPwaDebugStatus(status, { promptDismissedRecently });
+      setDebugStatus(debug);
+      if (status.state === "installed") setInstalled(true);
+      return status;
+    },
+    [promptDismissedRecently],
+  );
 
   useEffect(() => {
     setInstalled(resolvePwaInstalled());
     setHiddenPermanently(readPwaDontShowAgain());
     setSessionClosed(readPwaSessionClosed());
 
-    const early = takeEarlyCapturedPrompt();
-    if (early) setDeferred(early);
+    const early = syncDeferredFromWindow();
+    if (early) applyDeferred(early);
 
     void registerAdminServiceWorker().then(() => refreshProbe(early));
 
@@ -93,14 +117,14 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
       storeDeferredPrompt(promptEvent);
-      setDeferred(promptEvent);
+      applyDeferred(promptEvent);
       void refreshProbe(promptEvent);
     };
 
     const onInstalled = () => {
       markPwaInstalled();
       setInstalled(true);
-      setDeferred(null);
+      applyDeferred(null);
       clearDeferredPrompt();
       setForceShowCard(false);
       setInstallFeedback({ type: "accepted" });
@@ -108,8 +132,8 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
     };
 
     const onPromptAvailable = () => {
-      const prompt = takeEarlyCapturedPrompt();
-      if (prompt) setDeferred(prompt);
+      const prompt = syncDeferredFromWindow();
+      if (prompt) applyDeferred(prompt);
       void refreshProbe(prompt);
     };
 
@@ -126,14 +150,14 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       window.removeEventListener("pb-pwa-prompt-available", onPromptAvailable);
       window.removeEventListener("pb-pwa-installed", onExternalInstalled);
     };
-  }, [refreshProbe]);
+  }, [applyDeferred, refreshProbe]);
 
   useEffect(() => {
-    void refreshProbe(deferred);
+    void refreshProbe(deferredRef.current);
   }, [deferred, installed, refreshProbe]);
 
   const install = useCallback(async (): Promise<PwaInstallOutcome> => {
-    const promptEvent = deferred ?? takeEarlyCapturedPrompt();
+    const promptEvent = deferredRef.current ?? syncDeferredFromWindow();
     if (!promptEvent) {
       setInstallFeedback({ type: "unavailable" });
       return "unavailable";
@@ -150,7 +174,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       } else {
         setInstallFeedback({ type: "dismissed" });
       }
-      setDeferred(null);
+      applyDeferred(null);
       clearDeferredPrompt();
       void refreshProbe(null);
       return outcome;
@@ -159,7 +183,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       setInstallFeedback({ type: "unavailable" });
       return "unavailable";
     }
-  }, [deferred, refreshProbe]);
+  }, [applyDeferred, refreshProbe]);
 
   const closeCard = useCallback(() => {
     markPwaSessionClosed();
@@ -174,11 +198,20 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const checkInstallStatus = useCallback(async () => {
-    const currentDeferred = deferred ?? takeEarlyCapturedPrompt();
-    if (currentDeferred && !deferred) setDeferred(currentDeferred);
+    const currentDeferred = deferredRef.current ?? syncDeferredFromWindow();
+    if (currentDeferred) applyDeferred(currentDeferred);
     await registerAdminServiceWorker();
     return refreshProbe(currentDeferred);
-  }, [deferred, refreshProbe]);
+  }, [applyDeferred, refreshProbe]);
+
+  const resetInstallHints = useCallback(() => {
+    resetPwaInstallHints();
+    setHiddenPermanently(false);
+    setSessionClosed(false);
+    setForceShowCard(true);
+    setInstallFeedback({ type: "idle" });
+    void refreshProbe(deferredRef.current);
+  }, [refreshProbe]);
 
   const openInstallHelp = useCallback(() => {
     setHelpOpen(true);
@@ -194,7 +227,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
     setForceShowCard(true);
   }, []);
 
-  const canInstall = Boolean(deferred ?? takeEarlyCapturedPrompt()) && !installed;
+  const canInstall = Boolean(deferredRef.current ?? syncDeferredFromWindow()) && !installed;
   const showIosGuide = ios && !installed && !canInstall;
   const showAndroidGuide = android && !installed && !canInstall && supportsNativePwaInstall();
   const showUnsupportedGuide =
@@ -212,12 +245,14 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       isInstalled: installed,
       hiddenPermanently,
       probeResult,
+      debugStatus,
       installFeedback,
       helpOpen,
       install,
       closeCard,
       dontShowAgain,
       checkInstallStatus,
+      resetInstallHints,
       openInstallHelp,
       closeInstallHelp,
       reopenInstallCard,
@@ -227,6 +262,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       checkInstallStatus,
       closeCard,
       closeInstallHelp,
+      debugStatus,
       dontShowAgain,
       helpOpen,
       hiddenPermanently,
@@ -236,6 +272,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       openInstallHelp,
       probeResult,
       reopenInstallCard,
+      resetInstallHints,
       sessionClosed,
       showAndroidGuide,
       showInstallCard,

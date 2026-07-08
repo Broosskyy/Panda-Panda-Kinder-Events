@@ -120,6 +120,9 @@ declare global {
       prompt: () => Promise<void>;
       userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
     };
+    __pbPwaPromptFired?: boolean;
+    __pbPwaInstalledFired?: boolean;
+    __pbPwaEarlyCaptureBound?: boolean;
   }
 }
 
@@ -143,6 +146,153 @@ export function clearDeferredPrompt(): void {
   if (typeof window !== "undefined") {
     window.__pbPwaDeferredPrompt = undefined;
   }
+}
+
+export type PwaInstallCause =
+  | "already_standalone"
+  | "browser_unsupported"
+  | "prompt_not_yet_fired"
+  | "prompt_dismissed_by_user"
+  | "sw_not_controlling"
+  | "technical_blocker"
+  | "in_app_browser";
+
+export interface PwaDebugStatus {
+  manifestReachable: boolean;
+  serviceWorkerRegistered: boolean;
+  serviceWorkerControlling: boolean;
+  https: boolean;
+  iconsReachable: boolean;
+  displayModeStandalone: boolean;
+  beforeInstallPromptFired: boolean;
+  deferredPromptStored: boolean;
+  appInstalledFired: boolean;
+  installDismissedLocal: boolean;
+  browserProfile: string;
+  currentRoute: string;
+  startUrl: string;
+  scope: string;
+  detectedCause: PwaInstallCause | null;
+  causeMessage: string | null;
+}
+
+export function readPromptFiredFlag(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.__pbPwaPromptFired === true;
+}
+
+export function readAppInstalledFiredFlag(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.__pbPwaInstalledFired === true;
+}
+
+export function isInAppBrowser(): boolean {
+  if (typeof navigator === "undefined") return false;
+  const ua = navigator.userAgent;
+  return /(FBAN|FBAV|Instagram|Line\/|Twitter|LinkedInApp|wv\))/i.test(ua);
+}
+
+export function detectBrowserProfile(): string {
+  if (typeof navigator === "undefined") return "unbekannt";
+  const ua = navigator.userAgent;
+  if (isInAppBrowser()) return "In-App-Browser (kein Chrome)";
+  if (isIosDevice()) return "Safari iOS";
+  if (/android/i.test(ua) && /chrome/i.test(ua)) return "Chrome Android";
+  if (/chrome/i.test(ua) && !/edg/i.test(ua)) return "Chrome Desktop";
+  if (/edg/i.test(ua)) return "Edge";
+  if (/firefox/i.test(ua)) return "Firefox";
+  return "anderer Browser";
+}
+
+/** Clears only PWA hint/dismiss flags — no user or CMS data. */
+export function resetPwaInstallHints(): void {
+  if (typeof localStorage !== "undefined") {
+    localStorage.removeItem(PWA_HIDE_STORAGE_KEY);
+    localStorage.removeItem(PWA_DISMISS_STORAGE_KEY);
+    localStorage.removeItem(PWA_INSTALLED_STORAGE_KEY);
+  }
+  if (typeof sessionStorage !== "undefined") {
+    sessionStorage.removeItem(PWA_SESSION_CLOSED_KEY);
+    sessionStorage.removeItem(PWA_SW_RELOAD_KEY);
+  }
+}
+
+export function detectPwaInstallCause(
+  probe: PwaProbeResult,
+  opts: { promptDismissedRecently?: boolean } = {},
+): { cause: PwaInstallCause | null; message: string | null } {
+  if (probe.state === "installed" || isStandalonePwa()) {
+    return {
+      cause: "already_standalone",
+      message: "Die Admin-App läuft bereits im Vollbildmodus (standalone).",
+    };
+  }
+  if (isInAppBrowser()) {
+    return {
+      cause: "in_app_browser",
+      message:
+        "In-App-Browser erkannt — bitte die Seite in Chrome öffnen (Menü → „In Chrome öffnen“).",
+    };
+  }
+  if (probe.state === "browser_unsupported" || !supportsNativePwaInstall()) {
+    return {
+      cause: "browser_unsupported",
+      message: "Dieser Browser unterstützt keinen nativen Install-Prompt — manuelle Installation nutzen.",
+    };
+  }
+  if (!probe.manifestValid || !probe.icons192Ok || !probe.icons512Ok || !probe.https) {
+    return {
+      cause: "technical_blocker",
+      message: "Technische PWA-Kriterien sind noch nicht vollständig erfüllt — siehe Diagnose.",
+    };
+  }
+  if (probe.serviceWorkerActive && !probe.serviceWorkerControlling) {
+    return {
+      cause: "sw_not_controlling",
+      message:
+        "Der Service Worker kontrolliert diese Seite noch nicht — Seite einmal neu laden und erneut prüfen.",
+    };
+  }
+  if (opts.promptDismissedRecently) {
+    return {
+      cause: "prompt_dismissed_by_user",
+      message:
+        "Der Installationsdialog wurde zuvor abgelehnt — Chrome blockiert den Prompt temporär. Manuelle Installation über das Chrome-Menü nutzen.",
+    };
+  }
+  if (!probe.installPromptAvailable && !readPromptFiredFlag()) {
+    return {
+      cause: "prompt_not_yet_fired",
+      message:
+        "Chrome hat aktuell keinen nativen Installationsdialog bereitgestellt. Technische Kriterien sind erfüllt — Seite neu laden, Admin erneut besuchen oder Chrome-Menü → „App installieren“ prüfen.",
+    };
+  }
+  return { cause: null, message: null };
+}
+
+export async function buildPwaDebugStatus(
+  probe: PwaProbeResult,
+  opts: { promptDismissedRecently?: boolean } = {},
+): Promise<PwaDebugStatus> {
+  const detected = detectPwaInstallCause(probe, opts);
+  return {
+    manifestReachable: probe.manifestLoaded && probe.manifestValid,
+    serviceWorkerRegistered: probe.serviceWorkerRegistered,
+    serviceWorkerControlling: probe.serviceWorkerControlling,
+    https: probe.https,
+    iconsReachable: probe.icons192Ok && probe.icons512Ok,
+    displayModeStandalone: isStandalonePwa(),
+    beforeInstallPromptFired: readPromptFiredFlag(),
+    deferredPromptStored: Boolean(takeEarlyCapturedPrompt()),
+    appInstalledFired: readAppInstalledFiredFlag(),
+    installDismissedLocal: readPwaDontShowAgain(),
+    browserProfile: detectBrowserProfile(),
+    currentRoute: typeof window !== "undefined" ? window.location.pathname : "/admin",
+    startUrl: "/admin",
+    scope: "/admin",
+    detectedCause: detected.cause,
+    causeMessage: detected.message,
+  };
 }
 
 async function checkIconUrl(path: string): Promise<{ ok: boolean; mimeOk: boolean }> {

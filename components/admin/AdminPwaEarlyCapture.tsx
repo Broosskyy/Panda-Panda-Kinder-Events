@@ -16,10 +16,12 @@ export function AdminPwaEarlyCapture() {
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       storeDeferredPrompt(e as BeforeInstallPromptEvent);
+      if (typeof window !== "undefined") window.__pbPwaPromptFired = true;
       window.dispatchEvent(new CustomEvent("pb-pwa-prompt-available"));
     };
 
     const onInstalled = () => {
+      if (typeof window !== "undefined") window.__pbPwaInstalledFired = true;
       markPwaInstalled();
       window.dispatchEvent(new CustomEvent("pb-pwa-installed"));
     };

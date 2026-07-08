@@ -4,13 +4,16 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
-import type { PwaProbeResult } from "@/lib/admin/pwa-install";
+import type { PwaDebugStatus, PwaProbeResult } from "@/lib/admin/pwa-install";
 
 interface AdminPwaInstallHelpSheetProps {
   open: boolean;
   onClose: () => void;
   showIosGuide: boolean;
   blockers: string[];
+  debugStatus?: PwaDebugStatus | null;
+  canInstall?: boolean;
+  onInstall?: () => void;
 }
 
 export function AdminPwaInstallHelpSheet({
@@ -18,6 +21,9 @@ export function AdminPwaInstallHelpSheet({
   onClose,
   showIosGuide,
   blockers,
+  debugStatus,
+  canInstall = false,
+  onInstall,
 }: AdminPwaInstallHelpSheetProps) {
   const scrollLockY = useRef(0);
 
@@ -85,9 +91,13 @@ export function AdminPwaInstallHelpSheet({
           </button>
         </header>
         <div className="admin-pwa-help-sheet-body">
-          <p className="text-sm text-text-secondary">
-            So fügst du die Admin-App auf deinem Gerät hinzu:
-          </p>
+          {debugStatus?.causeMessage ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+              {debugStatus.causeMessage}
+            </div>
+          ) : null}
+
+          <p className="mt-3 text-sm text-text-secondary">So fügst du die Admin-App auf deinem Gerät hinzu:</p>
 
           {showIosGuide ? (
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
@@ -113,9 +123,16 @@ export function AdminPwaInstallHelpSheet({
             </ol>
           )}
 
+          {debugStatus ? (
+            <div className="mt-4 rounded-xl border border-border bg-bg-secondary/80 p-3 text-sm">
+              <p className="font-medium text-text-primary">Technische Diagnose</p>
+              <PwaDebugDetails debug={debugStatus} className="mt-2" />
+            </div>
+          ) : null}
+
           {blockers.length > 0 ? (
             <div className="mt-4 rounded-xl border border-border bg-bg-secondary/50 p-3 text-sm">
-              <p className="font-medium text-text-primary">Diagnose</p>
+              <p className="font-medium text-text-primary">Hinweise</p>
               <ul className="mt-2 list-disc space-y-1.5 pl-5 text-text-muted">
                 {blockers.map((item) => (
                   <li key={item}>{item}</li>
@@ -124,9 +141,16 @@ export function AdminPwaInstallHelpSheet({
             </div>
           ) : null}
 
-          <AdminButton variant="primary" className="mt-4 w-full" onClick={onClose}>
-            OK
-          </AdminButton>
+          <div className="mt-4 flex flex-col gap-2">
+            {canInstall && onInstall ? (
+              <AdminButton variant="primary" className="w-full" onClick={onInstall}>
+                Nativen Installationsdialog öffnen
+              </AdminButton>
+            ) : null}
+            <AdminButton variant="secondary" className="w-full" onClick={onClose}>
+              Schließen
+            </AdminButton>
+          </div>
         </div>
       </div>
     </div>,
@@ -141,6 +165,7 @@ export function ProbeDetails({ probeResult }: { probeResult: PwaProbeResult }) {
     { label: "SW kontrolliert Seite", ok: probeResult.serviceWorkerControlling },
     { label: "Icons 192/512", ok: probeResult.icons192Ok && probeResult.icons512Ok },
     { label: "HTTPS", ok: probeResult.https },
+    { label: "Offline", ok: probeResult.offlineCapable },
     { label: "Install-Prompt", ok: probeResult.installPromptAvailable },
   ];
 
@@ -150,6 +175,40 @@ export function ProbeDetails({ probeResult }: { probeResult: PwaProbeResult }) {
         <li key={row.label} className="flex items-center justify-between gap-2">
           <span>{row.label}</span>
           <span className={row.ok ? "text-[#2d5a3a]" : "text-amber-700"}>{row.ok ? "OK" : "Fehlt"}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function yesNo(value: boolean) {
+  return value ? "ja" : "nein";
+}
+
+export function PwaDebugDetails({ debug, className = "" }: { debug: PwaDebugStatus; className?: string }) {
+  const rows: { label: string; value: string }[] = [
+    { label: "Manifest erreichbar", value: yesNo(debug.manifestReachable) },
+    { label: "Service Worker registriert", value: yesNo(debug.serviceWorkerRegistered) },
+    { label: "SW kontrolliert Seite", value: yesNo(debug.serviceWorkerControlling) },
+    { label: "HTTPS", value: yesNo(debug.https) },
+    { label: "Icons erreichbar", value: yesNo(debug.iconsReachable) },
+    { label: "display-mode standalone", value: yesNo(debug.displayModeStandalone) },
+    { label: "beforeinstallprompt gefeuert", value: yesNo(debug.beforeInstallPromptFired) },
+    { label: "deferredPrompt gespeichert", value: yesNo(debug.deferredPromptStored) },
+    { label: "appinstalled gefeuert", value: yesNo(debug.appInstalledFired) },
+    { label: "Install-Hinweis ausgeblendet", value: yesNo(debug.installDismissedLocal) },
+    { label: "Browser", value: debug.browserProfile },
+    { label: "Route", value: debug.currentRoute },
+    { label: "start_url", value: debug.startUrl },
+    { label: "scope", value: debug.scope },
+  ];
+
+  return (
+    <ul className={`space-y-1 text-xs text-text-muted ${className}`.trim()}>
+      {rows.map((row) => (
+        <li key={row.label} className="flex items-start justify-between gap-3">
+          <span className="text-text-secondary">{row.label}</span>
+          <span className="text-right font-medium text-text-primary">{row.value}</span>
         </li>
       ))}
     </ul>

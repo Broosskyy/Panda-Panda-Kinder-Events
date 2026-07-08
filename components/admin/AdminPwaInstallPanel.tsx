@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { CheckCircle2, RefreshCw, Smartphone } from "lucide-react";
+import { CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Smartphone } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
-import { AdminPwaInstallHelpSheet, ProbeDetails } from "@/components/admin/AdminPwaInstallHelpSheet";
+import { AdminPwaInstallHelpSheet, ProbeDetails, PwaDebugDetails } from "@/components/admin/AdminPwaInstallHelpSheet";
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
 
 interface AdminPwaInstallPanelProps {
@@ -18,9 +18,9 @@ function feedbackMessage(feedback: ReturnType<typeof useAdminPwa>["installFeedba
     case "accepted":
       return "Installation akzeptiert — die App wird hinzugefügt.";
     case "dismissed":
-      return "Installation abgelehnt.";
+      return "Installation abgelehnt — Chrome blockiert den Prompt ggf. temporär. Manuelle Installation nutzen.";
     case "unavailable":
-      return "Installation nicht verfügbar — bitte Installationshilfe nutzen.";
+      return null;
     default:
       return null;
   }
@@ -34,13 +34,16 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
     install,
     checkInstallStatus,
     probeResult,
+    debugStatus,
     installFeedback,
     helpOpen,
     openInstallHelp,
     closeInstallHelp,
+    resetInstallHints,
   } = useAdminPwa();
   const [statusChecked, setStatusChecked] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [debugOpen, setDebugOpen] = useState(false);
 
   const handleCheckStatus = async () => {
     setChecking(true);
@@ -49,7 +52,17 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
     setChecking(false);
   };
 
+  const handlePrimaryAction = async () => {
+    if (canInstall) {
+      const outcome = await install();
+      if (outcome === "unavailable") openInstallHelp();
+      return;
+    }
+    openInstallHelp();
+  };
+
   const feedback = feedbackMessage(installFeedback);
+  const causeMessage = debugStatus?.causeMessage;
 
   if (isInstalled) {
     return (
@@ -83,7 +96,23 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
         <div className="rounded-xl border border-border bg-bg-secondary/40 p-3 text-sm">
           <p className="font-medium text-text-primary">Status</p>
           <p className="mt-1 text-text-muted">{probeResult?.statusLabel ?? "Wird geprüft…"}</p>
+          {causeMessage && !canInstall ? (
+            <p className="mt-2 text-xs leading-relaxed text-text-secondary">{causeMessage}</p>
+          ) : null}
           {statusChecked && probeResult ? <ProbeDetails probeResult={probeResult} /> : null}
+          {statusChecked && debugStatus ? (
+            <div className="mt-3 border-t border-border/70 pt-3">
+              <button
+                type="button"
+                className="flex w-full items-center justify-between gap-2 text-xs font-medium text-text-secondary"
+                onClick={() => setDebugOpen((v) => !v)}
+              >
+                Technische Diagnose
+                {debugOpen ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+              </button>
+              {debugOpen ? <PwaDebugDetails debug={debugStatus} className="mt-2" /> : null}
+            </div>
+          ) : null}
           {statusChecked && probeResult?.blockers?.length ? (
             <ul className="mt-3 space-y-1.5 border-t border-border/70 pt-3 text-xs text-text-secondary">
               {probeResult.blockers.map((item) => (
@@ -100,15 +129,13 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
         ) : null}
 
         <div className="flex flex-col gap-2">
-          {canInstall ? (
-            <AdminButton variant="primary" className="w-full" onClick={() => void install()}>
-              App installieren
-            </AdminButton>
-          ) : (
-            <AdminButton variant="secondary" className="w-full" onClick={openInstallHelp}>
-              Installationshilfe öffnen
-            </AdminButton>
-          )}
+          <AdminButton variant="primary" className="w-full" onClick={() => void handlePrimaryAction()}>
+            {canInstall ? "Admin-App installieren" : "Admin-App installieren / Hilfe"}
+          </AdminButton>
+
+          <AdminButton variant="secondary" className="w-full" onClick={openInstallHelp}>
+            Installationshilfe öffnen
+          </AdminButton>
 
           <AdminButton
             variant="ghost"
@@ -119,6 +146,10 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
           >
             {checking ? "Prüfe…" : "Installationsstatus prüfen"}
           </AdminButton>
+
+          <AdminButton variant="ghost" className="w-full text-xs" onClick={resetInstallHints}>
+            Installationshinweis zurücksetzen
+          </AdminButton>
         </div>
       </div>
 
@@ -127,6 +158,9 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
         onClose={closeInstallHelp}
         showIosGuide={showIosGuide}
         blockers={probeResult?.blockers ?? []}
+        debugStatus={debugStatus}
+        canInstall={canInstall}
+        onInstall={() => void install()}
       />
     </>
   );

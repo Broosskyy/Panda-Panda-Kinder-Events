@@ -4385,6 +4385,7 @@ html[data-mobile-menu-open="true"] {
   border-radius: 1.25rem 1.25rem 0 0;
   border: 1px solid var(--admin-border);
   background: var(--admin-surface);
+  color: var(--admin-text);
   box-shadow: 0 -12px 40px rgba(20, 22, 16, 0.18);
   padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
 }

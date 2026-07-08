@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { Newspaper, Save, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminEmptyState, AdminSearchInput, AdminStatusBadge, postStatusVariant } from "@/components/admin/ui";
-import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { AdminButton, AdminEmptyState, AdminLoadingCard, AdminSearchInput, AdminStatusBadge, postStatusVariant } from "@/components/admin/ui";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_CONFIRM, ADMIN_MSG, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_CONFIRM } from "@/lib/admin/messages";
 import type { CmsPost } from "@/lib/cms/types";
 
 type PostDraft = {
@@ -36,13 +37,14 @@ const emptyPost = (): PostDraft => ({
 });
 
 export function PostsView() {
-  const { toast, withLoading, postCreated, postUpdated } = useAdminMessages();
+  const { confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("beitraege");
   const empty = ADMIN_EMPTY_STATES.posts;
   const [posts, setPosts] = useState<CmsPost[]>([]);
   const [draft, setDraft] = useState<PostDraft>(emptyPost());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/posts");
@@ -52,12 +54,20 @@ export function PostsView() {
   }, []);
 
   useEffect(() => {
-    void withLoading(load());
-  }, [load, withLoading]);
+    void load()
+      .catch(() => undefined)
+      .finally(() => setLoading(false));
+  }, [load]);
 
   const save = async () => {
     if (!draft.title.trim()) {
-      toast("Titel ist Pflicht", "error");
+      await runAction({
+        action: async () => {
+          throw new Error("Titel ist Pflicht.");
+        },
+        success: ACTION_RESULTS.postCreated(),
+        error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+      });
       return;
     }
     const payload = {
@@ -71,8 +81,8 @@ export function PostsView() {
       slug: draft.slug || undefined,
     };
 
-    await withLoading(
-      (async () => {
+    const result = await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/posts", {
           method: editingId ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
@@ -80,49 +90,73 @@ export function PostsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        if (editingId) postUpdated();
-        else postCreated();
-        setDraft(emptyPost());
-        setEditingId(null);
         await load();
-      })(),
-    );
+        return data;
+      },
+      success: editingId ? ACTION_RESULTS.postUpdated() : ACTION_RESULTS.postCreated(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
+
+    if (result) {
+      setDraft(emptyPost());
+      setEditingId(null);
+    }
   };
 
   const remove = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.deletePost)) return;
-    await withLoading(
-      (async () => {
+    const ok = await confirm({
+      title: "Beitrag löschen",
+      message: ADMIN_CONFIRM.deletePost,
+      confirmLabel: "Löschen",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    await runAction({
+      action: async () => {
         const res = await fetch("/api/admin/posts", {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id }),
         });
         if (!res.ok) throw new Error("Löschen fehlgeschlagen");
-        toast(ADMIN_MSG.postDeleted);
         await load();
-      })(),
-    );
+      },
+      success: ACTION_RESULTS.postDeleted(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
   };
 
   const uploadHero = async (file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("bucket", "site-assets");
-    fd.append("folder", "posts");
-    const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    const data = await res.json();
-    if (!res.ok) {
-      toast(data.error ?? ADMIN_MSG.uploadFailed, "error");
-      return;
-    }
-    setDraft((d) => ({ ...d, hero_image_path: data.path, hero_image_url: data.url }));
-    toast("✓ Hero-Bild hochgeladen — bitte Beitrag speichern.");
+    await runAction({
+      action: async () => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("bucket", "site-assets");
+        fd.append("folder", "posts");
+        const res = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Upload fehlgeschlagen");
+        setDraft((d) => ({ ...d, hero_image_path: data.path, hero_image_url: data.url }));
+        return data;
+      },
+      success: ACTION_RESULTS.imageUploaded(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
   };
 
   const filtered = posts.filter((p) =>
     `${p.title} ${p.category} ${p.slug}`.toLowerCase().includes(search.toLowerCase()),
   );
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader {...page} />
+        <AdminLoadingCard message="Beiträge werden geladen…" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -136,7 +170,7 @@ export function PostsView() {
           <input className="admin-input" type="date" value={draft.published_at} onChange={(e) => setDraft({ ...draft, published_at: e.target.value })} />
           <input className="admin-input md:col-span-2" placeholder="Slug (optional, wird automatisch erzeugt)" value={draft.slug} onChange={(e) => setDraft({ ...draft, slug: e.target.value })} />
           <textarea className="admin-input md:col-span-2 min-h-32" placeholder="Text" value={draft.content} onChange={(e) => setDraft({ ...draft, content: e.target.value })} />
-          <label className="flex cursor-pointer items-center gap-2 text-sm">
+          <label className="flex cursor-pointer items-center gap-2 text-sm admin-text-body">
             <input type="checkbox" checked={draft.published} onChange={(e) => setDraft({ ...draft, published: e.target.checked })} />
             Veröffentlicht
           </label>
@@ -176,10 +210,10 @@ export function PostsView() {
           {filtered.map((p) => (
             <div key={p.id} className="admin-list-card">
               <div>
-                <p className="font-semibold text-text-primary">{p.title}</p>
+                <p className="font-semibold admin-text-body">{p.title}</p>
                 <div className="mt-1 flex flex-wrap items-center gap-2">
                   <AdminStatusBadge label={p.published ? "Veröffentlicht" : "Entwurf"} variant={postStatusVariant(p.published)} />
-                  <span className="text-sm text-text-muted">/aktuelles/{p.slug}</span>
+                  <span className="text-sm admin-text-muted">/aktuelles/{p.slug}</span>
                 </div>
               </div>
               <div className="flex gap-2">

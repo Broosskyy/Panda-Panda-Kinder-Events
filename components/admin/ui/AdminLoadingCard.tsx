@@ -29,7 +29,7 @@ export function AdminLoadingCard({
 
   return (
     <AdminCard compact>
-      <p className="text-sm text-text-muted" role="status" aria-live="polite">
+      <p className="text-sm admin-text-muted" role="status" aria-live="polite">
         {message}
       </p>
     </AdminCard>

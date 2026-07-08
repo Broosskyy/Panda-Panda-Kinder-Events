@@ -121,10 +121,10 @@ if (onboardingApi.includes("filterOnboardingSteps") && onboardingApi.includes("r
 
 const onboardingLib = read("lib/admin/onboarding.ts");
 if (
-  onboardingLib.includes("Willkommen im Panda-Bande Admin") &&
-  onboardingLib.includes('roles: ["administrator"]')
+  onboardingLib.includes("ROLE_TRACKS") &&
+  onboardingLib.includes("administrator")
 ) {
-  ok("Onboarding steps defined with role gates");
+  ok("Onboarding role tracks defined");
 } else {
   fail("Onboarding steps incomplete");
 }

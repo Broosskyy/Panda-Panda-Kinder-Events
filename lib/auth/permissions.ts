@@ -15,6 +15,7 @@ const ALL_PERMISSIONS = [
   "crm:read",
   "customers:write",
   "inquiries:write",
+  "inquiries:delete",
   "quotes:write",
   "invoices:write",
   "invoices:delete",

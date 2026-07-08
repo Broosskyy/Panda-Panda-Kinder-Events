@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw, Smartphone, Sparkles } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
@@ -33,6 +33,7 @@ import { DomainVerificationBanner } from "@/components/admin/email/DomainVerific
 import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
 import { ModulesSettingsPanel } from "@/components/admin/settings/ModulesSettingsPanel";
 import { useAdminOnboarding } from "@/components/admin/AdminOnboardingProvider";
+import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
 interface EmailStatusResponse {
@@ -96,6 +97,7 @@ export function SettingsView() {
   const [testTo, setTestTo] = useState("");
   const { withLoading, saved, testEmailSent, error: showError } = useAdminMessages();
   const { openWizard } = useAdminOnboarding();
+  const { showInstallHelp, isInstalled: pwaInstalled } = useAdminPwa();
   const settingsPage = adminPageHeaderProps("einstellungen");
 
   const applySettingsBundle = useCallback((settings: SiteSettingsBundle) => {
@@ -283,13 +285,20 @@ export function SettingsView() {
         helpItems={settingsPage.helpItems}
       />
 
-      <AdminCard title="Profil & Tutorial" compact>
+      <AdminCard title="Profil & Hilfe" compact>
         <p className="mb-3 text-sm text-text-muted">
-          Das interaktive Onboarding erklärt die wichtigsten Admin-Bereiche Schritt für Schritt.
+          Tutorial und App-Installation findest du hier jederzeit wieder.
         </p>
-        <AdminButton variant="secondary" icon={<Sparkles className="h-4 w-4" />} onClick={() => void openWizard()}>
-          Tutorial erneut starten
-        </AdminButton>
+        <div className="flex flex-wrap gap-2">
+          <AdminButton variant="secondary" icon={<Sparkles className="h-4 w-4" />} onClick={() => void openWizard()}>
+            Tutorial erneut starten
+          </AdminButton>
+          {!pwaInstalled ? (
+            <AdminButton variant="secondary" icon={<Smartphone className="h-4 w-4" />} onClick={showInstallHelp}>
+              Admin-App installieren
+            </AdminButton>
+          ) : null}
+        </div>
       </AdminCard>
 
       <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">

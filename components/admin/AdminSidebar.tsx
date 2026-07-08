@@ -156,7 +156,7 @@ export function AdminSidebar() {
         <div className="admin-sidebar-notifications hidden md:flex">
           <AdminNotificationCenter />
         </div>
-        <AdminIdentityPanel identity={identity} loading={identityLoading} />
+        <AdminIdentityPanel identity={identity} loading={identityLoading} compact />
         <nav className="admin-sidebar-nav">
           <NavContent />
         </nav>
@@ -195,7 +195,7 @@ export function AdminSidebar() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <AdminIdentityPanel identity={identity} loading={identityLoading} />
+            <AdminIdentityPanel identity={identity} loading={identityLoading} compact />
             <nav className="admin-drawer-nav">
               <NavContent onNavigate={() => setDrawerOpen(false)} />
             </nav>

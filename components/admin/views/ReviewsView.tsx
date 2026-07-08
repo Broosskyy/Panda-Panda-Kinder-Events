@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronUp, Mail, Star } from "lucide-react";
+import { ChevronDown, ChevronUp, Mail, Pencil, Shield, Star, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import {
   AdminButton,
@@ -10,6 +10,7 @@ import {
   AdminFilterSelect,
   AdminLoadingCard,
   AdminStatusBadge,
+  AdminActionMenu,
   getReviewDisplayStatus,
   ReviewAdminImages,
 } from "@/components/admin/ui";
@@ -54,6 +55,8 @@ export function ReviewsView() {
   const [requestEmail, setRequestEmail] = useState("");
   const [requestName, setRequestName] = useState("");
   const [requestEventType, setRequestEventType] = useState("");
+  const [replyDrafts, setReplyDrafts] = useState<Record<string, string>>({});
+  const [replyOpen, setReplyOpen] = useState<Set<string>>(new Set());
   const { toast, withLoading, reviewPublished, reviewSaved, reviewDeleted, reviewRequestSent, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("bewertungen");
   const empty = ADMIN_EMPTY_STATES.reviews;
@@ -137,7 +140,7 @@ export function ReviewsView() {
   };
 
   const remove = async (id: string) => {
-    if (!confirmDanger(ADMIN_CONFIRM.deleteReview)) return;
+    if (!confirmDanger(`${ADMIN_CONFIRM.deleteReview}\n\nDiese Aktion wird protokolliert.`)) return;
     const res = await fetch("/api/admin/reviews", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
@@ -246,38 +249,39 @@ export function ReviewsView() {
     <div className="review-admin-page">
       <AdminPageHeader {...page} />
 
-      <AdminCard title="Bewertungsanfrage per E-Mail" compact className="mb-0">
-        <p className="mb-4 text-sm text-text-muted">
-          Sende Kunden eine freundliche E-Mail mit Link zur Bewertungsseite. Text und Betreff kannst du unter
-          Einstellungen → E-Mail oder in den Vorlagen anpassen.
-        </p>
-        <div className="grid gap-3 md:grid-cols-3">
-          <input
-            className="admin-input"
-            type="email"
-            placeholder="kunde@beispiel.de"
-            value={requestEmail}
-            onChange={(e) => setRequestEmail(e.target.value)}
-          />
-          <input
-            className="admin-input"
-            placeholder="Name des Kunden"
-            value={requestName}
-            onChange={(e) => setRequestName(e.target.value)}
-          />
-          <input
-            className="admin-input"
-            placeholder="Anlass (optional)"
-            value={requestEventType}
-            onChange={(e) => setRequestEventType(e.target.value)}
-          />
-        </div>
-        <div className="mt-3">
-          <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendReviewRequest()}>
-            Bewertungsanfrage senden
-          </AdminButton>
-        </div>
-      </AdminCard>
+      <details className="admin-card admin-help-collapsible mb-0">
+        <summary className="admin-page-help-toggle cursor-pointer list-none">
+          Bewertungsanfrage per E-Mail senden
+        </summary>
+        <AdminCard title="Bewertungsanfrage" compact className="mt-2 border-0 p-0 shadow-none">
+          <div className="grid gap-3 md:grid-cols-3">
+            <input
+              className="admin-input"
+              type="email"
+              placeholder="kunde@beispiel.de"
+              value={requestEmail}
+              onChange={(e) => setRequestEmail(e.target.value)}
+            />
+            <input
+              className="admin-input"
+              placeholder="Name des Kunden"
+              value={requestName}
+              onChange={(e) => setRequestName(e.target.value)}
+            />
+            <input
+              className="admin-input"
+              placeholder="Anlass (optional)"
+              value={requestEventType}
+              onChange={(e) => setRequestEventType(e.target.value)}
+            />
+          </div>
+          <div className="mt-3">
+            <AdminButton variant="secondary" icon={<Mail className="h-4 w-4" />} onClick={() => void sendReviewRequest()}>
+              Bewertungsanfrage senden
+            </AdminButton>
+          </div>
+        </AdminCard>
+      </details>
 
       <AdminFilterBar>
         <AdminFilterSelect
@@ -308,6 +312,11 @@ export function ReviewsView() {
             const isEditing = editingId === r.id;
             const globalIdx = sortedReviews.findIndex((s) => s.id === r.id);
             const status = getReviewDisplayStatus(r);
+            const replyValue = replyDrafts[r.id] ?? r.admin_reply ?? "";
+            const replyDirty = replyValue !== (r.admin_reply ?? "");
+            const showReply = replyOpen.has(r.id) || isEditing || Boolean(r.admin_reply);
+
+            const saveReply = () => void patch(r.id, { admin_reply: replyValue });
 
             return (
               <AdminCard key={r.id} className="review-admin-card">
@@ -438,33 +447,75 @@ export function ReviewsView() {
                 </div>
 
                 <div className="review-admin-reply">
-                  <label className="admin-form-label mb-1 block">Antwort von Panda-Bande</label>
-                  <textarea
-                    defaultValue={r.admin_reply ?? ""}
-                    rows={3}
-                    className="admin-input min-h-[5.5rem] w-full"
-                    placeholder="Antwort schreiben…"
-                    onBlur={(e) => {
-                      if (e.target.value !== (r.admin_reply ?? "")) {
-                        void patch(r.id, { admin_reply: e.target.value });
-                      }
-                    }}
-                  />
+                  {showReply || isEditing ? (
+                    <>
+                      <label className="admin-form-label mb-1 block">Antwort von Panda-Bande</label>
+                      <textarea
+                        value={replyValue}
+                        rows={3}
+                        className="admin-input min-h-[5.5rem] w-full"
+                        placeholder="Antwort schreiben…"
+                        onChange={(e) => setReplyDrafts((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                      />
+                    </>
+                  ) : (
+                    <button
+                      type="button"
+                      className="text-sm font-medium text-primary"
+                      onClick={() => setReplyOpen((prev) => new Set(prev).add(r.id))}
+                    >
+                      Antwort hinzufügen
+                    </button>
+                  )}
                 </div>
 
                 <div className="review-admin-actions">
-                  <AdminButton variant="secondary" onClick={() => setEditingId(isEditing ? null : r.id)}>
-                    {isEditing ? ADMIN_BTN.close : ADMIN_BTN.edit}
-                  </AdminButton>
-                  <AdminButton variant={r.approved ? "secondary" : "primary"} onClick={() => void toggleApproved(r)}>
-                    {r.approved ? "Zurückziehen" : "Veröffentlichen"}
-                  </AdminButton>
-                  <AdminButton variant="secondary" onClick={() => void patch(r.id, { verified: !r.verified })}>
-                    {r.verified ? "Verifizierung entfernen" : "Verifizieren"}
-                  </AdminButton>
-                  <AdminButton variant="danger" onClick={() => void remove(r.id)}>
-                    {ADMIN_BTN.delete}
-                  </AdminButton>
+                  <AdminActionMenu
+                    primary={
+                      replyDirty
+                        ? {
+                            label: "Antwort speichern",
+                            onClick: saveReply,
+                          }
+                        : !r.approved
+                          ? {
+                              label: "Freigeben",
+                              onClick: () => void toggleApproved(r),
+                            }
+                          : undefined
+                    }
+                    items={[
+                      {
+                        id: "edit",
+                        label: isEditing ? ADMIN_BTN.close : ADMIN_BTN.edit,
+                        icon: <Pencil className="h-4 w-4" />,
+                        onClick: () => setEditingId(isEditing ? null : r.id),
+                      },
+                      {
+                        id: "verify",
+                        label: r.verified ? "Verifizierung entfernen" : "Verifizieren",
+                        icon: <Shield className="h-4 w-4" />,
+                        onClick: () => void patch(r.id, { verified: !r.verified }),
+                      },
+                      ...(r.approved
+                        ? [
+                            {
+                              id: "unpublish",
+                              label: "Zurückziehen",
+                              onClick: () => void toggleApproved(r),
+                            },
+                          ]
+                        : []),
+                    ]}
+                    dangerItems={[
+                      {
+                        id: "delete",
+                        label: ADMIN_BTN.delete,
+                        icon: <Trash2 className="h-4 w-4" />,
+                        onClick: () => void remove(r.id),
+                      },
+                    ]}
+                  />
                 </div>
               </AdminCard>
             );

@@ -93,17 +93,26 @@ export function AdminPwaInstallHelpSheet({
         <div className="admin-pwa-help-sheet-body">
           {debugStatus?.causeMessage ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-              {canInstall
-                ? debugStatus.causeMessage
-                : "Chrome stellt aktuell keinen Installationsdialog bereit."}
+              {debugStatus.causeMessage}
             </div>
           ) : !canInstall ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-              Chrome stellt aktuell keinen Installationsdialog bereit.
+              Chrome bietet aktuell keinen nativen Installationsdialog an.
             </div>
           ) : null}
 
-          <p className="mt-3 text-sm text-text-secondary">So fügst du die Admin-App auf deinem Gerät hinzu:</p>
+          <p className="mt-3 text-sm font-medium text-text-primary">Echte PWA vs. Verknüpfung</p>
+          <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-text-secondary">
+            <li>
+              <strong>App installieren</strong> = echte PWA (Vollbild, standalone, Service Worker aktiv)
+            </li>
+            <li>
+              <strong>Zum Startbildschirm hinzufügen</strong> = nur Verknüpfung im Browser —{" "}
+              <strong>keine</strong> echte PWA-Installation
+            </li>
+          </ul>
+
+          <p className="mt-4 text-sm text-text-secondary">So installierst du die Admin-App:</p>
 
           {showIosGuide ? (
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
@@ -122,10 +131,13 @@ export function AdminPwaInstallHelpSheet({
             <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
               <li>Chrome-Menü ⋮ oben rechts öffnen</li>
               <li>
-                <strong>App installieren</strong> oder <strong>Zum Startbildschirm hinzufügen</strong> wählen
+                Wenn verfügbar: <strong>App installieren</strong> wählen (echte PWA)
               </li>
-              <li>Installation bestätigen</li>
-              <li>Falls die Option fehlt: Seite einmal neu laden und erneut prüfen</li>
+              <li>
+                Wenn nur <strong>Zum Startbildschirm hinzufügen</strong> erscheint: PWA-Kriterien sind
+                noch nicht erfüllt — Status prüfen, Seite neu laden, erneut testen
+              </li>
+              <li>Nach Installation: App vom Startbildschirm öffnen (ohne Browserleiste)</li>
             </ol>
           )}
 
@@ -168,11 +180,11 @@ export function ProbeDetails({ probeResult }: { probeResult: PwaProbeResult }) {
   const rows: { label: string; ok: boolean }[] = [
     { label: "Manifest", ok: probeResult.manifestLoaded && probeResult.manifestValid },
     { label: "Service Worker aktiv", ok: probeResult.serviceWorkerActive },
-    { label: "SW kontrolliert Seite", ok: probeResult.serviceWorkerControlling },
+    { label: "SW kontrolliert /admin", ok: probeResult.serviceWorkerControlling },
     { label: "Icons 192/512", ok: probeResult.icons192Ok && probeResult.icons512Ok },
+    { label: "Maskable Icons", ok: probeResult.iconsMaskable192Ok && probeResult.iconsMaskable512Ok },
     { label: "HTTPS", ok: probeResult.https },
-    { label: "Offline", ok: probeResult.offlineCapable },
-    { label: "Install-Prompt", ok: probeResult.installPromptAvailable },
+    { label: "Echter Install-Prompt", ok: probeResult.installPromptAvailable },
   ];
 
   return (
@@ -207,6 +219,7 @@ export function PwaDebugDetails({ debug, className = "" }: { debug: PwaDebugStat
     { label: "Route", value: debug.currentRoute },
     { label: "start_url", value: debug.startUrl },
     { label: "scope", value: debug.scope },
+    { label: "Install-Modus", value: debug.installMode },
   ];
 
   return (

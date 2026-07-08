@@ -97,13 +97,15 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
           <p className="font-medium text-text-primary">Status</p>
           <p className="mt-1 text-text-muted">
             {canInstall
-              ? (probeResult?.statusLabel ?? "Wird geprüft…")
-              : "Chrome stellt aktuell keinen Installationsdialog bereit."}
+              ? "Echte PWA-Installation verfügbar („App installieren“)"
+              : probeResult?.installMode === "shortcut_only"
+                ? "Nur Startbildschirm-Verknüpfung — keine echte PWA"
+                : "Chrome bietet aktuell keinen Installationsdialog an."}
           </p>
           {!canInstall ? (
             <p className="mt-2 text-xs leading-relaxed text-text-secondary">
               {causeMessage ??
-                "Manuelle Installation: Chrome-Menü ⋮ → „App installieren“ oder „Zum Startbildschirm hinzufügen“."}
+                "Wenn Chrome nur „Zum Startbildschirm hinzufügen“ zeigt, sind die PWA-Kriterien noch nicht erfüllt."}
             </p>
           ) : null}
           {canInstall && causeMessage ? (
@@ -160,7 +162,7 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
           </AdminButton>
 
           <AdminButton variant="ghost" className="w-full text-xs" onClick={resetInstallHints}>
-            Installationshinweis zurücksetzen
+            PWA-Installationsstatus zurücksetzen
           </AdminButton>
         </div>
       </div>

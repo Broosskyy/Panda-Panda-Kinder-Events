@@ -17,7 +17,7 @@ export const BRAND = {
   /** Eine Quelle: Header, Splash, Favicon, PWA */
   master: "/assets/Logo.png",
 
-  iconVersion: "7",
+  iconVersion: "8",
 
   markOnly: "/assets/Logo.png",
 
@@ -31,6 +31,7 @@ export const BRAND = {
     appleTouchIcon: "/icons/panda-apple-touch-icon.png",
     icon192: "/icons/panda-icon-192.png",
     icon512: "/icons/panda-icon-512.png",
+    iconMaskable192: "/icons/panda-icon-maskable-192.png",
     iconMaskable512: "/icons/panda-icon-maskable-512.png",
     ogImage: "/branding/og-image.png",
   },

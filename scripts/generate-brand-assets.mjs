@@ -14,7 +14,7 @@ const brandingDir = join(root, "public/branding");
 const appDir = join(root, "src/app");
 const masterLogo = join(root, "public/assets/Logo.png");
 const BG = "#f4f1ea";
-const ICON_VERSION = "7";
+const ICON_VERSION = "8";
 
 /** Logo.png 640×160 — vollständiges Kombi-Logo proportional in Quadrat einpassen */
 async function renderLogoIcon(sharp, logoBuffer, size, { padding = 0.06 } = {}) {
@@ -96,6 +96,7 @@ async function main() {
   const pwaSizes = [
     { file: "panda-icon-192.png", size: 192, maskable: false },
     { file: "panda-icon-512.png", size: 512, maskable: false },
+    { file: "panda-icon-maskable-192.png", size: 192, maskable: true },
     { file: "panda-icon-maskable-512.png", size: 512, maskable: true },
   ];
 

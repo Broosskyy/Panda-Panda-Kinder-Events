@@ -35,6 +35,12 @@ export async function GET() {
         purpose: "any",
       },
       {
+        src: withIconVersion(BRAND.assets.iconMaskable192),
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "maskable",
+      },
+      {
         src: withIconVersion(BRAND.assets.iconMaskable512),
         sizes: "512x512",
         type: "image/png",

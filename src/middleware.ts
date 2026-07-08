@@ -4,6 +4,9 @@ import { SESSION_COOKIE } from "@/lib/auth/session";
 
 const PUBLIC_ADMIN_PAGE_PREFIXES = ["/admin/passwort-reset", "/admin/einladung"];
 
+/** PWA shell assets must be reachable without login (Chrome installability). */
+const PUBLIC_ADMIN_PWA_PATHS = ["/admin/manifest.webmanifest", "/admin/sw.js", "/admin-sw.js"];
+
 const PUBLIC_ADMIN_API_PREFIXES = [
   "/api/admin/login",
   "/api/admin/invites",
@@ -13,6 +16,10 @@ const PUBLIC_ADMIN_API_PREFIXES = [
 
 function isPublicAdminPage(pathname: string) {
   return PUBLIC_ADMIN_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function isPublicAdminPwaAsset(pathname: string) {
+  return PUBLIC_ADMIN_PWA_PATHS.includes(pathname);
 }
 
 function isPublicAdminApi(pathname: string) {
@@ -58,6 +65,19 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
+  if (isPublicAdminPwaAsset(pathname)) {
+    const response = NextResponse.next();
+    applySecurityHeaders(response, request);
+    if (pathname.endsWith(".webmanifest")) {
+      response.headers.set("Cache-Control", "public, max-age=3600");
+    }
+    if (pathname.endsWith(".js") && pathname.includes("sw")) {
+      response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+      response.headers.set("Service-Worker-Allowed", "/admin/");
+    }
+    return response;
+  }
+
   if (
     pathname.startsWith("/api/admin") &&
     !isPublicAdminApi(pathname) &&
@@ -94,5 +114,7 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|favicon.png|assets/|icons/).*)"],
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|favicon.png|assets/|icons/|admin/sw.js|admin-sw.js|admin/manifest.webmanifest).*)",
+  ],
 };

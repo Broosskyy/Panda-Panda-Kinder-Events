@@ -24,6 +24,8 @@ export interface PwaProbeResult {
   icons512Ok: boolean;
   icons192MimeOk: boolean;
   icons512MimeOk: boolean;
+  iconsMaskable192Ok: boolean;
+  iconsMaskable512Ok: boolean;
   serviceWorkerRegistered: boolean;
   serviceWorkerActive: boolean;
   serviceWorkerControlling: boolean;
@@ -34,6 +36,7 @@ export interface PwaProbeResult {
   blockers: string[];
   statusLabel: string;
   checkedAt: string;
+  installMode: PwaInstallMode;
 }
 
 export function isStandalonePwa(): boolean {
@@ -150,12 +153,23 @@ export function clearDeferredPrompt(): void {
 
 export type PwaInstallCause =
   | "already_standalone"
+  | "true_installable"
+  | "shortcut_only"
   | "browser_unsupported"
   | "prompt_not_yet_fired"
   | "prompt_dismissed_by_user"
   | "sw_not_controlling"
   | "technical_blocker"
   | "in_app_browser";
+
+export type PwaInstallMode =
+  | "true_installable"
+  | "shortcut_only"
+  | "sw_not_controlling"
+  | "manifest_or_icons_error"
+  | "installed"
+  | "prompt_blocked"
+  | "unsupported";
 
 export interface PwaDebugStatus {
   manifestReachable: boolean;
@@ -172,6 +186,7 @@ export interface PwaDebugStatus {
   currentRoute: string;
   startUrl: string;
   scope: string;
+  installMode: PwaInstallMode;
   detectedCause: PwaInstallCause | null;
   causeMessage: string | null;
 }
@@ -215,16 +230,68 @@ export function resetPwaInstallHints(): void {
     sessionStorage.removeItem(PWA_SESSION_CLOSED_KEY);
     sessionStorage.removeItem(PWA_SW_RELOAD_KEY);
   }
+  clearDeferredPrompt();
+  if (typeof window !== "undefined") {
+    window.__pbPwaPromptFired = false;
+    window.__pbPwaInstalledFired = false;
+  }
+}
+
+export async function resetPwaInstallCaches(): Promise<void> {
+  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations
+        .filter((reg) => reg.scope.includes("/admin"))
+        .map((reg) => reg.unregister()),
+    );
+  }
+  if (typeof caches === "undefined") return;
+  const keys = await caches.keys();
+  await Promise.all(keys.filter((key) => key.startsWith("pb-admin")).map((key) => caches.delete(key)));
+}
+
+export function resolvePwaInstallMode(
+  probe: PwaProbeResult,
+  opts: { canInstall?: boolean; promptDismissedRecently?: boolean } = {},
+): PwaInstallMode {
+  if (probe.state === "installed" || isStandalonePwa()) return "installed";
+  if (opts.canInstall || probe.installPromptAvailable) return "true_installable";
+  if (probe.state === "browser_unsupported" || !supportsNativePwaInstall()) return "unsupported";
+  if (!probe.manifestValid || !probe.icons192Ok || !probe.icons512Ok || !probe.iconsMaskable192Ok || !probe.iconsMaskable512Ok) {
+    return "manifest_or_icons_error";
+  }
+  if (probe.serviceWorkerActive && !probe.serviceWorkerControlling) return "sw_not_controlling";
+  if (opts.promptDismissedRecently) return "prompt_blocked";
+  if (
+    probe.manifestValid &&
+    probe.serviceWorkerRegistered &&
+    !probe.serviceWorkerControlling
+  ) {
+    return "sw_not_controlling";
+  }
+  if (probe.manifestValid && probe.icons192Ok && probe.icons512Ok && !probe.installPromptAvailable) {
+    return "shortcut_only";
+  }
+  return "shortcut_only";
 }
 
 export function detectPwaInstallCause(
   probe: PwaProbeResult,
-  opts: { promptDismissedRecently?: boolean } = {},
+  opts: { promptDismissedRecently?: boolean; canInstall?: boolean } = {},
 ): { cause: PwaInstallCause | null; message: string | null } {
-  if (probe.state === "installed" || isStandalonePwa()) {
+  const mode = resolvePwaInstallMode(probe, opts);
+
+  if (mode === "installed") {
     return {
       cause: "already_standalone",
       message: "Die Admin-App läuft bereits im Vollbildmodus (standalone).",
+    };
+  }
+  if (mode === "true_installable") {
+    return {
+      cause: "true_installable",
+      message: "Chrome bietet eine echte PWA-Installation an („App installieren“).",
     };
   }
   if (isInAppBrowser()) {
@@ -234,37 +301,43 @@ export function detectPwaInstallCause(
         "In-App-Browser erkannt — bitte die Seite in Chrome öffnen (Menü → „In Chrome öffnen“).",
     };
   }
-  if (probe.state === "browser_unsupported" || !supportsNativePwaInstall()) {
+  if (mode === "unsupported") {
     return {
       cause: "browser_unsupported",
-      message: "Dieser Browser unterstützt keinen nativen Install-Prompt — manuelle Installation nutzen.",
+      message: "Dieser Browser unterstützt keinen nativen Install-Prompt.",
     };
   }
-  if (!probe.manifestValid || !probe.icons192Ok || !probe.icons512Ok || !probe.https) {
+  if (mode === "manifest_or_icons_error") {
     return {
       cause: "technical_blocker",
-      message: "Technische PWA-Kriterien sind noch nicht vollständig erfüllt — siehe Diagnose.",
+      message: "Manifest oder Icons sind fehlerhaft — siehe technische Diagnose.",
     };
   }
-  if (probe.serviceWorkerActive && !probe.serviceWorkerControlling) {
+  if (mode === "sw_not_controlling") {
     return {
       cause: "sw_not_controlling",
       message:
-        "Der Service Worker kontrolliert diese Seite noch nicht — Seite einmal neu laden und erneut prüfen.",
+        "Der Service Worker kontrolliert /admin noch nicht — Seite einmal neu laden und erneut prüfen.",
     };
   }
-  if (opts.promptDismissedRecently) {
+  if (mode === "prompt_blocked") {
     return {
       cause: "prompt_dismissed_by_user",
       message:
-        "Der Installationsdialog wurde zuvor abgelehnt — Chrome blockiert den Prompt temporär. Manuelle Installation über das Chrome-Menü nutzen.",
+        "Der Installationsdialog wurde zuvor abgelehnt — Chrome blockiert den Prompt temporär.",
+    };
+  }
+  if (mode === "shortcut_only") {
+    return {
+      cause: "shortcut_only",
+      message:
+        "Chrome erkennt die Admin-App aktuell nur als Verknüpfung („Zum Startbildschirm hinzufügen“), nicht als installierbare PWA. PWA-Kriterien sind noch nicht vollständig erfüllt oder Chrome liefert keinen Install-Prompt.",
     };
   }
   if (!probe.installPromptAvailable && !readPromptFiredFlag()) {
     return {
       cause: "prompt_not_yet_fired",
-      message:
-        "Chrome stellt aktuell keinen Installationsdialog bereit. Manuelle Installation über Chrome-Menü → „App installieren“ oder „Zum Startbildschirm hinzufügen“. Fehlt die Option, erkennt Chrome die Seite noch nicht als installierbar oder blockiert den Prompt temporär.",
+      message: "Chrome bietet aktuell keinen Installationsdialog an.",
     };
   }
   return { cause: null, message: null };
@@ -272,7 +345,7 @@ export function detectPwaInstallCause(
 
 export async function buildPwaDebugStatus(
   probe: PwaProbeResult,
-  opts: { promptDismissedRecently?: boolean } = {},
+  opts: { promptDismissedRecently?: boolean; canInstall?: boolean } = {},
 ): Promise<PwaDebugStatus> {
   const detected = detectPwaInstallCause(probe, opts);
   return {
@@ -290,6 +363,7 @@ export async function buildPwaDebugStatus(
     currentRoute: typeof window !== "undefined" ? window.location.pathname : "/admin",
     startUrl: "/admin",
     scope: "/admin",
+    installMode: probe.installMode,
     detectedCause: detected.cause,
     causeMessage: detected.message,
   };
@@ -315,6 +389,9 @@ export function explainPwaBlockers(result: PwaProbeResult): string[] {
   }
   if (!result.icons192Ok || !result.icons512Ok) {
     messages.push("Die App-Icons (192×192 / 512×512) sind nicht erreichbar.");
+  }
+  if (!result.iconsMaskable192Ok || !result.iconsMaskable512Ok) {
+    messages.push("Maskable Icons (192×192 / 512×512) fehlen oder sind nicht erreichbar.");
   }
   if (result.icons192Ok && !result.icons192MimeOk) {
     messages.push("Das 192×192-Icon hat keinen gültigen PNG-MIME-Type.");
@@ -357,8 +434,9 @@ function buildStatusLabel(state: PwaInstallabilityState, issues: string[]): stri
     case "browser_unsupported":
       return "Browser nicht unterstützt";
     case "not_installable":
-      if (issues.includes("sw_not_controlling")) return "Service Worker kontrolliert Seite nicht";
-      if (issues.includes("prompt_pending")) return "Install-Prompt noch nicht verfügbar";
+      if (issues.includes("sw_not_controlling")) return "Service Worker kontrolliert /admin nicht";
+      if (issues.includes("prompt_pending")) return "Nur Verknüpfung — kein Install-Prompt";
+      if (issues.includes("shortcut_only")) return "Nur Startbildschirm-Verknüpfung möglich";
       if (issues.includes("manifest_missing")) return "Manifest fehlt";
       if (issues.includes("service_worker_missing")) return "Service Worker fehlt";
       if (issues.includes("icons_missing")) return "Icon fehlt";
@@ -411,11 +489,16 @@ export async function probePwaInstallability(
 
   const icon192 = await checkIconUrl(`${BRAND.assets.icon192}?v=${BRAND.iconVersion}`);
   const icon512 = await checkIconUrl(`${BRAND.assets.icon512}?v=${BRAND.iconVersion}`);
+  const iconMaskable192 = await checkIconUrl(`${BRAND.assets.iconMaskable192}?v=${BRAND.iconVersion}`);
+  const iconMaskable512 = await checkIconUrl(`${BRAND.assets.iconMaskable512}?v=${BRAND.iconVersion}`);
   const icons192Ok = icon192.ok;
   const icons512Ok = icon512.ok;
   const icons192MimeOk = icon192.mimeOk;
   const icons512MimeOk = icon512.mimeOk;
+  const iconsMaskable192Ok = iconMaskable192.ok;
+  const iconsMaskable512Ok = iconMaskable512.ok;
   if (!icons192Ok || !icons512Ok) issues.push("icons_missing");
+  if (!iconsMaskable192Ok || !iconsMaskable512Ok) issues.push("maskable_icons_missing");
   if (icons192Ok && !icons192MimeOk) issues.push("icon192_mime");
   if (icons512Ok && !icons512MimeOk) issues.push("icon512_mime");
 
@@ -452,10 +535,13 @@ export async function probePwaInstallability(
     serviceWorkerControlling &&
     icons192Ok &&
     icons512Ok &&
+    iconsMaskable192Ok &&
+    iconsMaskable512Ok &&
     https &&
     !installPromptAvailable
   ) {
     issues.push("prompt_pending");
+    issues.push("shortcut_only");
   }
 
   let state: PwaInstallabilityState;
@@ -463,28 +549,14 @@ export async function probePwaInstallability(
     state = "installed";
   } else if (!("serviceWorker" in navigator)) {
     state = "browser_unsupported";
-  } else if (installPromptAvailable && manifestValid && serviceWorkerActive && icons192Ok && icons512Ok) {
+  } else if (installPromptAvailable && manifestValid && serviceWorkerActive && icons192Ok && icons512Ok && iconsMaskable192Ok && iconsMaskable512Ok) {
     state = "installable";
   } else {
     state = "not_installable";
   }
 
-  return {
-    state,
-    manifestLoaded,
-    manifestValid,
-    icons192Ok,
-    icons512Ok,
-    icons192MimeOk,
-    icons512MimeOk,
-    serviceWorkerRegistered,
-    serviceWorkerActive,
-    serviceWorkerControlling,
-    offlineCapable,
-    installPromptAvailable,
-    https,
-    issues,
-    blockers: explainPwaBlockers({
+  const installMode = resolvePwaInstallMode(
+    {
       state,
       manifestLoaded,
       manifestValid,
@@ -492,6 +564,8 @@ export async function probePwaInstallability(
       icons512Ok,
       icons192MimeOk,
       icons512MimeOk,
+      iconsMaskable192Ok,
+      iconsMaskable512Ok,
       serviceWorkerRegistered,
       serviceWorkerActive,
       serviceWorkerControlling,
@@ -502,28 +576,68 @@ export async function probePwaInstallability(
       blockers: [],
       statusLabel: "",
       checkedAt: "",
-    }),
+      installMode: "shortcut_only",
+    },
+    { canInstall: installPromptAvailable },
+  );
+
+  const blockers = explainPwaBlockers({
+    state,
+    manifestLoaded,
+    manifestValid,
+    icons192Ok,
+    icons512Ok,
+    icons192MimeOk,
+    icons512MimeOk,
+    iconsMaskable192Ok,
+    iconsMaskable512Ok,
+    serviceWorkerRegistered,
+    serviceWorkerActive,
+    serviceWorkerControlling,
+    offlineCapable,
+    installPromptAvailable,
+    https,
+    issues,
+    blockers: [],
+    statusLabel: "",
+    checkedAt: "",
+    installMode,
+  });
+
+  return {
+    state,
+    manifestLoaded,
+    manifestValid,
+    icons192Ok,
+    icons512Ok,
+    icons192MimeOk,
+    icons512MimeOk,
+    iconsMaskable192Ok,
+    iconsMaskable512Ok,
+    serviceWorkerRegistered,
+    serviceWorkerActive,
+    serviceWorkerControlling,
+    offlineCapable,
+    installPromptAvailable,
+    https,
+    issues,
+    blockers,
     statusLabel: buildStatusLabel(state, issues),
     checkedAt: new Date().toISOString(),
+    installMode,
   };
 }
 
-const SW_PATHS = ["/admin/sw.js", "/admin-sw.js"] as const;
+const ADMIN_SW_PATH = "/admin/sw.js";
 
 export async function registerAdminServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
 
   let reg: ServiceWorkerRegistration | null = null;
-  for (const path of SW_PATHS) {
-    try {
-      reg = await navigator.serviceWorker.register(path, { scope: "/admin/" });
-      break;
-    } catch {
-      continue;
-    }
-  }
-  if (!reg) {
-    console.warn("[pwa] registration failed for all SW paths");
+  try {
+    reg = await navigator.serviceWorker.register(ADMIN_SW_PATH, { scope: "/admin/" });
+  } catch (err) {
+    console.warn("[pwa] registration failed for", ADMIN_SW_PATH, err);
     return null;
   }
 

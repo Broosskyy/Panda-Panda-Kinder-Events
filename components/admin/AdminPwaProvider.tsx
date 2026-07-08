@@ -24,6 +24,7 @@ import {
   readPwaSessionClosed,
   registerAdminServiceWorker,
   resetPwaInstallHints,
+  resetPwaInstallCaches,
   resolvePwaInstalled,
   storeDeferredPrompt,
   supportsNativePwaInstall,
@@ -95,7 +96,10 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
     async (prompt: BeforeInstallPromptEvent | null) => {
       const status = await probePwaInstallability(prompt);
       setProbeResult(status);
-      const debug = await buildPwaDebugStatus(status, { promptDismissedRecently });
+      const debug = await buildPwaDebugStatus(status, {
+        promptDismissedRecently,
+        canInstall: Boolean(prompt),
+      });
       setDebugStatus(debug);
       if (status.state === "installed") setInstalled(true);
       return status;
@@ -206,11 +210,12 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
 
   const resetInstallHints = useCallback(() => {
     resetPwaInstallHints();
+    void resetPwaInstallCaches();
     setHiddenPermanently(false);
     setSessionClosed(false);
     setForceShowCard(true);
     setInstallFeedback({ type: "idle" });
-    void refreshProbe(deferredRef.current);
+    void registerAdminServiceWorker().then(() => refreshProbe(deferredRef.current));
   }, [refreshProbe]);
 
   const openInstallHelp = useCallback(() => {

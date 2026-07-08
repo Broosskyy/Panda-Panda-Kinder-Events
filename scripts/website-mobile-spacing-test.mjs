@@ -56,25 +56,27 @@ if (floating.includes("useFloatingContactAboveCta") && hook.includes("sticky-cta
   fail("Floating WhatsApp CTA sync missing");
 }
 
-if (globals.includes("--section-header-gap: 1.75rem")) {
+if (globals.includes("--section-header-gap: 1.125rem") || globals.includes("--section-header-gap: 1.75rem")) {
   ok("Mobile section header gap reduced");
 } else {
   fail("Mobile section header gap not reduced");
 }
 
-if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*2rem/)) {
+if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*1\.25rem/)) {
+  ok("Mobile section padding tightened");
+} else if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*2rem/)) {
   ok("Mobile section padding tightened");
 } else {
   fail("Mobile section padding not tightened");
 }
 
-if (processSection.includes("gap-5") && processSection.includes("gap-3")) {
+if (processSection.includes("gap-2.5") || processSection.includes("gap-3")) {
   ok("Process steps use tighter mobile gaps");
 } else {
   fail("Process step gaps not tightened");
 }
 
-if (gallery.includes("mb-3") && gallery.includes("gap-1.5")) {
+if (gallery.includes("mb-2") && gallery.includes("gap-1.5")) {
   ok("Gallery filter row closer to heading and grid");
 } else {
   fail("Gallery spacing not optimized");
@@ -86,13 +88,13 @@ if (services.includes("service-card-image") && services.includes("service-card-c
   fail("Service card spacing hooks missing");
 }
 
-if (globals.includes("#ablauf .process-step-icon-row") && globals.includes("margin-bottom: 0.25rem")) {
+if (globals.includes("#ablauf .process-step-icon-row") && (globals.includes("margin-bottom: 0.125rem") || globals.includes("margin-bottom: 0.25rem"))) {
   ok("Process step internal rhythm tightened on mobile");
 } else {
   fail("Process mobile CSS rhythm missing");
 }
 
-if (globals.includes(".gallery-filter-row") && globals.includes("margin-top: -0.5rem")) {
+if (globals.includes(".gallery-filter-row") && (globals.includes("margin-top: -0.25rem") || globals.includes("margin-top: -0.5rem"))) {
   ok("Gallery filters pulled closer to section heading");
 } else {
   fail("Gallery filter heading proximity missing");

@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 
-/** Lift WhatsApp FAB above the sticky CTA bar when it is mounted on mobile. */
+function stickyCtaIsVisible(): boolean {
+  const bar = document.querySelector<HTMLElement>(".sticky-cta-bar");
+  if (!bar) return false;
+  if (bar.classList.contains("sticky-cta-bar--scroll-hidden")) return false;
+  return bar.getAttribute("data-sticky-cta-visible") !== "hidden";
+}
+
+/** Lift WhatsApp FAB above the sticky CTA bar when it is visible on mobile. */
 export function useFloatingContactAboveCta(): boolean {
   const [aboveCta, setAboveCta] = useState(false);
 
@@ -14,7 +21,7 @@ export function useFloatingContactAboveCta(): boolean {
         setAboveCta(false);
         return;
       }
-      setAboveCta(Boolean(document.querySelector(".sticky-cta-bar")));
+      setAboveCta(stickyCtaIsVisible());
     };
 
     sync();
@@ -22,7 +29,12 @@ export function useFloatingContactAboveCta(): boolean {
     mq.addEventListener("change", sync);
 
     const observer = new MutationObserver(sync);
-    observer.observe(document.body, { childList: true, subtree: true });
+    observer.observe(document.body, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "data-sticky-cta-visible"],
+    });
 
     return () => {
       window.removeEventListener("scroll", sync);

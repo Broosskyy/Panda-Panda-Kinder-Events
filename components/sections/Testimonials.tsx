@@ -26,10 +26,10 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
   const displayStars = Math.round(average * 2) / 2;
 
   return (
-    <div className="mb-5 flex flex-col items-center gap-3 text-center sm:mb-12 md:mb-16">
+    <div className="review-summary mb-3 flex flex-col items-center gap-2 text-center sm:mb-12 sm:gap-3 md:mb-16">
       <StarRating rating={displayStars} size="xl" />
       <div className="flex items-baseline gap-2">
-        <span className="font-heading text-4xl font-bold text-text-primary sm:text-5xl md:text-6xl">{displayAverage}</span>
+        <span className="font-heading text-3xl font-bold text-text-primary sm:text-5xl md:text-6xl">{displayAverage}</span>
         <span className="text-xl text-text-muted">/ 5</span>
       </div>
       <p className="text-base text-text-muted md:text-lg">

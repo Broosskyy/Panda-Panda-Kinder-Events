@@ -33,7 +33,7 @@ export function TeamMemberImage({
         className={`flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/15 to-bg-secondary ${className}`}
         aria-hidden
       >
-        <span className="font-heading text-4xl font-bold text-primary/70 sm:text-5xl">{getInitials(name)}</span>
+        <span className="font-heading text-3xl font-bold text-primary/70 sm:text-5xl">{getInitials(name)}</span>
       </div>
     );
   }

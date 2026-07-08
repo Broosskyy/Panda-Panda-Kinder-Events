@@ -33,7 +33,7 @@ export function FloatingContactButtons({
         aria-label="WhatsApp Chat öffnen"
         tabIndex={hidden ? -1 : undefined}
       >
-        <MessageCircle className="h-6 w-6" aria-hidden />
+        <MessageCircle className="h-5 w-5" aria-hidden />
       </a>
     </div>
   );

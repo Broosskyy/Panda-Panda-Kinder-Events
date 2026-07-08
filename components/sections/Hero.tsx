@@ -38,10 +38,10 @@ export function Hero({
       />
 
       <Container>
-        <div className="grid items-center gap-7 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
+        <div className="grid items-center gap-5 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
           <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:max-w-lg lg:py-6 xl:max-w-xl">
             {rating && rating.count > 0 ? (
-              <div className="hero-rating-pill mb-4 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-4 py-2 shadow-sm backdrop-blur-sm sm:mb-6">
+              <div className="hero-rating-pill mb-3 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-3.5 py-1.5 shadow-sm backdrop-blur-sm sm:mb-6 sm:px-4 sm:py-2">
                 <StarRating rating={Math.round(rating.average * 2) / 2} size="sm" />
                 <span className="text-sm font-semibold text-text-primary">
                   {rating.average.toFixed(1).replace(".", ",")} / 5
@@ -51,7 +51,7 @@ export function Hero({
                 </span>
               </div>
             ) : (
-              <div className="hero-rating-pill mb-4 inline-flex items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-4 py-2 shadow-sm backdrop-blur-sm sm:mb-6">
+              <div className="hero-rating-pill mb-3 inline-flex items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-3.5 py-1.5 shadow-sm backdrop-blur-sm sm:mb-6 sm:px-4 sm:py-2">
                 <ShieldCheck className="h-4 w-4 text-primary" aria-hidden />
                 <span className="text-sm font-medium text-text-secondary">Liebevoll betreut · persönlich · in NRW</span>
               </div>
@@ -61,15 +61,15 @@ export function Hero({
               {hero.headline}
             </h1>
 
-            <p className="font-accent mt-4 text-lg leading-snug text-primary sm:mt-6 sm:text-xl md:text-[1.35rem] md:leading-snug">
+            <p className="font-accent mt-3 text-lg leading-snug text-primary sm:mt-6 sm:text-xl md:text-[1.35rem] md:leading-snug">
               {hero.tagline}
             </p>
 
-            <p className="mt-4 max-w-md text-base leading-relaxed text-text-secondary sm:mt-6 sm:max-w-lg sm:text-lg sm:leading-8 md:text-xl md:leading-9">
+            <p className="mt-3 max-w-md text-base leading-relaxed text-text-secondary sm:mt-6 sm:max-w-lg sm:text-lg sm:leading-8 md:text-xl md:leading-9">
               {hero.subtitle}
             </p>
 
-            <div className="hero-cta-group mt-6 w-full sm:mt-10">
+            <div className="hero-cta-group mt-5 w-full sm:mt-10">
               <Button
                 href="#kontakt"
                 size="lg"
@@ -93,7 +93,7 @@ export function Hero({
               Unverbindlich · persönliche Rückmeldung · individuell geplant
             </p>
 
-            <div className="mt-6 grid grid-cols-2 gap-3 border-t border-border/40 pt-6 sm:mt-10 sm:gap-4 sm:pt-10 md:grid-cols-4 lg:gap-6">
+            <div className="mt-5 grid grid-cols-2 gap-2.5 border-t border-border/40 pt-5 sm:mt-10 sm:gap-4 sm:pt-10 md:grid-cols-4 lg:gap-6">
               {badges.map((badge) => {
                 const Icon = resolveContentIcon(badge.iconKey);
                 return (

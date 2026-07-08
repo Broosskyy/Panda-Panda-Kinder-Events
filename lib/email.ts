@@ -359,6 +359,112 @@ export async function sendPasswordResetEmail(opts: {
   return result;
 }
 
+export async function sendAdminInviteEmail(opts: {
+  to: string;
+  adminName: string;
+  roleLabel: string;
+  inviteUrl: string;
+  message?: string;
+}) {
+  const emailSettings = await getEmailSettings();
+  const sender = await resolveFlowEmailSender("security", emailSettings);
+  const settings = await fetchSiteSettings();
+  const primaryColor = resolvePrimaryColor(settings.branding);
+
+  const messageBlock = opts.message?.trim()
+    ? `Persönliche Nachricht:\n${opts.message.trim()}`
+    : "";
+
+  const content = await resolveEmailContent("admin-invite", {
+    admin_name: opts.adminName,
+    role_label: opts.roleLabel,
+    invite_link: opts.inviteUrl,
+    message: messageBlock,
+  });
+
+  let html = content.html;
+  if (!html.includes(opts.inviteUrl)) {
+    html = html.replace(
+      "</td></tr>",
+      `${buildEmailButton(opts.inviteUrl, "Zugang einrichten", primaryColor)}</td></tr>`,
+    );
+  }
+
+  const result = await sendEmailWithRetry({
+    payload: {
+      from: sender.from,
+      to: opts.to,
+      replyTo: sender.replyTo,
+      subject: content.subject,
+      text: content.text,
+      html,
+    },
+    log: {
+      recipient: opts.to,
+      subject: content.subject,
+      templateSlug: "admin-invite",
+      area: "admin_invite",
+    },
+  });
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Einladungs-E-Mail konnte nicht gesendet werden");
+  }
+
+  return result;
+}
+
+export async function sendAccountCreatedEmail(opts: {
+  to: string;
+  adminName: string;
+  roleLabel: string;
+  adminUrl: string;
+  message?: string;
+}) {
+  const emailSettings = await getEmailSettings();
+  const sender = await resolveFlowEmailSender("security", emailSettings);
+  const settings = await fetchSiteSettings();
+  const primaryColor = resolvePrimaryColor(settings.branding);
+
+  const content = await resolveEmailContent("account-created", {
+    admin_name: opts.adminName,
+    company_name: settings.branding?.brandName ?? "Panda-Bande",
+    admin_url: opts.adminUrl,
+    message: opts.message?.trim() ?? "",
+  });
+
+  let html = content.html;
+  if (!html.includes(opts.adminUrl)) {
+    html = html.replace(
+      "</td></tr>",
+      `${buildEmailButton(opts.adminUrl, "Zum Admin-Bereich", primaryColor)}</td></tr>`,
+    );
+  }
+
+  const result = await sendEmailWithRetry({
+    payload: {
+      from: sender.from,
+      to: opts.to,
+      replyTo: sender.replyTo,
+      subject: content.subject,
+      text: content.text,
+      html,
+    },
+    log: {
+      recipient: opts.to,
+      subject: content.subject,
+      templateSlug: "account-created",
+      area: "admin_users",
+    },
+  });
+
+  if (!result.success) {
+    throw new Error(result.error ?? "Willkommens-E-Mail konnte nicht gesendet werden");
+  }
+
+  return result;
+}
+
 interface CrmDocumentEmailOptions {
   to: string;
   customerName: string;

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminCookieName, legacyCookieClearOptions } from "@/lib/admin-auth";
-import { verifyPassword } from "@/lib/auth/password";
+import { verifyPassword, hashPassword, validatePassword } from "@/lib/auth/password";
+import { getPasswordPolicy } from "@/lib/auth/security-settings";
 import { evaluateBootstrapAccess } from "@/lib/auth/bootstrap-guard";
 import { findUserByIdentifier, getRoleById, getUserPublicById, hasAdminUsers, updateUser } from "@/lib/auth/users";
 import { getLoginPolicy, getRateLimitPolicy } from "@/lib/auth/security-settings";
@@ -53,6 +54,8 @@ export async function POST(request: Request) {
     backupCode,
     pendingToken,
     trustDevice,
+    action,
+    newPassword,
   } = body as {
     identifier?: string;
     password?: string;
@@ -61,7 +64,69 @@ export async function POST(request: Request) {
     backupCode?: string;
     pendingToken?: string;
     trustDevice?: boolean;
+    action?: string;
+    newPassword?: string;
   };
+
+  // Step 1b: forced password change after admin-created account
+  if (action === "change_password" && pendingToken && body.userId && newPassword) {
+    const userId = body.userId as string;
+    const { cookies } = await import("next/headers");
+    const pendingCookie = (await cookies()).get(PENDING_2FA_COOKIE)?.value;
+    if (!pendingCookie || sha256(pendingToken) !== pendingCookie) {
+      return NextResponse.json({ error: "Sitzung abgelaufen. Bitte erneut anmelden." }, { status: 401 });
+    }
+
+    const { getUserById } = await import("@/lib/auth/users");
+    const user = await getUserById(userId);
+    if (!user?.active) {
+      return NextResponse.json({ error: "Benutzer nicht gefunden." }, { status: 400 });
+    }
+
+    const policy = await getPasswordPolicy();
+    const validationError = validatePassword(newPassword, policy);
+    if (validationError) {
+      return NextResponse.json({ error: validationError }, { status: 400 });
+    }
+
+    await updateUser(user.id, {
+      passwordHash: await hashPassword(newPassword),
+      mustChangePassword: false,
+    });
+
+    const pending = randomToken(24);
+    if (user.totp_enabled && user.totp_secret) {
+      const response = NextResponse.json({
+        requires2fa: true,
+        userId: user.id,
+        pendingToken: pending,
+        message: "Bitte 2FA-Code eingeben.",
+      });
+      response.cookies.set(PENDING_2FA_COOKIE, sha256(pending), {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 300,
+      });
+      return response;
+    }
+
+    const setupResponse = NextResponse.json({
+      requires2faSetup: true,
+      userId: user.id,
+      pendingToken: pending,
+      message: "2FA ist verpflichtend. Bitte jetzt einrichten.",
+    });
+    setupResponse.cookies.set(PENDING_2FA_COOKIE, sha256(pending), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 600,
+    });
+    return setupResponse;
+  }
 
   // Step 2: 2FA verification
   if (pendingToken && (totpCode || backupCode)) {
@@ -91,7 +156,7 @@ export async function POST(request: Request) {
     if (!codeOk) {
       const failRole = await getRoleById(user.role_id);
       await writeAuditLogFromRequest(null, request, {
-        action: "login_failed",
+        action: "2fa_failed",
         area: "auth",
         entityId: user.id,
         success: false,
@@ -232,6 +297,24 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ungültige Anmeldedaten." }, { status: 401 });
   }
 
+  if (user.must_change_password) {
+    const pending = randomToken(24);
+    const response = NextResponse.json({
+      requiresPasswordChange: true,
+      userId: user.id,
+      pendingToken: pending,
+      message: "Bitte zuerst ein neues Passwort setzen.",
+    });
+    response.cookies.set(PENDING_2FA_COOKIE, sha256(pending), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 600,
+    });
+    return response;
+  }
+
   if (user.totp_enabled && user.totp_secret) {
     const pending = randomToken(24);
     const response = NextResponse.json({
@@ -250,54 +333,22 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const loginPolicy = await getLoginPolicy();
-  const { token, session, maxAgeSec } = await createSession({
+  // Mandatory 2FA: users without 2FA must set it up before receiving a session
+  const pending = randomToken(24);
+  const setupResponse = NextResponse.json({
+    requires2faSetup: true,
     userId: user.id,
-    userAgent: request.headers.get("user-agent"),
-    ip,
-    rememberDays: rememberMe ? loginPolicy.rememberDays : undefined,
+    pendingToken: pending,
+    message: "2FA ist verpflichtend. Bitte jetzt einrichten.",
   });
-
-  await updateUser(user.id, {
-    lastLogin: new Date().toISOString(),
-    failedLoginAttempts: 0,
-    lockedUntil: null,
+  setupResponse.cookies.set(PENDING_2FA_COOKIE, sha256(pending), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600,
   });
-
-  const role = await getRoleById(user.role_id);
-  await recordLoginHistory({
-    userId: user.id,
-    identifier,
-    success: true,
-    ip,
-    userAgent: request.headers.get("user-agent"),
-    request,
-    roleSlug: role?.slug ?? null,
-  });
-
-  await writeAuditLogFromRequest(
-    {
-      userId: user.id,
-      displayName: user.display_name,
-      email: user.email,
-      roleSlug: role?.slug ?? "readonly",
-      permissions: [],
-      sessionId: session.id,
-    },
-    request,
-    { action: "login", area: "auth", entityId: user.id },
-  );
-
-  const response = NextResponse.json({
-    success: true,
-    user: {
-      id: user.id,
-      displayName: user.display_name,
-      email: user.email,
-    },
-  });
-  attachSessionCookies(response, token, maxAgeSec);
-  return response;
+  return setupResponse;
 }
 
 export async function DELETE(request: Request) {

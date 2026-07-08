@@ -1,8 +1,11 @@
 "use client";
 
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Sparkles, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, X } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
+import { resolveAdminIcon } from "@/lib/admin/icons";
 import type { OnboardingStep } from "@/lib/admin/onboarding";
 
 interface AdminOnboardingWizardProps {
@@ -10,8 +13,8 @@ interface AdminOnboardingWizardProps {
   stepIndex: number;
   onStepIndexChange: (index: number) => void;
   onComplete: () => void;
-  onSkip: () => void;
-  onClose: () => void;
+  onDismissPermanent: () => void;
+  onSkipToEnd: () => void;
   displayName: string;
 }
 
@@ -20,8 +23,8 @@ export function AdminOnboardingWizard({
   stepIndex,
   onStepIndexChange,
   onComplete,
-  onSkip,
-  onClose,
+  onDismissPermanent,
+  onSkipToEnd,
   displayName,
 }: AdminOnboardingWizardProps) {
   const step = steps[stepIndex];
@@ -29,50 +32,87 @@ export function AdminOnboardingWizard({
   const isLast = stepIndex === steps.length - 1;
   const progress = ((stepIndex + 1) / steps.length) * 100;
 
+  useEffect(() => {
+    const root = document.documentElement;
+    root.setAttribute("data-admin-onboarding", "open");
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      root.removeAttribute("data-admin-onboarding");
+      document.body.style.overflow = prevOverflow;
+    };
+  }, []);
+
   if (!step) return null;
 
+  const Icon = resolveAdminIcon(step.iconKey ?? "Sparkles");
   const title =
     step.id === "welcome" && displayName
       ? `${step.title}, ${displayName.split(" ")[0]}!`
       : step.title;
 
-  return (
-    <div className="admin-onboarding-root" role="dialog" aria-modal="true" aria-labelledby="admin-onboarding-title">
-      <button type="button" className="admin-onboarding-backdrop" onClick={onClose} aria-label="Tutorial schließen" />
-      <div className="admin-onboarding-panel">
-        <div className="admin-onboarding-header">
-          <div className="flex items-center gap-2 text-sm font-medium text-primary">
-            <Sparkles className="h-4 w-4" aria-hidden />
-            <span>
+  const content = (
+    <div className="admin-onboarding-v2-root" role="presentation">
+      <div className="admin-onboarding-v2-backdrop" aria-hidden="true" />
+
+      <div
+        className="admin-onboarding-v2-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="admin-onboarding-v2-title"
+        aria-describedby="admin-onboarding-v2-desc"
+      >
+        <header className="admin-onboarding-v2-header">
+          <div className="admin-onboarding-v2-header-left">
+            <div className="admin-onboarding-v2-icon-wrap" aria-hidden>
+              <Icon className="h-5 w-5" />
+            </div>
+            <p className="admin-onboarding-v2-step-label">
               Schritt {stepIndex + 1} von {steps.length}
-            </span>
+            </p>
           </div>
-          <button type="button" className="admin-icon-btn" onClick={onClose} aria-label="Schließen">
-            <X className="h-4 w-4" />
+          <button
+            type="button"
+            className="admin-onboarding-v2-close"
+            onClick={onDismissPermanent}
+            aria-label="Tutorial schließen"
+          >
+            <X className="h-5 w-5" />
           </button>
+        </header>
+
+        <div className="admin-onboarding-v2-progress" aria-hidden>
+          <div className="admin-onboarding-v2-progress-bar" style={{ width: `${progress}%` }} />
         </div>
 
-        <div className="admin-onboarding-progress" aria-hidden>
-          <div className="admin-onboarding-progress-bar" style={{ width: `${progress}%` }} />
-        </div>
-
-        <div className="admin-onboarding-body">
-          <h2 id="admin-onboarding-title" className="admin-onboarding-title">
+        <div className="admin-onboarding-v2-body">
+          <h2 id="admin-onboarding-v2-title" className="admin-onboarding-v2-title">
             {title}
           </h2>
-          <p className="admin-onboarding-text">{step.body}</p>
+          <p id="admin-onboarding-v2-desc" className="admin-onboarding-v2-text">
+            {step.body}
+          </p>
+          {step.bullets?.length ? (
+            <ul className="admin-onboarding-v2-bullets">
+              {step.bullets.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          ) : null}
           {step.href ? (
-            <Link href={step.href} className="admin-onboarding-link" onClick={onClose}>
+            <Link href={step.href} className="admin-onboarding-v2-link" onClick={onDismissPermanent}>
               {step.hrefLabel ?? "Bereich öffnen"} →
             </Link>
           ) : null}
         </div>
 
-        <div className="admin-onboarding-footer">
-          <div className="flex flex-wrap gap-2">
+        <footer className="admin-onboarding-v2-footer">
+          <div className={`admin-onboarding-v2-actions-primary ${isFirst ? "admin-onboarding-v2-actions-single" : ""}`}>
             {!isFirst ? (
               <AdminButton
                 variant="secondary"
+                className="admin-onboarding-v2-btn"
                 icon={<ChevronLeft className="h-4 w-4" />}
                 onClick={() => onStepIndexChange(stepIndex - 1)}
               >
@@ -80,12 +120,13 @@ export function AdminOnboardingWizard({
               </AdminButton>
             ) : null}
             {isLast ? (
-              <AdminButton variant="primary" onClick={onComplete}>
+              <AdminButton variant="primary" className="admin-onboarding-v2-btn" onClick={onComplete}>
                 Fertig
               </AdminButton>
             ) : (
               <AdminButton
                 variant="primary"
+                className="admin-onboarding-v2-btn"
                 icon={<ChevronRight className="h-4 w-4" />}
                 onClick={() => onStepIndexChange(stepIndex + 1)}
               >
@@ -93,16 +134,19 @@ export function AdminOnboardingWizard({
               </AdminButton>
             )}
           </div>
-          <div className="flex flex-wrap gap-3">
-            <button type="button" className="admin-onboarding-text-btn" onClick={onSkip}>
+          <div className="admin-onboarding-v2-actions-secondary">
+            <button type="button" className="admin-onboarding-v2-text-btn" onClick={onSkipToEnd}>
               Überspringen
             </button>
-            <button type="button" className="admin-onboarding-text-btn" onClick={onSkip}>
+            <button type="button" className="admin-onboarding-v2-text-btn" onClick={onDismissPermanent}>
               Nicht erneut anzeigen
             </button>
           </div>
-        </div>
+        </footer>
       </div>
     </div>
   );
+
+  if (typeof document === "undefined") return null;
+  return createPortal(content, document.body);
 }

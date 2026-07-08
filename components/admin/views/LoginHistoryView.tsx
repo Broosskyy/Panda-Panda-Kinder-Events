@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
+import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
 import { AdminLoadingCard } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
@@ -41,7 +42,7 @@ function formatLocation(entry: LoginHistoryEntry): string {
   return parts.length > 0 ? parts.join(", ") : "—";
 }
 
-export function LoginHistoryView() {
+export function LoginHistoryView({ embedded = false }: { embedded?: boolean }) {
   const page = adminPageHeaderProps("loginHistorie");
   const [history, setHistory] = useState<LoginHistoryEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,7 +89,7 @@ export function LoginHistoryView() {
   return (
     <div className="space-y-6">
       <AdminPageHeader {...page} />
-      <SecuritySubNav />
+      {embedded ? <UsersSecurityTabs /> : <SecuritySubNav />}
 
       <AdminCard>
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -21,7 +21,7 @@ export function Usps({ usps = DEFAULT_SITE_SETTINGS.usps }: UspsProps) {
           <SectionHeading title={usps.title} subtitle={usps.subtitle} />
         </ScrollReveal>
 
-        <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8" role="list">
+        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-5 lg:gap-8" role="list">
           {items.map((usp, i) => {
             const Icon = resolveContentIcon(usp.iconKey);
             return (
@@ -34,7 +34,7 @@ export function Usps({ usps = DEFAULT_SITE_SETTINGS.usps }: UspsProps) {
                     padding="md"
                     hover
                   >
-                    <div className="icon-wrap mx-auto mb-5 h-14 w-14 sm:mx-0 lg:mx-auto lg:mb-6 lg:h-16 lg:w-16">
+                    <div className="icon-wrap mx-auto mb-4 h-14 w-14 sm:mx-0 sm:mb-5 lg:mx-auto lg:mb-6 lg:h-16 lg:w-16">
                       <Icon
                         className="h-7 w-7 text-primary sm:h-8 sm:w-8 lg:h-8 lg:w-8"
                         strokeWidth={ICON_STROKE}

@@ -12,7 +12,7 @@ import { AdminBootstrapWizard } from "./AdminBootstrapWizard";
 import { AdminPwaProvider } from "./AdminPwaProvider";
 import { AdminOnboardingProvider } from "./AdminOnboardingProvider";
 
-const PUBLIC_ADMIN_PATHS = ["/admin/passwort-reset"];
+const PUBLIC_ADMIN_PATHS = ["/admin/passwort-reset", "/admin/einladung"];
 
 type GateState = "checking" | "bootstrap" | "login" | "authenticated";
 

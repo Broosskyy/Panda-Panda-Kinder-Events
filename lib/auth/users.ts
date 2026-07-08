@@ -86,6 +86,7 @@ export async function getRoleById(id: string): Promise<AdminRole | null> {
 function mapRowToAdminUserPublic(row: Record<string, unknown>): AdminUserPublic {
   const role = row.admin_roles as { slug: AdminRoleSlug; label: string } | null;
   const teamMember = row.team_members as { name: string } | null;
+  const creator = row.creator as { display_name: string } | null;
   return {
     id: String(row.id),
     username: String(row.username),
@@ -100,10 +101,13 @@ function mapRowToAdminUserPublic(row: Record<string, unknown>): AdminUserPublic 
     totp_enabled: Boolean(row.totp_enabled),
     last_login: (row.last_login as string | null) ?? null,
     team_member_id: (row.team_member_id as string | null) ?? null,
-  team_member_name: teamMember?.name ?? null,
-  onboarding_completed_at: (row.onboarding_completed_at as string | null) ?? null,
-  created_at: String(row.created_at),
+    team_member_name: teamMember?.name ?? null,
+    onboarding_completed_at: (row.onboarding_completed_at as string | null) ?? null,
+    created_at: String(row.created_at),
     updated_at: String(row.updated_at),
+    created_by: (row.created_by as string | null) ?? null,
+    created_by_name: creator?.display_name ?? null,
+    must_change_password: Boolean(row.must_change_password),
   };
 }
 
@@ -144,12 +148,12 @@ export async function listUsers(): Promise<AdminUserPublic[]> {
   const supabase = getSupabaseAdmin();
   const first = await supabase
     .from("admin_users")
-    .select("*, admin_roles(slug, label), team_members(name)")
+    .select("*, admin_roles(slug, label), team_members(name), creator:admin_users!admin_users_created_by_fkey(display_name)")
     .order("display_name");
 
   let data = first.data;
   if (first.error) {
-    console.warn("listUsers with team_members join failed, retrying:", first.error.message);
+    console.warn("listUsers with joins failed, retrying:", first.error.message);
     const fallback = await supabase
       .from("admin_users")
       .select("*, admin_roles(slug, label)")
@@ -171,6 +175,7 @@ export async function createUser(input: {
   avatar?: string;
   createdBy?: string;
   teamMemberId?: string | null;
+  mustChangePassword?: boolean;
 }): Promise<AdminUserPublic> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -185,6 +190,7 @@ export async function createUser(input: {
       avatar: input.avatar || null,
       created_by: input.createdBy ?? null,
       team_member_id: input.teamMemberId ?? null,
+      must_change_password: input.mustChangePassword ?? false,
     })
     .select("*, admin_roles(slug, label)")
     .single();
@@ -209,6 +215,9 @@ export async function createUser(input: {
     onboarding_completed_at: null,
     created_at: data.created_at,
     updated_at: data.updated_at,
+    created_by: data.created_by ?? null,
+    created_by_name: null,
+    must_change_password: Boolean(data.must_change_password),
   };
 }
 
@@ -229,6 +238,7 @@ export async function updateUser(
     lockedUntil: string | null;
     lastLogin: string;
     teamMemberId: string | null;
+    mustChangePassword: boolean;
   }>,
 ): Promise<void> {
   const supabase = getSupabaseAdmin();
@@ -248,6 +258,7 @@ export async function updateUser(
   if (patch.lockedUntil !== undefined) update.locked_until = patch.lockedUntil;
   if (patch.lastLogin !== undefined) update.last_login = patch.lastLogin;
   if (patch.teamMemberId !== undefined) update.team_member_id = patch.teamMemberId;
+  if (patch.mustChangePassword !== undefined) update.must_change_password = patch.mustChangePassword;
 
   const { error } = await supabase.from("admin_users").update(update).eq("id", id);
   if (error) throw new Error(error.message);

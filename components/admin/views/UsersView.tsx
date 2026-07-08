@@ -1,17 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Pencil, Plus, Shield, UserRound } from "lucide-react";
+import { KeyRound, Pencil, Plus, Shield, ShieldOff, Trash2, UserRound } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
-import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
+import { AdminUserManageDialog } from "@/components/admin/AdminUserManageDialog";
+import { CriticalActionModal } from "@/components/admin/CriticalActionModal";
+import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
+import { AdminActionMenu, AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
 import { DEFAULT_NEW_USER_ROLE_SLUG, describeRoleSlug, shortRoleSlug } from "@/lib/admin/role-descriptions";
-import type { AdminUserPublic } from "@/lib/auth/types";
+import type { AdminRoleSlug, AdminUserPublic } from "@/lib/auth/types";
 
 interface Role {
   id: string;
@@ -39,6 +41,11 @@ function formatLogin(date: string | null) {
   return new Date(date).toLocaleString("de-DE");
 }
 
+function formatDate(date: string | null) {
+  if (!date) return "—";
+  return new Date(date).toLocaleString("de-DE");
+}
+
 function userInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   if (parts.length === 0) return "?";
@@ -49,6 +56,9 @@ function userInitials(name: string): string {
 interface UsersMeta {
   canListAll: boolean;
   canManageUsers: boolean;
+  canInvite: boolean;
+  canCreateUsers: boolean;
+  inviterRole: AdminRoleSlug;
   selfOnly: boolean;
   currentUserId: string | null;
   authenticated: boolean;
@@ -64,6 +74,9 @@ export function UsersView() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<AdminUserPublic | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const { toast, withLoading, fromApi } = useAdminMessages();
   const page = adminPageHeaderProps("benutzer");
 
@@ -93,14 +106,6 @@ export function UsersView() {
     void load();
   }, [load]);
 
-  const openCreate = () => {
-    setEditingId(null);
-    const defaultRole =
-      roles.find((r) => r.slug === DEFAULT_NEW_USER_ROLE_SLUG) ?? roles.find((r) => r.slug === "employee") ?? roles[0];
-    setForm({ ...emptyForm(), roleId: defaultRole?.id ?? "" });
-    setShowForm(true);
-  };
-
   const openEdit = (user: AdminUserPublic) => {
     setEditingId(user.id);
     setForm({
@@ -119,15 +124,14 @@ export function UsersView() {
     if (!form.username || !form.email || !form.displayName || !form.roleId) {
       return toast("Bitte alle Pflichtfelder ausfüllen.", "error");
     }
-    if (!editingId && !form.password) {
-      return toast("Passwort ist bei Neuanlage erforderlich.", "error");
-    }
     await withLoading(
       (async () => {
         const payload = {
           ...form,
           teamMemberId: form.teamMemberId || null,
-          ...(editingId ? { id: editingId, ...(form.password ? { password: form.password, resetPassword: true } : {}) } : {}),
+          ...(editingId
+            ? { id: editingId, ...(form.password ? { password: form.password, resetPassword: true } : {}) }
+            : {}),
         };
         const res = await fetch("/api/admin/users", {
           method: editingId ? "PATCH" : "POST",
@@ -152,24 +156,94 @@ export function UsersView() {
     });
     const data = await res.json();
     if (!res.ok) return fromApi(data, "Status konnte nicht geändert werden.");
+    toast(user.active ? "Benutzer deaktiviert." : "Benutzer aktiviert.");
+    await load();
+  };
+
+  const reset2fa = async (user: AdminUserPublic) => {
+    const res = await fetch("/api/admin/users", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: user.id, action: "reset2fa" }),
+    });
+    const data = await res.json();
+    if (!res.ok) return fromApi(data, "2FA konnte nicht zurückgesetzt werden.");
+    toast("2FA zurückgesetzt.");
     await load();
   };
 
   const showAuthenticatedEmpty = !loading && !loadError && users.length === 0 && Boolean(meta?.authenticated);
-
   const isCurrentUser = (id: string) => meta?.currentUserId === id;
+  const canManage = Boolean(meta?.canInvite || meta?.canCreateUsers);
+  const isSuperAdmin = meta?.inviterRole === "administrator";
+
+  const userActions = (u: AdminUserPublic) => {
+    if (!meta?.canManageUsers) {
+      return (
+        <AdminButton variant="secondary" icon={<UserRound className="h-4 w-4" />} onClick={() => openEdit(u)}>
+          Profil
+        </AdminButton>
+      );
+    }
+
+    return (
+      <AdminActionMenu
+        primary={{
+          label: "Bearbeiten",
+          icon: <Pencil className="h-4 w-4" />,
+          onClick: () => openEdit(u),
+        }}
+        items={[
+          {
+            id: "role",
+            label: "Rolle ändern",
+            icon: <Shield className="h-4 w-4" />,
+            onClick: () => openEdit(u),
+          },
+          {
+            id: "password",
+            label: "Passwort zurücksetzen",
+            icon: <KeyRound className="h-4 w-4" />,
+            onClick: () => openEdit(u),
+          },
+          {
+            id: "2fa",
+            label: "2FA zurücksetzen",
+            icon: <ShieldOff className="h-4 w-4" />,
+            onClick: () => reset2fa(u),
+            hidden: !isSuperAdmin || isCurrentUser(u.id),
+          },
+          {
+            id: "toggle",
+            label: u.active ? "Deaktivieren" : "Aktivieren",
+            onClick: () => toggleActive(u),
+            hidden: isCurrentUser(u.id),
+          },
+        ]}
+        dangerItems={[
+          {
+            id: "delete",
+            label: "Löschen",
+            icon: <Trash2 className="h-4 w-4" />,
+            onClick: () => setDeleteTarget(u),
+            hidden: isCurrentUser(u.id),
+          },
+        ]}
+      />
+    );
+  };
 
   return (
     <div className="space-y-6">
       <AdminPageHeader {...page}>
-        {meta?.canManageUsers ? (
-          <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-            Benutzer anlegen
+        {canManage ? (
+          <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => setDialogOpen(true)}>
+            Benutzer einladen
           </AdminButton>
         ) : null}
       </AdminPageHeader>
 
-      <SecuritySubNav />
+      <UsersSecurityTabs />
 
       {meta?.selfOnly ? (
         <AdminCard>
@@ -180,9 +254,7 @@ export function UsersView() {
       ) : null}
 
       <details className="admin-card admin-roles-collapse">
-        <summary className="admin-card-title cursor-pointer list-none marker:content-none">
-          Rollenübersicht
-        </summary>
+        <summary className="admin-card-title cursor-pointer list-none marker:content-none">Rollenübersicht</summary>
         <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {roles.map((role) => (
             <div key={role.id} className="rounded-xl border border-border bg-bg-secondary/40 p-3 text-sm">
@@ -195,7 +267,7 @@ export function UsersView() {
       </details>
 
       {showForm ? (
-        <AdminCard title={editingId ? "Benutzer bearbeiten" : "Neuer Benutzer"}>
+        <AdminCard title={editingId ? "Benutzer bearbeiten" : "Benutzer bearbeiten"}>
           <div className="grid gap-4 md:grid-cols-2">
             <AdminFormField label="Benutzername" required hint="Für die Anmeldung.">
               <input className="admin-input" value={form.username} onChange={(e) => setForm({ ...form, username: e.target.value })} />
@@ -206,26 +278,19 @@ export function UsersView() {
             <AdminFormField label="Anzeigename" required>
               <input className="admin-input" value={form.displayName} onChange={(e) => setForm({ ...form, displayName: e.target.value })} />
             </AdminFormField>
-            <AdminFormField
-              label="Passwort"
-              required={!editingId}
-              hint={editingId ? "Nur ausfüllen zum Zurücksetzen." : "Mindestens 12 Zeichen empfohlen."}
-            >
+            <AdminFormField label="Passwort" hint="Nur ausfüllen zum Zurücksetzen.">
               <input className="admin-input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="Rolle" required hint="Neue Benutzer erhalten standardmäßig die Rolle Admin — nie automatisch Super Admin.">
+            <AdminFormField label="Rolle" required>
               <select className="admin-input" value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}>
                 {roles.map((r) => (
-                  <option key={r.id} value={r.id}>{r.label}</option>
+                  <option key={r.id} value={r.id}>
+                    {r.label}
+                  </option>
                 ))}
               </select>
-              {form.roleId ? (
-                <p className="mt-2 text-xs text-text-muted">
-                  {describeRoleSlug(roles.find((r) => r.id === form.roleId)?.slug ?? "")}
-                </p>
-              ) : null}
             </AdminFormField>
-            <AdminFormField label="Team-Verknüpfung" hint="Optional: öffentliches Teammitglied verknüpfen (kein Login).">
+            <AdminFormField label="Team-Verknüpfung" hint="Optional: öffentliches Teammitglied verknüpfen.">
               <select
                 className="admin-input"
                 value={form.teamMemberId ?? ""}
@@ -233,14 +298,20 @@ export function UsersView() {
               >
                 <option value="">— Keine Verknüpfung —</option>
                 {teamMembers.map((t) => (
-                  <option key={t.id} value={t.id}>{t.name}</option>
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
                 ))}
               </select>
             </AdminFormField>
           </div>
           <div className="mt-6 flex gap-2">
-            <AdminButton variant="primary" onClick={() => void save()}>{ADMIN_BTN.save}</AdminButton>
-            <AdminButton variant="secondary" onClick={() => setShowForm(false)}>{ADMIN_BTN.cancel}</AdminButton>
+            <AdminButton variant="primary" onClick={() => void save()}>
+              {ADMIN_BTN.save}
+            </AdminButton>
+            <AdminButton variant="secondary" onClick={() => setShowForm(false)}>
+              {ADMIN_BTN.cancel}
+            </AdminButton>
           </div>
         </AdminCard>
       ) : null}
@@ -250,16 +321,10 @@ export function UsersView() {
       ) : loadError ? (
         <AdminCard>
           <p className="text-sm text-red-700">{loadError}</p>
-          <p className="mt-2 text-sm text-text-muted">
-            Bitte Seite neu laden. Wenn das Problem bleibt, prüfen Sie die Datenbank-Verbindung.
-          </p>
         </AdminCard>
       ) : showAuthenticatedEmpty ? (
         <AdminCard>
-          <p className="text-sm text-text-muted">
-            Ihr Benutzerprofil konnte nicht geladen werden, obwohl Sie angemeldet sind. Bitte melden Sie sich erneut an
-            oder wenden Sie sich an einen Super Admin.
-          </p>
+          <p className="text-sm text-text-muted">Ihr Benutzerprofil konnte nicht geladen werden.</p>
         </AdminCard>
       ) : users.length === 0 ? null : (
         <>
@@ -285,30 +350,33 @@ export function UsersView() {
                   <dl className="admin-user-card-meta">
                     <div>
                       <dt>Rolle</dt>
-                      <dd><AdminStatusBadge label={u.role_label} variant="default" /></dd>
+                      <dd>
+                        <AdminStatusBadge label={u.role_label} variant="default" />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>2FA</dt>
+                      <dd>
+                        <AdminStatusBadge
+                          label={u.totp_enabled ? "Aktiv" : "Ausstehend"}
+                          variant={u.totp_enabled ? "success" : "warning"}
+                        />
+                      </dd>
                     </div>
                     <div>
                       <dt>Letzter Login</dt>
                       <dd>{formatLogin(u.last_login)}</dd>
                     </div>
+                    <div>
+                      <dt>Erstellt am</dt>
+                      <dd>{formatDate(u.created_at)}</dd>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <dt>Erstellt von</dt>
+                      <dd>{u.created_by_name ?? "—"}</dd>
+                    </div>
                   </dl>
-                  <div className="admin-user-card-actions">
-                    <AdminButton variant="secondary" icon={<UserRound className="h-4 w-4" />} onClick={() => openEdit(u)}>
-                      Öffnen
-                    </AdminButton>
-                    {meta?.canManageUsers ? (
-                      <>
-                        <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(u)}>
-                          Bearbeiten
-                        </AdminButton>
-                        <AdminButton variant="secondary" onClick={() => void toggleActive(u)}>
-                          {u.active ? "Deaktivieren" : "Aktivieren"}
-                        </AdminButton>
-                      </>
-                    ) : (
-                      <AdminStatusBadge label="Nur Ansicht" variant="muted" />
-                    )}
-                  </div>
+                  <div className="admin-user-card-actions">{userActions(u)}</div>
                 </div>
               </AdminCard>
             ))}
@@ -316,80 +384,102 @@ export function UsersView() {
 
           <AdminCard className="hidden overflow-x-auto p-0 md:block">
             <table className="admin-users-table w-full text-sm">
-            <thead>
-              <tr>
-                <th className="text-left">Benutzer</th>
-                <th className="text-left">Rolle</th>
-                <th className="text-left">Status</th>
-                <th className="text-left">Letzter Login</th>
-                <th className="text-right">Aktionen</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.map((u) => (
-                <tr key={u.id} className={isCurrentUser(u.id) ? "admin-users-row-current" : undefined}>
-                  <td>
-                    <div className="flex items-center gap-3">
-                      <div className="admin-users-avatar" aria-hidden>
-                        {u.avatar ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={u.avatar} alt="" className="h-full w-full rounded-full object-cover" />
-                        ) : (
-                          userInitials(u.display_name)
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-semibold text-text-primary">{u.display_name}</p>
-                        <p className="truncate text-text-muted">{u.email || "—"}</p>
-                        <p className="font-mono text-[10px] text-text-muted" title={u.id}>
-                          {u.id}
-                        </p>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <AdminStatusBadge label={u.role_label} variant="default" />
-                  </td>
-                  <td>
-                    <AdminStatusBadge label={u.active ? "Aktiv" : "Deaktiviert"} variant={u.active ? "success" : "muted"} />
-                  </td>
-                  <td className="text-text-muted">{formatLogin(u.last_login)}</td>
-                  <td>
-                    <div className="flex flex-wrap justify-end gap-1.5">
-                      <AdminButton variant="secondary" icon={<UserRound className="h-4 w-4" />} onClick={() => openEdit(u)}>
-                        Öffnen
-                      </AdminButton>
-                      {meta?.canManageUsers ? (
-                        <>
-                          <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(u)}>
-                            Bearbeiten
-                          </AdminButton>
-                          <AdminButton variant="secondary" icon={<Shield className="h-4 w-4" />} onClick={() => openEdit(u)}>
-                            Rechte
-                          </AdminButton>
-                          <AdminButton
-                            variant="secondary"
-                            icon={<KeyRound className="h-4 w-4" />}
-                            onClick={() => openEdit(u)}
-                          >
-                            Passwort
-                          </AdminButton>
-                          <AdminButton variant="secondary" onClick={() => void toggleActive(u)}>
-                            {u.active ? "Deaktivieren" : "Aktivieren"}
-                          </AdminButton>
-                        </>
-                      ) : (
-                        <AdminStatusBadge label="Nur Ansicht" variant="muted" />
-                      )}
-                    </div>
-                  </td>
+              <thead>
+                <tr>
+                  <th className="text-left">Benutzer</th>
+                  <th className="text-left">Rolle</th>
+                  <th className="text-left">Status</th>
+                  <th className="text-left">2FA</th>
+                  <th className="text-left">Letzter Login</th>
+                  <th className="text-left">Erstellt am</th>
+                  <th className="text-left">Erstellt von</th>
+                  <th className="text-right">Aktionen</th>
                 </tr>
-              ))}
-            </tbody>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id} className={isCurrentUser(u.id) ? "admin-users-row-current" : undefined}>
+                    <td>
+                      <div className="flex items-center gap-3">
+                        <div className="admin-users-avatar" aria-hidden>
+                          {u.avatar ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={u.avatar} alt="" className="h-full w-full rounded-full object-cover" />
+                          ) : (
+                            userInitials(u.display_name)
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-text-primary">{u.display_name}</p>
+                          <p className="truncate text-text-muted">{u.email || "—"}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <AdminStatusBadge label={u.role_label} variant="default" />
+                    </td>
+                    <td>
+                      <AdminStatusBadge label={u.active ? "Aktiv" : "Deaktiviert"} variant={u.active ? "success" : "muted"} />
+                    </td>
+                    <td>
+                      <AdminStatusBadge
+                        label={u.totp_enabled ? "Aktiv" : "Ausstehend"}
+                        variant={u.totp_enabled ? "success" : "warning"}
+                      />
+                    </td>
+                    <td className="text-text-muted">{formatLogin(u.last_login)}</td>
+                    <td className="text-text-muted">{formatDate(u.created_at)}</td>
+                    <td className="text-text-muted">{u.created_by_name ?? "—"}</td>
+                    <td>
+                      <div className="flex justify-end">{userActions(u)}</div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </AdminCard>
         </>
       )}
+
+      <AdminUserManageDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        onSuccess={() => void load()}
+        inviterRole={meta?.inviterRole ?? "readonly"}
+        roles={roles}
+        canInvite={Boolean(meta?.canInvite)}
+        canCreateManually={Boolean(meta?.canCreateUsers)}
+        defaultTab="invite"
+        toast={toast}
+        withLoading={withLoading}
+      />
+
+      <CriticalActionModal
+        open={Boolean(deleteTarget)}
+        title="Benutzer löschen?"
+        description={
+          deleteTarget
+            ? `„${deleteTarget.display_name}" wird dauerhaft gelöscht. Aktive Sitzungen werden beendet.`
+            : ""
+        }
+        loading={deleteLoading}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={async ({ confirmPassword }) => {
+          if (!deleteTarget) return;
+          setDeleteLoading(true);
+          const res = await fetch("/api/admin/users", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id: deleteTarget.id, confirmPassword }),
+          });
+          const data = await res.json();
+          setDeleteLoading(false);
+          if (!res.ok) throw new Error(data.error ?? "Löschen fehlgeschlagen");
+          toast("Benutzer gelöscht.");
+          setDeleteTarget(null);
+          await load();
+        }}
+      />
     </div>
   );
 }

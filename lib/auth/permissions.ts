@@ -21,6 +21,7 @@ const ALL_PERMISSIONS = [
   "invoices:delete",
   "users:read",
   "users:write",
+  "users:invite",
   "settings:write",
   "settings:system",
   "security:read",

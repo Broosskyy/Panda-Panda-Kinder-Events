@@ -31,6 +31,7 @@ export interface AdminUser {
   created_at: string;
   updated_at: string;
   created_by: string | null;
+  must_change_password: boolean;
 }
 
 export interface AdminUserPublic {
@@ -51,6 +52,9 @@ export interface AdminUserPublic {
   onboarding_completed_at: string | null;
   created_at: string;
   updated_at: string;
+  created_by: string | null;
+  created_by_name: string | null;
+  must_change_password: boolean;
 }
 
 export interface AdminSession {

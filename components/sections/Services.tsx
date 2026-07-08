@@ -64,7 +64,7 @@ export function Services({
               <li key={service.title} className="swipe-item swipe-item-card md:w-auto">
                 <ScrollReveal delay={i * 60}>
                   <Card className="card-equal service-card flex h-full flex-col" padding="md">
-                    <div className="relative mb-4 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-bg-secondary">
+                    <div className="service-card-image relative mb-3 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-bg-secondary sm:mb-4">
                       <Image
                         src={service.imageUrl?.trim() || SERVICE_IMAGE_FALLBACK}
                         alt={service.title}
@@ -80,11 +80,11 @@ export function Services({
                     {service.priceFrom ? (
                       <p className="mt-2 text-sm font-semibold text-primary">ab {service.priceFrom}</p>
                     ) : null}
-                    <p className="mt-3 flex-1 text-[0.9375rem] leading-relaxed text-text-secondary sm:text-base">
+                    <p className="service-card-desc mt-2 flex-1 text-[0.9375rem] leading-relaxed text-text-secondary sm:mt-3 sm:text-base">
                       {service.description}
                     </p>
                     {service.highlights?.length ? (
-                      <ul className="mt-3 space-y-1 text-sm text-text-muted" aria-label="Highlights">
+                      <ul className="service-card-highlights mt-2 space-y-1 text-sm text-text-muted sm:mt-3" aria-label="Highlights">
                         {service.highlights.slice(0, 3).map((h) => (
                           <li key={h}>• {h}</li>
                         ))}
@@ -92,7 +92,7 @@ export function Services({
                     ) : null}
                     <Button
                       variant="secondary"
-                      className="btn-equal mt-5 w-full"
+                      className="service-card-cta btn-equal mt-4 w-full sm:mt-5"
                       onClick={() => setActive(service)}
                     >
                       {service.buttonLabel ?? "Mehr erfahren"}

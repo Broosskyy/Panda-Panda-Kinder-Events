@@ -280,7 +280,7 @@ export function CustomersView() {
         </AdminButton>
       </div>
 
-      <div className="grid gap-3">
+      <div className="grid gap-3 md:grid-cols-2">
         <AdminFormField label="Name *">
           <input
             className="admin-input font-semibold"
@@ -312,7 +312,7 @@ export function CustomersView() {
             options={Object.entries(CRM_CUSTOMER_STATUS_LABELS).map(([value, label]) => ({ value, label }))}
           />
         </AdminFormField>
-        <AdminFormField label="Adresse">
+        <AdminFormField label="Adresse" className="md:col-span-2">
           <input
             className="admin-input"
             value={editForm.address}
@@ -320,7 +320,7 @@ export function CustomersView() {
             placeholder="Adresse"
           />
         </AdminFormField>
-        <AdminFormField label="Notizen">
+        <AdminFormField label="Notizen" className="md:col-span-2">
           <textarea
             className="admin-input min-h-20"
             value={editForm.notes}
@@ -509,7 +509,7 @@ export function CustomersView() {
           </AdminButton>
         </AdminCard>
       ) : (
-        <div className={`grid gap-6 lg:grid-cols-2 ${selectedId ? "admin-customer-split" : ""}`}>
+        <div className={`grid gap-6 lg:grid-cols-[minmax(280px,1fr)_minmax(0,1.5fr)] ${selectedId ? "admin-customer-split" : ""}`}>
           <div className={`space-y-3 ${selectedId ? "hidden lg:block" : ""}`}>
             {customers.length === 0 ? (
               <AdminEmptyState
@@ -545,9 +545,17 @@ export function CustomersView() {
   );
 }
 
-function AdminFormField({ label, children }: { label: string; children: React.ReactNode }) {
+function AdminFormField({
+  label,
+  children,
+  className = "",
+}: {
+  label: string;
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <label className="block">
+    <label className={`block ${className}`.trim()}>
       <span className="mb-1 block text-xs font-medium text-text-muted">{label}</span>
       {children}
     </label>

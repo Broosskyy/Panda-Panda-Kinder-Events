@@ -39,11 +39,11 @@ export function About({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid items-start gap-4 sm:gap-14 lg:grid-cols-2 lg:gap-20">
+        <div className="grid items-start gap-4 sm:gap-14 lg:grid-cols-2 lg:gap-12 xl:gap-20">
           <ScrollReveal>
             <div className="relative">
               <FlowerOrnament className="pointer-events-none absolute -left-2 -top-4 h-16 w-16 opacity-25 sm:-left-6 sm:-top-6 sm:h-24 sm:w-24 sm:opacity-35" />
-              <div className="about-image-frame relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden">
+              <div className="about-image-frame relative mx-auto aspect-[4/5] w-full max-w-md overflow-hidden lg:mx-0 lg:max-w-none">
                 <Image
                   src={aboutImage}
                   alt={`${contactName} — Panda-Bande Kinderevents`}

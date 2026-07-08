@@ -9,6 +9,8 @@ import { DashboardTodaySection } from "@/components/admin/dashboard/DashboardTod
 import { DashboardQuickActionsSection } from "@/components/admin/dashboard/DashboardQuickActionsSection";
 import { DashboardStatsGrid } from "@/components/admin/dashboard/DashboardStatsGrid";
 import { DashboardActivitySection } from "@/components/admin/dashboard/DashboardActivitySection";
+import { DashboardPwaInstallCard } from "@/components/admin/dashboard/DashboardPwaInstallCard";
+import { DashboardPwaInstallHint } from "@/components/admin/dashboard/DashboardPwaInstallHint";
 import { DASHBOARD_V2_QUICK_ACTIONS } from "@/lib/admin/dashboard-v2/constants";
 import type {
   DashboardPreferences,
@@ -179,6 +181,8 @@ export function DashboardViewV2() {
         <>
           <DashboardStatusChips chips={payload.statusChips} />
 
+          <DashboardPwaInstallCard />
+
           <div className="dash-v2-toolbar">
             <button
               type="button"
@@ -209,7 +213,7 @@ export function DashboardViewV2() {
             }
           />
 
-          <DashboardHelpAccordion items={payload.roleHelp} />
+          <DashboardHelpAccordion items={payload.roleHelp} footer={<DashboardPwaInstallHint />} />
 
           <div className="dash-v2-bottom-grid">
             <DashboardStatsGrid items={payload.stats} />

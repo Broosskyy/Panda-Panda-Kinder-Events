@@ -1,12 +1,18 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import type { RoleHelpItem } from "@/lib/admin/role-help";
 
-export function DashboardHelpAccordion({ items }: { items: RoleHelpItem[] }) {
+export function DashboardHelpAccordion({
+  items,
+  footer,
+}: {
+  items: RoleHelpItem[];
+  footer?: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
-  if (items.length === 0) return null;
+  if (items.length === 0 && !footer) return null;
 
   return (
     <section className="dash-v2-accordion">
@@ -21,14 +27,17 @@ export function DashboardHelpAccordion({ items }: { items: RoleHelpItem[] }) {
       </button>
       {open ? (
         <div className="dash-v2-accordion-panel">
-          <ul className="space-y-3">
-            {items.map((item) => (
-              <li key={item.title}>
-                <p className="text-sm font-semibold text-text-primary">{item.title}</p>
-                <p className="mt-1 text-sm text-text-secondary">{item.body}</p>
-              </li>
-            ))}
-          </ul>
+          {items.length > 0 ? (
+            <ul className="space-y-3">
+              {items.map((item) => (
+                <li key={item.title}>
+                  <p className="text-sm font-semibold text-text-primary">{item.title}</p>
+                  <p className="mt-1 text-sm text-text-secondary">{item.body}</p>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {footer ? <div className={items.length > 0 ? "mt-3 border-t border-border pt-3" : ""}>{footer}</div> : null}
         </div>
       ) : null}
     </section>

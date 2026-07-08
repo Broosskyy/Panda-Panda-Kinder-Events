@@ -16,11 +16,11 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     id: "main",
     items: [
-      { href: "/admin", label: "Dashboard", iconKey: "Home" },
-      { href: "/admin/anfragen", label: "Anfragen", iconKey: "Inbox" },
-      { href: "/admin/kunden", label: "Kunden", iconKey: "Users" },
-      { href: "/admin/angebote", label: "Angebote", iconKey: "FileText" },
-      { href: "/admin/rechnungen", label: "Rechnungen", iconKey: "Receipt" },
+      { href: "/admin", label: "Dashboard", iconKey: "Home", mobileLabel: "Start" },
+      { href: "/admin/anfragen", label: "Anfragen", iconKey: "Inbox", mobileLabel: "Anfragen" },
+      { href: "/admin/kunden", label: "Kunden", iconKey: "Users", mobileLabel: "Kunden" },
+      { href: "/admin/angebote", label: "Angebote", iconKey: "FileText", mobileLabel: "Angeb." },
+      { href: "/admin/rechnungen", label: "Rechnungen", iconKey: "Receipt", mobileLabel: "Rechn." },
     ],
   },
   {

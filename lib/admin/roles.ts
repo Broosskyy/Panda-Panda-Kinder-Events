@@ -25,8 +25,9 @@ export function filterActiveRoles(roles: AdminRole[]): AdminRole[] {
   return roles.filter((role) => isActiveRoleSlug(role.slug));
 }
 
-export function roleDisplayLabel(slug: AdminRoleSlug | "legacy", fallback?: string): string {
-  if (slug === "legacy") return "Super Admin";
-  if (isActiveRoleSlug(slug)) return ADMIN_ROLE_DISPLAY_LABELS[slug];
+export function roleDisplayLabel(slug: AdminRoleSlug, fallback?: string): string {
+  if (slug in ADMIN_ROLE_DISPLAY_LABELS) {
+    return ADMIN_ROLE_DISPLAY_LABELS[slug as ActiveAdminRoleSlug];
+  }
   return fallback ?? slug;
 }

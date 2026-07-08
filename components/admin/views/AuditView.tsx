@@ -47,7 +47,6 @@ export function AuditView() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
-  const [isLegacy, setIsLegacy] = useState(false);
   const [canExportAudit, setCanExportAudit] = useState(false);
   const { error: showError, success } = useAdminMessages();
 
@@ -85,10 +84,8 @@ export function AuditView() {
     fetch("/api/admin/login")
       .then((r) => r.json())
       .then((data) => {
-        setIsLegacy(Boolean(data.isLegacy));
         setCanExportAudit(
-          Boolean(data.isLegacy) ||
-            (Array.isArray(data.permissions) && data.permissions.includes("audit:export")),
+          Array.isArray(data.permissions) && data.permissions.includes("audit:export"),
         );
       })
       .catch(() => undefined);
@@ -233,7 +230,6 @@ export function AuditView() {
         open={exportOpen}
         title="Export bestätigen"
         description="Der Export enthält sensible Aktivitätsdaten. Bitte bestätigen Sie mit Ihrem Passwort."
-        isLegacy={isLegacy}
         onCancel={() => setExportOpen(false)}
         onConfirm={async (confirmation) => exportLogs("csv", confirmation)}
       />

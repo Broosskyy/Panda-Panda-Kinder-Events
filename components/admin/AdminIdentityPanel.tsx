@@ -5,12 +5,11 @@ import { roleDisplayLabel } from "@/lib/admin/roles";
 import type { AdminRoleSlug } from "@/lib/auth/types";
 
 export interface AdminIdentity {
-  userId: string | null;
+  userId: string;
   displayName: string;
-  email: string | null;
-  roleSlug: AdminRoleSlug | "legacy";
+  email: string;
+  roleSlug: AdminRoleSlug;
   roleLabel: string;
-  isLegacy?: boolean;
 }
 
 function initials(name: string): string {
@@ -21,7 +20,7 @@ function initials(name: string): string {
 }
 
 export function AdminIdentityPanel({ identity }: { identity: AdminIdentity | null }) {
-  if (!identity) return null;
+  if (!identity?.userId) return null;
 
   const roleLabel = identity.roleLabel || roleDisplayLabel(identity.roleSlug);
 
@@ -32,15 +31,11 @@ export function AdminIdentityPanel({ identity }: { identity: AdminIdentity | nul
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold text-text-primary">{identity.displayName}</p>
-        {identity.email ? <p className="truncate text-xs text-text-muted">{identity.email}</p> : null}
+        <p className="truncate text-xs text-text-muted">{identity.email}</p>
         <p className="mt-1 text-xs font-medium text-primary">{roleLabel}</p>
-        {identity.userId ? (
-          <p className="mt-0.5 truncate font-mono text-[10px] text-text-muted" title={identity.userId}>
-            ID: {identity.userId}
-          </p>
-        ) : identity.isLegacy ? (
-          <p className="mt-0.5 text-[10px] text-amber-700">Legacy-Zugang (kein Benutzerprofil)</p>
-        ) : null}
+        <p className="mt-0.5 truncate font-mono text-[10px] text-text-muted" title={identity.userId}>
+          ID: {identity.userId}
+        </p>
       </div>
     </div>
   );

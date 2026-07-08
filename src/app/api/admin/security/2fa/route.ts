@@ -16,15 +16,9 @@ async function requirePersonalAuth() {
   const authError = await requireAdmin("security:write");
   if (authError) return { error: authError, ctx: null };
   const adminCtx = await getAdminContext();
-  if (!adminCtx?.userId) {
+  if (!adminCtx) {
     return {
-      error: NextResponse.json(
-        {
-          error: "2FA ist erst verfügbar, wenn ein Admin-Benutzer angelegt wurde. Bitte unter Sicherheit → Benutzer & Rollen den ersten Benutzer anlegen.",
-          legacy: true,
-        },
-        { status: 400 },
-      ),
+      error: NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 }),
       ctx: null,
     };
   }
@@ -42,7 +36,6 @@ export async function GET() {
     enabled: user?.totp_enabled ?? false,
     backupCodesRemaining,
     email: user?.email,
-    legacy: false,
   });
 }
 

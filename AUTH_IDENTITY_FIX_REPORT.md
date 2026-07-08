@@ -127,6 +127,13 @@ npm run typecheck
 npm run build
 ```
 
-## Confirmation
+## Confirmation (v2 — legacy fully removed)
 
-After logout + login, the session is bound exclusively to `admin_sessions.user_id` → `admin_users.id`. Users cannot be swapped by stale legacy cookies or shared server cache.
+- **No** `legacy-session` virtual user in code
+- **No** `pb_admin_auth` authentication path — cookie cleared on every login check when users exist
+- **No** `isLegacy` flag on `AdminContext`
+- **Only** `admin_sessions.user_id` → `admin_users.id` resolves identity
+- Bootstrap wizard shown when zero `admin_users` rows exist
+- User list loads **exclusively** from `admin_users` table
+
+After deploy: log out, log in with `manuel.bauch0705@gmail.com`. Sidebar must show Manuel Bauch, email, Super Admin, real UUID.

@@ -87,7 +87,6 @@ export function SettingsView() {
   const [legal, setLegal] = useState<SiteLegalSettings | null>(null);
   const [modules, setModules] = useState<SiteModulesSettings | null>(null);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-  const [isLegacy, setIsLegacy] = useState(false);
   const [emailStatus, setEmailStatus] = useState<EmailStatusResponse | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -114,7 +113,6 @@ export function SettingsView() {
       .then((r) => r.json())
       .then((data) => {
         setIsSuperAdmin(Boolean(data.isSuperAdmin));
-        setIsLegacy(Boolean(data.isLegacy));
       })
       .catch(() => undefined);
   }, []);
@@ -799,7 +797,7 @@ export function SettingsView() {
       ) : null}
 
       {!settingsLoading && tab === "modules" && modules ? (
-        <ModulesSettingsPanel initial={modules} isSuperAdmin={isSuperAdmin} isLegacy={isLegacy} />
+        <ModulesSettingsPanel initial={modules} isSuperAdmin={isSuperAdmin} />
       ) : null}
 
       {!settingsLoading && tab === "system" ? (

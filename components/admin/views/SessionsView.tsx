@@ -17,7 +17,6 @@ interface SessionEntry {
 
 export function SessionsView() {
   const [sessions, setSessions] = useState<SessionEntry[]>([]);
-  const [legacy, setLegacy] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { toast, fromApi } = useAdminMessages();
@@ -30,7 +29,6 @@ export function SessionsView() {
     const data = await res.json();
     if (res.ok) {
       setSessions(data.sessions ?? []);
-      setLegacy(Boolean(data.legacy));
     } else {
       setLoadError(data.error ?? "Sitzungen konnten nicht geladen werden.");
     }
@@ -67,13 +65,6 @@ export function SessionsView() {
       ) : loadError ? (
         <AdminCard>
           <p className="text-sm text-text-muted">{loadError}</p>
-        </AdminCard>
-      ) : legacy ? (
-        <AdminCard>
-          <p className="text-sm text-text-muted">
-            Sitzungsverwaltung ist aktuell nicht aktiviert. Im Ein-Passwort-Modus werden keine einzelnen
-            Gerätesitzungen gespeichert.
-          </p>
         </AdminCard>
       ) : (
         <AdminCard>

@@ -7,28 +7,38 @@ import { AdminQuickActions } from "./AdminQuickActions";
 import { AdminUiProvider } from "./AdminUiProvider";
 import { AdminNotificationsProvider } from "./AdminNotificationsProvider";
 import { AdminLoginForm } from "./AdminLoginForm";
+import { AdminBootstrapWizard } from "./AdminBootstrapWizard";
 
 const PUBLIC_ADMIN_PATHS = ["/admin/passwort-reset"];
+
+type GateState = "checking" | "bootstrap" | "login" | "authenticated";
 
 export function AdminGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isPublicRoute = PUBLIC_ADMIN_PATHS.some((p) => pathname?.startsWith(p));
-  const [authenticated, setAuthenticated] = useState(false);
-  const [checking, setChecking] = useState(!isPublicRoute);
+  const [gateState, setGateState] = useState<GateState>(isPublicRoute ? "authenticated" : "checking");
 
   useEffect(() => {
     if (isPublicRoute) return;
     fetch("/api/admin/login")
       .then((res) => res.json())
-      .then((data) => setAuthenticated(Boolean(data.authenticated)))
-      .finally(() => setChecking(false));
+      .then((data) => {
+        if (data.authenticated) {
+          setGateState("authenticated");
+        } else if (data.needsBootstrap) {
+          setGateState("bootstrap");
+        } else {
+          setGateState("login");
+        }
+      })
+      .catch(() => setGateState("login"));
   }, [isPublicRoute]);
 
   if (isPublicRoute) {
     return <>{children}</>;
   }
 
-  if (checking) {
+  if (gateState === "checking") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-bg-secondary">
         <p className="text-text-muted">Prüfe Anmeldung...</p>
@@ -36,8 +46,12 @@ export function AdminGate({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!authenticated) {
-    return <AdminLoginForm onSuccess={() => setAuthenticated(true)} />;
+  if (gateState === "bootstrap") {
+    return <AdminBootstrapWizard onComplete={() => setGateState("login")} />;
+  }
+
+  if (gateState === "login") {
+    return <AdminLoginForm onSuccess={() => setGateState("authenticated")} />;
   }
 
   return (

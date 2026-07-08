@@ -11,10 +11,9 @@ import type { SiteModulesSettings } from "@/lib/cms/types";
 interface ModulesSettingsPanelProps {
   initial: SiteModulesSettings;
   isSuperAdmin: boolean;
-  isLegacy?: boolean;
 }
 
-export function ModulesSettingsPanel({ initial, isSuperAdmin, isLegacy = false }: ModulesSettingsPanelProps) {
+export function ModulesSettingsPanel({ initial, isSuperAdmin }: ModulesSettingsPanelProps) {
   const [modules, setModules] = useState<SiteModulesSettings>(initial);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingSave, setPendingSave] = useState<SiteModulesSettings | null>(null);
@@ -134,7 +133,6 @@ export function ModulesSettingsPanel({ initial, isSuperAdmin, isLegacy = false }
         open={confirmOpen}
         title="Module ändern — Bestätigung nötig"
         description="Das Ein- oder Ausschalten von Modulen betrifft die gesamte Website. Bitte bestätigen Sie mit Ihrem Passwort."
-        isLegacy={isLegacy}
         onCancel={() => {
           setConfirmOpen(false);
           setPendingSave(null);

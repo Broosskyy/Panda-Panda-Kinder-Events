@@ -1,14 +1,7 @@
 import { NextResponse } from "next/server";
-import { timingSafeEqual } from "crypto";
-import {
-  createAdminSessionToken,
-  getAdminCookieName,
-  getAdminSessionMaxAge,
-  isAdminConfigured,
-  legacyCookieClearOptions,
-} from "@/lib/admin-auth";
+import { getAdminCookieName, legacyCookieClearOptions } from "@/lib/admin-auth";
 import { verifyPassword } from "@/lib/auth/password";
-import { findUserByIdentifier, getUserPublicById, hasAdminUsers, updateUser } from "@/lib/auth/users";
+import { findUserByIdentifier, getRoleById, getUserPublicById, hasAdminUsers, updateUser } from "@/lib/auth/users";
 import { getLoginPolicy, getRateLimitPolicy } from "@/lib/auth/security-settings";
 import { recordLoginHistory } from "@/lib/auth/login-history";
 import { writeAuditLogFromRequest } from "@/lib/auth/audit";
@@ -26,25 +19,13 @@ import { resolveAdminContext } from "@/lib/auth/context";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { roleDisplayLabel } from "@/lib/admin/roles";
 
-function attachMultiUserSessionCookies(response: NextResponse, token: string, maxAgeSec: number) {
+function attachSessionCookies(response: NextResponse, token: string, maxAgeSec: number) {
   response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(maxAgeSec));
   response.cookies.set(getAdminCookieName(), "", legacyCookieClearOptions());
 }
 
-function passwordsMatch(input: string, expected: string): boolean {
-  const a = Buffer.from(input);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(a, b);
-}
-
-async function legacyLogin(password: string) {
-  const expected = process.env.ADMIN_PASSWORD ?? "";
-  const token = createAdminSessionToken();
-  if (!password || !expected || !token || !passwordsMatch(password, expected)) {
-    return null;
-  }
-  return token;
+function clearLegacyAuthCookie(response: NextResponse) {
+  response.cookies.set(getAdminCookieName(), "", legacyCookieClearOptions());
 }
 
 export async function POST(request: Request) {
@@ -143,58 +124,27 @@ export async function POST(request: Request) {
         email: user.email,
       },
     });
-    attachMultiUserSessionCookies(response, token, maxAgeSec);
+    attachSessionCookies(response, token, maxAgeSec);
     response.cookies.set(PENDING_2FA_COOKIE, "", clearSessionCookieOptions());
     return response;
   }
 
-  let multiUserEnabled = false;
+  let usersExist = false;
   try {
-    multiUserEnabled = await hasAdminUsers();
+    usersExist = await hasAdminUsers();
   } catch {
     return NextResponse.json({ error: "Anmeldung vorübergehend nicht verfügbar." }, { status: 503 });
   }
 
-  // Legacy single-password mode — only when no admin_users exist
-  if (!multiUserEnabled) {
-    if (!isAdminConfigured()) {
-      return NextResponse.json({ error: "Admin ist nicht konfiguriert." }, { status: 503 });
-    }
-    const legacyPassword = password ?? identifier;
-    const token = await legacyLogin(legacyPassword ?? "");
-    if (!token) {
-      await writeAuditLogFromRequest(null, request, {
-        action: "login_failed",
-        area: "auth",
-        success: false,
-        errorMessage: "legacy_invalid_password",
-      });
-      await recordLoginHistory({
-        identifier: "legacy",
-        success: false,
-        ip,
-        userAgent: request.headers.get("user-agent"),
-      });
-      return NextResponse.json({ error: "Ungültiges Passwort." }, { status: 401 });
-    }
-    const response = NextResponse.json({ success: true, legacy: true });
-    response.cookies.set(getAdminCookieName(), token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      path: "/",
-      maxAge: getAdminSessionMaxAge(),
-    });
-    await recordLoginHistory({
-      identifier: "legacy",
-      success: true,
-      ip,
-      userAgent: request.headers.get("user-agent"),
-    });
+  if (!usersExist) {
+    const response = NextResponse.json(
+      { error: "Noch kein Admin-Benutzer angelegt. Bitte zuerst den Einrichtungs-Assistenten nutzen.", needsBootstrap: true },
+      { status: 403 },
+    );
+    clearLegacyAuthCookie(response);
     return response;
   }
 
-  // Multi-user login step 1
   if (!identifier?.trim() || !password) {
     return NextResponse.json({ error: "Benutzername/E-Mail und Passwort erforderlich." }, { status: 400 });
   }
@@ -272,7 +222,7 @@ export async function POST(request: Request) {
   }
 
   const loginPolicy = await getLoginPolicy();
-  const { token, maxAgeSec } = await createSession({
+  const { token, session, maxAgeSec } = await createSession({
     userId: user.id,
     userAgent: request.headers.get("user-agent"),
     ip,
@@ -293,15 +243,15 @@ export async function POST(request: Request) {
     userAgent: request.headers.get("user-agent"),
   });
 
+  const role = await getRoleById(user.role_id);
   await writeAuditLogFromRequest(
     {
       userId: user.id,
       displayName: user.display_name,
       email: user.email,
-      roleSlug: "readonly",
+      roleSlug: role?.slug ?? "readonly",
       permissions: [],
-      sessionId: null,
-      isLegacy: false,
+      sessionId: session.id,
     },
     request,
     { action: "login", area: "auth", entityId: user.id },
@@ -315,13 +265,13 @@ export async function POST(request: Request) {
       email: user.email,
     },
   });
-  attachMultiUserSessionCookies(response, token, maxAgeSec);
+  attachSessionCookies(response, token, maxAgeSec);
   return response;
 }
 
 export async function DELETE(request: Request) {
   const ctx = await resolveAdminContext();
-  if (ctx?.userId && ctx.sessionId) {
+  if (ctx?.sessionId) {
     const { revokeSession } = await import("@/lib/auth/session");
     await revokeSession(ctx.sessionId, ctx.userId);
     await writeAuditLogFromRequest(ctx, request, { action: "logout", area: "auth" });
@@ -335,31 +285,46 @@ export async function DELETE(request: Request) {
 }
 
 export async function GET() {
+  let usersExist = false;
+  try {
+    usersExist = await hasAdminUsers();
+  } catch {
+    const response = NextResponse.json({ authenticated: false, needsBootstrap: false, error: "Datenbank nicht erreichbar." });
+    return response;
+  }
+
   const ctx = await resolveAdminContext();
   if (!ctx) {
-    return NextResponse.json({ authenticated: false });
+    const response = NextResponse.json({
+      authenticated: false,
+      needsBootstrap: !usersExist,
+    });
+    if (usersExist) clearLegacyAuthCookie(response);
+    return response;
   }
+
   const settings = await fetchSiteSettings().catch(() => null);
-  const profile = ctx.userId ? await getUserPublicById(ctx.userId) : null;
+  const profile = await getUserPublicById(ctx.userId);
   const roleLabel = profile?.role_label ?? roleDisplayLabel(ctx.roleSlug);
 
-  return NextResponse.json({
+  const response = NextResponse.json({
     authenticated: true,
     userId: ctx.userId,
-    displayName: ctx.displayName,
-    email: ctx.email ?? profile?.email ?? null,
+    displayName: profile?.display_name ?? ctx.displayName,
+    email: profile?.email ?? ctx.email,
     roleSlug: ctx.roleSlug,
     roleLabel,
-    isLegacy: ctx.isLegacy,
     permissions: ctx.permissions,
     modules: settings?.modules ?? null,
-    isSuperAdmin: ctx.isLegacy || ctx.roleSlug === "administrator",
+    isSuperAdmin: ctx.roleSlug === "administrator",
     identity: {
       id: ctx.userId,
-      displayName: ctx.displayName,
-      email: ctx.email ?? profile?.email ?? null,
+      displayName: profile?.display_name ?? ctx.displayName,
+      email: profile?.email ?? ctx.email,
       roleSlug: ctx.roleSlug,
       roleLabel,
     },
   });
+  clearLegacyAuthCookie(response);
+  return response;
 }

@@ -13,8 +13,8 @@ export async function GET() {
   if (authError) return authError;
 
   const ctx = await getAdminContext();
-  if (!ctx?.userId) {
-    return NextResponse.json({ sessions: [], legacy: true });
+  if (!ctx) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
   }
 
   try {
@@ -41,8 +41,8 @@ export async function POST(request: Request) {
   if (authError) return authError;
 
   const ctx = await getAdminContext();
-  if (!ctx?.userId) {
-    return NextResponse.json({ error: "Nicht verfügbar im Legacy-Modus." }, { status: 400 });
+  if (!ctx) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
   }
 
   const { action, sessionId } = await request.json();

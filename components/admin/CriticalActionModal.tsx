@@ -11,8 +11,7 @@ interface CriticalActionModalProps {
   title: string;
   description: string;
   onCancel: () => void;
-  onConfirm: (payload: { confirmPassword?: string; criticalAcknowledged?: boolean }) => Promise<void>;
-  isLegacy?: boolean;
+  onConfirm: (payload: { confirmPassword?: string }) => Promise<void>;
   loading?: boolean;
 }
 
@@ -22,22 +21,15 @@ export function CriticalActionModal({
   description,
   onCancel,
   onConfirm,
-  isLegacy = false,
   loading = false,
 }: CriticalActionModalProps) {
   const [password, setPassword] = useState("");
-  const [acknowledged, setAcknowledged] = useState(false);
 
   if (!open) return null;
 
   const handleConfirm = async () => {
-    await onConfirm(
-      isLegacy
-        ? { criticalAcknowledged: acknowledged }
-        : { confirmPassword: password },
-    );
+    await onConfirm({ confirmPassword: password });
     setPassword("");
-    setAcknowledged(false);
   };
 
   return (
@@ -52,32 +44,20 @@ export function CriticalActionModal({
           </div>
         </div>
 
-        {isLegacy ? (
-          <label className="mt-4 flex items-start gap-2 text-sm">
-            <input
-              type="checkbox"
-              className="mt-1"
-              checked={acknowledged}
-              onChange={(e) => setAcknowledged(e.target.checked)}
-            />
-            <span>Ich verstehe, dass diese Aktion wichtig ist und möchte fortfahren.</span>
-          </label>
-        ) : (
-          <AdminFormField
-            label="Ihr Passwort zur Bestätigung"
-            required
-            hint="Nur Super Admins können diese Aktion ausführen."
-            className="mt-4"
-          >
-            <input
-              className="admin-input"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </AdminFormField>
-        )}
+        <AdminFormField
+          label="Ihr Passwort zur Bestätigung"
+          required
+          hint="Nur Super Admins können diese Aktion ausführen."
+          className="mt-4"
+        >
+          <input
+            className="admin-input"
+            type="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+        </AdminFormField>
 
         <div className="mt-6 flex flex-wrap justify-end gap-2">
           <AdminButton variant="secondary" onClick={onCancel} disabled={loading}>
@@ -86,7 +66,7 @@ export function CriticalActionModal({
           <AdminButton
             variant="primary"
             onClick={() => void handleConfirm()}
-            disabled={loading || (isLegacy ? !acknowledged : !password.trim())}
+            disabled={loading || !password.trim()}
           >
             Sicher bestätigen
           </AdminButton>
@@ -96,10 +76,9 @@ export function CriticalActionModal({
   );
 }
 
-/** Merge critical confirmation fields into a JSON body for API calls. */
 export function withCriticalConfirmation<T extends object>(
   payload: T,
-  confirmation: { confirmPassword?: string; criticalAcknowledged?: boolean },
-): T & { confirmPassword?: string; criticalAcknowledged?: boolean } {
+  confirmation: { confirmPassword?: string },
+): T & { confirmPassword?: string } {
   return { ...payload, ...confirmation };
 }

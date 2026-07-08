@@ -19,7 +19,7 @@ export const CRITICAL_ACTION_LABELS: Record<string, string> = {
 export type CriticalActionKind = keyof typeof CRITICAL_ACTION_LABELS;
 
 export function isSuperAdmin(ctx: AdminContext): boolean {
-  return ctx.isLegacy || ctx.roleSlug === "administrator";
+  return ctx.roleSlug === "administrator";
 }
 
 export interface CriticalConfirmationBody {
@@ -36,22 +36,6 @@ export async function verifyCriticalConfirmation(
       ok: false,
       response: NextResponse.json(
         { error: "Nur Super Admins dürfen diese Aktion ausführen.", needsSuperAdmin: true },
-        { status: 403 },
-      ),
-    };
-  }
-
-  if (ctx.isLegacy || !ctx.userId) {
-    if (body.criticalAcknowledged === true) {
-      return { ok: true };
-    }
-    return {
-      ok: false,
-      response: NextResponse.json(
-        {
-          error: "Bitte bestätigen Sie diese sicherheitskritische Aktion.",
-          needsConfirmation: true,
-        },
         { status: 403 },
       ),
     };

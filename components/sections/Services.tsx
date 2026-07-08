@@ -61,7 +61,7 @@ export function Services({
           >
             {items.map((service, i) => {
               return (
-              <li key={service.title} className="swipe-item swipe-item-card md:w-auto">
+              <li key={service.id ?? `${service.title}-${i}`} className="swipe-item swipe-item-card md:w-auto">
                 <ScrollReveal delay={i * 60}>
                   <Card className="card-equal service-card flex h-full flex-col" padding="md">
                     <div className="service-card-image relative mb-3 aspect-[16/10] w-full overflow-hidden rounded-2xl bg-bg-secondary sm:mb-4">

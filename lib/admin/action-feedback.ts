@@ -176,6 +176,26 @@ export const ACTION_RESULTS = {
     message: "Alle Änderungen wurden übernommen.",
     status: "success",
   }),
+  serviceSaved: (): ActionResultPayload => ({
+    title: "Leistung gespeichert",
+    message: "Die Leistung ist auf der Website sichtbar.",
+    status: "success",
+  }),
+  serviceDeleted: (): ActionResultPayload => ({
+    title: "Leistung gelöscht",
+    message: "Die Leistung wurde entfernt.",
+    status: "success",
+  }),
+  faqSaved: (): ActionResultPayload => ({
+    title: "FAQ gespeichert",
+    message: "Die FAQ wurde aktualisiert.",
+    status: "success",
+  }),
+  faqDeleted: (): ActionResultPayload => ({
+    title: "FAQ gelöscht",
+    message: "Die FAQ wurde entfernt.",
+    status: "success",
+  }),
   passwordChanged: (): ActionResultPayload => ({
     title: "Passwort geändert",
     message: "Das Passwort wurde erfolgreich aktualisiert.",

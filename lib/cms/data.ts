@@ -287,11 +287,12 @@ async function queryCmsServices(): Promise<Service[]> {
   return (data as CmsService[])
     .filter((s) => isValidCmsService(s.title ?? "", s.description ?? ""))
     .map((s) => ({
+      id: s.id,
       iconKey: s.icon_key?.trim() || "Star",
       title: s.title.trim(),
       description: s.description.trim(),
       detailText: s.detail_text?.trim() || s.description.trim(),
-      imageUrl: s.image_url?.trim() || undefined,
+      imageUrl: (resolveImageUrl("gallery", s.image_url) ?? s.image_url?.trim()) || undefined,
       buttonLabel: s.button_label?.trim() || "Mehr erfahren",
       buttonLink: s.button_link?.trim() || undefined,
       category: s.category?.trim() || undefined,
@@ -309,6 +310,9 @@ export async function fetchCmsServices(): Promise<Service[]> {
     if (!hasCms) return staticServices;
 
     const cmsServices = await queryCmsServices();
+    if (cmsServices.length === 0) {
+      console.warn("fetchCmsServices: cms_services has rows but none are publicly visible/valid");
+    }
     return cmsServices;
   } catch (err) {
     console.error("fetchCmsServices:", err);

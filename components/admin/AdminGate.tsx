@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { AdminSidebar } from "./AdminSidebar";
 import { AdminQuickActions } from "./AdminQuickActions";
 import { AdminUiProvider } from "./AdminUiProvider";
+import { AdminSessionProvider } from "./AdminSessionProvider";
 import { AdminNotificationsProvider } from "./AdminNotificationsProvider";
 import { AdminLoginForm } from "./AdminLoginForm";
 import { AdminBootstrapWizard } from "./AdminBootstrapWizard";
@@ -58,14 +59,16 @@ export function AdminGate({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AdminUiProvider>
-      <AdminNotificationsProvider>
-        <div className="admin-shell flex min-h-[100dvh] flex-col md:flex-row" data-admin-theme="light">
-          <AdminSidebar />
-          <main className="admin-main flex-1 overflow-x-hidden">{children}</main>
-          <AdminQuickActions />
-        </div>
-      </AdminNotificationsProvider>
-    </AdminUiProvider>
+    <AdminSessionProvider>
+      <AdminUiProvider>
+        <AdminNotificationsProvider>
+          <div className="admin-shell flex min-h-[100dvh] flex-col md:flex-row" data-admin-theme="light">
+            <AdminSidebar />
+            <main className="admin-main flex-1 overflow-x-hidden">{children}</main>
+            <AdminQuickActions />
+          </div>
+        </AdminNotificationsProvider>
+      </AdminUiProvider>
+    </AdminSessionProvider>
   );
 }

@@ -8,25 +8,28 @@ import { deleteStorageFile } from "@/lib/cms/storage";
 import type { GalleryImageRecord } from "@/lib/cms/types";
 import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
+import { runSafeApi } from "@/lib/api/safe-route";
 
 export async function GET() {
-  const authError = await requireAdmin("website:read");
-  if (authError) return authError;
+  return runSafeApi(async () => {
+    const authError = await requireAdmin("website:read");
+    if (authError) return authError;
 
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("gallery_images")
-    .select("*")
-    .order("sort_order", { ascending: true });
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("gallery_images")
+      .select("*")
+      .order("sort_order", { ascending: true });
 
-  if (error) return NextResponse.json({ error: "Laden fehlgeschlagen." }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Laden fehlgeschlagen." }, { status: 500 });
 
-  const images = ((data ?? []) as GalleryImageRecord[]).map((img) => ({
-    ...img,
-    url: getPublicUrl("gallery", img.storage_path),
-  }));
+    const images = ((data ?? []) as GalleryImageRecord[]).map((img) => ({
+      ...img,
+      url: getPublicUrl("gallery", img.storage_path),
+    }));
 
-  return NextResponse.json({ images });
+    return NextResponse.json({ images });
+  }, "Galerie konnte nicht geladen werden.");
 }
 
 export async function POST(request: Request) {

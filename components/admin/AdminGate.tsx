@@ -6,7 +6,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { AdminQuickActions } from "./AdminQuickActions";
 import { AdminUiProvider } from "./AdminUiProvider";
 import { AdminActionFeedbackProvider } from "./AdminActionFeedbackProvider";
-import { AdminSessionProvider } from "./AdminSessionProvider";
+import { AdminSessionProvider, type AdminLoginSnapshot } from "./AdminSessionProvider";
 import { AdminNotificationsProvider } from "./AdminNotificationsProvider";
 import { AdminLoginForm } from "./AdminLoginForm";
 import { AdminBootstrapWizard } from "./AdminBootstrapWizard";
@@ -21,12 +21,14 @@ export function AdminGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const isPublicRoute = PUBLIC_ADMIN_PATHS.some((p) => pathname?.startsWith(p));
   const [gateState, setGateState] = useState<GateState>(isPublicRoute ? "authenticated" : "checking");
+  const [loginSnapshot, setLoginSnapshot] = useState<AdminLoginSnapshot | null>(null);
 
   useEffect(() => {
     if (isPublicRoute) return;
     fetch("/api/admin/login")
       .then((res) => res.json())
-      .then((data) => {
+      .then((data: AdminLoginSnapshot & { needsBootstrap?: boolean; bootstrap?: { allowed?: boolean } }) => {
+        setLoginSnapshot(data);
         if (data.authenticated) {
           setGateState("authenticated");
           return;
@@ -58,11 +60,21 @@ export function AdminGate({ children }: { children: ReactNode }) {
   }
 
   if (gateState === "login") {
-    return <AdminLoginForm onSuccess={() => setGateState("authenticated")} />;
+    const handleLoginSuccess = () => {
+      fetch("/api/admin/login")
+        .then((res) => res.json())
+        .then((data: AdminLoginSnapshot) => {
+          setLoginSnapshot(data);
+          setGateState("authenticated");
+        })
+        .catch(() => setGateState("authenticated"));
+    };
+
+    return <AdminLoginForm onSuccess={handleLoginSuccess} />;
   }
 
   return (
-    <AdminSessionProvider>
+    <AdminSessionProvider initialLoginData={loginSnapshot}>
       <AdminOnboardingProvider>
         <AdminUiProvider>
           <AdminActionFeedbackProvider>

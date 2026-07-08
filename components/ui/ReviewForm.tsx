@@ -197,7 +197,7 @@ export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
             />
             {profilePreview ? (
               <div className="relative mt-3 h-16 w-16 overflow-hidden rounded-full">
-                <Image src={profilePreview} alt="Profilbild Vorschau" fill className="object-cover" />
+                <Image src={profilePreview} alt="Profilbild Vorschau" fill sizes="64px" className="object-cover" />
               </div>
             ) : null}
           </FormField>
@@ -212,7 +212,7 @@ export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
             />
             {eventPreview ? (
               <div className="relative mt-3 h-20 w-full overflow-hidden rounded-xl">
-                <Image src={eventPreview} alt="Eventfoto Vorschau" fill className="object-cover" />
+                <Image src={eventPreview} alt="Eventfoto Vorschau" fill sizes="(max-width: 640px) 100vw, 320px" className="object-cover" />
               </div>
             ) : null}
           </FormField>

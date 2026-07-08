@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useRef, useState, type ReactNode } from "react";
 import { ADMIN_MSG } from "@/lib/admin/messages";
 
 type ToastType = "success" | "error" | "info" | "warning";
@@ -23,6 +23,7 @@ const AdminUiContext = createContext<AdminUiContextValue | null>(null);
 export function AdminUiProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
   const [loading, setLoading] = useState(false);
+  const loadingRef = useRef(false);
 
   const toast = useCallback((message: string, type: ToastType = "success") => {
     const id = Date.now();
@@ -31,10 +32,13 @@ export function AdminUiProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const withLoading = useCallback(async <T,>(promise: Promise<T>): Promise<T> => {
+    if (loadingRef.current) return promise;
+    loadingRef.current = true;
     setLoading(true);
     try {
       return await promise;
     } finally {
+      loadingRef.current = false;
       setLoading(false);
     }
   }, []);

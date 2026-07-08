@@ -33,6 +33,7 @@ import { DomainVerificationBanner } from "@/components/admin/email/DomainVerific
 import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
 import { ModulesSettingsPanel } from "@/components/admin/settings/ModulesSettingsPanel";
 import { useAdminOnboarding } from "@/components/admin/AdminOnboardingProvider";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { AdminAppSettingsCard } from "@/components/admin/AdminAppSettingsCard";
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
@@ -88,7 +89,7 @@ export function SettingsView() {
   const [seo, setSeo] = useState<SiteSeoSettings | null>(null);
   const [legal, setLegal] = useState<SiteLegalSettings | null>(null);
   const [modules, setModules] = useState<SiteModulesSettings | null>(null);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const { isSuperAdmin } = useAdminSession();
   const [emailStatus, setEmailStatus] = useState<EmailStatusResponse | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -109,15 +110,6 @@ export function SettingsView() {
     setSeo(settings.seo);
     setLegal(settings.legal);
     setModules(settings.modules ?? DEFAULT_SITE_SETTINGS.modules);
-  }, []);
-
-  useEffect(() => {
-    fetch("/api/admin/login")
-      .then((r) => r.json())
-      .then((data) => {
-        setIsSuperAdmin(Boolean(data.isSuperAdmin));
-      })
-      .catch(() => undefined);
   }, []);
 
   const loadSettings = useCallback(async () => {

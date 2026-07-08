@@ -1,5 +1,11 @@
 import { Suspense } from "react";
-import { SettingsView } from "@/components/admin/views/SettingsView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
+
+const SettingsView = adminDynamicView(
+  () => import("@/components/admin/views/SettingsView"),
+  "SettingsView",
+  "Einstellungen werden geladen…",
+);
 
 export default function AdminSettingsPage() {
   return (

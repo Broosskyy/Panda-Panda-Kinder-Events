@@ -45,6 +45,7 @@ export function PostsView() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/posts");
@@ -60,6 +61,7 @@ export function PostsView() {
   }, [load]);
 
   const save = async () => {
+    if (saving) return;
     if (!draft.title.trim()) {
       await runAction({
         action: async () => {
@@ -83,15 +85,20 @@ export function PostsView() {
 
     const result = await runAction({
       action: async () => {
-        const res = await fetch("/api/admin/posts", {
-          method: editingId ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editingId ? { id: editingId, ...payload } : payload),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        await load();
-        return data;
+        setSaving(true);
+        try {
+          const res = await fetch("/api/admin/posts", {
+            method: editingId ? "PATCH" : "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(editingId ? { id: editingId, ...payload } : payload),
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
+          await load();
+          return data;
+        } finally {
+          setSaving(false);
+        }
       },
       success: editingId ? ACTION_RESULTS.postUpdated() : ACTION_RESULTS.postCreated(),
       error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
@@ -184,8 +191,8 @@ export function PostsView() {
           <img src={draft.hero_image_url} alt="" className="mt-4 h-32 w-full rounded-xl object-cover" />
         ) : null}
         <div className="mt-4 flex gap-2">
-          <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void save()}>
-            {ADMIN_BTN.save}
+          <AdminButton variant="primary" icon={<Save className="h-4 w-4" />} onClick={() => void save()} disabled={saving}>
+            {saving ? "Speichern…" : ADMIN_BTN.save}
           </AdminButton>
           {editingId ? (
             <AdminButton variant="secondary" onClick={() => { setEditingId(null); setDraft(emptyPost()); }}>

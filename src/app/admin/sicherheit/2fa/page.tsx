@@ -1,5 +1,10 @@
-import { TwoFactorView } from "@/components/admin/views/TwoFactorView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function Security2faPage() {
+const TwoFactorView = adminDynamicView(
+  () => import("@/components/admin/views/TwoFactorView"),
+  "TwoFactorView",
+);
+
+export default function AdminTwoFactorPage() {
   return <TwoFactorView />;
 }

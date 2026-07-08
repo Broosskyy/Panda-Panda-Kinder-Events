@@ -1,5 +1,10 @@
-import { SecurityCenterView } from "@/components/admin/views/SecurityCenterView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function SecurityIndexPage() {
+const SecurityCenterView = adminDynamicView(
+  () => import("@/components/admin/views/SecurityCenterView"),
+  "SecurityCenterView",
+);
+
+export default function AdminSecurityPage() {
   return <SecurityCenterView />;
 }

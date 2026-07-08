@@ -4,6 +4,7 @@ import { requireAdmin, getAdminContext } from "@/lib/admin-route";
 import { getSupabaseAdmin, type BookingStatus } from "@/lib/supabase/admin";
 import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { assessBookingDeleteBlock } from "@/lib/admin/booking-lifecycle";
+import { runSafeApi } from "@/lib/api/safe-route";
 
 const VALID_STATUSES: BookingStatus[] = [
   "new",
@@ -22,28 +23,30 @@ const patchSchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const authError = await requireAdmin("crm:read");
-  if (authError) return authError;
+  return runSafeApi(async () => {
+    const authError = await requireAdmin("crm:read");
+    if (authError) return authError;
 
-  const { searchParams } = new URL(request.url);
-  const view = searchParams.get("view") ?? "active";
+    const { searchParams } = new URL(request.url);
+    const view = searchParams.get("view") ?? "active";
 
-  const supabase = getSupabaseAdmin();
-  let query = supabase.from("booking_requests").select("*").order("created_at", { ascending: false });
+    const supabase = getSupabaseAdmin();
+    let query = supabase.from("booking_requests").select("*").order("created_at", { ascending: false });
 
-  if (view === "active") {
-    query = query.is("archived_at", null);
-  } else if (view === "archived") {
-    query = query.not("archived_at", "is", null);
-  }
+    if (view === "active") {
+      query = query.is("archived_at", null);
+    } else if (view === "archived") {
+      query = query.not("archived_at", "is", null);
+    }
 
-  const { data, error } = await query;
+    const { data, error } = await query;
 
-  if (error) {
-    return NextResponse.json({ error: "Fehler beim Laden." }, { status: 500 });
-  }
+    if (error) {
+      return NextResponse.json({ error: "Fehler beim Laden." }, { status: 500 });
+    }
 
-  return NextResponse.json({ bookings: data ?? [] });
+    return NextResponse.json({ bookings: data ?? [] });
+  }, "Anfragen konnten nicht geladen werden.");
 }
 
 export async function PATCH(request: Request) {

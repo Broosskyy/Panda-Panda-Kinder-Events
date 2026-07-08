@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { resolveImageUrl } from "./resolve-image";
 import type { PublicReview } from "./types";
@@ -22,8 +22,7 @@ export function mapReviewRow(row: Record<string, unknown>): PublicReview {
   };
 }
 
-export async function fetchApprovedReviews(): Promise<PublicReview[]> {
-  noStore();
+async function fetchApprovedReviewsImpl(): Promise<PublicReview[]> {
   if (!isSupabaseConfigured()) return [];
 
   try {
@@ -46,3 +45,5 @@ export async function fetchApprovedReviews(): Promise<PublicReview[]> {
     return [];
   }
 }
+
+export const fetchApprovedReviews = cache(fetchApprovedReviewsImpl);

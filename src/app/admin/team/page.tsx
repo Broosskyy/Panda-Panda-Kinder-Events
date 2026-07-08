@@ -1,5 +1,10 @@
-import { TeamView } from "@/components/admin/views/TeamView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function TeamPage() {
+const TeamView = adminDynamicView(
+  () => import("@/components/admin/views/TeamView"),
+  "TeamView",
+);
+
+export default function AdminTeamPage() {
   return <TeamView />;
 }

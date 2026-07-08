@@ -1,5 +1,10 @@
-import { SessionsView } from "@/components/admin/views/SessionsView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function SecuritySessionsPage() {
+const SessionsView = adminDynamicView(
+  () => import("@/components/admin/views/SessionsView"),
+  "SessionsView",
+);
+
+export default function AdminSessionsPage() {
   return <SessionsView />;
 }

@@ -1,4 +1,4 @@
-import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { resolveImageUrl } from "@/lib/cms/resolve-image";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
@@ -22,8 +22,7 @@ function mapMemberToPublic(member: Awaited<ReturnType<typeof listTeamMembers>>[n
 }
 
 /** Active, non-archived team members for the public website (source of truth: team_members). */
-export async function fetchPublicTeamMembers(): Promise<PublicTeamMemberItem[]> {
-  noStore();
+async function fetchPublicTeamMembersImpl(): Promise<PublicTeamMemberItem[]> {
   if (!isSupabaseConfigured()) return [];
 
   try {
@@ -38,9 +37,9 @@ export async function fetchPublicTeamMembers(): Promise<PublicTeamMemberItem[]> 
   }
 }
 
-/** Section title/subtitle from CMS + live team members from team_members. */
-export async function fetchPublicTeam(): Promise<SitePublicTeamSettings> {
-  noStore();
+export const fetchPublicTeamMembers = cache(fetchPublicTeamMembersImpl);
+
+async function fetchPublicTeamImpl(): Promise<SitePublicTeamSettings> {
   const [settings, items] = await Promise.all([fetchSiteSettings(), fetchPublicTeamMembers()]);
 
   return {
@@ -49,3 +48,5 @@ export async function fetchPublicTeam(): Promise<SitePublicTeamSettings> {
     items,
   };
 }
+
+export const fetchPublicTeam = cache(fetchPublicTeamImpl);

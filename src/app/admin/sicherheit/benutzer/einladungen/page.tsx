@@ -1,11 +1,10 @@
-import { Suspense } from "react";
-import { InvitesView } from "@/components/admin/views/InvitesView";
-import { AdminLoadingCard } from "@/components/admin/ui";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function SecurityInvitesPage() {
-  return (
-    <Suspense fallback={<AdminLoadingCard message="Einladungen werden geladen…" />}>
-      <InvitesView />
-    </Suspense>
-  );
+const InvitesView = adminDynamicView(
+  () => import("@/components/admin/views/InvitesView"),
+  "InvitesView",
+);
+
+export default function AdminInvitesPage() {
+  return <InvitesView />;
 }

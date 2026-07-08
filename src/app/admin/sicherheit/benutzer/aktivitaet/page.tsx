@@ -1,5 +1,10 @@
-import { AuditView } from "@/components/admin/views/AuditView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function SecurityUsersAuditPage() {
-  return <AuditView embedded />;
+const AuditView = adminDynamicView(
+  () => import("@/components/admin/views/AuditView"),
+  "AuditView",
+);
+
+export default function AdminUserAuditPage() {
+  return <AuditView />;
 }

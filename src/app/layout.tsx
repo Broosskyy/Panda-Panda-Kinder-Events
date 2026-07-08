@@ -117,7 +117,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="de" className={`${playfair.variable} ${montserrat.variable} ${caveat.variable}`}>
       <head>
-        <link rel="preload" href={BRAND.master} as="image" type="image/png" />
         <link rel="icon" href={withIconVersion(BRAND.assets.favicon32)} type="image/png" sizes="32x32" />
         <link rel="icon" href={withIconVersion(BRAND.assets.favicon16)} type="image/png" sizes="16x16" />
         <link rel="icon" href={withIconVersion(BRAND.assets.faviconPng)} type="image/png" sizes="512x512" />

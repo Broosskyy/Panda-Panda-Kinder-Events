@@ -1,5 +1,23 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { SESSION_COOKIE } from "@/lib/auth/session";
+
+const PUBLIC_ADMIN_PAGE_PREFIXES = ["/admin/passwort-reset", "/admin/einladung"];
+
+const PUBLIC_ADMIN_API_PREFIXES = [
+  "/api/admin/login",
+  "/api/admin/invites",
+  "/api/admin/password-reset",
+  "/api/admin/auth/bootstrap",
+];
+
+function isPublicAdminPage(pathname: string) {
+  return PUBLIC_ADMIN_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+function isPublicAdminApi(pathname: string) {
+  return PUBLIC_ADMIN_API_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
 function applySecurityHeaders(response: NextResponse, request: NextRequest) {
   response.headers.set("X-Content-Type-Options", "nosniff");
@@ -19,7 +37,7 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest) {
 
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+    "script-src 'self' 'unsafe-inline'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co",
     "font-src 'self' data: https://fonts.gstatic.com",
@@ -37,9 +55,29 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest) {
 }
 
 export function middleware(request: NextRequest) {
+  const { pathname } = request.nextUrl;
+
+  if (pathname.startsWith("/api/admin") && !isPublicAdminApi(pathname)) {
+    const session = request.cookies.get(SESSION_COOKIE)?.value;
+    if (!session) {
+      return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+    }
+  }
+
+  if (pathname.startsWith("/admin") && !isPublicAdminPage(pathname)) {
+    const session = request.cookies.get(SESSION_COOKIE)?.value;
+    if (!session && pathname !== "/admin" && pathname !== "/admin/") {
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/admin";
+      loginUrl.search = "";
+      loginUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+  }
+
   const requestHeaders = new Headers(request.headers);
-  if (request.nextUrl.pathname.startsWith("/admin")) {
-    requestHeaders.set("x-pathname", request.nextUrl.pathname);
+  if (pathname.startsWith("/admin")) {
+    requestHeaders.set("x-pathname", pathname);
   }
 
   const response = NextResponse.next({

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { timingSafeEqual } from "crypto";
-import { countAdminUsers, createUser, listRoles } from "@/lib/auth/users";
+import { evaluateBootstrapAccess } from "@/lib/auth/bootstrap-guard";
+import { createUser, hasAdminUsers, listRoles } from "@/lib/auth/users";
 import { hashPassword } from "@/lib/auth/password";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
@@ -20,7 +21,13 @@ function passwordsMatch(input: string, expected: string): boolean {
   return timingSafeEqual(a, b);
 }
 
-/** Bootstrap first admin when no users exist — requires legacy ADMIN_PASSWORD */
+/** Bootstrap status — diagnostics only, no PII */
+export async function GET() {
+  const bootstrap = await evaluateBootstrapAccess();
+  return NextResponse.json({ bootstrap });
+}
+
+/** Bootstrap first admin when no users exist — requires ADMIN_PASSWORD */
 export async function POST(request: Request) {
   const ip = getClientIp(request);
   const limited = rateLimit(`bootstrap:${ip}`, 5, 15 * 60 * 1000);
@@ -31,9 +38,28 @@ export async function POST(request: Request) {
     );
   }
 
-  const userCount = await countAdminUsers();
-  if (userCount > 0) {
-    return NextResponse.json({ error: "Bootstrap nicht verfügbar." }, { status: 403 });
+  const bootstrap = await evaluateBootstrapAccess();
+  if (!bootstrap.allowed) {
+    const status = bootstrap.reason === "count_query_failed" ? 503 : 403;
+    return NextResponse.json(
+      {
+        error:
+          bootstrap.reason === "count_query_failed"
+            ? "Einrichtung vorübergehend nicht verfügbar."
+            : "Bootstrap nicht verfügbar.",
+        bootstrap,
+      },
+      { status },
+    );
+  }
+
+  // Double-check immediately before insert (race-safe)
+  try {
+    if (await hasAdminUsers()) {
+      return NextResponse.json({ error: "Bootstrap nicht verfügbar." }, { status: 403 });
+    }
+  } catch {
+    return NextResponse.json({ error: "Einrichtung vorübergehend nicht verfügbar." }, { status: 503 });
   }
 
   const expected = process.env.ADMIN_PASSWORD ?? "";
@@ -44,13 +70,13 @@ export async function POST(request: Request) {
   }
 
   if (!expected || !passwordsMatch(parsed.data.adminPassword, expected)) {
-    return NextResponse.json({ error: "Legacy-Admin-Passwort ungültig." }, { status: 401 });
+    return NextResponse.json({ error: "Server-Setup-Passwort ungültig." }, { status: 401 });
   }
 
   const roles = await listRoles();
   const adminRole = roles.find((r) => r.slug === "administrator");
   if (!adminRole) {
-    return NextResponse.json({ error: "Administrator-Rolle fehlt. Migration ausführen." }, { status: 503 });
+    return NextResponse.json({ error: "Super-Admin-Rolle fehlt. Migration ausführen." }, { status: 503 });
   }
 
   const passwordHash = await hashPassword(parsed.data.password);
@@ -62,5 +88,5 @@ export async function POST(request: Request) {
     roleId: adminRole.id,
   });
 
-  return NextResponse.json({ user, message: "Erster Administrator angelegt." });
+  return NextResponse.json({ user, message: "Erster Super Admin angelegt." });
 }

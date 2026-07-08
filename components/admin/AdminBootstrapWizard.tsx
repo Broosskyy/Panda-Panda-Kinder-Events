@@ -4,9 +4,9 @@ import { useState, type FormEvent } from "react";
 import { Logo } from "@/components/ui/Logo";
 
 export function AdminBootstrapWizard({ onComplete }: { onComplete: () => void }) {
-  const [username, setUsername] = useState("manuel");
-  const [email, setEmail] = useState("manuel.bauch0705@gmail.com");
-  const [displayName, setDisplayName] = useState("Manuel Bauch");
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [displayName, setDisplayName] = useState("");
   const [password, setPassword] = useState("");
   const [adminPassword, setAdminPassword] = useState("");
   const [error, setError] = useState("");

@@ -13,11 +13,12 @@ export async function countAdminUsers(): Promise<number> {
   return count ?? 0;
 }
 
-export async function countAdminUsersSafe(): Promise<number> {
+/** Returns null on DB error — never treat null as zero for auth/bootstrap decisions. */
+export async function countAdminUsersSafe(): Promise<number | null> {
   try {
     return await countAdminUsers();
   } catch {
-    return 0;
+    return null;
   }
 }
 
@@ -33,11 +34,7 @@ export async function hasAdminUsers(): Promise<boolean> {
 }
 
 export async function isMultiUserAuthEnabled(): Promise<boolean> {
-  try {
-    return await hasAdminUsers();
-  } catch {
-    return false;
-  }
+  return hasAdminUsers();
 }
 
 export async function findUserByEmail(email: string): Promise<AdminUserPublic | null> {

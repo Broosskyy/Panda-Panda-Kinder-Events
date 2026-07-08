@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import Link from "next/link";
 import {
   BookOpen,
@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { hasPermission } from "@/lib/auth/permissions";
 
 const STEPS = [
@@ -93,31 +94,31 @@ const DONT_DELETE = [
 ];
 
 export function ErsteSchritteView() {
-  const [displayName, setDisplayName] = useState("Admin");
-  const [permissions, setPermissions] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetch("/api/admin/login")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.displayName) setDisplayName(data.displayName);
-        if (data.permissions) setPermissions(data.permissions);
-      })
-      .catch(() => undefined);
-  }, []);
+  const { status, identity, permissions } = useAdminSession();
 
   const visibleSteps = useMemo(
     () => STEPS.filter((step) => hasPermission(permissions, step.permission)),
     [permissions],
   );
 
+  const identityReady = status === "ready" && Boolean(identity?.displayName);
+
+  const welcomeName = identity?.displayName ?? "";
+
   return (
     <div className="space-y-8">
-      <AdminPageHeader
-        title="Erste Schritte"
-        description={`Willkommen, ${displayName}! Hier findest du die wichtigsten Aufgaben — Schritt für Schritt, ohne technisches Vorwissen.`}
-        whereVisible="Nur hier im Admin — Besucher sehen diese Seite nicht."
-      />
+      {!identityReady ? (
+        <div className="admin-page-header-block space-y-4 animate-pulse" aria-busy="true" aria-label="Profil wird geladen">
+          <div className="h-8 w-48 rounded-lg bg-border" />
+          <div className="h-4 w-full max-w-xl rounded bg-border" />
+        </div>
+      ) : (
+        <AdminPageHeader
+          title="Erste Schritte"
+          description={`Willkommen, ${welcomeName}! Hier findest du die wichtigsten Aufgaben — Schritt für Schritt, ohne technisches Vorwissen.`}
+          whereVisible="Nur hier im Admin — Besucher sehen diese Seite nicht."
+        />
+      )}
 
       <AdminHelpBlock title="So funktioniert der Admin" variant="tip">
         <p className="text-sm leading-relaxed">

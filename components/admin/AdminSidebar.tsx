@@ -9,13 +9,10 @@ import { AdminNavBadge, AdminNotificationCenter } from "@/components/admin/Admin
 import { useAdminNotificationsContext } from "@/components/admin/AdminNotificationsProvider";
 import { MOBILE_BOTTOM_NAV_HREFS, isAdminNavActive, type AdminNavGroup } from "@/lib/admin/nav";
 import { filterAdminNavGroups } from "@/lib/admin/filter-nav";
-import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
-import type { SiteModulesSettings } from "@/lib/cms/types";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 import { AdminPageHelp } from "@/components/admin/ui/AdminHelpBlock";
-import { AdminIdentityPanel, type AdminIdentity } from "@/components/admin/AdminIdentityPanel";
-import { roleDisplayLabel } from "@/lib/admin/roles";
-import type { AdminRoleSlug } from "@/lib/auth/types";
+import { AdminIdentityPanel } from "@/components/admin/AdminIdentityPanel";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 
 const MOBILE_BOTTOM_NAV_HREFS_SET = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
 
@@ -59,30 +56,10 @@ function NavGroupSection({
 export function AdminSidebar() {
   const pathname = usePathname();
   const { badgeCounts, markTypeRead } = useAdminNotificationsContext();
+  const { status, identity, permissions, modules } = useAdminSession();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollYRef = useRef(0);
-  const [permissions, setPermissions] = useState<string[]>([]);
-  const [modules, setModules] = useState<SiteModulesSettings>(DEFAULT_SITE_SETTINGS.modules);
-  const [identity, setIdentity] = useState<AdminIdentity | null>(null);
-
-  useEffect(() => {
-    fetch("/api/admin/login")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.permissions) setPermissions(data.permissions);
-        if (data.modules) setModules(data.modules);
-        if (data.authenticated && data.userId) {
-          setIdentity({
-            userId: data.userId,
-            displayName: data.displayName ?? data.identity?.displayName ?? "",
-            email: data.email ?? data.identity?.email ?? "",
-            roleSlug: (data.roleSlug ?? data.identity?.roleSlug ?? "readonly") as AdminRoleSlug,
-            roleLabel: data.roleLabel ?? data.identity?.roleLabel ?? roleDisplayLabel(data.roleSlug ?? "readonly"),
-          });
-        }
-      })
-      .catch(() => undefined);
-  }, []);
+  const identityLoading = status === "loading";
 
   const navGroups = useMemo(
     () => filterAdminNavGroups(permissions.length ? permissions : ["dashboard:read"], modules),
@@ -176,7 +153,7 @@ export function AdminSidebar() {
         <div className="admin-sidebar-notifications hidden md:flex">
           <AdminNotificationCenter />
         </div>
-        <AdminIdentityPanel identity={identity} />
+        <AdminIdentityPanel identity={identity} loading={identityLoading} />
         <nav className="admin-sidebar-nav">
           <NavContent />
         </nav>
@@ -215,7 +192,7 @@ export function AdminSidebar() {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <AdminIdentityPanel identity={identity} />
+            <AdminIdentityPanel identity={identity} loading={identityLoading} />
             <nav className="admin-drawer-nav">
               <NavContent onNavigate={() => setDrawerOpen(false)} />
             </nav>

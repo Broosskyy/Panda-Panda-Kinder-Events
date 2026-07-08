@@ -17,6 +17,7 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminEmptyState } from "@/components/admin/ui";
 import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import { useAdminNotificationsContext } from "@/components/admin/AdminNotificationsProvider";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import type { AdminActivityItem } from "@/lib/admin/activity";
 import { DASHBOARD_QUICK_ACTIONS, filterQuickActions } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
@@ -111,8 +112,21 @@ function tasksBySection(tasks: DashboardTaskCard[], section: DashboardTaskCard["
   return tasks.filter((task) => task.section === section);
 }
 
+function DashboardHeaderSkeleton() {
+  return (
+    <div className="admin-page-header-block space-y-4 animate-pulse" aria-busy="true" aria-label="Profil wird geladen">
+      <div className="space-y-3">
+        <div className="h-8 w-64 max-w-full rounded-lg bg-border" />
+        <div className="h-4 w-96 max-w-full rounded bg-border" />
+      </div>
+      <div className="h-4 w-28 rounded bg-border" />
+    </div>
+  );
+}
+
 export function DashboardView() {
   const { period, badgeCounts } = useAdminNotificationsContext();
+  const { status: sessionStatus, identity, permissions: sessionPermissions } = useAdminSession();
   const [payload, setPayload] = useState<DashboardPayload | null>(null);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
@@ -122,17 +136,21 @@ export function DashboardView() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (sessionPermissions.length > 0) {
+      setPermissions(sessionPermissions);
+    }
+  }, [sessionPermissions]);
+
+  useEffect(() => {
     Promise.all([
       fetch("/api/admin/dashboard").then((r) => r.json()),
       fetch("/api/admin/activity").then((r) => r.json()),
-      fetch("/api/admin/login").then((r) => r.json()),
       fetch("/api/admin/email/status", { cache: "no-store" }).then((r) => r.json()).catch(() => ({})),
     ])
-      .then(([dashboardData, activityData, sessionData, emailData]) => {
+      .then(([dashboardData, activityData, emailData]) => {
         if (dashboardData.error) throw new Error(dashboardData.error);
         setPayload(dashboardData);
         setActivity(activityData.activity ?? []);
-        if (sessionData.permissions) setPermissions(sessionData.permissions);
         if (emailData.domainLive?.state || emailData.resolved?.domainVerification) {
           setDomainVerification(emailData.domainLive?.state ?? emailData.resolved.domainVerification);
         }
@@ -144,8 +162,9 @@ export function DashboardView() {
 
   const hour = new Date().getHours();
   const greeting = greetingForHour(hour);
-  const displayName = payload?.user?.displayName ?? "Admin";
-  const roleLabel = payload?.user?.roleLabel ?? "";
+  const displayName = identity?.displayName ?? payload?.user?.displayName;
+  const roleLabel = identity?.roleLabel ?? payload?.user?.roleLabel ?? "";
+  const identityReady = sessionStatus === "ready" && Boolean(displayName);
   const stats = payload;
   const statsMissing = analyticsUnavailable(stats);
   const activityEmpty = ADMIN_EMPTY_STATES.activity;
@@ -190,14 +209,18 @@ export function DashboardView() {
 
   return (
     <div className="space-y-8">
-      <AdminPageHeader
-        title={`${greeting}, ${displayName}!`}
-        description={payload?.dashboardDescription ?? "Hier siehst du auf einen Blick, was heute zu tun ist."}
-        whereVisible="Nur hier im Admin — Besucher sehen das Dashboard nicht."
-        helpItems={payload?.roleHelp?.map((item) => `${item.title}: ${item.body}`) ?? []}
-      />
+      {!identityReady ? (
+        <DashboardHeaderSkeleton />
+      ) : (
+        <AdminPageHeader
+          title={`${greeting}, ${displayName}!`}
+          description={payload?.dashboardDescription ?? "Hier siehst du auf einen Blick, was heute zu tun ist."}
+          whereVisible="Nur hier im Admin — Besucher sehen das Dashboard nicht."
+          helpItems={payload?.roleHelp?.map((item) => `${item.title}: ${item.body}`) ?? []}
+        />
+      )}
 
-      {roleLabel ? (
+      {identityReady && roleLabel ? (
         <p className="text-sm font-medium text-text-secondary">
           Rolle: <span className="text-text-primary">{roleLabel}</span>
         </p>
@@ -248,7 +271,7 @@ export function DashboardView() {
         <p className="text-sm text-text-muted">Übersicht wird geladen…</p>
       ) : null}
 
-      {payload?.roleHelp && payload.roleHelp.length > 0 ? (
+      {payload?.roleHelp && payload.roleHelp.length > 0 && identityReady ? (
         <section className="admin-dashboard-section">
           <h2 className="admin-dashboard-section-title">Hinweise für deine Rolle</h2>
           <div className="grid gap-3 sm:grid-cols-2">

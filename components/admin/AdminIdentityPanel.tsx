@@ -19,7 +19,27 @@ function initials(name: string): string {
   return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
 }
 
-export function AdminIdentityPanel({ identity }: { identity: AdminIdentity | null }) {
+export function AdminIdentitySkeleton() {
+  return (
+    <div className="admin-identity-panel animate-pulse" aria-hidden>
+      <div className="admin-identity-avatar bg-border" />
+      <div className="min-w-0 flex-1 space-y-2">
+        <div className="h-4 w-28 rounded bg-border" />
+        <div className="h-3 w-36 rounded bg-border" />
+        <div className="h-3 w-20 rounded bg-border" />
+      </div>
+    </div>
+  );
+}
+
+export function AdminIdentityPanel({
+  identity,
+  loading = false,
+}: {
+  identity: AdminIdentity | null;
+  loading?: boolean;
+}) {
+  if (loading) return <AdminIdentitySkeleton />;
   if (!identity?.userId) return null;
 
   const roleLabel = identity.roleLabel || roleDisplayLabel(identity.roleSlug);

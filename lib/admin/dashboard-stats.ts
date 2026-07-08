@@ -1,5 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import { countAdminUsers } from "@/lib/auth/users";
+import { countAdminUsersSafe } from "@/lib/auth/users";
 import { listLoginHistory } from "@/lib/auth/login-history";
 import { getSystemStatus } from "@/lib/admin/system-status";
 import type { SystemStatusLevel } from "@/lib/admin/system-status";
@@ -19,8 +19,8 @@ const SYSTEM_STATUS_LABELS: Record<SystemStatusLevel, string> = {
 };
 
 export async function fetchSecurityDashboardStats(): Promise<AdminSecurityDashboard> {
-  const multiUserEnabled = (await countAdminUsers()) > 0;
-  let activeUsers = multiUserEnabled ? await countAdminUsers() : 1;
+  const multiUserEnabled = (await countAdminUsersSafe()) > 0;
+  let activeUsers = multiUserEnabled ? await countAdminUsersSafe() : 1;
 
   if (multiUserEnabled) {
     const supabase = getSupabaseAdmin();

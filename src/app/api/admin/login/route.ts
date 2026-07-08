@@ -7,7 +7,7 @@ import {
   isAdminConfigured,
 } from "@/lib/admin-auth";
 import { verifyPassword } from "@/lib/auth/password";
-import { countAdminUsers, findUserByIdentifier, updateUser } from "@/lib/auth/users";
+import { countAdminUsersSafe, findUserByIdentifier, updateUser } from "@/lib/auth/users";
 import { getLoginPolicy, getRateLimitPolicy } from "@/lib/auth/security-settings";
 import { recordLoginHistory } from "@/lib/auth/login-history";
 import { writeAuditLogFromRequest } from "@/lib/auth/audit";
@@ -137,7 +137,7 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const userCount = await countAdminUsers();
+  const userCount = await countAdminUsersSafe();
 
   // Legacy single-password mode
   if (userCount === 0) {

@@ -6,7 +6,7 @@ import {
 import { getSessionByToken, getSessionTokenFromCookies, touchSession } from "@/lib/auth/session";
 import { getPermissionsForRole, getLegacyPermissions, hasPermission } from "@/lib/auth/permissions";
 import { getUserById } from "@/lib/auth/users";
-import { getRoleById, countAdminUsers } from "@/lib/auth/users";
+import { getRoleById, countAdminUsersSafe } from "@/lib/auth/users";
 import type { AdminContext } from "@/lib/auth/types";
 
 let cachedContext: { at: number; ctx: AdminContext | null } | null = null;
@@ -41,7 +41,7 @@ export async function resolveAdminContext(): Promise<AdminContext | null> {
 
   const legacyOk = await isLegacyAuthenticated();
   if (legacyOk) {
-    const userCount = await countAdminUsers();
+    const userCount = await countAdminUsersSafe();
     if (userCount === 0) {
       const ctx: AdminContext = {
         userId: null,

@@ -48,7 +48,7 @@ export function AuditView() {
   const [to, setTo] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
   const [isLegacy, setIsLegacy] = useState(false);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [canExportAudit, setCanExportAudit] = useState(false);
   const { error: showError, success } = useAdminMessages();
 
   const queryString = useMemo(() => {
@@ -86,7 +86,10 @@ export function AuditView() {
       .then((r) => r.json())
       .then((data) => {
         setIsLegacy(Boolean(data.isLegacy));
-        setIsSuperAdmin(data.roleSlug === "administrator" || data.isLegacy);
+        setCanExportAudit(
+          Boolean(data.isLegacy) ||
+            (Array.isArray(data.permissions) && data.permissions.includes("audit:export")),
+        );
       })
       .catch(() => undefined);
   }, []);
@@ -169,7 +172,7 @@ export function AuditView() {
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <AdminButton variant="primary" onClick={() => void load()}>Filtern</AdminButton>
-          {isSuperAdmin ? (
+          {canExportAudit ? (
             <>
               <AdminButton variant="secondary" icon={<Download className="h-4 w-4" />} onClick={() => void exportLogs("csv")}>
                 CSV exportieren

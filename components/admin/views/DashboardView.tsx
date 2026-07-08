@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   BarChart3,
@@ -9,7 +9,6 @@ import {
   Image,
   Inbox,
   Newspaper,
-  Shield,
   Star,
   Users,
   Mail,
@@ -19,13 +18,32 @@ import { AdminEmptyState } from "@/components/admin/ui";
 import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import { useAdminNotificationsContext } from "@/components/admin/AdminNotificationsProvider";
 import type { AdminActivityItem } from "@/lib/admin/activity";
-import { DASHBOARD_QUICK_ACTIONS } from "@/lib/admin/quickActions";
+import { DASHBOARD_QUICK_ACTIONS, filterQuickActions } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
-import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 import { DomainVerificationBanner } from "@/components/admin/email/DomainVerificationBanner";
 import type { AdminAnalyticsDashboard } from "@/lib/analytics/types";
+import type { DashboardTaskCard } from "@/lib/admin/dashboard-tasks";
+import { filterDashboardModuleLinks } from "@/lib/admin/dashboard-tasks";
+import type { RoleHelpItem } from "@/lib/admin/role-help";
+import { hasPermission } from "@/lib/auth/permissions";
+
+interface DashboardUser {
+  displayName: string;
+  roleSlug: string;
+  roleLabel: string;
+}
+
+interface DashboardPayload extends AdminAnalyticsDashboard {
+  user?: DashboardUser;
+  roleHelp?: RoleHelpItem[];
+  dashboardDescription?: string;
+  tasks?: DashboardTaskCard[];
+  emailTestMode?: { enabled: boolean; address: string } | null;
+  security?: AdminAnalyticsDashboard["security"];
+  error?: string;
+}
 
 function formatRelativeTime(dateStr: string) {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -83,13 +101,23 @@ function analyticsUnavailable(stats: AdminAnalyticsDashboard | null): boolean {
   return Boolean(stats && (!stats.trackingEnabled || stats.trackingTableReady === false));
 }
 
+function greetingForHour(hour: number): string {
+  if (hour < 12) return "Guten Morgen";
+  if (hour < 18) return "Guten Tag";
+  return "Guten Abend";
+}
+
+function tasksBySection(tasks: DashboardTaskCard[], section: DashboardTaskCard["section"]) {
+  return tasks.filter((task) => task.section === section);
+}
+
 export function DashboardView() {
   const { period, badgeCounts } = useAdminNotificationsContext();
-  const [stats, setStats] = useState<AdminAnalyticsDashboard | null>(null);
+  const [payload, setPayload] = useState<DashboardPayload | null>(null);
+  const [permissions, setPermissions] = useState<string[]>([]);
   const [activity, setActivity] = useState<AdminActivityItem[]>([]);
   const [domainVerification, setDomainVerification] = useState<DomainVerificationDisplay | null>(null);
   const [emailTestSucceeded, setEmailTestSucceeded] = useState(false);
-  const [emailTestMode, setEmailTestMode] = useState<{ enabled: boolean; address: string } | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -97,53 +125,98 @@ export function DashboardView() {
     Promise.all([
       fetch("/api/admin/dashboard").then((r) => r.json()),
       fetch("/api/admin/activity").then((r) => r.json()),
-      fetch("/api/admin/email/status", { cache: "no-store" }).then((r) => r.json()),
-      fetch("/api/admin/settings").then((r) => r.json()),
+      fetch("/api/admin/login").then((r) => r.json()),
+      fetch("/api/admin/email/status", { cache: "no-store" }).then((r) => r.json()).catch(() => ({})),
     ])
-      .then(([dashboardData, activityData, emailData, settingsData]) => {
+      .then(([dashboardData, activityData, sessionData, emailData]) => {
         if (dashboardData.error) throw new Error(dashboardData.error);
-        setStats(dashboardData);
+        setPayload(dashboardData);
         setActivity(activityData.activity ?? []);
+        if (sessionData.permissions) setPermissions(sessionData.permissions);
         if (emailData.domainLive?.state || emailData.resolved?.domainVerification) {
           setDomainVerification(emailData.domainLive?.state ?? emailData.resolved.domainVerification);
         }
         setEmailTestSucceeded(Boolean(emailData.hasSuccessfulTest));
-        const testMode = settingsData.settings?.email?.testMode;
-        if (testMode?.enabled) {
-          setEmailTestMode({ enabled: true, address: testMode.testAddress ?? "" });
-        }
       })
       .catch((err) => setError(err instanceof Error ? err.message : "Laden fehlgeschlagen"))
       .finally(() => setLoading(false));
   }, []);
 
-  const dashboardHelp = adminPageHeaderProps("dashboard");
-  const activityEmpty = ADMIN_EMPTY_STATES.activity;
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
+  const greeting = greetingForHour(hour);
+  const displayName = payload?.user?.displayName ?? "Admin";
+  const roleLabel = payload?.user?.roleLabel ?? "";
+  const stats = payload;
   const statsMissing = analyticsUnavailable(stats);
+  const activityEmpty = ADMIN_EMPTY_STATES.activity;
+
+  const todayTasks = useMemo(
+    () => tasksBySection(payload?.tasks ?? [], "today"),
+    [payload?.tasks],
+  );
+  const securityTasks = useMemo(
+    () => tasksBySection(payload?.tasks ?? [], "security"),
+    [payload?.tasks],
+  );
+  const crmTasks = useMemo(
+    () => tasksBySection(payload?.tasks ?? [], "crm"),
+    [payload?.tasks],
+  );
+  const statsTasks = useMemo(
+    () => tasksBySection(payload?.tasks ?? [], "stats"),
+    [payload?.tasks],
+  );
+  const quickActions = useMemo(
+    () => filterQuickActions(DASHBOARD_QUICK_ACTIONS, permissions),
+    [permissions],
+  );
+  const moduleLinks = useMemo(
+    () => filterDashboardModuleLinks(permissions),
+    [permissions],
+  );
+  const showErsteSchritte = hasPermission(permissions, "website:write") || hasPermission(permissions, "quotes:write");
+  const showEmailTestBanner = payload?.emailTestMode?.enabled;
+  const showDomainBanner = hasPermission(permissions, "settings:system") && domainVerification;
+
+  const filteredActivity = useMemo(() => {
+    return activity.filter((item) => {
+      if (item.type === "booking") return hasPermission(permissions, "inquiries:write");
+      if (item.type === "review") return hasPermission(permissions, "reviews:write") || hasPermission(permissions, "website:read");
+      if (item.type === "post") return hasPermission(permissions, "posts:write");
+      if (item.type === "gallery") return hasPermission(permissions, "gallery:write");
+      return true;
+    });
+  }, [activity, permissions]);
 
   return (
     <div className="space-y-8">
       <AdminPageHeader
-        title={`${greeting}, Samira!`}
-        description="Hier siehst du auf einen Blick, was heute zu tun ist — Website, Anfragen und Rechnungen an einem Ort."
-        whereVisible={dashboardHelp.whereVisible}
-        helpItems={dashboardHelp.helpItems}
+        title={`${greeting}, ${displayName}!`}
+        description={payload?.dashboardDescription ?? "Hier siehst du auf einen Blick, was heute zu tun ist."}
+        whereVisible="Nur hier im Admin — Besucher sehen das Dashboard nicht."
+        helpItems={payload?.roleHelp?.map((item) => `${item.title}: ${item.body}`) ?? []}
       />
 
-      <Link
-        href="/admin/erste-schritte"
-        className="admin-card flex items-center gap-4 border-primary/20 bg-primary/5 transition-colors hover:border-primary/40"
-      >
-        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
-          <BookOpen className="h-6 w-6 text-primary" aria-hidden />
-        </div>
-        <div>
-          <p className="font-semibold text-text-primary">Erste Schritte — Anleitung für den Einstieg</p>
-          <p className="text-sm text-text-secondary">Texte, Bilder, Anfragen, Angebote und Rechnungen Schritt für Schritt erklärt.</p>
-        </div>
-      </Link>
+      {roleLabel ? (
+        <p className="text-sm font-medium text-text-secondary">
+          Rolle: <span className="text-text-primary">{roleLabel}</span>
+        </p>
+      ) : null}
+
+      {showErsteSchritte ? (
+        <Link
+          href="/admin/erste-schritte"
+          className="admin-card flex items-center gap-4 border-primary/20 bg-primary/5 transition-colors hover:border-primary/40"
+        >
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
+            <BookOpen className="h-6 w-6 text-primary" aria-hidden />
+          </div>
+          <div>
+            <p className="font-semibold text-text-primary">Erste Schritte — Anleitung für den Einstieg</p>
+            <p className="text-sm text-text-secondary">Texte, Bilder, Anfragen, Angebote und Rechnungen Schritt für Schritt erklärt.</p>
+          </div>
+        </Link>
+      ) : null}
 
       {error ? (
         <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
@@ -151,17 +224,19 @@ export function DashboardView() {
         </p>
       ) : null}
 
-      {emailTestMode?.enabled ? (
+      {showEmailTestBanner ? (
         <div className="rounded-xl border border-amber-400/60 bg-amber-50 px-4 py-3 text-sm text-amber-950">
           <strong>⚠ Testmodus aktiv</strong> — Es werden keine echten Kunden angeschrieben. Alle E-Mails gehen an{" "}
-          <strong>{emailTestMode.address || "die konfigurierte Testadresse"}</strong>.{" "}
-          <Link href="/admin/einstellungen?tab=email&emailTab=testmode" className="font-semibold underline">
-            Testmodus verwalten
-          </Link>
+          <strong>{payload?.emailTestMode?.address || "die konfigurierte Testadresse"}</strong>.{" "}
+          {hasPermission(permissions, "settings:system") ? (
+            <Link href="/admin/einstellungen?tab=email&emailTab=testmode" className="font-semibold underline">
+              Testmodus verwalten
+            </Link>
+          ) : null}
         </div>
       ) : null}
 
-      {domainVerification ? (
+      {showDomainBanner ? (
         <DomainVerificationBanner
           className="mb-4"
           state={domainVerification}
@@ -173,185 +248,213 @@ export function DashboardView() {
         <p className="text-sm text-text-muted">Übersicht wird geladen…</p>
       ) : null}
 
+      {payload?.roleHelp && payload.roleHelp.length > 0 ? (
+        <section className="admin-dashboard-section">
+          <h2 className="admin-dashboard-section-title">Hinweise für deine Rolle</h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {payload.roleHelp.map((item) => (
+              <AdminHelpBlock key={item.title} title={item.title} variant="tip">
+                <p className="text-sm leading-relaxed">{item.body}</p>
+              </AdminHelpBlock>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section className="admin-dashboard-section">
         <h2 className="admin-dashboard-section-title">Heute zu tun</h2>
-        <div className="admin-stat-grid">
-          <StatCard
-            label="Neue Anfragen"
-            value={period.bookingsToday}
-            href="/admin/anfragen"
+        {todayTasks.length === 0 ? (
+          <AdminEmptyState
             icon={Inbox}
-            sublabel={badgeCounts.bookings > 0 ? `${badgeCounts.bookings} unbearbeitet` : "Alles erledigt"}
-            highlight={badgeCounts.bookings > 0}
+            title="Alles erledigt."
+            description="Keine offenen Aufgaben für deine Rolle — gut gemacht!"
           />
-          <StatCard
-            label="Bewertungen prüfen"
-            value={period.reviewsPending}
-            href="/admin/bewertungen"
-            icon={Star}
-            sublabel={badgeCounts.reviews > 0 ? "Wartet auf Freigabe" : "Keine offenen"}
-            highlight={badgeCounts.reviews > 0}
-          />
-          <StatCard
-            label="Offene Angebote"
-            value={stats?.crm.openQuotesCount ?? "—"}
-            href="/admin/angebote"
-            icon={FileText}
-            sublabel="CRM"
-          />
-          <StatCard
-            label="Offene Rechnungen"
-            value={stats?.crm.openInvoicesCount ?? "—"}
-            href="/admin/rechnungen"
-            icon={FileText}
-            sublabel="CRM"
-          />
-          <StatCard
-            label="E-Mail-Status"
-            value={emailTestSucceeded ? "Funktioniert" : "Prüfen"}
-            href="/admin/einstellungen?tab=email"
-            icon={Mail}
-            sublabel={emailTestSucceeded ? "Testmail erfolgreich" : "Testmail empfohlen"}
-            highlight={!emailTestSucceeded}
-          />
-          <StatCard
-            label="Website"
-            value="Online"
-            href="/"
-            icon={Image}
-            sublabel="Öffentliche Seite öffnen"
-          />
-        </div>
+        ) : (
+          <div className="admin-stat-grid">
+            {todayTasks.map((task) => {
+              const Icon = resolveAdminIcon(task.iconKey);
+              return (
+                <StatCard
+                  key={task.id}
+                  label={task.label}
+                  value={task.value}
+                  href={task.href}
+                  icon={Icon}
+                  sublabel={task.sublabel}
+                  highlight={task.highlight}
+                />
+              );
+            })}
+          </div>
+        )}
       </section>
 
-      <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">Schnellaktionen</h2>
-        <div className="admin-quick-actions">
-          {DASHBOARD_QUICK_ACTIONS.map(({ href, label, iconKey }) => {
-            const Icon = resolveAdminIcon(iconKey);
-            return (
-            <Link key={href + label} href={href} className="admin-quick-action">
-              <Icon className="h-5 w-5 text-primary" aria-hidden />
-              {label}
-            </Link>
-            );
-          })}
-        </div>
-      </section>
+      {quickActions.length > 0 ? (
+        <section className="admin-dashboard-section">
+          <h2 className="admin-dashboard-section-title">Schnellaktionen</h2>
+          <div className="admin-quick-actions">
+            {quickActions.map(({ href, label, iconKey }) => {
+              const Icon = resolveAdminIcon(iconKey);
+              return (
+                <Link key={href + label} href={href} className="admin-quick-action">
+                  <Icon className="h-5 w-5 text-primary" aria-hidden />
+                  {label}
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
-      <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">Letzte Zahlen</h2>
-        <div className="admin-stat-grid">
-          <StatCard
-            label="Neue Anfragen"
-            value={period.bookingsToday}
-            href="/admin/anfragen"
-            icon={Inbox}
-            sublabel={`Heute · ${period.bookingsWeek} diese Woche · ${period.bookingsTotal} gesamt`}
-            highlight={badgeCounts.bookings > 0}
-          />
-          <StatCard
-            label="Offene Bewertungen"
-            value={period.reviewsPending}
-            href="/admin/bewertungen"
-            icon={Star}
-            sublabel={`${period.reviewsToday} heute · ${period.reviewsWeek} diese Woche · ${period.reviewsTotal} gesamt`}
-            highlight={badgeCounts.reviews > 0}
-          />
-          <StatCard
-            label="Interessenten"
-            value={period.customersLeads}
-            href="/admin/kunden"
-            icon={Users}
-            sublabel="Unbearbeitete Kontakte"
-            highlight={badgeCounts.customers > 0}
-          />
-          <StatCard
-            label="E-Mail-Fehler"
-            value={period.emailsFailed}
-            href="/admin/emails"
-            icon={Mail}
-            sublabel="Letzte 7 Tage"
-            highlight={badgeCounts.emails > 0}
-          />
-        </div>
-      </section>
+      {(hasPermission(permissions, "inquiries:write") ||
+        hasPermission(permissions, "reviews:write") ||
+        hasPermission(permissions, "crm:read") ||
+        hasPermission(permissions, "email:write")) && (
+        <section className="admin-dashboard-section">
+          <h2 className="admin-dashboard-section-title">Letzte Zahlen</h2>
+          <div className="admin-stat-grid">
+            {hasPermission(permissions, "inquiries:write") ? (
+              <StatCard
+                label="Neue Anfragen"
+                value={period.bookingsToday}
+                href="/admin/anfragen"
+                icon={Inbox}
+                sublabel={`Heute · ${period.bookingsWeek} diese Woche · ${period.bookingsTotal} gesamt`}
+                highlight={badgeCounts.bookings > 0}
+              />
+            ) : null}
+            {hasPermission(permissions, "reviews:write") ? (
+              <StatCard
+                label="Offene Bewertungen"
+                value={period.reviewsPending}
+                href="/admin/bewertungen"
+                icon={Star}
+                sublabel={`${period.reviewsToday} heute · ${period.reviewsWeek} diese Woche · ${period.reviewsTotal} gesamt`}
+                highlight={badgeCounts.reviews > 0}
+              />
+            ) : null}
+            {hasPermission(permissions, "crm:read") ? (
+              <StatCard
+                label="Interessenten"
+                value={period.customersLeads}
+                href="/admin/kunden"
+                icon={Users}
+                sublabel="Unbearbeitete Kontakte"
+                highlight={badgeCounts.customers > 0}
+              />
+            ) : null}
+            {hasPermission(permissions, "email:write") ? (
+              <StatCard
+                label="E-Mail-Fehler"
+                value={period.emailsFailed}
+                href="/admin/emails"
+                icon={Mail}
+                sublabel="Letzte 7 Tage"
+                highlight={badgeCounts.emails > 0}
+              />
+            ) : null}
+          </div>
+        </section>
+      )}
 
-      <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">Statistik</h2>
-        <div className="admin-stat-grid">
-          <StatCard
-            label="Besucher gesamt"
-            value={statsMissing ? "—" : (stats?.visitors.total ?? "—")}
-            href="/admin/analytics"
-            icon={Users}
-            sublabel={statsMissing ? "Statistik nicht aktiv" : undefined}
-          />
-          <StatCard
-            label="Besucher heute"
-            value={statsMissing ? "—" : (stats?.visitors.today ?? "—")}
-            href="/admin/analytics"
-            icon={BarChart3}
-          />
-          <StatCard
-            label="Letzte 7 Tage"
-            value={statsMissing ? "—" : (stats?.visitors.last7Days ?? "—")}
-            href="/admin/analytics"
-            icon={BarChart3}
-          />
-        </div>
-      </section>
+      {statsTasks.length > 0 ? (
+        <section className="admin-dashboard-section">
+          <h2 className="admin-dashboard-section-title">Statistik</h2>
+          <div className="admin-stat-grid">
+            {hasPermission(permissions, "analytics:read") ? (
+              <>
+                <StatCard
+                  label="Besucher gesamt"
+                  value={statsMissing ? "—" : (stats?.visitors.total ?? "—")}
+                  href="/admin/analytics"
+                  icon={Users}
+                  sublabel={statsMissing ? "Statistik nicht aktiv" : undefined}
+                />
+                <StatCard
+                  label="Besucher heute"
+                  value={statsMissing ? "—" : (stats?.visitors.today ?? "—")}
+                  href="/admin/analytics"
+                  icon={BarChart3}
+                />
+                <StatCard
+                  label="Letzte 7 Tage"
+                  value={statsMissing ? "—" : (stats?.visitors.last7Days ?? "—")}
+                  href="/admin/analytics"
+                  icon={BarChart3}
+                />
+              </>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
-      <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">Sicherheit & System</h2>
-        <div className="admin-stat-grid">
-          <StatCard
-            label="Aktive Benutzer"
-            value={stats?.security?.activeUsers ?? "—"}
-            href="/admin/sicherheit/benutzer"
-            icon={Users}
-          />
-          <StatCard
-            label="Letzte Logins"
-            value={stats?.security?.recentLogins ?? "—"}
-            href="/admin/sicherheit"
-            icon={Shield}
-          />
-          <StatCard
-            label="Systemstatus"
-            value={stats?.security?.systemStatusLabel ?? "—"}
-            href="/admin/einstellungen?tab=system"
-            icon={Shield}
-            sublabel={
-              stats?.security?.systemStatus === "ok"
-                ? "Alle wichtigen Prüfungen bestanden"
-                : stats?.security?.systemStatus === "warn"
-                  ? "Einige Hinweise vorhanden"
-                  : stats?.security?.systemStatus === "error"
-                    ? "Kritische Punkte offen"
-                    : undefined
-            }
-            highlight={stats?.security?.systemStatus === "error"}
-          />
-        </div>
-      </section>
+      {securityTasks.length > 0 ? (
+        <section className="admin-dashboard-section">
+          <h2 className="admin-dashboard-section-title">Sicherheit & System</h2>
+          <div className="admin-stat-grid">
+            {securityTasks.map((task) => {
+              const Icon = resolveAdminIcon(task.iconKey);
+              return (
+                <StatCard
+                  key={task.id}
+                  label={task.label}
+                  value={task.value}
+                  href={task.href}
+                  icon={Icon}
+                  sublabel={task.sublabel}
+                  highlight={task.highlight}
+                />
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
-      <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">Kunden & Dokumente</h2>
-        <div className="admin-stat-grid">
-          <StatCard label="Kunden" value={stats?.crm.customersCount ?? "—"} href="/admin/kunden" icon={Users} />
-          <StatCard label="Offene Angebote" value={stats?.crm.openQuotesCount ?? "—"} href="/admin/angebote" icon={FileText} />
-          <StatCard label="Offene Rechnungen" value={stats?.crm.openInvoicesCount ?? "—"} href="/admin/rechnungen" icon={FileText} />
-        </div>
-      </section>
+      {crmTasks.length > 0 ? (
+        <section className="admin-dashboard-section">
+          <h2 className="admin-dashboard-section-title">Kunden & Dokumente</h2>
+          <div className="admin-stat-grid">
+            {crmTasks.map((task) => {
+              const Icon = resolveAdminIcon(task.iconKey);
+              return (
+                <StatCard
+                  key={task.id}
+                  label={task.label}
+                  value={task.value}
+                  href={task.href}
+                  icon={Icon}
+                  sublabel={task.sublabel}
+                  highlight={task.highlight}
+                />
+              );
+            })}
+            {hasPermission(permissions, "quotes:write") ? (
+              <StatCard
+                label="Offene Angebote"
+                value={stats?.crm.openQuotesCount ?? "—"}
+                href="/admin/angebote"
+                icon={FileText}
+              />
+            ) : null}
+            {hasPermission(permissions, "invoices:write") ? (
+              <StatCard
+                label="Offene Rechnungen"
+                value={stats?.crm.openInvoicesCount ?? "—"}
+                href="/admin/rechnungen"
+                icon={FileText}
+              />
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
-      {stats && !stats.trackingEnabled ? (
+      {stats && !stats.trackingEnabled && hasPermission(permissions, "analytics:read") ? (
         <AdminHelpBlock title="Besucherstatistik" variant="info">
           Die Besucherzahlen sind noch nicht aktiv — das beeinträchtigt Website und Anfragen nicht.
         </AdminHelpBlock>
       ) : null}
 
-      {stats?.trackingEnabled && stats.trackingTableReady === false ? (
+      {stats?.trackingEnabled && stats.trackingTableReady === false && hasPermission(permissions, "analytics:read") ? (
         <AdminHelpBlock title="Besucherstatistik" variant="warning">
           Die Statistik wird gerade eingerichtet. Du kannst alle anderen Bereiche normal nutzen.
         </AdminHelpBlock>
@@ -359,7 +462,7 @@ export function DashboardView() {
 
       <section className="grid gap-6 lg:grid-cols-2">
         <AdminCard title="Letzte Aktivitäten">
-          {activity.length === 0 ? (
+          {filteredActivity.length === 0 ? (
             <AdminEmptyState
               icon={Inbox}
               title={activityEmpty.title}
@@ -367,7 +470,7 @@ export function DashboardView() {
             />
           ) : (
             <ul className="space-y-1">
-              {activity.map((item) => {
+              {filteredActivity.map((item) => {
                 const Icon = ACTIVITY_ICONS[item.type];
                 return (
                   <li key={item.id}>
@@ -388,24 +491,21 @@ export function DashboardView() {
           )}
         </AdminCard>
 
-        <AdminCard title="Module">
-          <div className="grid gap-3 sm:grid-cols-2">
-            {[
-              { href: "/admin/kunden", label: "Kunden & CRM" },
-              { href: "/admin/angebote", label: "Angebote" },
-              { href: "/admin/inhalte", label: "Website-Inhalte" },
-              { href: "/admin/analytics", label: "Besucherstatistik" },
-            ].map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-medium text-text-primary transition-colors hover:border-primary/30 hover:bg-primary/5"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
-        </AdminCard>
+        {moduleLinks.length > 0 ? (
+          <AdminCard title="Module">
+            <div className="grid gap-3 sm:grid-cols-2">
+              {moduleLinks.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className="flex items-center gap-2 rounded-xl border border-border px-4 py-3 text-sm font-medium text-text-primary transition-colors hover:border-primary/30 hover:bg-primary/5"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </AdminCard>
+        ) : null}
       </section>
     </div>
   );

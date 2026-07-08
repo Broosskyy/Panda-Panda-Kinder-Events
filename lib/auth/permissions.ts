@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getRoleById } from "@/lib/auth/users";
 import type { AdminRoleSlug } from "@/lib/auth/types";
 
 const ALL_PERMISSIONS = [
@@ -38,7 +39,12 @@ export async function getPermissionsForRole(roleId: string): Promise<string[]> {
     .select("admin_permissions(slug)")
     .eq("role_id", roleId);
 
-  if (error) return [];
+  if (error) {
+    console.error("getPermissionsForRole:", error.message, roleId);
+    const role = await getRoleById(roleId);
+    if (role?.slug === "administrator") return getLegacyPermissions();
+    return [];
+  }
   return (data ?? [])
     .map((row) => {
       const perm = row.admin_permissions as { slug: string } | { slug: string }[] | null;

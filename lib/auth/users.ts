@@ -1,17 +1,28 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
-import type { AdminRole, AdminRoleSlug, AdminUser, AdminUserPublic } from "@/lib/auth/types";
+import type { AdminContext, AdminRole, AdminRoleSlug, AdminUser, AdminUserPublic } from "@/lib/auth/types";
 
 export async function countAdminUsers(): Promise<number> {
   const supabase = getSupabaseAdmin();
   const { count, error } = await supabase
     .from("admin_users")
     .select("id", { count: "exact", head: true });
-  if (error) return 0;
+  if (error) {
+    console.error("countAdminUsers:", error.message);
+    throw new Error(`Admin-Benutzer konnten nicht gezählt werden: ${error.message}`);
+  }
   return count ?? 0;
 }
 
+export async function countAdminUsersSafe(): Promise<number> {
+  try {
+    return await countAdminUsers();
+  } catch {
+    return 0;
+  }
+}
+
 export async function isMultiUserAuthEnabled(): Promise<boolean> {
-  return (await countAdminUsers()) > 0;
+  return (await countAdminUsersSafe()) > 0;
 }
 
 export async function findUserByIdentifier(identifier: string): Promise<AdminUser | null> {
@@ -49,37 +60,123 @@ export async function getRoleById(id: string): Promise<AdminRole | null> {
   return (data as AdminRole | null) ?? null;
 }
 
-export async function listUsers(): Promise<AdminUserPublic[]> {
+function mapRowToAdminUserPublic(row: Record<string, unknown>): AdminUserPublic {
+  const role = row.admin_roles as { slug: AdminRoleSlug; label: string } | null;
+  const teamMember = row.team_members as { name: string } | null;
+  return {
+    id: String(row.id),
+    username: String(row.username),
+    email: String(row.email),
+    display_name: String(row.display_name),
+    role_id: String(row.role_id),
+    role_slug: role?.slug ?? "readonly",
+    role_label: role?.label ?? "Nur Lesen",
+    active: Boolean(row.active),
+    avatar: (row.avatar as string | null) ?? null,
+    phone: (row.phone as string | null) ?? null,
+    totp_enabled: Boolean(row.totp_enabled),
+    last_login: (row.last_login as string | null) ?? null,
+    team_member_id: (row.team_member_id as string | null) ?? null,
+    team_member_name: teamMember?.name ?? null,
+    created_at: String(row.created_at),
+    updated_at: String(row.updated_at),
+  };
+}
+
+/** Virtual profile for legacy cookie sessions (no admin_users row yet). */
+export function buildLegacyUserPublic(ctx: AdminContext): AdminUserPublic {
+  const now = new Date().toISOString();
+  return {
+    id: "legacy-session",
+    username: "administrator",
+    email: "",
+    display_name: ctx.displayName || "Administrator",
+    role_id: "",
+    role_slug: "administrator",
+    role_label: "Super Admin",
+    active: true,
+    avatar: null,
+    phone: null,
+    totp_enabled: false,
+    last_login: null,
+    team_member_id: null,
+    team_member_name: null,
+    created_at: now,
+    updated_at: now,
+  };
+}
+
+export async function getUserPublicById(id: string): Promise<AdminUserPublic | null> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("admin_users")
     .select("*, admin_roles(slug, label), team_members(name)")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) {
+    const fallback = await supabase
+      .from("admin_users")
+      .select("*, admin_roles(slug, label)")
+      .eq("id", id)
+      .maybeSingle();
+    if (fallback.error || !fallback.data) return null;
+    return mapRowToAdminUserPublic(fallback.data as Record<string, unknown>);
+  }
+
+  return mapRowToAdminUserPublic(data as Record<string, unknown>);
+}
+
+export async function listUsers(): Promise<AdminUserPublic[]> {
+  const supabase = getSupabaseAdmin();
+  const first = await supabase
+    .from("admin_users")
+    .select("*, admin_roles(slug, label), team_members(name)")
     .order("display_name");
 
-  if (error) throw new Error(error.message);
+  let data = first.data;
+  if (first.error) {
+    console.warn("listUsers with team_members join failed, retrying:", first.error.message);
+    const fallback = await supabase
+      .from("admin_users")
+      .select("*, admin_roles(slug, label)")
+      .order("display_name");
+    if (fallback.error) throw new Error(fallback.error.message);
+    data = fallback.data;
+  }
 
-  return (data ?? []).map((row) => {
-    const role = row.admin_roles as { slug: AdminRoleSlug; label: string } | null;
-    const teamMember = row.team_members as { name: string } | null;
-    return {
-      id: row.id,
-      username: row.username,
-      email: row.email,
-      display_name: row.display_name,
-      role_id: row.role_id,
-      role_slug: role?.slug ?? "readonly",
-      role_label: role?.label ?? "Nur Lesen",
-      active: row.active,
-      avatar: row.avatar,
-      phone: row.phone,
-      totp_enabled: row.totp_enabled,
-      last_login: row.last_login,
-      team_member_id: row.team_member_id ?? null,
-      team_member_name: teamMember?.name ?? null,
-      created_at: row.created_at,
-      updated_at: row.updated_at,
-    };
-  });
+  return (data ?? []).map((row) => mapRowToAdminUserPublic(row as Record<string, unknown>));
+}
+
+/**
+ * Ensures the active session user is always included in the users list.
+ * Never returns an empty list for an authenticated admin.
+ */
+export async function resolveUsersForSession(ctx: AdminContext, canListAll: boolean): Promise<AdminUserPublic[]> {
+  let users: AdminUserPublic[] = [];
+
+  if (canListAll) {
+    users = await listUsers();
+  }
+
+  if (ctx.isLegacy) {
+    const legacyUser = buildLegacyUserPublic(ctx);
+    if (!users.some((u) => u.id === legacyUser.id)) {
+      users = [legacyUser, ...users];
+    }
+    return users;
+  }
+
+  if (ctx.userId) {
+    const self = await getUserPublicById(ctx.userId);
+    if (self && !users.some((u) => u.id === self.id)) {
+      users = [self, ...users];
+    } else if (!self) {
+      console.error("resolveUsersForSession: session user missing in admin_users", ctx.userId);
+    }
+  }
+
+  return users;
 }
 
 export async function createUser(input: {

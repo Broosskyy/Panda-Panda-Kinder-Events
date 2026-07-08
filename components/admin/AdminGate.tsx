@@ -75,7 +75,7 @@ export function AdminGate({ children }: { children: ReactNode }) {
 
   return (
     <AdminSessionProvider initialLoginData={loginSnapshot}>
-      <AdminOnboardingProvider>
+      <AdminOnboardingProvider initialCompleted={Boolean(loginSnapshot?.onboardingCompleted)}>
         <AdminUiProvider>
           <AdminActionFeedbackProvider>
             <AdminNotificationsProvider>

@@ -2,7 +2,6 @@ import { unstable_noStore as noStore } from "next/cache";
 import { cache } from "react";
 import { faqs as staticFaqs } from "@/lib/faqs";
 import { galleryImages as staticGallery } from "@/lib/gallery";
-import { services as staticServices } from "@/lib/services";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { isPlaceholderContent, isValidCmsFaq, isValidCmsService, isValidPublishedPost } from "./content-quality";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
@@ -277,14 +276,18 @@ async function queryCmsServices(): Promise<Service[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("cms_services")
-    .select("*")
+    .select(
+      "id, icon_key, title, description, detail_text, image_url, button_label, button_link, category, price_from, highlights, sort_order, visible",
+    )
     .eq("visible", true)
     .order("sort_order", { ascending: true });
 
   if (error) {
-    console.error("queryCmsServices:", error.message);
-    return [];
+    console.error("queryCmsServices:", error.message, error.details ?? "");
+    throw new Error(error.message);
   }
+
+  if (!data?.length) return [];
 
   return (data as CmsService[])
     .filter((s) => isValidCmsService(s.title ?? "", s.description ?? ""))
@@ -304,20 +307,30 @@ async function queryCmsServices(): Promise<Service[]> {
 }
 
 async function fetchCmsServicesImpl(): Promise<Service[]> {
-  if (!isSupabaseConfigured()) return staticServices;
+  noStore();
+
+  if (!isSupabaseConfigured()) {
+    console.warn("fetchCmsServices: Supabase not configured — no public services rendered");
+    return [];
+  }
 
   try {
-    const hasCms = await tableHasRows("cms_services");
-    if (!hasCms) return staticServices;
-
     const cmsServices = await queryCmsServices();
     if (cmsServices.length === 0) {
-      console.warn("fetchCmsServices: cms_services has rows but none are publicly visible/valid");
+      const supabase = getSupabaseAdmin();
+      const { count } = await supabase
+        .from("cms_services")
+        .select("id", { count: "exact", head: true });
+      if ((count ?? 0) > 0) {
+        console.warn(
+          "fetchCmsServices: cms_services has rows but none are publicly visible/valid (check visible flag and content)",
+        );
+      }
     }
     return cmsServices;
   } catch (err) {
     console.error("fetchCmsServices:", err);
-    return staticServices;
+    return [];
   }
 }
 

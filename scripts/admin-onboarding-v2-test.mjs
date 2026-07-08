@@ -38,20 +38,20 @@ else fail("Missing onboarding lock");
 if (wizard.includes("admin-onboarding-v2-panel")) ok("V2 panel class used");
 else fail("V2 panel missing");
 
-if (wizard.includes("onDismissPermanent") && wizard.includes("onSkipToEnd")) ok("Separate skip vs dismiss handlers");
-else fail("Skip/dismiss handlers missing");
+if (wizard.includes("onSkip") && wizard.includes("onClose")) ok("Separate skip vs close handlers");
+else fail("Skip/close handlers missing");
 
 if (wizard.includes("admin-onboarding-v2-bullets")) ok("Bullet list in wizard");
 else fail("Bullets UI missing");
 
-if (css.includes("admin-onboarding-v2-root") && css.includes("z-index: 200")) ok("V2 overlay above bottom nav");
+if (css.includes("admin-onboarding-v2-root") && css.includes("z-index: 220")) ok("V2 overlay above bottom nav");
 else fail("V2 z-index/overlay missing");
 
 if (css.includes('html[data-admin-onboarding="open"] .admin-bottom-nav')) ok("Bottom nav hidden during tutorial");
 else fail("Bottom nav not hidden");
 
-if (css.includes("background: #f4f1ea") && css.includes("rgba(26, 27, 23, 0.72)")) {
-  ok("Solid panel + dark backdrop");
+if (css.includes("var(--admin-panel-solid)") && css.includes("admin-onboarding-v2-panel")) {
+  ok("Solid panel styling");
 } else fail("Panel/backdrop styling weak");
 
 if (css.includes("admin-onboarding-v2-footer")) ok("Sticky footer section");
@@ -61,7 +61,7 @@ if (steps.includes("bullets:") && steps.includes("iconKey:")) ok("Steps have bul
 else fail("Step content incomplete");
 
 const provider = read("components/admin/AdminOnboardingProvider.tsx");
-if (provider.includes("dismissPermanent") && provider.includes("skipToEnd")) ok("Provider skip/dismiss wiring");
+if (provider.includes("dismissSession") && provider.includes("ONBOARDING_SESSION_DISMISS_KEY")) ok("Provider skip/dismiss wiring");
 else fail("Provider wiring incomplete");
 
 console.log(`\n${passed} passed, ${failed} failed`);

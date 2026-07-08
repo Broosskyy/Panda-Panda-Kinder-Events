@@ -71,14 +71,13 @@ export function AdminSidebar() {
       .then((data) => {
         if (data.permissions) setPermissions(data.permissions);
         if (data.modules) setModules(data.modules);
-        if (data.authenticated) {
+        if (data.authenticated && data.userId) {
           setIdentity({
-            userId: data.userId ?? data.identity?.id ?? null,
-            displayName: data.displayName ?? data.identity?.displayName ?? "Admin",
-            email: data.email ?? data.identity?.email ?? null,
-            roleSlug: (data.roleSlug ?? data.identity?.roleSlug ?? "readonly") as AdminRoleSlug | "legacy",
+            userId: data.userId,
+            displayName: data.displayName ?? data.identity?.displayName ?? "",
+            email: data.email ?? data.identity?.email ?? "",
+            roleSlug: (data.roleSlug ?? data.identity?.roleSlug ?? "readonly") as AdminRoleSlug,
             roleLabel: data.roleLabel ?? data.identity?.roleLabel ?? roleDisplayLabel(data.roleSlug ?? "readonly"),
-            isLegacy: Boolean(data.isLegacy),
           });
         }
       })

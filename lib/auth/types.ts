@@ -66,13 +66,12 @@ export interface AdminSession {
 }
 
 export interface AdminContext {
-  userId: string | null;
+  userId: string;
   displayName: string;
-  email: string | null;
-  roleSlug: AdminRoleSlug | "legacy";
+  email: string;
+  roleSlug: AdminRoleSlug;
   permissions: string[];
-  sessionId: string | null;
-  isLegacy: boolean;
+  sessionId: string;
 }
 
 export interface LoginPolicy {

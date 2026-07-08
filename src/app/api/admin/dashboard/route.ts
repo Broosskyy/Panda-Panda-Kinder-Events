@@ -6,7 +6,6 @@ import { fetchAdminNotificationData } from "@/lib/admin/notifications";
 import { buildDashboardTasks } from "@/lib/admin/dashboard-tasks";
 import { roleDisplayLabel, isActiveRoleSlug } from "@/lib/admin/roles";
 import { ROLE_DASHBOARD_HELP, dashboardDescriptionForRole } from "@/lib/admin/role-help";
-import type { ActiveAdminRoleSlug } from "@/lib/admin/roles";
 import { fetchSiteSettings } from "@/lib/cms/data";
 import { listEmailLogs } from "@/lib/email/log";
 import { isTestEmailLog } from "@/lib/email/domain-status-copy";
@@ -38,15 +37,11 @@ export async function GET() {
       hasSuccessfulEmailTest(),
     ]);
 
-    const roleSlug = ctx.isLegacy
-      ? ("administrator" as ActiveAdminRoleSlug)
-      : isActiveRoleSlug(ctx.roleSlug)
-        ? ctx.roleSlug
-        : ("manager" as ActiveAdminRoleSlug);
+    const roleSlug = isActiveRoleSlug(ctx.roleSlug) ? ctx.roleSlug : "manager";
 
     const tasks = buildDashboardTasks({
       permissions: ctx.permissions,
-      roleSlug: ctx.isLegacy ? "legacy" : roleSlug,
+      roleSlug,
       period: notifications.period,
       stats,
       security,

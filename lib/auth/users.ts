@@ -109,27 +109,16 @@ function mapRowToAdminUserPublic(row: Record<string, unknown>): AdminUserPublic 
   };
 }
 
-/** Virtual profile for legacy cookie sessions (no admin_users row yet). */
-export function buildLegacyUserPublic(ctx: AdminContext): AdminUserPublic {
-  const now = new Date().toISOString();
-  return {
-    id: "legacy-session",
-    username: "administrator",
-    email: "",
-    display_name: ctx.displayName || "Administrator",
-    role_id: "",
-    role_slug: "administrator",
-    role_label: "Super Admin",
-    active: true,
-    avatar: null,
-    phone: null,
-    totp_enabled: false,
-    last_login: null,
-    team_member_id: null,
-    team_member_name: null,
-    created_at: now,
-    updated_at: now,
-  };
+/**
+ * Loads admin users from admin_users only — never injects virtual users.
+ */
+export async function resolveUsersForSession(ctx: AdminContext, canListAll: boolean): Promise<AdminUserPublic[]> {
+  if (canListAll) {
+    return listUsers();
+  }
+
+  const self = await getUserPublicById(ctx.userId);
+  return self ? [self] : [];
 }
 
 export async function getUserPublicById(id: string): Promise<AdminUserPublic | null> {
@@ -172,37 +161,6 @@ export async function listUsers(): Promise<AdminUserPublic[]> {
   }
 
   return (data ?? []).map((row) => mapRowToAdminUserPublic(row as Record<string, unknown>));
-}
-
-/**
- * Ensures the active session user is always included in the users list.
- * Never returns an empty list for an authenticated admin.
- */
-export async function resolveUsersForSession(ctx: AdminContext, canListAll: boolean): Promise<AdminUserPublic[]> {
-  let users: AdminUserPublic[] = [];
-
-  if (canListAll) {
-    users = await listUsers();
-  }
-
-  if (ctx.isLegacy && !ctx.userId) {
-    const legacyUser = buildLegacyUserPublic(ctx);
-    if (!users.some((u) => u.id === legacyUser.id)) {
-      users = [legacyUser, ...users];
-    }
-    return users;
-  }
-
-  if (ctx.userId) {
-    const self = await getUserPublicById(ctx.userId);
-    if (self && !users.some((u) => u.id === self.id)) {
-      users = [self, ...users];
-    } else if (!self) {
-      console.error("resolveUsersForSession: session user missing in admin_users", ctx.userId);
-    }
-  }
-
-  return users;
 }
 
 export async function createUser(input: {

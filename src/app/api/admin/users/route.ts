@@ -70,11 +70,9 @@ export async function GET() {
       meta: {
         canListAll,
         canManageUsers,
-        isLegacy: ctx.isLegacy,
         selfOnly: !canListAll && users.length > 0,
         currentUserId: ctx.userId,
         authenticated: true,
-        showBootstrap: ctx.isLegacy && users.length === 0,
       },
     });
   } catch (err) {
@@ -105,7 +103,7 @@ export async function POST(request: Request) {
     const passwordHash = await hashPassword(parsed.data.password);
     const roles = await listRoles();
     const assignedRole = roles.find((r) => r.id === parsed.data.roleId);
-    if (assignedRole?.slug === "administrator" && ctx && !ctx.isLegacy && ctx.roleSlug !== "administrator") {
+    if (assignedRole?.slug === "administrator" && ctx && ctx.roleSlug !== "administrator") {
       return NextResponse.json({ error: "Nur Super Admins dürfen weitere Super Admins anlegen." }, { status: 403 });
     }
     const user = await createUser({

@@ -1,14 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { KeyRound, Pencil, Plus, Shield, UserPlus, UserRound } from "lucide-react";
+import { KeyRound, Pencil, Plus, Shield, UserRound } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
-import { AdminButton, AdminEmptyState, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
+import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
-import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
 import { DEFAULT_NEW_USER_ROLE_SLUG, describeRoleSlug, shortRoleSlug } from "@/lib/admin/role-descriptions";
@@ -50,11 +49,9 @@ function userInitials(name: string): string {
 interface UsersMeta {
   canListAll: boolean;
   canManageUsers: boolean;
-  isLegacy: boolean;
   selfOnly: boolean;
   currentUserId: string | null;
   authenticated: boolean;
-  showBootstrap?: boolean;
 }
 
 export function UsersView() {
@@ -69,7 +66,6 @@ export function UsersView() {
   const [form, setForm] = useState(emptyForm);
   const { toast, withLoading, fromApi } = useAdminMessages();
   const page = adminPageHeaderProps("benutzer");
-  const empty = ADMIN_EMPTY_STATES.users;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -106,9 +102,6 @@ export function UsersView() {
   };
 
   const openEdit = (user: AdminUserPublic) => {
-    if (user.id === "legacy-session") {
-      return toast("Bitte legen Sie zuerst einen echten Admin-Benutzer an.", "error");
-    }
     setEditingId(user.id);
     setForm({
       username: user.username,
@@ -162,16 +155,8 @@ export function UsersView() {
     await load();
   };
 
-  const showBootstrapEmpty =
-    !loading &&
-    !loadError &&
-    users.length === 0 &&
-    Boolean(meta?.showBootstrap) &&
-    !meta?.authenticated;
-
   const showAuthenticatedEmpty = !loading && !loadError && users.length === 0 && Boolean(meta?.authenticated);
 
-  const visibleUsers = users.filter((u) => meta?.isLegacy || u.id !== "legacy-session");
   const isCurrentUser = (id: string) => meta?.currentUserId === id;
 
   return (
@@ -190,14 +175,6 @@ export function UsersView() {
         <AdminCard>
           <p className="text-sm text-text-muted">
             Sie sehen Ihr eigenes Profil. Nur Super Admins dürfen alle Benutzer verwalten.
-          </p>
-        </AdminCard>
-      ) : null}
-
-      {meta?.isLegacy && users.some((u) => u.id === "legacy-session") ? (
-        <AdminCard>
-          <p className="admin-status-warn text-sm">
-            Legacy-Zugang aktiv — bitte einen echten Benutzer anlegen. Der virtuelle „Administrator“ ist kein Datenbank-Konto.
           </p>
         </AdminCard>
       ) : null}
@@ -281,14 +258,6 @@ export function UsersView() {
             oder wenden Sie sich an einen Super Admin.
           </p>
         </AdminCard>
-      ) : showBootstrapEmpty ? (
-        <AdminEmptyState
-          icon={UserPlus}
-          title={empty.title}
-          description={empty.description}
-          actionLabel={empty.actionLabel}
-          onAction={openCreate}
-        />
       ) : users.length === 0 ? null : (
         <AdminCard className="overflow-x-auto p-0">
           <table className="admin-users-table w-full min-w-[720px] text-sm">
@@ -302,7 +271,7 @@ export function UsersView() {
               </tr>
             </thead>
             <tbody>
-              {visibleUsers.map((u) => (
+              {users.map((u) => (
                 <tr key={u.id} className={isCurrentUser(u.id) ? "admin-users-row-current" : undefined}>
                   <td>
                     <div className="flex items-center gap-3">
@@ -335,7 +304,7 @@ export function UsersView() {
                       <AdminButton variant="secondary" icon={<UserRound className="h-4 w-4" />} onClick={() => openEdit(u)}>
                         Öffnen
                       </AdminButton>
-                      {meta?.canManageUsers && u.id !== "legacy-session" ? (
+                      {meta?.canManageUsers ? (
                         <>
                           <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(u)}>
                             Bearbeiten

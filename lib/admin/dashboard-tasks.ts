@@ -25,7 +25,7 @@ export interface DashboardModuleLink {
 
 interface BuildDashboardTasksInput {
   permissions: string[];
-  roleSlug: ActiveAdminRoleSlug | "legacy";
+  roleSlug: ActiveAdminRoleSlug;
   period: AdminNotificationPeriodCounts;
   stats: AdminAnalyticsDashboard | null;
   security: AdminSecurityDashboard | null;
@@ -44,7 +44,7 @@ function emptySublabel(count: number, active: string, done = "Alles erledigt."):
 export function buildDashboardTasks(input: BuildDashboardTasksInput): DashboardTaskCard[] {
   const { permissions, roleSlug, period, stats, security, emailTestSucceeded, badgeCounts } = input;
   const tasks: DashboardTaskCard[] = [];
-  const role = roleSlug === "legacy" || !isActiveRoleSlug(roleSlug) ? "administrator" : roleSlug;
+  const role = isActiveRoleSlug(roleSlug) ? roleSlug : "manager";
 
   if (allowed(permissions, "inquiries:write")) {
     tasks.push({

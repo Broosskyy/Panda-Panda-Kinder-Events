@@ -14,7 +14,6 @@ type Step = "idle" | "setup" | "enabled";
 
 export function TwoFactorView() {
   const [step, setStep] = useState<Step>("idle");
-  const [legacy, setLegacy] = useState(false);
   const [enabled, setEnabled] = useState(false);
   const [backupRemaining, setBackupRemaining] = useState(0);
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -31,7 +30,6 @@ export function TwoFactorView() {
     const res = await fetch("/api/admin/security/2fa");
     const data = await res.json();
     if (res.ok) {
-      setLegacy(Boolean(data.legacy));
       setEnabled(Boolean(data.enabled));
       setBackupRemaining(data.backupCodesRemaining ?? 0);
       setStep(data.enabled ? "enabled" : "idle");
@@ -55,7 +53,6 @@ export function TwoFactorView() {
       setStep("setup");
     } else {
       showError("Einrichtung fehlgeschlagen.", data.error);
-      if (data.legacy) setLegacy(true);
     }
   };
 
@@ -140,30 +137,21 @@ export function TwoFactorView() {
 
       <SecuritySubNav />
 
-      {legacy ? (
-        <AdminCard>
-          <p className="text-sm text-text-secondary">
-            2FA ist verfügbar, sobald mindestens ein Admin-Benutzer unter{" "}
-            <strong>Benutzer & Rollen</strong> angelegt wurde. Aktuell gilt noch das globale Passwort.
-          </p>
-        </AdminCard>
-      ) : (
-        <AdminCard title="Status">
-          <div className="flex items-center gap-3">
-            <Shield className={`h-8 w-8 ${enabled ? "text-primary" : "text-text-muted"}`} />
-            <div>
-              <p className="font-semibold text-text-primary">{enabled ? "2FA ist aktiv" : "2FA ist nicht aktiv"}</p>
-              {enabled ? (
-                <p className="text-sm text-text-muted">Verbleibende Backup-Codes: {backupRemaining}</p>
-              ) : (
-                <p className="text-sm text-text-muted">Nach dem Passwort-Login wird kein zusätzlicher Code abgefragt.</p>
-              )}
-            </div>
+      <AdminCard title="Status">
+        <div className="flex items-center gap-3">
+          <Shield className={`h-8 w-8 ${enabled ? "text-primary" : "text-text-muted"}`} />
+          <div>
+            <p className="font-semibold text-text-primary">{enabled ? "2FA ist aktiv" : "2FA ist nicht aktiv"}</p>
+            {enabled ? (
+              <p className="text-sm text-text-muted">Verbleibende Backup-Codes: {backupRemaining}</p>
+            ) : (
+              <p className="text-sm text-text-muted">Nach dem Passwort-Login wird kein zusätzlicher Code abgefragt.</p>
+            )}
           </div>
-        </AdminCard>
-      )}
+        </div>
+      </AdminCard>
 
-      {!legacy && !enabled && step === "idle" ? (
+      {!enabled && step === "idle" ? (
         <AdminCard title="2FA einrichten">
           <p className="mb-4 text-sm text-text-secondary">
             1. Klicke auf „2FA einrichten“<br />

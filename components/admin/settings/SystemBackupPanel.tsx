@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Download } from "lucide-react";
 import { AdminCard } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
@@ -22,16 +22,8 @@ export function SystemBackupPanel() {
   const [lastWarnings, setLastWarnings] = useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [isLegacy, setIsLegacy] = useState(false);
 
-  useEffect(() => {
-    fetch("/api/admin/login")
-      .then((r) => r.json())
-      .then((data) => setIsLegacy(Boolean(data.isLegacy)))
-      .catch(() => undefined);
-  }, []);
-
-  const downloadBackup = async (confirmation?: { confirmPassword?: string; criticalAcknowledged?: boolean }) => {
+  const downloadBackup = async (confirmation?: { confirmPassword?: string }) => {
     setDownloading(true);
     setLastWarnings([]);
     try {
@@ -39,7 +31,6 @@ export function SystemBackupPanel() {
         (async () => {
           const params = new URLSearchParams();
           if (confirmation?.confirmPassword) params.set("confirmPassword", confirmation.confirmPassword);
-          if (confirmation?.criticalAcknowledged) params.set("criticalAcknowledged", "true");
 
           const res = await fetch(`/api/admin/backup/export?${params}`);
           if (!res.ok) {
@@ -129,7 +120,6 @@ export function SystemBackupPanel() {
         open={confirmOpen}
         title="Backup erstellen — Bestätigung nötig"
         description="Ein Backup enthält sensible Geschäftsdaten. Bitte bestätigen Sie mit Ihrem Super-Admin-Passwort."
-        isLegacy={isLegacy}
         onCancel={() => setConfirmOpen(false)}
         onConfirm={async (confirmation) => downloadBackup(confirmation)}
       />

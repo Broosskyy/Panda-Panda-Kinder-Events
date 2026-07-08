@@ -81,7 +81,20 @@ html {
 
 @media (min-width: 1024px) {
   html {
-    --section-header-gap: 6rem;
+    --site-padding-x: 3rem;
+    --site-max-width: 80rem;
+    --section-header-gap: 5rem;
+  }
+
+  .section-padding {
+    padding-top: 5rem;
+    padding-bottom: 5rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  html {
+    --site-padding-x: 3.5rem;
   }
 }
 
@@ -232,13 +245,6 @@ summary:focus-visible,
   .section-padding {
     padding-top: 5rem;
     padding-bottom: 5rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .section-padding {
-    padding-top: 6rem;
-    padding-bottom: 6rem;
   }
 }
 
@@ -1536,6 +1542,13 @@ img {
 @media (min-width: 768px) {
   .admin-main {
     padding: 2rem 2.5rem;
+    padding-bottom: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .admin-main {
+    padding: 2rem 3rem;
     padding-bottom: 2rem;
   }
 }
@@ -4055,8 +4068,18 @@ html[data-mobile-menu-open="true"] {
 
 @media (min-width: 1024px) {
   .dash-v2-bottom-grid {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
-    align-items: start;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .dash-v2-stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .dash-v2-bottom-grid {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
   }
 }
 
@@ -4072,6 +4095,13 @@ html[data-mobile-menu-open="true"] {
   .dash-v2 {
     gap: 1.5rem;
     padding-bottom: 2rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dash-v2 {
+    max-width: none;
+    gap: 1.75rem;
   }
 }
 
@@ -4133,6 +4163,31 @@ html[data-mobile-menu-open="true"] {
   margin-top: 0.75rem;
   font-size: 0.75rem;
   color: var(--admin-text-muted);
+}
+
+@media (min-width: 1024px) {
+  .dash-v2-hero {
+    align-items: center;
+    padding: 1.25rem 1.5rem;
+  }
+
+  .dash-v2-hero-avatar {
+    height: 3.5rem;
+    width: 3.5rem;
+    font-size: 1rem;
+  }
+
+  .dash-v2-hero-meta {
+    gap: 1rem 2rem;
+  }
+
+  .dash-v2-today-value {
+    font-size: 1.75rem;
+  }
+
+  .dash-v2-stat-value {
+    font-size: 1.5rem;
+  }
 }
 
 .dash-v2-hero-meta dt {
@@ -4290,7 +4345,7 @@ html[data-mobile-menu-open="true"] {
   gap: 0.75rem;
 }
 @media (min-width: 640px) { .dash-v2-today-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (min-width: 1024px) { .dash-v2-today-grid { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .dash-v2-today-grid { grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr)); } }
 
 .dash-v2-today-card {
   position: relative;
@@ -4321,6 +4376,8 @@ html[data-mobile-menu-open="true"] {
   gap: 0.625rem;
 }
 @media (min-width: 640px) { .dash-v2-quick-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (min-width: 1024px) { .dash-v2-quick-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (min-width: 1280px) { .dash-v2-quick-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
 
 .dash-v2-quick-item-wrap { display: flex; flex-direction: column; gap: 0.25rem; }
 .dash-v2-quick-item {
@@ -5468,6 +5525,173 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
 
   .admin-page-title {
     font-size: 1.25rem;
+  }
+}
+
+/* ── Sprint 2: Desktop Final Polish (1024px+) ── */
+
+@media (min-width: 1024px) {
+  .admin-overlay-modal-panel {
+    width: min(100%, 40rem);
+  }
+
+  .admin-overlay-modal-panel--lg {
+    width: min(100%, 48rem);
+    max-height: min(88dvh, 44rem);
+  }
+
+  .admin-modal-panel {
+    width: min(100%, 40rem);
+  }
+
+  .service-modal-panel {
+    width: min(100%, 44rem);
+    border-radius: 1.25rem;
+    padding: 1.75rem;
+  }
+
+  .service-modal-root {
+    align-items: center;
+    padding: 1.5rem;
+  }
+
+  .admin-filter-bar {
+    justify-content: flex-start;
+    align-items: center;
+  }
+
+  .admin-search-wrap {
+    flex: 1;
+    max-width: 22rem;
+  }
+
+  .admin-booking-meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .admin-bookings-table-wrap {
+    overflow-x: auto;
+    border-radius: 1rem;
+    border: 1px solid var(--admin-border);
+    background: var(--admin-surface);
+  }
+
+  .admin-bookings-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.875rem;
+  }
+
+  .admin-bookings-table th,
+  .admin-bookings-table td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--admin-border);
+  }
+
+  .admin-bookings-table th {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--admin-text-muted);
+    background: var(--admin-surface-muted);
+  }
+
+  .admin-bookings-table tbody tr:hover {
+    background: var(--admin-accent-soft);
+  }
+
+  .admin-bookings-table tbody tr:last-child td {
+    border-bottom: 0;
+  }
+
+  .admin-bookings-table .admin-input {
+    min-height: 2.25rem;
+    padding: 0.375rem 0.625rem;
+    font-size: 0.8125rem;
+  }
+
+  .dash-v2-accordion-panel .dash-v2-help-list {
+    columns: 2;
+    column-gap: 1.5rem;
+  }
+
+  .review-admin-card {
+    display: grid;
+    grid-template-columns: 11rem minmax(0, 1fr) auto;
+    grid-template-rows: auto auto;
+    gap: 0 1.25rem;
+    align-items: start;
+  }
+
+  .review-admin-card-header {
+    grid-column: 1 / -1;
+    margin-bottom: 0.75rem;
+  }
+
+  .review-admin-media {
+    grid-column: 1;
+    grid-row: 2;
+    margin-bottom: 0;
+  }
+
+  .review-admin-body {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .review-admin-uploads,
+  .review-admin-reply {
+    grid-column: 2;
+  }
+
+  .review-admin-actions {
+    grid-column: 3;
+    grid-row: 2;
+    align-self: start;
+    justify-self: end;
+  }
+
+  .review-admin-event-btn,
+  .review-admin-event-placeholder {
+    max-width: 11rem;
+    width: 11rem;
+  }
+
+  .review-admin-sort-btn {
+    min-height: 2rem !important;
+    min-width: 2rem !important;
+  }
+
+  .admin-customer-detail .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-customer-detail .grid > :nth-child(5),
+  .admin-customer-detail .grid > :nth-child(6) {
+    grid-column: 1 / -1;
+  }
+
+  .contact-cards {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .contact-cards > :first-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 1280px) {
+  .dash-v2-today-value {
+    font-size: 2rem;
+  }
+
+  .admin-page-title {
+    font-size: 1.75rem;
   }
 }
 

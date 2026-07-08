@@ -92,7 +92,7 @@ export function Services({
                     ) : null}
                     <Button
                       variant="secondary"
-                      className="service-card-cta btn-equal mt-4 w-full sm:mt-5"
+                      className="service-card-cta btn-equal mt-4 w-full sm:mt-5 lg:w-auto lg:self-start"
                       onClick={() => setActive(service)}
                     >
                       {service.buttonLabel ?? "Mehr erfahren"}

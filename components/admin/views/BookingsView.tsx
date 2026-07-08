@@ -227,7 +227,110 @@ export function BookingsView() {
           actionHref={bookings.length === 0 ? empty.actionHref : undefined}
         />
       ) : (
-        <div className="admin-list-stack">
+        <>
+          <div className="hidden lg:block admin-bookings-table-wrap">
+            <table className="admin-bookings-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Event</th>
+                  <th>Datum</th>
+                  <th>Ort</th>
+                  <th>Kinder</th>
+                  <th>Status</th>
+                  <th className="text-right">Aktionen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.map((b) => (
+                  <tr key={b.id} className={b.archived_at ? "opacity-90" : ""}>
+                    <td>
+                      <p className="font-semibold text-text-primary">{b.name}</p>
+                      <p className="text-xs text-text-muted">{b.email}</p>
+                    </td>
+                    <td>{b.event_type}</td>
+                    <td>
+                      {b.event_date}
+                      <br />
+                      <span className="text-xs text-text-muted">{b.event_time}</span>
+                    </td>
+                    <td className="max-w-[12rem] truncate" title={b.location}>
+                      {b.location}
+                    </td>
+                    <td>{b.children_count}</td>
+                    <td>
+                      {canWrite ? (
+                        <select
+                          value={b.status}
+                          onChange={(e) => update(b.id, { status: e.target.value as BookingStatus })}
+                          className="admin-input admin-filter-select"
+                          aria-label={`Status für ${b.name}`}
+                        >
+                          {Object.entries(STATUS_LABELS).map(([v, l]) => (
+                            <option key={v} value={v}>
+                              {l}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <AdminStatusBadge label={STATUS_LABELS[b.status]} variant={bookingStatusVariant(b.status)} />
+                      )}
+                    </td>
+                    <td>
+                      <div className="flex justify-end">
+                        {canWrite ? (
+                          <AdminActionMenu
+                            primary={
+                              b.customer_id
+                                ? {
+                                    label: "Zum Kunden",
+                                    onClick: () => {
+                                      window.location.href = `/admin/kunden?id=${b.customer_id}`;
+                                    },
+                                  }
+                                : {
+                                    label: "Kunde erstellen",
+                                    icon: <UserPlus className="h-4 w-4" />,
+                                    onClick: () => void createCustomer(b.id),
+                                  }
+                            }
+                            items={[
+                              ...(!b.archived_at
+                                ? [
+                                    {
+                                      id: "archive",
+                                      label: "Archivieren",
+                                      icon: <Archive className="h-4 w-4" />,
+                                      onClick: () => void archiveBooking(b.id),
+                                    },
+                                  ]
+                                : []),
+                            ]}
+                            dangerItems={
+                              canDelete
+                                ? [
+                                    {
+                                      id: "delete",
+                                      label: "Löschen",
+                                      icon: <Trash2 className="h-4 w-4" />,
+                                      onClick: () => void deleteBooking(b.id),
+                                    },
+                                  ]
+                                : []
+                            }
+                          />
+                        ) : (
+                          "—"
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="admin-list-stack lg:hidden">
           {filtered.map((b) => {
             const longMessage = Boolean(b.message && b.message.length > 120);
             return (
@@ -392,7 +495,8 @@ export function BookingsView() {
               </AdminCard>
             );
           })}
-        </div>
+          </div>
+        </>
       )}
     </AdminPage>
   );

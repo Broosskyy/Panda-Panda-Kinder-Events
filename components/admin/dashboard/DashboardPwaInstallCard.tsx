@@ -11,7 +11,7 @@ export function DashboardPwaInstallCard() {
   if (!showInstallCard) return null;
 
   return (
-    <AdminCard compact className="admin-pwa-install-card">
+    <AdminCard compact className="admin-pwa-install-card lg:hidden">
       <div className="flex items-start gap-3">
         <div className="admin-pwa-install-card-icon" aria-hidden>
           <Smartphone className="h-5 w-5 text-primary" />

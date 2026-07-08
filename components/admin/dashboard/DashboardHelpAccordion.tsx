@@ -28,7 +28,7 @@ export function DashboardHelpAccordion({
       {open ? (
         <div className="dash-v2-accordion-panel">
           {items.length > 0 ? (
-            <ul className="space-y-3">
+            <ul className="dash-v2-help-list space-y-3">
               {items.map((item) => (
                 <li key={item.title}>
                   <p className="text-sm font-semibold text-text-primary">{item.title}</p>

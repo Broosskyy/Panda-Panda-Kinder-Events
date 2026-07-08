@@ -41,8 +41,9 @@ export function isUnsuitablePublicImage(url: string | null | undefined): boolean
   return UNSUITABLE_IMAGE_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
-export function isValidCmsService(title: string, description: string): boolean {
-  return !isPlaceholderContent(title) && !isPlaceholderContent(description);
+/** Minimum for a CMS service row to render publicly (admin `visible` is the main gate). */
+export function hasMinimumServiceContent(title: string, description: string): boolean {
+  return Boolean(String(title ?? "").trim()) && Boolean(String(description ?? "").trim());
 }
 
 export function isValidCmsFaq(question: string, answer: string): boolean {

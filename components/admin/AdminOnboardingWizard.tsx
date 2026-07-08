@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, X } from "lucide-react";
+import { ChevronLeft, X } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 import type { OnboardingStep } from "@/lib/admin/onboarding";
@@ -136,16 +136,23 @@ export function AdminOnboardingWizard({
         </div>
 
         <footer className="admin-onboarding-v2-footer">
-          <div className="admin-onboarding-v2-actions-primary">
-            <AdminButton
-              variant="secondary"
-              className="admin-onboarding-v2-btn"
-              icon={<ChevronLeft className="h-4 w-4" />}
-              disabled={isFirst}
-              onClick={() => onStepIndexChange(stepIndex - 1)}
-            >
-              Zurück
-            </AdminButton>
+          <div
+            className={
+              isFirst
+                ? "admin-onboarding-v2-actions-primary admin-onboarding-v2-actions-primary--single"
+                : "admin-onboarding-v2-actions-primary"
+            }
+          >
+            {!isFirst ? (
+              <AdminButton
+                variant="secondary"
+                className="admin-onboarding-v2-btn"
+                icon={<ChevronLeft className="h-4 w-4" />}
+                onClick={() => onStepIndexChange(stepIndex - 1)}
+              >
+                Zurück
+              </AdminButton>
+            ) : null}
             {isLast ? (
               <AdminButton variant="primary" className="admin-onboarding-v2-btn" onClick={onComplete}>
                 Fertig
@@ -154,7 +161,6 @@ export function AdminOnboardingWizard({
               <AdminButton
                 variant="primary"
                 className="admin-onboarding-v2-btn"
-                icon={<ChevronRight className="h-4 w-4" />}
                 onClick={() => onStepIndexChange(stepIndex + 1)}
               >
                 Weiter

@@ -20,6 +20,8 @@ export interface AdminLoginSnapshot {
   modules?: SiteModulesSettings;
   isSuperAdmin?: boolean;
   identity?: Partial<AdminIdentity>;
+  onboardingCompleted?: boolean;
+  onboardingCompletedAt?: string | null;
 }
 
 interface AdminSessionContextValue {

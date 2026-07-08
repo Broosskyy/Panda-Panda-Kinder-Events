@@ -1,6 +1,8 @@
 import type { AdminRoleSlug } from "@/lib/auth/types";
 import { hasPermission } from "@/lib/auth/permissions";
 
+export const ONBOARDING_SESSION_DISMISS_KEY = "pb-admin-onboarding-session-dismissed";
+
 export interface OnboardingStep {
   id: string;
   title: string;

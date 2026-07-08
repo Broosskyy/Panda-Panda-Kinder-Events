@@ -14,8 +14,8 @@ interface AdminOnboardingWizardProps {
   onStepIndexChange: (index: number) => void;
   onComplete: () => void;
   onDismissPermanent: () => void;
-  onCloseSession: () => void;
-  onSkipToEnd: () => void;
+  onClose: () => void;
+  onSkip: () => void;
   displayName: string;
 }
 
@@ -25,8 +25,8 @@ export function AdminOnboardingWizard({
   onStepIndexChange,
   onComplete,
   onDismissPermanent,
-  onCloseSession,
-  onSkipToEnd,
+  onClose,
+  onSkip,
   displayName,
 }: AdminOnboardingWizardProps) {
   const step = steps[stepIndex];
@@ -37,6 +37,12 @@ export function AdminOnboardingWizard({
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-admin-onboarding", "open");
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", onKeyDown);
+
     const scrollY = window.scrollY;
     const prevOverflow = document.body.style.overflow;
     const prevPosition = document.body.style.position;
@@ -57,8 +63,9 @@ export function AdminOnboardingWizard({
       document.body.style.top = prevTop;
       document.body.style.width = prevWidth;
       window.scrollTo(0, scrollY);
+      document.removeEventListener("keydown", onKeyDown);
     };
-  }, []);
+  }, [onClose]);
 
   if (!step) return null;
 
@@ -70,7 +77,12 @@ export function AdminOnboardingWizard({
 
   const content = (
     <div className="admin-onboarding-v2-root" role="presentation">
-      <div className="admin-onboarding-v2-backdrop" aria-hidden="true" />
+      <button
+        type="button"
+        className="admin-onboarding-v2-backdrop"
+        onClick={onClose}
+        aria-label="Tutorial schließen"
+      />
 
       <div
         className="admin-onboarding-v2-panel"
@@ -91,7 +103,7 @@ export function AdminOnboardingWizard({
           <button
             type="button"
             className="admin-onboarding-v2-close"
-            onClick={onCloseSession}
+            onClick={onClose}
             aria-label="Tutorial schließen"
           >
             <X className="h-5 w-5" />
@@ -117,24 +129,23 @@ export function AdminOnboardingWizard({
             </ul>
           ) : null}
           {step.href ? (
-            <Link href={step.href} className="admin-onboarding-v2-link" onClick={onCloseSession}>
+            <Link href={step.href} className="admin-onboarding-v2-link" onClick={onClose}>
               {step.hrefLabel ?? "Bereich öffnen"} →
             </Link>
           ) : null}
         </div>
 
         <footer className="admin-onboarding-v2-footer">
-          <div className={`admin-onboarding-v2-actions-primary ${isFirst ? "admin-onboarding-v2-actions-single" : ""}`}>
-            {!isFirst ? (
-              <AdminButton
-                variant="secondary"
-                className="admin-onboarding-v2-btn"
-                icon={<ChevronLeft className="h-4 w-4" />}
-                onClick={() => onStepIndexChange(stepIndex - 1)}
-              >
-                Zurück
-              </AdminButton>
-            ) : null}
+          <div className="admin-onboarding-v2-actions-primary">
+            <AdminButton
+              variant="secondary"
+              className="admin-onboarding-v2-btn"
+              icon={<ChevronLeft className="h-4 w-4" />}
+              disabled={isFirst}
+              onClick={() => onStepIndexChange(stepIndex - 1)}
+            >
+              Zurück
+            </AdminButton>
             {isLast ? (
               <AdminButton variant="primary" className="admin-onboarding-v2-btn" onClick={onComplete}>
                 Fertig
@@ -151,7 +162,7 @@ export function AdminOnboardingWizard({
             )}
           </div>
           <div className="admin-onboarding-v2-actions-secondary">
-            <button type="button" className="admin-onboarding-v2-text-btn" onClick={onSkipToEnd}>
+            <button type="button" className="admin-onboarding-v2-text-btn" onClick={onSkip}>
               Überspringen
             </button>
             <button type="button" className="admin-onboarding-v2-text-btn" onClick={onDismissPermanent}>

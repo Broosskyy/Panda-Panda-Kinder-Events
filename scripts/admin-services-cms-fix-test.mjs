@@ -51,8 +51,8 @@ if (schema.includes("button_link") && schema.includes("category") && schema.incl
 else fail("Schema");
 
 const data = read("lib/cms/data.ts");
-if (data.includes("return cmsServices") && !data.includes("hasValidCmsServices(cmsServices) ? cmsServices : staticServices")) {
-  ok("Public fetch uses CMS only when table has rows");
+if (data.includes("return cmsServices") && !data.includes("staticServices")) {
+  ok("Public fetch uses CMS data only (no static fallback)");
 } else fail("Public fetch fallback logic");
 
 const staticServices = read("lib/services.ts");

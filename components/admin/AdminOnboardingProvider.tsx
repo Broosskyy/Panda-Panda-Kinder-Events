@@ -11,7 +11,11 @@ import {
 } from "react";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { AdminOnboardingWizard } from "@/components/admin/AdminOnboardingWizard";
-import { getClientOnboardingSteps, type OnboardingStep } from "@/lib/admin/onboarding";
+import {
+  getClientOnboardingSteps,
+  ONBOARDING_SESSION_DISMISS_KEY,
+  type OnboardingStep,
+} from "@/lib/admin/onboarding";
 
 interface OnboardingContextValue {
   openWizard: () => void;
@@ -20,46 +24,58 @@ interface OnboardingContextValue {
 
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
-export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
+interface AdminOnboardingProviderProps {
+  children: ReactNode;
+  initialCompleted?: boolean;
+}
+
+export function AdminOnboardingProvider({
+  children,
+  initialCompleted = false,
+}: AdminOnboardingProviderProps) {
   const { status, identity, permissions } = useAdminSession();
   const [steps, setSteps] = useState<OnboardingStep[]>([]);
-  const [completed, setCompleted] = useState(false);
-  const [loaded, setLoaded] = useState(false);
+  const [completed, setCompleted] = useState(initialCompleted);
+  const [sessionDismissed, setSessionDismissed] = useState(false);
   const [forcedOpen, setForcedOpen] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-
-  const applyClientFallback = useCallback(() => {
-    if (!identity) return;
-    const clientSteps = getClientOnboardingSteps(permissions, identity.roleSlug);
-    setSteps(clientSteps);
-    setCompleted(false);
-  }, [identity, permissions]);
-
-  const loadStatus = useCallback(async () => {
-    try {
-      const res = await fetch("/api/admin/onboarding");
-      const data = await res.json();
-      if (res.ok) {
-        const apiSteps = Array.isArray(data.steps) ? data.steps : [];
-        setSteps(apiSteps.length > 0 ? apiSteps : getClientOnboardingSteps(permissions, identity!.roleSlug));
-        setCompleted(Boolean(data.completed));
-        return;
-      }
-      applyClientFallback();
-    } catch {
-      applyClientFallback();
-    } finally {
-      setLoaded(true);
-    }
-  }, [applyClientFallback, identity, permissions]);
+  const [statusSynced, setStatusSynced] = useState(false);
 
   useEffect(() => {
     if (status !== "ready" || !identity) return;
-    void loadStatus();
-  }, [status, identity, loadStatus]);
+    setSteps(getClientOnboardingSteps(permissions, identity.roleSlug));
+    setSessionDismissed(sessionStorage.getItem(ONBOARDING_SESSION_DISMISS_KEY) === "1");
+    setStatusSynced(true);
+  }, [status, identity, permissions]);
 
-  const shouldAutoOpen = loaded && !completed && steps.length > 0;
-  const isOpen = forcedOpen || shouldAutoOpen;
+  useEffect(() => {
+    if (status !== "ready" || !identity) return;
+    let cancelled = false;
+
+    void (async () => {
+      try {
+        const res = await fetch("/api/admin/onboarding");
+        const data = await res.json();
+        if (cancelled || !res.ok) return;
+        setCompleted(Boolean(data.completed));
+        const apiSteps = Array.isArray(data.steps) ? data.steps : [];
+        if (apiSteps.length > 0) setSteps(apiSteps);
+      } catch {
+        // Client steps remain usable immediately.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [status, identity]);
+
+  const dismissSession = useCallback(() => {
+    sessionStorage.setItem(ONBOARDING_SESSION_DISMISS_KEY, "1");
+    setSessionDismissed(true);
+    setForcedOpen(false);
+    setStepIndex(0);
+  }, []);
 
   const finish = useCallback(async () => {
     try {
@@ -69,14 +85,24 @@ export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ action: "complete" }),
       });
     } catch {
-      // still close locally
+      // Close locally even if the network call fails.
     }
+    sessionStorage.removeItem(ONBOARDING_SESSION_DISMISS_KEY);
     setCompleted(true);
+    setSessionDismissed(false);
     setForcedOpen(false);
     setStepIndex(0);
   }, []);
 
   const openWizard = useCallback(async () => {
+    sessionStorage.removeItem(ONBOARDING_SESSION_DISMISS_KEY);
+    setSessionDismissed(false);
+    setCompleted(false);
+    setForcedOpen(true);
+    setStepIndex(0);
+    if (identity) {
+      setSteps(getClientOnboardingSteps(permissions, identity.roleSlug));
+    }
     try {
       await fetch("/api/admin/onboarding", {
         method: "POST",
@@ -84,31 +110,12 @@ export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ action: "restart" }),
       });
     } catch {
-      // continue with local open
+      // Local open still works.
     }
-    setCompleted(false);
-    setForcedOpen(true);
-    setStepIndex(0);
-    if (identity) {
-      setSteps(getClientOnboardingSteps(permissions, identity.roleSlug));
-    }
-    await loadStatus();
-  }, [identity, loadStatus, permissions]);
+  }, [identity, permissions]);
 
-  const closeSession = useCallback(() => {
-    setForcedOpen(false);
-    setStepIndex(0);
-  }, []);
-
-  const dismissPermanent = useCallback(() => {
-    void finish();
-  }, [finish]);
-
-  const skipToEnd = useCallback(() => {
-    if (steps.length > 0) {
-      setStepIndex(steps.length - 1);
-    }
-  }, [steps.length]);
+  const shouldAutoOpen = statusSynced && !completed && !sessionDismissed && steps.length > 0;
+  const isOpen = forcedOpen || shouldAutoOpen;
 
   const value = useMemo(() => ({ openWizard, isOpen }), [openWizard, isOpen]);
 
@@ -121,9 +128,9 @@ export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
           stepIndex={stepIndex}
           onStepIndexChange={setStepIndex}
           onComplete={() => void finish()}
-          onDismissPermanent={dismissPermanent}
-          onCloseSession={closeSession}
-          onSkipToEnd={skipToEnd}
+          onDismissPermanent={() => void finish()}
+          onClose={dismissSession}
+          onSkip={dismissSession}
           displayName={identity.displayName}
         />
       ) : null}

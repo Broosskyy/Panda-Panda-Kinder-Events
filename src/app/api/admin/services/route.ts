@@ -48,6 +48,9 @@ export async function GET() {
   try {
     const seed = await ensureCmsServicesSeeded();
     const services = await listCmsServicesAdmin();
+    if (seed.seeded) {
+      revalidatePublicCms();
+    }
     return NextResponse.json({ services, meta: { seeded: seed.seeded, count: services.length } });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Laden fehlgeschlagen.";
@@ -88,12 +91,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Ungültige Leistungsdaten." }, { status: 400 });
   }
 
+  const existing = await listCmsServicesAdmin();
+  const nextSortOrder =
+    typeof parsed.data.sort_order === "number" ? parsed.data.sort_order : existing.length;
+
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
     .from("cms_services")
     .insert({
       ...dbRowFromInput(parsed.data),
-      sort_order: parsed.data.sort_order ?? 0,
+      sort_order: nextSortOrder,
       visible: parsed.data.visible ?? true,
     })
     .select()

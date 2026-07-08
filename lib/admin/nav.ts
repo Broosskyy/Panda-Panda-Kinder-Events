@@ -11,65 +11,44 @@ export interface AdminNavGroup {
   items: AdminNavItem[];
 }
 
+/** Flat, practical navigation — no deep nesting. */
 export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
-    id: "overview",
+    id: "main",
     items: [
-      { href: "/admin", label: "Übersicht", iconKey: "Home" },
-      { href: "/admin/erste-schritte", label: "Erste Schritte", iconKey: "BookOpen" },
-      { href: "/admin/analytics", label: "Besucherstatistik", iconKey: "BarChart3" },
-    ],
-  },
-  {
-    id: "website",
-    label: "Website",
-    items: [
-      { href: "/admin/inhalte", label: "Inhalte", iconKey: "Layout", mobileLabel: "Inhalte" },
-      { href: "/admin/leistungen", label: "Leistungen", iconKey: "Sparkles" },
-      { href: "/admin/galerie", label: "Galerie", iconKey: "Image" },
-      { href: "/admin/beitraege", label: "Beiträge", iconKey: "Newspaper" },
-      { href: "/admin/faq", label: "FAQ", iconKey: "HelpCircle" },
-      { href: "/admin/team", label: "Team", iconKey: "UserCog" },
-    ],
-  },
-  {
-    id: "kommunikation",
-    label: "Kommunikation",
-    items: [
+      { href: "/admin", label: "Dashboard", iconKey: "Home" },
       { href: "/admin/anfragen", label: "Anfragen", iconKey: "Inbox" },
-      { href: "/admin/bewertungen", label: "Bewertungen", iconKey: "Star" },
-      { href: "/admin/emails", label: "E-Mail-Protokoll", iconKey: "Mail" },
-    ],
-  },
-  {
-    id: "crm",
-    label: "CRM",
-    items: [
       { href: "/admin/kunden", label: "Kunden", iconKey: "Users" },
       { href: "/admin/angebote", label: "Angebote", iconKey: "FileText" },
       { href: "/admin/rechnungen", label: "Rechnungen", iconKey: "Receipt" },
     ],
   },
   {
-    id: "security",
-    label: "Sicherheit",
+    id: "website",
+    label: "Website",
     items: [
-      { href: "/admin/sicherheit/benutzer", label: "Benutzer & Rollen", iconKey: "Users" },
-      { href: "/admin/sicherheit/2fa", label: "Zwei-Faktor-Schutz", iconKey: "Shield" },
-      { href: "/admin/sicherheit/sitzungen", label: "Sitzungen", iconKey: "Monitor" },
-      { href: "/admin/sicherheit/login-historie", label: "Anmelde-Verlauf", iconKey: "History" },
-      { href: "/admin/sicherheit/audit", label: "Aktivitätsprotokoll", iconKey: "ScrollText" },
+      { href: "/admin/inhalte", label: "Inhalte", iconKey: "Layout" },
+      { href: "/admin/galerie", label: "Galerie", iconKey: "Image" },
+      { href: "/admin/bewertungen", label: "Bewertungen", iconKey: "Star" },
+      { href: "/admin/leistungen", label: "Leistungen", iconKey: "Sparkles" },
+      { href: "/admin/team", label: "Team", iconKey: "UserCog" },
     ],
   },
   {
-    id: "settings",
-    label: "Einstellungen",
+    id: "communication",
     items: [
-      { href: "/admin/einstellungen", label: "Unternehmensdaten", iconKey: "Settings" },
-      { href: "/admin/einstellungen?tab=branding", label: "Branding", iconKey: "Image" },
-      { href: "/admin/einstellungen?tab=email", label: "E-Mail", iconKey: "Mail" },
-      { href: "/admin/einstellungen?tab=modules", label: "Module", iconKey: "Layout" },
-      { href: "/admin/einstellungen?tab=system", label: "System", iconKey: "Cpu" },
+      { href: "/admin/emails", label: "E-Mail", iconKey: "Mail" },
+      { href: "/admin/sicherheit/benutzer", label: "Benutzer", iconKey: "Users" },
+      { href: "/admin/einstellungen", label: "Einstellungen", iconKey: "Settings" },
+    ],
+  },
+  {
+    id: "more",
+    label: "Mehr",
+    items: [
+      { href: "/admin/analytics", label: "Besucherstatistik", iconKey: "BarChart3" },
+      { href: "/admin/erste-schritte", label: "Erste Schritte", iconKey: "BookOpen" },
+      { href: "/admin/sicherheit/audit", label: "Aktivitätsprotokoll", iconKey: "ScrollText" },
     ],
   },
 ];
@@ -79,9 +58,10 @@ export const ADMIN_NAV: AdminNavItem[] = ADMIN_NAV_GROUPS.flatMap((group) => gro
 
 export const MOBILE_BOTTOM_NAV_HREFS = [
   "/admin",
-  "/admin/galerie",
   "/admin/anfragen",
   "/admin/kunden",
+  "/admin/angebote",
+  "/admin/rechnungen",
 ] as const;
 
 export function isAdminNavActive(pathname: string, href: string): boolean {

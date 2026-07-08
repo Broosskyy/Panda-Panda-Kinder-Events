@@ -21,8 +21,34 @@ export async function countAdminUsersSafe(): Promise<number> {
   }
 }
 
+/** Reliable check for auth mode — throws on DB errors (fail closed). */
+export async function hasAdminUsers(): Promise<boolean> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase.from("admin_users").select("id").limit(1);
+  if (error) {
+    console.error("hasAdminUsers:", error.message);
+    throw new Error(`Admin-Benutzer konnten nicht geprüft werden: ${error.message}`);
+  }
+  return (data?.length ?? 0) > 0;
+}
+
 export async function isMultiUserAuthEnabled(): Promise<boolean> {
-  return (await countAdminUsersSafe()) > 0;
+  try {
+    return await hasAdminUsers();
+  } catch {
+    return false;
+  }
+}
+
+export async function findUserByEmail(email: string): Promise<AdminUserPublic | null> {
+  const supabase = getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("admin_users")
+    .select("*, admin_roles(slug, label)")
+    .eq("email", email.trim().toLowerCase())
+    .maybeSingle();
+  if (error || !data) return null;
+  return mapRowToAdminUserPublic(data as Record<string, unknown>);
 }
 
 export async function findUserByIdentifier(identifier: string): Promise<AdminUser | null> {
@@ -159,7 +185,7 @@ export async function resolveUsersForSession(ctx: AdminContext, canListAll: bool
     users = await listUsers();
   }
 
-  if (ctx.isLegacy) {
+  if (ctx.isLegacy && !ctx.userId) {
     const legacyUser = buildLegacyUserPublic(ctx);
     if (!users.some((u) => u.id === legacyUser.id)) {
       users = [legacyUser, ...users];

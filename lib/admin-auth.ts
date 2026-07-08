@@ -65,6 +65,16 @@ export function isAdminConfigured(): boolean {
   return Boolean(getSessionSecret());
 }
 
+export function legacyCookieClearOptions() {
+  return {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict" as const,
+    path: "/",
+    maxAge: 0,
+  };
+}
+
 /** @deprecated Use createAdminSessionToken — never expose password-derived tokens. */
 export function getAdminToken(): string | null {
   return null;

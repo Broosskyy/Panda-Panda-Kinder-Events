@@ -13,6 +13,9 @@ import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteModulesSettings } from "@/lib/cms/types";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 import { AdminPageHelp } from "@/components/admin/ui/AdminHelpBlock";
+import { AdminIdentityPanel, type AdminIdentity } from "@/components/admin/AdminIdentityPanel";
+import { roleDisplayLabel } from "@/lib/admin/roles";
+import type { AdminRoleSlug } from "@/lib/auth/types";
 
 const MOBILE_BOTTOM_NAV_HREFS_SET = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
 
@@ -60,6 +63,7 @@ export function AdminSidebar() {
   const scrollYRef = useRef(0);
   const [permissions, setPermissions] = useState<string[]>([]);
   const [modules, setModules] = useState<SiteModulesSettings>(DEFAULT_SITE_SETTINGS.modules);
+  const [identity, setIdentity] = useState<AdminIdentity | null>(null);
 
   useEffect(() => {
     fetch("/api/admin/login")
@@ -67,6 +71,16 @@ export function AdminSidebar() {
       .then((data) => {
         if (data.permissions) setPermissions(data.permissions);
         if (data.modules) setModules(data.modules);
+        if (data.authenticated) {
+          setIdentity({
+            userId: data.userId ?? data.identity?.id ?? null,
+            displayName: data.displayName ?? data.identity?.displayName ?? "Admin",
+            email: data.email ?? data.identity?.email ?? null,
+            roleSlug: (data.roleSlug ?? data.identity?.roleSlug ?? "readonly") as AdminRoleSlug | "legacy",
+            roleLabel: data.roleLabel ?? data.identity?.roleLabel ?? roleDisplayLabel(data.roleSlug ?? "readonly"),
+            isLegacy: Boolean(data.isLegacy),
+          });
+        }
       })
       .catch(() => undefined);
   }, []);
@@ -163,6 +177,7 @@ export function AdminSidebar() {
         <div className="admin-sidebar-notifications hidden md:flex">
           <AdminNotificationCenter />
         </div>
+        <AdminIdentityPanel identity={identity} />
         <nav className="admin-sidebar-nav">
           <NavContent />
         </nav>
@@ -201,6 +216,7 @@ export function AdminSidebar() {
                 <X className="h-5 w-5" />
               </button>
             </div>
+            <AdminIdentityPanel identity={identity} />
             <nav className="admin-drawer-nav">
               <NavContent onNavigate={() => setDrawerOpen(false)} />
             </nav>
@@ -223,13 +239,15 @@ export function AdminSidebar() {
             mobileLabel ??
             (href === "/admin"
               ? "Dashboard"
-              : href === "/admin/kunden"
-                ? "Kunden"
-                : href === "/admin/galerie"
-                  ? "Galerie"
-                  : href === "/admin/anfragen"
-                    ? "Anfragen"
-                    : label);
+              : href === "/admin/anfragen"
+                ? "Anfragen"
+                : href === "/admin/kunden"
+                  ? "Kunden"
+                  : href === "/admin/angebote"
+                    ? "Angebote"
+                    : href === "/admin/rechnungen"
+                      ? "Rechnungen"
+                      : label);
           return (
             <Link key={href} href={href} className={`admin-bottom-nav-item ${active ? "admin-bottom-nav-item-active" : ""}`}>
               <span className="relative">

@@ -37,8 +37,8 @@ export function Footer({
 
   return (
     <footer className="footer-premium text-text-inverse">
-      <Container className="footer-inner relative py-3 sm:py-10 md:py-16 lg:py-20">
-        <div className="footer-grid grid gap-4 sm:gap-14 md:grid-cols-2 lg:grid-cols-4 md:gap-10">
+      <Container className="footer-inner relative py-3 sm:py-8 md:py-12 lg:py-16">
+        <div className="footer-grid grid gap-4 sm:gap-10 md:grid-cols-2 lg:grid-cols-4 md:gap-8">
           <div className="flex flex-col items-center md:items-start lg:col-span-1">
             <Logo context="footer" variant="inverse" branding={branding} className="footer-brand-mark" />
             <p className="footer-tagline font-accent mt-3 max-w-xs text-center text-base leading-snug text-white/90 sm:mt-6 sm:text-xl md:max-w-none md:text-left md:text-2xl">
@@ -165,7 +165,7 @@ export function Footer({
           </div>
         </div>
 
-        <p className="footer-copyright mt-4 border-t border-white/10 pt-3 text-center text-xs text-white/70 sm:mt-16 sm:pt-8 sm:text-base">
+        <p className="footer-copyright mt-4 border-t border-white/10 pt-3 text-center text-xs text-white/70 sm:mt-10 sm:pt-6 sm:text-base">
           © {new Date().getFullYear()} {footer.copyrightName}. Alle Rechte vorbehalten.
         </p>
       </Container>

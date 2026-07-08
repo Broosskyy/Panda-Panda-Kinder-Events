@@ -38,7 +38,7 @@ export function Hero({
       />
 
       <Container>
-        <div className="grid items-center gap-5 sm:gap-12 lg:grid-cols-[1fr_1.05fr] lg:gap-20 xl:gap-28">
+        <div className="grid items-center gap-5 sm:gap-10 lg:grid-cols-[1fr_1.05fr] lg:gap-12 xl:gap-16">
           <div className="hero-content relative z-10 order-1 max-w-xl lg:order-none lg:max-w-lg lg:py-6 xl:max-w-xl">
             {rating && rating.count > 0 ? (
               <div className="hero-rating-pill mb-3 inline-flex flex-wrap items-center gap-2 rounded-full border border-border/60 bg-bg-card/80 px-3.5 py-1.5 shadow-sm backdrop-blur-sm sm:mb-6 sm:px-4 sm:py-2">
@@ -111,7 +111,7 @@ export function Hero({
           </div>
 
           <div className="relative order-2 lg:order-none">
-            <div className="hero-image-wrap relative mx-auto aspect-[5/6] w-full max-h-[min(48vh,20rem)] overflow-hidden sm:aspect-[4/5] sm:max-h-none lg:-mr-4 xl:-mr-8">
+            <div className="hero-image-wrap relative mx-auto aspect-[5/6] w-full overflow-hidden sm:aspect-[4/5] lg:-mr-4 xl:-mr-8">
               <Image
                 src={heroImage}
                 alt="Panda-Bande Team bei der liebevollen Kinderbetreuung"

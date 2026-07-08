@@ -39,7 +39,7 @@ export function About({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid items-start gap-5 sm:gap-14 lg:grid-cols-2 lg:gap-20">
+        <div className="grid items-start gap-4 sm:gap-14 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal>
             <div className="relative">
               <FlowerOrnament className="pointer-events-none absolute -left-2 -top-4 h-16 w-16 opacity-25 sm:-left-6 sm:-top-6 sm:h-24 sm:w-24 sm:opacity-35" />
@@ -64,7 +64,7 @@ export function About({
               <p className="font-accent text-xl leading-snug text-primary sm:text-2xl md:text-[1.85rem] md:leading-snug">
                 {about.introText}
               </p>
-              <p className="mt-6 text-base leading-relaxed text-text-secondary sm:mt-8 sm:text-lg sm:leading-8">
+              <p className="mt-4 text-base leading-relaxed text-text-secondary sm:mt-8 sm:text-lg sm:leading-8">
                 {about.paragraph1}
               </p>
               <p className="mt-5 text-base leading-relaxed text-text-secondary sm:mt-6 sm:text-lg sm:leading-8">
@@ -74,7 +74,7 @@ export function About({
           </ScrollReveal>
         </div>
 
-        <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-5">
+        <div className="mt-5 grid gap-2.5 sm:grid-cols-2 sm:gap-5">
           {[
             { label: "Unsere Mission", text: about.missionText },
             { label: "Unsere Werte", text: about.valuesText },
@@ -99,7 +99,7 @@ export function About({
         </ScrollReveal>
 
         {teamItems.length > 0 ? (
-          <div id="unser-team" className="mt-8 sm:mt-20">
+          <div id="unser-team" className="mt-6 sm:mt-20">
             <ScrollReveal>
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
                 {teamHeading}

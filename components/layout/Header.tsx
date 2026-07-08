@@ -137,7 +137,7 @@ export function Header({
           <Logo
             context="header"
             branding={branding}
-            className={`site-header-logo min-w-0 max-w-[min(100%,9.5rem)] sm:max-w-none ${isMenuOpen ? "invisible" : ""}`}
+            className={`site-header-logo min-w-0 max-w-[min(100%,8.25rem)] sm:max-w-none ${isMenuOpen ? "invisible" : ""}`}
           />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
@@ -165,7 +165,7 @@ export function Header({
             <button
               ref={menuButtonRef}
               type="button"
-              className={`site-header-menu-btn inline-flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center overflow-visible rounded-full border border-border/70 bg-bg-card/90 p-0 text-text-primary shadow-sm backdrop-blur-sm transition-all duration-500 hover:border-primary/25 hover:bg-bg-secondary hover:shadow-md lg:hidden ${focusRing} ${isMenuOpen ? "pointer-events-none invisible" : ""}`}
+              className={`site-header-menu-btn inline-flex h-12 w-12 min-h-12 min-w-12 shrink-0 items-center justify-center overflow-visible rounded-full border border-border/70 bg-bg-card/90 p-0 text-text-primary shadow-sm backdrop-blur-sm transition-all duration-500 hover:border-primary/25 hover:bg-bg-secondary hover:shadow-md lg:hidden ${focusRing} ${isMenuOpen ? "pointer-events-none invisible" : ""}`}
               onClick={() => setIsMenuOpen(true)}
               aria-label="Menü öffnen"
               aria-expanded={isMenuOpen}

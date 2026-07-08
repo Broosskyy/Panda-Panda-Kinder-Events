@@ -72,7 +72,7 @@ function layoutFromTemplate(t: EmailTemplateRecord): EmailTemplateLayout {
 }
 
 export function EmailsView() {
-  const { toast, withLoading, error: showError, testEmailSent } = useAdminMessages();
+  const { toast, withLoading, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("emails");
   const emptyLog = ADMIN_EMPTY_STATES.emailLogs;
   const [tab, setTab] = useState<Tab>("templates");
@@ -189,10 +189,12 @@ export function EmailsView() {
             throw new Error(data.error ?? `Test für ${slug} fehlgeschlagen`);
           }
         }
-        toast("Alle aktiven Vorlagen wurden als Test gesendet.");
+        toast("E-Mail erfolgreich versendet.");
         await load();
       })(),
-    );
+    ).catch((err: unknown) => {
+      toast(err instanceof Error ? err.message : "E-Mail konnte nicht versendet werden.", "error");
+    });
   };
 
   const sendTest = async () => {
@@ -213,10 +215,12 @@ export function EmailsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? ADMIN_MSG.sendFailed);
-        testEmailSent();
+        toast("E-Mail erfolgreich versendet.");
         await load();
       })(),
-    );
+    ).catch((err: unknown) => {
+      toast(err instanceof Error ? err.message : "E-Mail konnte nicht versendet werden.", "error");
+    });
   };
 
   const coreTemplates = CORE_TEMPLATES.map((slug) => templates.find((t) => t.slug === slug)).filter(Boolean) as EmailTemplateRecord[];

@@ -56,8 +56,13 @@ function applySecurityHeaders(response: NextResponse, request: NextRequest) {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const method = request.method;
 
-  if (pathname.startsWith("/api/admin") && !isPublicAdminApi(pathname)) {
+  if (
+    pathname.startsWith("/api/admin") &&
+    !isPublicAdminApi(pathname) &&
+    !(method === "DELETE" && pathname === "/api/admin/login")
+  ) {
     const session = request.cookies.get(SESSION_COOKIE)?.value;
     if (!session) {
       return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });

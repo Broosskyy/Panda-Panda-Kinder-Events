@@ -31,6 +31,8 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/galerie", label: "Galerie", iconKey: "Image" },
       { href: "/admin/bewertungen", label: "Bewertungen", iconKey: "Star" },
       { href: "/admin/leistungen", label: "Leistungen", iconKey: "Sparkles" },
+      { href: "/admin/faq", label: "FAQ", iconKey: "HelpCircle" },
+      { href: "/admin/beitraege", label: "Blog", iconKey: "Newspaper" },
       { href: "/admin/team", label: "Team", iconKey: "UserCog" },
     ],
   },

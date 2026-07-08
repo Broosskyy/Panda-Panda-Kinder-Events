@@ -1,10 +1,10 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
+import { AdminButton, AdminEmptyState, AdminLoadingCard } from "@/components/admin/ui";
 import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
 import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
@@ -26,20 +26,33 @@ interface GalleryItem {
 
 export function GalleryView() {
   const [images, setImages] = useState<GalleryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const { uploading } = useAdminMessages();
   const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("galerie");
   const empty = ADMIN_EMPTY_STATES.gallery;
 
-  const load = () =>
-    fetch("/api/admin/gallery")
-      .then((r) => r.json())
-      .then((d) => setImages(d.images ?? []));
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/admin/gallery");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Galerie konnte nicht geladen werden.");
+      setImages(data.images ?? []);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Galerie konnte nicht geladen werden.");
+      setImages([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   const upload = async (file: File) => {
     uploading();
@@ -125,7 +138,16 @@ export function GalleryView() {
         />
       </AdminPageHeader>
 
-      {images.length === 0 ? (
+      {loading ? (
+        <AdminLoadingCard message="Galerie wird geladen…" />
+      ) : loadError ? (
+        <AdminCard>
+          <p className="admin-text-body">{loadError}</p>
+          <AdminButton variant="secondary" className="mt-4" onClick={() => void load()}>
+            Erneut laden
+          </AdminButton>
+        </AdminCard>
+      ) : images.length === 0 ? (
         <AdminEmptyState
           icon={ImageIcon}
           title={empty.title}

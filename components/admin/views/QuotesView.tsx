@@ -118,6 +118,8 @@ function exportQuotesCsv(rows: QuoteRow[]) {
 export function QuotesView() {
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  const [listLoadError, setListLoadError] = useState<string | null>(null);
+  const [savingQuote, setSavingQuote] = useState(false);
   const [customers, setCustomers] = useState<CrmCustomer[]>([]);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<QuoteView>("active");
@@ -156,14 +158,20 @@ export function QuotesView() {
 
   const load = useCallback(() => {
     setListLoading(true);
+    setListLoadError(null);
     const params = new URLSearchParams();
     if (search) params.set("q", search);
     params.set("view", view);
     fetch(`/api/admin/quotes?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? "Angebote konnten nicht geladen werden.");
         setQuotes(d.quotes ?? []);
         setSelected(new Set());
+      })
+      .catch((err) => {
+        setListLoadError(err instanceof Error ? err.message : "Angebote konnten nicht geladen werden.");
+        setQuotes([]);
       })
       .finally(() => setListLoading(false));
   }, [search, view]);
@@ -222,6 +230,7 @@ export function QuotesView() {
   };
 
   const saveQuote = async () => {
+    if (savingQuote) return;
     if (!form.customer_id) return showError("Angebot konnte nicht gespeichert werden.", "Bitte einen Kunden auswählen.");
     if (!form.items.some((i) => i.title.trim())) {
       return showError("Angebot konnte nicht gespeichert werden.", "Mindestens eine Position mit Bezeichnung erforderlich.");
@@ -242,6 +251,8 @@ export function QuotesView() {
       items: form.items.map(lineItemToApiPayload),
     };
 
+    setSavingQuote(true);
+    try {
     if (editingId) {
       const res = await fetch("/api/admin/quotes", {
         method: "PATCH",
@@ -265,6 +276,9 @@ export function QuotesView() {
     setShowForm(false);
     resetForm();
     load();
+    } finally {
+      setSavingQuote(false);
+    }
   };
 
   const startEdit = async (quoteId: string) => {
@@ -584,8 +598,12 @@ export function QuotesView() {
           </FormSection>
 
           <div className="mt-6 flex flex-wrap gap-2">
-            <AdminButton variant="primary" onClick={() => void withLoading(saveQuote())}>
-              {ADMIN_BTN.save}
+            <AdminButton
+              variant="primary"
+              disabled={savingQuote}
+              onClick={() => void withLoading(() => saveQuote())}
+            >
+              {savingQuote ? "Speichern…" : ADMIN_BTN.save}
             </AdminButton>
             <AdminButton variant="secondary" onClick={() => { setShowForm(false); resetForm(); }}>
               {ADMIN_BTN.cancel}
@@ -596,6 +614,13 @@ export function QuotesView() {
 
       {listLoading ? (
         <AdminLoadingCard message="Angebote werden geladen…" />
+      ) : listLoadError ? (
+        <AdminCard>
+          <p className="admin-text-body">{listLoadError}</p>
+          <AdminButton variant="secondary" className="mt-4" onClick={() => void load()}>
+            Erneut laden
+          </AdminButton>
+        </AdminCard>
       ) : filteredQuotes.length === 0 ? (
         <AdminEmptyState
           icon={FileText}

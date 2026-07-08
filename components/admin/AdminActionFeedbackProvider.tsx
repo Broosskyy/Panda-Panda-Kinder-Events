@@ -64,7 +64,7 @@ export function AdminActionFeedbackProvider({ children }: { children: ReactNode 
   const runAction = useCallback(
     async <T,>(options: RunAdminActionOptions<T>): Promise<T | null> => {
       try {
-        const result = await withLoading(options.action());
+        const result = await withLoading(() => options.action());
         if (!options.silent) {
           const payload =
             typeof options.success === "function" ? options.success(result) : options.success;

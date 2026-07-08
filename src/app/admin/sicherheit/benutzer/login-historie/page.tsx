@@ -6,5 +6,5 @@ const LoginHistoryView = adminDynamicView(
 );
 
 export default function AdminUserLoginHistoryPage() {
-  return <LoginHistoryView />;
+  return <LoginHistoryView embedded />;
 }

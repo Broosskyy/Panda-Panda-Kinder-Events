@@ -7,6 +7,7 @@ import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteBrandingSettings, SiteNavItem, SiteNavigationSettings } from "@/lib/cms/types";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import { focusRing } from "@/lib/a11y";
+import { resolvePublicHref } from "@/lib/public-href";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 
@@ -142,10 +143,11 @@ export function Header({
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
             {navItems.map((item) => {
+              const href = resolvePublicHref(item.href);
               const id = item.href.replace("#", "");
               const isActive = activeId === id;
               return (
-                <a key={item.href} href={item.href} className={navLinkClass(isActive)}>
+                <a key={item.href} href={href} className={navLinkClass(isActive)}>
                   {item.label}
                 </a>
               );
@@ -154,7 +156,7 @@ export function Header({
 
           <div className="site-header-actions flex shrink-0 items-center gap-1.5 overflow-visible sm:gap-2">
             <Button
-              href="#kontakt"
+              href={resolvePublicHref("#kontakt")}
               size="default"
               className="hidden shrink-0 whitespace-nowrap px-3 text-xs shadow-lg md:inline-flex md:gap-1.5 md:px-4 md:text-sm lg:px-6 lg:text-[0.9375rem]"
               icon={<Calendar className="h-3.5 w-3.5 shrink-0 md:h-4 md:w-4" aria-hidden />}
@@ -213,12 +215,13 @@ export function Header({
             </div>
             <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto overscroll-contain p-3" aria-label="Mobile Navigation">
               {navItems.map((item) => {
+                const href = resolvePublicHref(item.href);
                 const id = item.href.replace("#", "");
                 const isActive = activeId === id;
                 return (
                   <a
                     key={item.href}
-                    href={item.href}
+                    href={href}
                     onClick={closeMenu}
                     className={`rounded-xl px-4 py-3 text-base font-medium transition-all duration-300 min-h-11 flex items-center ${focusRing} ${
                       isActive
@@ -233,7 +236,7 @@ export function Header({
             </nav>
             <div className="border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
               <Button
-                href="#kontakt"
+                href={resolvePublicHref("#kontakt")}
                 className="w-full"
                 size="lg"
                 icon={<Calendar className="h-4 w-4" aria-hidden />}

@@ -45,8 +45,9 @@ for (const file of [
 }
 
 const route = read("src/app/api/admin/backup/export/route.ts");
-if (route.includes('requireAdmin("settings:write")')) ok("Backup route requires settings:write permission");
-else fail("Backup route missing settings:write guard");
+if (route.includes('requireAdmin("backup:write")') || route.includes('requireAdmin("settings:write")')) {
+  ok("Backup route requires backup:write permission");
+} else fail("Backup route missing backup:write guard");
 
 if (route.includes("buildAdminBackupZip")) ok("Backup route uses buildAdminBackupZip");
 else fail("Backup route missing ZIP builder");

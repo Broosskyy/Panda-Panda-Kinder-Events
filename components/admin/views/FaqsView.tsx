@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { HelpCircle, Plus } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
+import { AdminButton, AdminEmptyState, AdminLoadingCard } from "@/components/admin/ui";
 import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
 import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
@@ -21,18 +21,31 @@ interface FaqRow {
 
 export function FaqsView() {
   const [faqs, setFaqs] = useState<FaqRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const { confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("faq");
   const empty = ADMIN_EMPTY_STATES.faqs;
 
-  const load = () =>
-    fetch("/api/admin/faqs")
-      .then((r) => r.json())
-      .then((d) => setFaqs(d.faqs ?? []));
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/admin/faqs");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "FAQs konnten nicht geladen werden.");
+      setFaqs(data.faqs ?? []);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "FAQs konnten nicht geladen werden.");
+      setFaqs([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    load();
-  }, []);
+    void load();
+  }, [load]);
 
   const save = async (body: Record<string, unknown>, method: "POST" | "PATCH" | "DELETE") => {
     const res = await fetch("/api/admin/faqs", {
@@ -63,6 +76,29 @@ export function FaqsView() {
     if (!ok) return;
     await runSave({ id }, "DELETE", ACTION_RESULTS.faqDeleted());
   };
+
+  if (loading) {
+    return (
+      <div>
+        <AdminPageHeader {...page} />
+        <AdminLoadingCard message="FAQs werden geladen…" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div>
+        <AdminPageHeader {...page} />
+        <AdminCard>
+          <p className="admin-text-body">{loadError}</p>
+          <AdminButton variant="secondary" className="mt-4" onClick={() => void load()}>
+            Erneut laden
+          </AdminButton>
+        </AdminCard>
+      </div>
+    );
+  }
 
   return (
     <div>

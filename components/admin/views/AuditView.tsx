@@ -126,16 +126,8 @@ export function AuditView() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="admin-page space-y-6">
       <AdminPageHeader {...page} />
-
-      <AdminCard>
-        <p className="text-sm text-text-muted">
-          Hier sehen Sie, wer wann was im System geändert hat. Das Protokoll ist nur intern sichtbar.
-          Nutzen Sie die Filter, um bestimmte Aktionen oder Zeiträume zu finden.
-        </p>
-      </AdminCard>
-
       <SecuritySubNav />
 
       <AdminCard title="Filter & Suche">

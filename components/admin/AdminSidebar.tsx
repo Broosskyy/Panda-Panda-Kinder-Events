@@ -10,10 +10,11 @@ import { useAdminNotificationsContext } from "@/components/admin/AdminNotificati
 import { MOBILE_BOTTOM_NAV_HREFS, isAdminNavActive, type AdminNavGroup } from "@/lib/admin/nav";
 import { filterAdminNavGroups } from "@/lib/admin/filter-nav";
 import { resolveAdminIcon } from "@/lib/admin/icons";
-import { AdminPageHelp } from "@/components/admin/ui/AdminHelpBlock";
 import { AdminIdentityPanel } from "@/components/admin/AdminIdentityPanel";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { lockAdminPwa } from "@/components/admin/AdminPwaRegister";
+
+export { AdminPageHeader, AdminCard, AdminPage } from "@/components/admin/ui/AdminLayout";
 
 const MOBILE_BOTTOM_NAV_HREFS_SET = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
 
@@ -242,54 +243,5 @@ export function AdminSidebar() {
         </button>
       </nav>
     </>
-  );
-}
-
-export function AdminPageHeader({
-  title,
-  description,
-  whereVisible,
-  helpItems,
-  children,
-}: {
-  title: string;
-  description?: string;
-  whereVisible?: string;
-  helpItems?: string[];
-  children?: React.ReactNode;
-}) {
-  return (
-    <div className="admin-page-header-block space-y-4">
-      <div className="admin-page-header">
-        <div>
-          <h1 className="admin-page-title">{title}</h1>
-          {description ? <p className="admin-page-description">{description}</p> : null}
-          {whereVisible ? (
-            <p className="admin-page-where-visible">
-              <span className="font-medium">Sichtbar:</span> {whereVisible}
-            </p>
-          ) : null}
-        </div>
-        {children ? <div className="admin-page-actions">{children}</div> : null}
-      </div>
-      {helpItems?.length ? <AdminPageHelp items={helpItems} /> : null}
-    </div>
-  );
-}
-
-export function AdminCard({
-  children,
-  className = "",
-  title,
-}: {
-  children: React.ReactNode;
-  className?: string;
-  title?: string;
-}) {
-  return (
-    <div className={`admin-card ${className}`}>
-      {title ? <h2 className="admin-card-title">{title}</h2> : null}
-      {children}
-    </div>
   );
 }

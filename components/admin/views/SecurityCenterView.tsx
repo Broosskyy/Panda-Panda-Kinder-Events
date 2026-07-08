@@ -58,10 +58,10 @@ export function SecurityCenterView() {
         <>
           <section className="dash-v2-chips" aria-label="Sicherheitsstatus">
             <span className={`dash-v2-chip ${totpEnabled ? "dash-v2-chip-success" : "dash-v2-chip-warning"}`}>
-              {totpEnabled ? "🟢 2FA aktiv" : "🟡 2FA aus"}
+              {totpEnabled ? "2FA aktiv" : "2FA aus"}
             </span>
-            <span className="dash-v2-chip dash-v2-chip-info">🔵 {sessions.length} aktive Sessions</span>
-            <span className="dash-v2-chip dash-v2-chip-muted">⚪ {recentLogins} erfolgreiche Logins (letzte 100)</span>
+            <span className="dash-v2-chip dash-v2-chip-info">{sessions.length} aktive Sessions</span>
+            <span className="dash-v2-chip dash-v2-chip-muted">{recentLogins} erfolgreiche Logins</span>
           </section>
 
           {warnings.length > 0 ? (

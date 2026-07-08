@@ -10,7 +10,7 @@ export interface AdminPageMeta {
 export const ADMIN_PAGE_META = {
   dashboard: {
     title: "Übersicht",
-    description: "Deine Tageszentrale — sieh auf einen Blick, was heute zu tun ist.",
+    description: "Tageszentrale — offene Aufgaben und Kennzahlen auf einen Blick.",
     whereVisible: "Nur hier im Admin — Besucher sehen das Dashboard nicht.",
     help: [
       "Prüfe neue Anfragen, Bewertungen und offene Angebote.",
@@ -40,7 +40,7 @@ export const ADMIN_PAGE_META = {
   },
   inhalte: {
     title: "Website-Inhalte",
-    description: "Texte und Bilder der Startseite bearbeiten — Hero, Über uns, Footer und mehr.",
+    description: "Startseite bearbeiten — Hero, Über uns, Footer und mehr.",
     whereVisible: "Änderungen erscheinen sofort auf der öffentlichen Website.",
     help: [
       "Passe Überschriften und Texte der Startseite an.",
@@ -60,7 +60,7 @@ export const ADMIN_PAGE_META = {
   },
   galerie: {
     title: "Galerie",
-    description: "Eventfotos hochladen und kategorisieren — erscheinen in der öffentlichen Galerie.",
+    description: "Eventfotos für die öffentliche Galerie hochladen und sortieren.",
     whereVisible: "Sichtbar unter „Galerie“ auf der Website — Bilder sind anklickbar.",
     help: [
       "Bilder hochladen und Kategorie zuweisen.",
@@ -100,7 +100,7 @@ export const ADMIN_PAGE_META = {
   },
   anfragen: {
     title: "Anfragen",
-    description: "Buchungsanfragen von der Website — Status verwalten und Kunden anlegen.",
+    description: "Buchungsanfragen vom Kontaktformular — Status und Kunden verwalten.",
     whereVisible: "Anfragen kommen vom Kontaktformular auf der Website.",
     help: [
       "Neue Anfragen prüfen und Status setzen.",
@@ -110,7 +110,7 @@ export const ADMIN_PAGE_META = {
   },
   bewertungen: {
     title: "Bewertungen",
-    description: "Kundenbewertungen freigeben, beantworten und Eventfotos verwalten.",
+    description: "Bewertungen freigeben, beantworten und Eventfotos pflegen.",
     whereVisible: "Freigegebene Bewertungen erscheinen im Bereich „Bewertungen“.",
     help: [
       "Neue Bewertungen prüfen und freigeben.",

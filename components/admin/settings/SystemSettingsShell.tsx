@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
 import { SystemBackupPanel } from "@/components/admin/settings/SystemBackupPanel";
+import { AdminStatusBadge } from "@/components/admin/ui";
 
 export type SystemSubTab = "health" | "backup";
 
@@ -29,10 +30,10 @@ const OVERALL_LABEL: Record<SystemStatusLevel, string> = {
   error: "Kritische Punkte — bitte beheben",
 };
 
-const OVERALL_EMOJI: Record<SystemStatusLevel, string> = {
-  ok: "🟢",
-  warn: "🟡",
-  error: "🔴",
+const OVERALL_CHIP: Record<SystemStatusLevel, string> = {
+  ok: "dash-v2-chip-success",
+  warn: "dash-v2-chip-warning",
+  error: "dash-v2-chip-danger",
 };
 
 interface SystemSettingsShellProps {
@@ -78,47 +79,24 @@ export function SystemSettingsShell({
           {systemStatus ? (
             <>
               {systemStatus.overall ? (
-                <div
-                  className={`rounded-xl border px-4 py-3 text-sm ${
-                    systemStatus.overall === "ok"
-                      ? "border-primary/30 bg-primary/10"
-                      : systemStatus.overall === "error"
-                        ? "border-red-300 bg-red-50"
-                        : "border-amber-300 bg-amber-50"
-                  }`}
-                >
-                  <strong>
-                    {OVERALL_EMOJI[systemStatus.overall]} {OVERALL_LABEL[systemStatus.overall]}
-                  </strong>
+                <div className={`dash-v2-chip ${OVERALL_CHIP[systemStatus.overall]} w-full justify-center px-4 py-3 text-sm`}>
+                  <strong>{OVERALL_LABEL[systemStatus.overall]}</strong>
                 </div>
               ) : null}
               <div className="flex flex-wrap gap-2">
-                <span className="inline-flex items-center rounded-full bg-green-100 px-3 py-1 text-xs font-medium text-green-800">
-                  {systemStatus.summary.ok} OK
-                </span>
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">
-                  {systemStatus.summary.warn} Hinweise
-                </span>
-                <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-xs font-medium text-red-800">
-                  {systemStatus.summary.error} Kritisch
-                </span>
+                <AdminStatusBadge label={`${systemStatus.summary.ok} OK`} variant="success" />
+                <AdminStatusBadge label={`${systemStatus.summary.warn} Hinweise`} variant="warning" />
+                <AdminStatusBadge label={`${systemStatus.summary.error} Kritisch`} variant="danger" />
               </div>
               <ul className="space-y-3">
                 {systemStatus.items.map((item) => (
-                  <li key={item.id} className="rounded-xl border border-border bg-bg-secondary/30 p-4">
+                  <li key={item.id} className="admin-card admin-card-compact">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <p className="font-medium text-text-primary">{item.label}</p>
-                      <span
-                        className={`rounded-full px-2 py-0.5 text-xs font-medium ${
-                          SYSTEM_LEVEL_VARIANT[item.level] === "success"
-                            ? "bg-green-100 text-green-800"
-                            : SYSTEM_LEVEL_VARIANT[item.level] === "warning"
-                              ? "bg-amber-100 text-amber-900"
-                              : "bg-red-100 text-red-800"
-                        }`}
-                      >
-                        {SYSTEM_LEVEL_LABEL[item.level]}
-                      </span>
+                      <AdminStatusBadge
+                        label={SYSTEM_LEVEL_LABEL[item.level]}
+                        variant={SYSTEM_LEVEL_VARIANT[item.level]}
+                      />
                     </div>
                     <p className="mt-1 text-sm text-text-secondary">{item.message}</p>
                     {item.action ? <p className="mt-1 text-xs text-text-muted">{item.action}</p> : null}

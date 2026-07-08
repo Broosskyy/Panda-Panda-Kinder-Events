@@ -13,6 +13,7 @@ interface CriticalActionModalProps {
   onCancel: () => void;
   onConfirm: (payload: { confirmPassword?: string }) => Promise<void>;
   loading?: boolean;
+  destructive?: boolean;
 }
 
 export function CriticalActionModal({
@@ -22,6 +23,7 @@ export function CriticalActionModal({
   onCancel,
   onConfirm,
   loading = false,
+  destructive = true,
 }: CriticalActionModalProps) {
   const [password, setPassword] = useState("");
 
@@ -33,21 +35,24 @@ export function CriticalActionModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="critical-action-title">
       <button type="button" className="absolute inset-0 bg-black/40" onClick={onCancel} aria-label="Schließen" />
-      <div className="relative z-10 w-full max-w-md rounded-2xl border border-amber-300 bg-bg-card p-6 shadow-xl">
+      <div className={`relative z-10 w-full max-w-md rounded-2xl border p-6 shadow-xl ${destructive ? "admin-modal-danger" : "admin-modal-warning"}`}>
         <div className="flex items-start gap-3">
-          <ShieldAlert className="mt-0.5 h-6 w-6 shrink-0 text-amber-600" aria-hidden />
+          <ShieldAlert className={`mt-0.5 h-6 w-6 shrink-0 ${destructive ? "text-red-600" : "text-amber-600"}`} aria-hidden />
           <div>
-            <h2 className="font-heading text-lg font-bold text-text-primary">{title}</h2>
+            <h2 id="critical-action-title" className="font-heading text-lg font-bold text-text-primary">
+              {title}
+            </h2>
             <p className="mt-2 text-sm text-text-muted">{description}</p>
+            <p className="mt-2 text-xs text-text-muted">Diese Aktion wird im Aktivitätsprotokoll gespeichert.</p>
           </div>
         </div>
 
         <AdminFormField
-          label="Ihr Passwort zur Bestätigung"
+          label="Passwort zur Bestätigung"
           required
-          hint="Nur Super Admins können diese Aktion ausführen."
+          hint="Nur berechtigte Admins können diese Aktion ausführen."
           className="mt-4"
         >
           <input
@@ -64,9 +69,10 @@ export function CriticalActionModal({
             {ADMIN_BTN.cancel}
           </AdminButton>
           <AdminButton
-            variant="primary"
+            variant={destructive ? "danger" : "primary"}
+            loading={loading}
             onClick={() => void handleConfirm()}
-            disabled={loading || !password.trim()}
+            disabled={!password.trim()}
           >
             Sicher bestätigen
           </AdminButton>

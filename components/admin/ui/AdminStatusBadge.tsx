@@ -1,4 +1,4 @@
-type AdminStatusBadgeVariant = "default" | "success" | "warning" | "danger" | "muted";
+type AdminStatusBadgeVariant = "default" | "success" | "warning" | "danger" | "muted" | "info";
 
 const variantClass: Record<AdminStatusBadgeVariant, string> = {
   default: "admin-status-badge-default",
@@ -6,6 +6,7 @@ const variantClass: Record<AdminStatusBadgeVariant, string> = {
   warning: "admin-status-badge-warning",
   danger: "admin-status-badge-danger",
   muted: "admin-status-badge-muted",
+  info: "admin-status-badge-info",
 };
 
 interface AdminStatusBadgeProps {
@@ -37,6 +38,23 @@ export function crmDocumentStatusVariant(
   }
 }
 
+export function bookingStatusVariant(status: string): AdminStatusBadgeVariant {
+  switch (status) {
+    case "new":
+      return "info";
+    case "contacted":
+      return "warning";
+    case "confirmed":
+    case "completed":
+      return "success";
+    case "declined":
+    case "cancelled":
+      return "danger";
+    default:
+      return "muted";
+  }
+}
+
 export function reviewStatusVariant(approved: boolean): AdminStatusBadgeVariant {
   return approved ? "success" : "warning";
 }
@@ -55,7 +73,7 @@ export function getReviewDisplayStatus(review: {
     return { label: "Wartet auf Prüfung", variant: "warning" };
   }
   if (review.admin_reply?.trim()) {
-    return { label: "Beantwortet", variant: "default" };
+    return { label: "Beantwortet", variant: "info" };
   }
   if (review.verified) {
     return { label: "Verifiziert", variant: "success" };

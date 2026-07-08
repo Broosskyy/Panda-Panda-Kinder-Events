@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Mail, Star } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import {
   AdminButton,
   AdminEmptyState,
@@ -247,11 +246,7 @@ export function ReviewsView() {
     <div className="review-admin-page">
       <AdminPageHeader {...page} />
 
-      <AdminHelpBlock title="Wichtig" variant="tip" className="mb-6">
-        Neue Bewertungen werden erst nach deiner Freigabe öffentlich auf der Website angezeigt. Grün = veröffentlicht.
-      </AdminHelpBlock>
-
-      <AdminCard title="Bewertungsanfrage per E-Mail" className="mb-6">
+      <AdminCard title="Bewertungsanfrage per E-Mail" compact className="mb-0">
         <p className="mb-4 text-sm text-text-muted">
           Sende Kunden eine freundliche E-Mail mit Link zur Bewertungsseite. Text und Betreff kannst du unter
           Einstellungen → E-Mail oder in den Vorlagen anpassen.

@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { usePathname } from "next/navigation";
 import { useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
@@ -23,6 +24,8 @@ const HIDE_FAB_PREFIXES = [
   "/admin/sicherheit",
   "/admin/kunden",
   "/admin/anfragen",
+  "/admin/analytics",
+  "/admin/erste-schritte",
 ];
 
 export function AdminQuickActions() {
@@ -42,41 +45,42 @@ export function AdminQuickActions() {
   if (hideFab || actions.length === 0) return null;
 
   return (
-    <div className="admin-quick-actions-global">
+    <div className={`admin-quick-actions-global ${open ? "admin-quick-actions-global-open" : ""}`}>
       {open ? (
-        <>
-          <button
-            type="button"
-            className="admin-quick-actions-backdrop"
-            onClick={() => setOpen(false)}
-            aria-label="Schnellaktionen schließen"
-          />
-          <div className="admin-quick-actions-menu" role="menu" aria-label="Schnellaktionen">
-            <div className="flex items-center justify-between border-b border-border px-4 py-3">
-              <p className="text-sm font-semibold text-text-primary">Schnellaktionen</p>
-              <button type="button" className="admin-icon-btn" onClick={() => setOpen(false)} aria-label="Schließen">
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-            <ul className="p-2">
-              {actions.map(({ href, label, iconKey, description }) => {
-                const Icon = resolveAdminIcon(iconKey);
-                return (
-                <li key={href}>
-                  <Link href={href} className="admin-quick-actions-item" role="menuitem" onClick={() => setOpen(false)}>
-                    <Icon className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-                    <span>
-                      <span className="block text-sm font-medium text-text-primary">{label}</span>
-                      {description ? <span className="block text-xs text-text-muted">{description}</span> : null}
+        <button
+          type="button"
+          className="admin-quick-actions-backdrop"
+          onClick={() => setOpen(false)}
+          aria-label="Schnellaktionen schließen"
+        />
+      ) : null}
+
+      <ul className="admin-speed-dial" aria-label="Schnellaktionen">
+        {open
+          ? actions.map((action, index) => {
+              const Icon = resolveAdminIcon(action.iconKey);
+              return (
+                <li
+                  key={action.href}
+                  className="admin-speed-dial-item-wrap"
+                  style={{ ["--speed-dial-index" as string]: String(index) } as CSSProperties}
+                >
+                  <Link
+                    href={action.href}
+                    className="admin-speed-dial-item"
+                    onClick={() => setOpen(false)}
+                    title={action.label}
+                  >
+                    <span className="admin-speed-dial-label">{action.label}</span>
+                    <span className="admin-speed-dial-btn">
+                      <Icon className="h-4 w-4" aria-hidden />
                     </span>
                   </Link>
                 </li>
-                );
-              })}
-            </ul>
-          </div>
-        </>
-      ) : null}
+              );
+            })
+          : null}
+      </ul>
 
       <button
         type="button"

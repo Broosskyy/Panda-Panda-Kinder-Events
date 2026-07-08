@@ -41,6 +41,7 @@ const AREA_OPTIONS = [
   { value: "settings_seo", label: "Domain & SEO" },
   { value: "admin_invites", label: "Einladungen" },
   { value: "website", label: "Website" },
+  { value: "cms_services", label: "Leistungen" },
 ];
 
 export function AuditView({ embedded = false }: { embedded?: boolean }) {

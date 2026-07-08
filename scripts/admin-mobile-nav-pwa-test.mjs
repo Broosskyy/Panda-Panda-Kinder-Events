@@ -67,13 +67,14 @@ if (gate.includes("AdminPwaProvider") && !gate.includes("AdminPwaRegister")) {
 }
 
 const card = read("components/admin/dashboard/DashboardPwaInstallCard.tsx");
-if (card.includes("Admin-App installieren") && card.includes("Installationsstatus prüfen")) {
+const panel = read("components/admin/AdminPwaInstallPanel.tsx");
+if (card.includes("Admin-App installieren") && panel.includes("Installationsstatus prüfen")) {
   ok("Dashboard install card copy");
 } else {
   fail("Dashboard install card missing");
 }
 
-if (card.includes("Zum Home-Bildschirm")) ok("iOS install instructions");
+if (panel.includes("Zum Home-Bildschirm")) ok("iOS install instructions");
 else fail("iOS instructions missing");
 
 const provider = read("components/admin/AdminPwaProvider.tsx");

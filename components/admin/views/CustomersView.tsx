@@ -299,14 +299,14 @@ export function CustomersView() {
         </AdminFormField>
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <AdminButton variant="primary" onClick={() => void saveEdit()} disabled={saving}>
+      <div className="admin-customer-detail-actions">
+        <AdminButton variant="primary" className="admin-customer-detail-btn" onClick={() => void saveEdit()} disabled={saving}>
           {ADMIN_BTN.save}
         </AdminButton>
-        <AdminButton variant="secondary" onClick={() => void archiveCustomer()} disabled={saving}>
+        <AdminButton variant="secondary" className="admin-customer-detail-btn" onClick={() => void archiveCustomer()} disabled={saving}>
           Archivieren
         </AdminButton>
-        <AdminButton variant="ghost" icon={<Trash2 className="h-4 w-4" />} onClick={() => void deleteCustomer()} disabled={saving}>
+        <AdminButton variant="danger" className="admin-customer-detail-btn admin-customer-detail-btn-danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void deleteCustomer()} disabled={saving}>
           Löschen
         </AdminButton>
       </div>

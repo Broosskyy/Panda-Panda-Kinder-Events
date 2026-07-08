@@ -1,21 +1,12 @@
 "use client";
 
 import { Smartphone, X } from "lucide-react";
-import { AdminButton } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/ui/AdminLayout";
+import { AdminPwaInstallPanel } from "@/components/admin/AdminPwaInstallPanel";
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
 
 export function DashboardPwaInstallCard() {
-  const {
-    canInstall,
-    showIosGuide,
-    showManualGuide,
-    showInstallCard,
-    install,
-    dismiss,
-    checkInstallStatus,
-    installHelpVisible,
-  } = useAdminPwa();
+  const { showInstallCard, closeCard, dontShowAgain } = useAdminPwa();
 
   if (!showInstallCard) return null;
 
@@ -31,45 +22,20 @@ export function DashboardPwaInstallCard() {
             <button
               type="button"
               className="admin-icon-btn shrink-0"
-              onClick={dismiss}
-              aria-label="Hinweis ausblenden"
+              onClick={closeCard}
+              aria-label="Hinweis schließen"
             >
               <X className="h-4 w-4" />
             </button>
           </div>
-          <p className="mt-1 text-sm text-text-muted">
-            Installiere den Adminbereich als App auf deinem Handy.
-          </p>
-
-          {showIosGuide ? (
-            <p className="mt-2 text-sm text-text-secondary">
-              Auf dem iPhone: <strong>Teilen</strong> → <strong>Zum Home-Bildschirm</strong>
-            </p>
-          ) : canInstall ? (
-            <div className="mt-3">
-              <AdminButton variant="primary" onClick={() => void install()}>
-                App installieren
-              </AdminButton>
-            </div>
-          ) : showManualGuide || installHelpVisible ? (
-            <div className="mt-3 space-y-2">
-              <p className="text-sm text-text-secondary">
-                Falls kein Installationsfenster erscheint: Chrome-Menü ⋮ → <strong>App installieren</strong>.
-              </p>
-              <p className="text-xs text-text-muted">
-                Öffne das Chrome-Menü oben rechts und wähle „App installieren“.
-              </p>
-              <AdminButton variant="secondary" onClick={() => void checkInstallStatus()}>
-                Installationsstatus prüfen
-              </AdminButton>
-            </div>
-          ) : (
-            <div className="mt-3">
-              <AdminButton variant="secondary" onClick={() => void checkInstallStatus()}>
-                Installationsstatus prüfen
-              </AdminButton>
-            </div>
-          )}
+          <AdminPwaInstallPanel compact showTitle={false} />
+          <button
+            type="button"
+            className="mt-3 text-xs text-text-muted underline hover:text-text-secondary"
+            onClick={dontShowAgain}
+          >
+            Nicht mehr anzeigen
+          </button>
         </div>
       </div>
     </AdminCard>

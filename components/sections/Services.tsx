@@ -132,10 +132,19 @@ export function Services({
               className="btn-equal mt-6 w-full"
               onClick={() => {
                 setActive(null);
+                const link = active.buttonLink?.trim();
+                if (link) {
+                  if (link.startsWith("#")) {
+                    document.querySelector(link)?.scrollIntoView({ behavior: "smooth" });
+                  } else {
+                    window.location.href = link;
+                  }
+                  return;
+                }
                 document.getElementById("kontakt")?.scrollIntoView({ behavior: "smooth" });
               }}
             >
-              Beratung anfragen
+              {active.buttonLabel ?? "Beratung anfragen"}
             </Button>
           </div>
         </div>

@@ -17,6 +17,8 @@
     "test:admin-mobile": "node scripts/admin-mobile-nav-pwa-test.mjs",
     "test:admin-real-mobile": "node scripts/admin-real-mobile-ux-test.mjs",
     "test:admin-critical-mobile": "node scripts/admin-critical-mobile-ux-action-bugfix-test.mjs",
+    "test:admin-ui-bugfix": "node scripts/admin-ui-bugfix-pwa-menu-customers-test.mjs",
+    "test:admin-services-cms": "node scripts/admin-services-cms-fix-test.mjs",
     "test:admin-onboarding-v2": "node scripts/admin-onboarding-v2-test.mjs",
     "test:admin-invites-2fa": "node scripts/admin-invites-mandatory-2fa-test.mjs",
     "test:admin-user-management": "node scripts/admin-user-management-complete-test.mjs",

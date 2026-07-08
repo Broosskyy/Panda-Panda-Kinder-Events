@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AdminGate } from "@/components/admin/AdminGate";
+import { AdminPwaEarlyCapture } from "@/components/admin/AdminPwaEarlyCapture";
 
 export const metadata: Metadata = {
   title: "Panda-Bande Admin",
@@ -13,5 +14,10 @@ export const metadata: Metadata = {
 };
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
-  return <AdminGate>{children}</AdminGate>;
+  return (
+    <>
+      <AdminPwaEarlyCapture />
+      <AdminGate>{children}</AdminGate>
+    </>
+  );
 }

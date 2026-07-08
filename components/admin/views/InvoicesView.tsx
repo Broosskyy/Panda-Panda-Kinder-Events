@@ -1,18 +1,18 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Ban, Download, Loader2, Receipt, Send, Trash2 } from "lucide-react";
+import { Ban, Download, Receipt, Send, Trash2 } from "lucide-react";
 import { CrmDocumentListControls } from "@/components/admin/crm/CrmDocumentListControls";
 import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import {
-  AdminButton,
   AdminEmptyState,
   AdminFilterBar,
   AdminFilterSelect,
   AdminLoadingCard,
   AdminSearchInput,
   AdminStatusBadge,
+  AdminActionMenu,
   crmDocumentStatusVariant,
 } from "@/components/admin/ui";
 import { paginateRows, sortCrmRows, type CrmSortDir, type CrmSortField } from "@/lib/admin/crm-list";
@@ -383,62 +383,71 @@ export function InvoicesView() {
                       ) : null}
                     </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="admin-document-actions w-full sm:w-auto">
                     <AdminFilterSelect
                       value={inv.status}
                       onChange={(v) => setStatus(inv.id, v)}
                       options={STATUS_OPTIONS}
                       label="Status"
                     />
-                    <AdminButton
-                      variant="secondary"
-                      disabled={pdfBusy}
-                      icon={isPdfLoading(openKey) ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
-                      onClick={() => void openPdf(pdfUrl(inv.id), openKey)}
-                    >
-                      {isPdfLoading(openKey) ? "PDF wird erstellt…" : ADMIN_BTN.pdfOpen}
-                    </AdminButton>
-                    <AdminButton
-                      variant="secondary"
-                      disabled={pdfBusy}
-                      icon={
-                        isPdfLoading(downloadKey) ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )
-                      }
-                      onClick={() => void downloadPdf(pdfUrl(inv.id), downloadKey, `${inv.invoice_number}.pdf`)}
-                    >
-                      {isPdfLoading(downloadKey) ? "Wird heruntergeladen…" : ADMIN_BTN.pdfDownload}
-                    </AdminButton>
-                    <AdminButton
-                      variant="primary"
-                      icon={<Send className="h-4 w-4" />}
-                      onClick={() => {
-                        setSendTarget(inv);
-                        setSendToCustomer(true);
-                        setCopyToBusiness(true);
-                        setSendError(null);
+                    <AdminActionMenu
+                      primary={{
+                        label: ADMIN_BTN.send,
+                        icon: <Send className="h-4 w-4" />,
+                        onClick: () => {
+                          setSendTarget(inv);
+                          setSendToCustomer(true);
+                          setCopyToBusiness(true);
+                          setSendError(null);
+                        },
                       }}
-                    >
-                      {ADMIN_BTN.send}
-                    </AdminButton>
-                    {!inv.archived_at ? (
-                      <AdminButton variant="secondary" onClick={() => void archiveInvoice(inv.id)}>
-                        {ADMIN_BTN.archive}
-                      </AdminButton>
-                    ) : null}
-                    {canCancel(inv.status) ? (
-                      <AdminButton variant="secondary" icon={<Ban className="h-4 w-4" />} onClick={() => void cancelInvoice(inv.id)}>
-                        Stornieren
-                      </AdminButton>
-                    ) : null}
-                    {canDelete(inv.status) ? (
-                      <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void deleteInvoice(inv)}>
-                        {ADMIN_BTN.delete}
-                      </AdminButton>
-                    ) : null}
+                      items={[
+                        {
+                          id: "pdf-open",
+                          label: isPdfLoading(openKey) ? "PDF wird erstellt…" : ADMIN_BTN.pdfOpen,
+                          disabled: pdfBusy,
+                          onClick: () => void openPdf(pdfUrl(inv.id), openKey),
+                        },
+                        {
+                          id: "pdf-download",
+                          label: isPdfLoading(downloadKey) ? "Wird heruntergeladen…" : ADMIN_BTN.pdfDownload,
+                          icon: <Download className="h-4 w-4" />,
+                          disabled: pdfBusy,
+                          onClick: () => void downloadPdf(pdfUrl(inv.id), downloadKey, `${inv.invoice_number}.pdf`),
+                        },
+                        ...(!inv.archived_at
+                          ? [
+                              {
+                                id: "archive",
+                                label: ADMIN_BTN.archive,
+                                onClick: () => void archiveInvoice(inv.id),
+                              },
+                            ]
+                          : []),
+                      ]}
+                      dangerItems={[
+                        ...(canCancel(inv.status)
+                          ? [
+                              {
+                                id: "cancel",
+                                label: "Stornieren",
+                                icon: <Ban className="h-4 w-4" />,
+                                onClick: () => void cancelInvoice(inv.id),
+                              },
+                            ]
+                          : []),
+                        ...(canDelete(inv.status)
+                          ? [
+                              {
+                                id: "delete",
+                                label: ADMIN_BTN.delete,
+                                icon: <Trash2 className="h-4 w-4" />,
+                                onClick: () => void deleteInvoice(inv),
+                              },
+                            ]
+                          : []),
+                      ]}
+                    />
                   </div>
                 </div>
               </AdminCard>

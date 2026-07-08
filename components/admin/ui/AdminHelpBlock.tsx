@@ -42,10 +42,11 @@ interface AdminPageHelpProps {
   className?: string;
 }
 
-/** Einklappbare Kurzhilfe — max. 3 Stichpunkte */
+/** Einklappbare Kurzhilfe — eine Zeile sichtbar, Details per Klick */
 export function AdminPageHelp({ items, className = "" }: AdminPageHelpProps) {
   const [open, setOpen] = useState(false);
   if (!items.length) return null;
+  const summary = items[0]!;
   const bullets = items.slice(0, 3);
 
   return (
@@ -57,11 +58,11 @@ export function AdminPageHelp({ items, className = "" }: AdminPageHelpProps) {
         aria-expanded={open}
       >
         <Lightbulb className="h-4 w-4 shrink-0 text-primary" aria-hidden />
-        <span>{open ? "Hilfe ausblenden" : "Hilfe anzeigen"}</span>
+        <span className="admin-page-help-summary">{open ? "Hilfe ausblenden" : summary}</span>
         <ChevronDown className={`admin-page-help-chevron ${open ? "admin-page-help-chevron-open" : ""}`} aria-hidden />
       </button>
       {open ? (
-        <AdminHelpBlock title="Was kann ich hier machen?" variant="tip">
+        <AdminHelpBlock title="Ausführliche Hilfe" variant="tip">
           <ul className="mt-1 list-inside list-disc space-y-1 text-sm leading-relaxed">
             {bullets.map((item) => (
               <li key={item}>{item}</li>

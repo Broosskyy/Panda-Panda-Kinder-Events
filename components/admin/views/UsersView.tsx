@@ -179,8 +179,11 @@ export function UsersView() {
         </AdminCard>
       ) : null}
 
-      <AdminCard title="Rollenübersicht">
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+      <details className="admin-card admin-roles-collapse">
+        <summary className="admin-card-title cursor-pointer list-none marker:content-none">
+          Rollenübersicht
+        </summary>
+        <div className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {roles.map((role) => (
             <div key={role.id} className="rounded-xl border border-border bg-bg-secondary/40 p-3 text-sm">
               <p className="font-semibold text-text-primary">{role.label}</p>
@@ -189,7 +192,7 @@ export function UsersView() {
             </div>
           ))}
         </div>
-      </AdminCard>
+      </details>
 
       {showForm ? (
         <AdminCard title={editingId ? "Benutzer bearbeiten" : "Neuer Benutzer"}>
@@ -259,8 +262,60 @@ export function UsersView() {
           </p>
         </AdminCard>
       ) : users.length === 0 ? null : (
-        <AdminCard className="overflow-x-auto p-0">
-          <table className="admin-users-table w-full min-w-[720px] text-sm">
+        <>
+          <div className="space-y-3 md:hidden">
+            {users.map((u) => (
+              <AdminCard key={u.id} className={isCurrentUser(u.id) ? "admin-user-card-current" : ""}>
+                <div className="admin-user-card">
+                  <div className="admin-user-card-header">
+                    <div className="admin-users-avatar" aria-hidden>
+                      {u.avatar ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={u.avatar} alt="" className="h-full w-full rounded-full object-cover" />
+                      ) : (
+                        userInitials(u.display_name)
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-semibold text-text-primary">{u.display_name}</p>
+                      <p className="truncate text-sm text-text-muted">{u.email || "—"}</p>
+                    </div>
+                    <AdminStatusBadge label={u.active ? "Aktiv" : "Deaktiviert"} variant={u.active ? "success" : "muted"} />
+                  </div>
+                  <dl className="admin-user-card-meta">
+                    <div>
+                      <dt>Rolle</dt>
+                      <dd><AdminStatusBadge label={u.role_label} variant="default" /></dd>
+                    </div>
+                    <div>
+                      <dt>Letzter Login</dt>
+                      <dd>{formatLogin(u.last_login)}</dd>
+                    </div>
+                  </dl>
+                  <div className="admin-user-card-actions">
+                    <AdminButton variant="secondary" icon={<UserRound className="h-4 w-4" />} onClick={() => openEdit(u)}>
+                      Öffnen
+                    </AdminButton>
+                    {meta?.canManageUsers ? (
+                      <>
+                        <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(u)}>
+                          Bearbeiten
+                        </AdminButton>
+                        <AdminButton variant="secondary" onClick={() => void toggleActive(u)}>
+                          {u.active ? "Deaktivieren" : "Aktivieren"}
+                        </AdminButton>
+                      </>
+                    ) : (
+                      <AdminStatusBadge label="Nur Ansicht" variant="muted" />
+                    )}
+                  </div>
+                </div>
+              </AdminCard>
+            ))}
+          </div>
+
+          <AdminCard className="hidden overflow-x-auto p-0 md:block">
+            <table className="admin-users-table w-full text-sm">
             <thead>
               <tr>
                 <th className="text-left">Benutzer</th>
@@ -331,8 +386,9 @@ export function UsersView() {
                 </tr>
               ))}
             </tbody>
-          </table>
-        </AdminCard>
+            </table>
+          </AdminCard>
+        </>
       )}
     </div>
   );

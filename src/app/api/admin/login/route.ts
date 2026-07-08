@@ -354,6 +354,8 @@ export async function GET() {
     permissions: ctx.permissions,
     modules: settings?.modules ?? null,
     isSuperAdmin: ctx.roleSlug === "administrator",
+    onboardingCompleted: Boolean(profile?.onboarding_completed_at),
+    onboardingCompletedAt: profile?.onboarding_completed_at ?? null,
     identity: {
       id: ctx.userId,
       displayName: profile?.display_name ?? ctx.displayName,

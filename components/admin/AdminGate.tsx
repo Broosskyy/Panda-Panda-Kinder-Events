@@ -10,6 +10,7 @@ import { AdminNotificationsProvider } from "./AdminNotificationsProvider";
 import { AdminLoginForm } from "./AdminLoginForm";
 import { AdminBootstrapWizard } from "./AdminBootstrapWizard";
 import { AdminPwaProvider } from "./AdminPwaProvider";
+import { AdminOnboardingProvider } from "./AdminOnboardingProvider";
 
 const PUBLIC_ADMIN_PATHS = ["/admin/passwort-reset"];
 
@@ -61,17 +62,19 @@ export function AdminGate({ children }: { children: ReactNode }) {
 
   return (
     <AdminSessionProvider>
-      <AdminUiProvider>
-        <AdminNotificationsProvider>
-          <AdminPwaProvider>
-            <div className="admin-shell flex min-h-[100dvh] flex-col md:flex-row" data-admin-theme="light">
-              <AdminSidebar />
-              <main className="admin-main flex-1 overflow-x-hidden">{children}</main>
-              <AdminQuickActions />
-            </div>
-          </AdminPwaProvider>
-        </AdminNotificationsProvider>
-      </AdminUiProvider>
+      <AdminOnboardingProvider>
+        <AdminUiProvider>
+          <AdminNotificationsProvider>
+            <AdminPwaProvider>
+              <div className="admin-shell flex min-h-[100dvh] flex-col md:flex-row" data-admin-theme="light">
+                <AdminSidebar />
+                <main className="admin-main flex-1 overflow-x-hidden">{children}</main>
+                <AdminQuickActions />
+              </div>
+            </AdminPwaProvider>
+          </AdminNotificationsProvider>
+        </AdminUiProvider>
+      </AdminOnboardingProvider>
     </AdminSessionProvider>
   );
 }

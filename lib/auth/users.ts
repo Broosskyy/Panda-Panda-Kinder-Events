@@ -100,8 +100,9 @@ function mapRowToAdminUserPublic(row: Record<string, unknown>): AdminUserPublic 
     totp_enabled: Boolean(row.totp_enabled),
     last_login: (row.last_login as string | null) ?? null,
     team_member_id: (row.team_member_id as string | null) ?? null,
-    team_member_name: teamMember?.name ?? null,
-    created_at: String(row.created_at),
+  team_member_name: teamMember?.name ?? null,
+  onboarding_completed_at: (row.onboarding_completed_at as string | null) ?? null,
+  created_at: String(row.created_at),
     updated_at: String(row.updated_at),
   };
 }
@@ -205,6 +206,7 @@ export async function createUser(input: {
     last_login: data.last_login,
     team_member_id: data.team_member_id ?? null,
     team_member_name: null,
+    onboarding_completed_at: null,
     created_at: data.created_at,
     updated_at: data.updated_at,
   };

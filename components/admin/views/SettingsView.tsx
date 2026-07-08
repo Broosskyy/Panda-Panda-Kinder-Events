@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Sparkles } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
 import { AdminStickySave } from "@/components/admin/ui/AdminStickySave";
@@ -32,6 +32,7 @@ import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/E
 import { DomainVerificationBanner } from "@/components/admin/email/DomainVerificationBanner";
 import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
 import { ModulesSettingsPanel } from "@/components/admin/settings/ModulesSettingsPanel";
+import { useAdminOnboarding } from "@/components/admin/AdminOnboardingProvider";
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
 interface EmailStatusResponse {
@@ -94,6 +95,7 @@ export function SettingsView() {
   const [settingsLoading, setSettingsLoading] = useState(true);
   const [testTo, setTestTo] = useState("");
   const { withLoading, saved, testEmailSent, error: showError } = useAdminMessages();
+  const { openWizard } = useAdminOnboarding();
   const settingsPage = adminPageHeaderProps("einstellungen");
 
   const applySettingsBundle = useCallback((settings: SiteSettingsBundle) => {
@@ -280,6 +282,15 @@ export function SettingsView() {
         whereVisible={settingsPage.whereVisible}
         helpItems={settingsPage.helpItems}
       />
+
+      <AdminCard title="Profil & Tutorial" compact>
+        <p className="mb-3 text-sm text-text-muted">
+          Das interaktive Onboarding erklärt die wichtigsten Admin-Bereiche Schritt für Schritt.
+        </p>
+        <AdminButton variant="secondary" icon={<Sparkles className="h-4 w-4" />} onClick={() => void openWizard()}>
+          Tutorial erneut starten
+        </AdminButton>
+      </AdminCard>
 
       <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">
         {CONTROL_CENTER_TABS.map((item) => (

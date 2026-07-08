@@ -95,10 +95,15 @@ export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
     await loadStatus();
   }, [identity, loadStatus, permissions]);
 
-  const closeWizard = useCallback(() => {
-    setForcedOpen(false);
-    if (!completed) void finish();
-  }, [completed, finish]);
+  const dismissPermanent = useCallback(() => {
+    void finish();
+  }, [finish]);
+
+  const skipToEnd = useCallback(() => {
+    if (steps.length > 0) {
+      setStepIndex(steps.length - 1);
+    }
+  }, [steps.length]);
 
   const value = useMemo(() => ({ openWizard, isOpen }), [openWizard, isOpen]);
 
@@ -111,8 +116,8 @@ export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
           stepIndex={stepIndex}
           onStepIndexChange={setStepIndex}
           onComplete={() => void finish()}
-          onSkip={() => void finish()}
-          onClose={closeWizard}
+          onDismissPermanent={dismissPermanent}
+          onSkipToEnd={skipToEnd}
           displayName={identity.displayName}
         />
       ) : null}

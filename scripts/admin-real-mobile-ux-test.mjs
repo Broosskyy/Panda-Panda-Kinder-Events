@@ -52,7 +52,7 @@ for (const check of [
   ["admin-bottom-nav-item-active::before", "Active tab indicator"],
   ["admin-user-card", "Mobile user cards"],
   ["admin-action-menu", "Action menu component styles"],
-  ["admin-onboarding-root", "Onboarding wizard styles"],
+  ["admin-onboarding-v2-root", "Onboarding wizard styles"],
   ["admin-page-help-summary", "One-line help summary"],
 ]) {
   if (css.includes(check[0])) ok(check[1]);

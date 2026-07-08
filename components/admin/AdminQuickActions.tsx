@@ -1,10 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import Link from "next/link";
-import { ADMIN_GLOBAL_QUICK_ACTIONS } from "@/lib/admin/quickActions";
+import { ADMIN_GLOBAL_QUICK_ACTIONS, filterQuickActions } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 
 const HIDE_FAB_PREFIXES = [
@@ -27,9 +27,24 @@ const HIDE_FAB_PREFIXES = [
 export function AdminQuickActions() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [permissions, setPermissions] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch("/api/admin/login")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.permissions) setPermissions(data.permissions);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const actions = useMemo(
+    () => filterQuickActions(ADMIN_GLOBAL_QUICK_ACTIONS, permissions),
+    [permissions],
+  );
 
   const hideFab = HIDE_FAB_PREFIXES.some((prefix) => pathname?.startsWith(prefix));
-  if (hideFab) return null;
+  if (hideFab || actions.length === 0) return null;
 
   return (
     <div className="admin-quick-actions-global">
@@ -49,7 +64,7 @@ export function AdminQuickActions() {
               </button>
             </div>
             <ul className="p-2">
-              {ADMIN_GLOBAL_QUICK_ACTIONS.map(({ href, label, iconKey, description }) => {
+              {actions.map(({ href, label, iconKey, description }) => {
                 const Icon = resolveAdminIcon(iconKey);
                 return (
                 <li key={href}>

@@ -32,8 +32,8 @@ function navItemAllowed(href: string, permissions: string[], modules: SiteModule
   const required = NAV_PERMISSION_MAP[base];
   if (required && !hasPermission(permissions, required)) return false;
 
-  if (base.startsWith("/admin/einstellungen") && !hasPermission(permissions, "settings:write")) {
-    return hasPermission(permissions, "website:read");
+  if (base.startsWith("/admin/einstellungen")) {
+    return hasPermission(permissions, "settings:write") || hasPermission(permissions, "settings:system");
   }
 
   return true;

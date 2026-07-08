@@ -13,7 +13,10 @@ export async function requireAdmin(permission?: string) {
     return NextResponse.json({ error: "Supabase nicht konfiguriert." }, { status: 503 });
   }
   if (permission && !adminHasPermission(ctx, permission)) {
-    return NextResponse.json({ error: "Keine Berechtigung für diesen Bereich." }, { status: 403 });
+    return NextResponse.json(
+      { error: "Du hast für diesen Bereich keine Berechtigung." },
+      { status: 403 },
+    );
   }
   return null;
 }

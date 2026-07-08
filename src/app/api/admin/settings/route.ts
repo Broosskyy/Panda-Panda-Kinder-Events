@@ -74,12 +74,9 @@ export async function PUT(request: Request) {
   if (section === "modules") {
     const authError = await requireAdmin("modules:write");
     if (authError) return authError;
-  } else if (section === "email" || section === "seo") {
+  } else if (section === "email" || section === "seo" || section === "branding") {
     const authError = await requireAdmin("settings:system");
-    if (authError) {
-      const fallback = await requireAdmin("settings:write");
-      if (fallback) return fallback;
-    }
+    if (authError) return authError;
   } else {
     const authError = await requireAdmin("settings:write");
     if (authError) return authError;
@@ -94,7 +91,7 @@ export async function PUT(request: Request) {
     return NextResponse.json({ error: "Ungültige Sektion." }, { status: 400 });
   }
 
-  if (section === "modules" || section === "email" || section === "seo") {
+  if (section === "modules" || section === "email" || section === "seo" || section === "branding") {
     const critical = await verifyCriticalConfirmation(ctx, parseCriticalBody(body));
     if (!critical.ok) return critical.response;
   }

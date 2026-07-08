@@ -11,8 +11,8 @@ import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
-import { ADMIN_ROLE_DESCRIPTIONS, ADMIN_ROLE_SHORT, DEFAULT_NEW_USER_ROLE_SLUG } from "@/lib/admin/role-descriptions";
-import type { AdminUserPublic, AdminRoleSlug } from "@/lib/auth/types";
+import { DEFAULT_NEW_USER_ROLE_SLUG, describeRoleSlug, shortRoleSlug } from "@/lib/admin/role-descriptions";
+import type { AdminUserPublic } from "@/lib/auth/types";
 
 interface Role {
   id: string;
@@ -198,8 +198,8 @@ export function UsersView() {
           {roles.map((role) => (
             <div key={role.id} className="rounded-xl border border-border bg-bg-secondary/40 p-3 text-sm">
               <p className="font-semibold text-text-primary">{role.label}</p>
-              <p className="mt-1 text-xs text-primary">{ADMIN_ROLE_SHORT[role.slug as AdminRoleSlug] ?? ""}</p>
-              <p className="mt-2 text-text-muted">{ADMIN_ROLE_DESCRIPTIONS[role.slug as AdminRoleSlug] ?? ""}</p>
+              <p className="mt-1 text-xs text-primary">{shortRoleSlug(role.slug)}</p>
+              <p className="mt-2 text-text-muted">{describeRoleSlug(role.slug)}</p>
             </div>
           ))}
         </div>
@@ -232,7 +232,7 @@ export function UsersView() {
               </select>
               {form.roleId ? (
                 <p className="mt-2 text-xs text-text-muted">
-                  {ADMIN_ROLE_DESCRIPTIONS[roles.find((r) => r.id === form.roleId)?.slug as AdminRoleSlug] ?? ""}
+                  {describeRoleSlug(roles.find((r) => r.id === form.roleId)?.slug ?? "")}
                 </p>
               ) : null}
             </AdminFormField>

@@ -11,6 +11,7 @@ import {
   getUserById,
   deleteUser,
 } from "@/lib/auth/users";
+import { filterActiveRoles } from "@/lib/admin/roles";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
 import { getPasswordPolicy } from "@/lib/auth/security-settings";
 import { writeAuditLogFromRequest } from "@/lib/auth/audit";
@@ -64,7 +65,7 @@ export async function GET() {
 
     return NextResponse.json({
       users,
-      roles,
+      roles: filterActiveRoles(roles),
       teamMembers,
       meta: {
         canListAll,

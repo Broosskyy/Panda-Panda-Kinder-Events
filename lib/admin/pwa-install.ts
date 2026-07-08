@@ -24,6 +24,8 @@ export interface PwaProbeResult {
   icons512Ok: boolean;
   icons192MimeOk: boolean;
   icons512MimeOk: boolean;
+  iconsMaskable192Ok: boolean;
+  iconsMaskable512Ok: boolean;
   serviceWorkerRegistered: boolean;
   serviceWorkerActive: boolean;
   serviceWorkerControlling: boolean;
@@ -34,6 +36,7 @@ export interface PwaProbeResult {
   blockers: string[];
   statusLabel: string;
   checkedAt: string;
+  installMode: PwaInstallMode;
 }
 
 export function isStandalonePwa(): boolean {
@@ -54,9 +57,60 @@ export function isAndroidDevice(): boolean {
   return /android/i.test(navigator.userAgent);
 }
 
+export type PwaBrowserId =
+  | "chrome_android"
+  | "chrome_desktop"
+  | "edge"
+  | "safari_ios"
+  | "firefox"
+  | "samsung_internet"
+  | "in_app_browser"
+  | "other";
+
+export type PwaInstallMethod =
+  | "native_prompt"
+  | "manual_ios"
+  | "manual_firefox"
+  | "manual_samsung"
+  | "unknown";
+
+export interface PwaBrowserInfo {
+  id: PwaBrowserId;
+  label: string;
+  supportsBeforeInstallPrompt: boolean;
+  installMethod: PwaInstallMethod;
+}
+
+export interface BrowserInstallGuide {
+  browserId: PwaBrowserId;
+  title: string;
+  introduction: string;
+  steps: string[];
+  note?: string;
+  expectsNativePrompt: boolean;
+  showShortcutVsPwaNote: boolean;
+}
+
+/** Browsers that may fire beforeinstallprompt (Chromium family). */
+export function expectsBeforeInstallPrompt(browser: PwaBrowserInfo): boolean {
+  return browser.supportsBeforeInstallPrompt;
+}
+
+/** Browsers with a documented manual install path (no native prompt — not an error). */
+export function usesManualInstallPath(browser: PwaBrowserInfo): boolean {
+  return (
+    browser.installMethod === "manual_ios" ||
+    browser.installMethod === "manual_firefox" ||
+    browser.installMethod === "manual_samsung"
+  );
+}
+
 export function supportsNativePwaInstall(): boolean {
   if (typeof window === "undefined") return false;
-  return !isIosDevice() && "serviceWorker" in navigator;
+  const browser = detectPwaBrowser();
+  if (browser.id === "in_app_browser") return false;
+  if (browser.installMethod === "manual_ios") return true;
+  return "serviceWorker" in navigator;
 }
 
 export function readPwaDontShowAgain(): boolean {
@@ -150,12 +204,25 @@ export function clearDeferredPrompt(): void {
 
 export type PwaInstallCause =
   | "already_standalone"
+  | "true_installable"
+  | "shortcut_only"
+  | "manual_install_path"
   | "browser_unsupported"
   | "prompt_not_yet_fired"
   | "prompt_dismissed_by_user"
   | "sw_not_controlling"
   | "technical_blocker"
   | "in_app_browser";
+
+export type PwaInstallMode =
+  | "true_installable"
+  | "shortcut_only"
+  | "sw_not_controlling"
+  | "manifest_or_icons_error"
+  | "installed"
+  | "prompt_blocked"
+  | "manual_install_available"
+  | "unsupported";
 
 export interface PwaDebugStatus {
   manifestReachable: boolean;
@@ -172,6 +239,7 @@ export interface PwaDebugStatus {
   currentRoute: string;
   startUrl: string;
   scope: string;
+  installMode: PwaInstallMode;
   detectedCause: PwaInstallCause | null;
   causeMessage: string | null;
 }
@@ -192,16 +260,354 @@ export function isInAppBrowser(): boolean {
   return /(FBAN|FBAV|Instagram|Line\/|Twitter|LinkedInApp|wv\))/i.test(ua);
 }
 
-export function detectBrowserProfile(): string {
-  if (typeof navigator === "undefined") return "unbekannt";
+export function detectPwaBrowser(): PwaBrowserInfo {
+  if (typeof navigator === "undefined") {
+    return {
+      id: "other",
+      label: "unbekannt",
+      supportsBeforeInstallPrompt: false,
+      installMethod: "unknown",
+    };
+  }
+
   const ua = navigator.userAgent;
-  if (isInAppBrowser()) return "In-App-Browser (kein Chrome)";
-  if (isIosDevice()) return "Safari iOS";
-  if (/android/i.test(ua) && /chrome/i.test(ua)) return "Chrome Android";
-  if (/chrome/i.test(ua) && !/edg/i.test(ua)) return "Chrome Desktop";
-  if (/edg/i.test(ua)) return "Edge";
-  if (/firefox/i.test(ua)) return "Firefox";
-  return "anderer Browser";
+
+  if (isInAppBrowser()) {
+    return {
+      id: "in_app_browser",
+      label: "In-App-Browser",
+      supportsBeforeInstallPrompt: false,
+      installMethod: "unknown",
+    };
+  }
+
+  if (/SamsungBrowser/i.test(ua)) {
+    return {
+      id: "samsung_internet",
+      label: "Samsung Internet",
+      supportsBeforeInstallPrompt: true,
+      installMethod: "native_prompt",
+    };
+  }
+
+  if (isIosDevice()) {
+    return {
+      id: "safari_ios",
+      label: "Safari (iOS)",
+      supportsBeforeInstallPrompt: false,
+      installMethod: "manual_ios",
+    };
+  }
+
+  if (/android/i.test(ua) && /chrome/i.test(ua) && !/edg/i.test(ua)) {
+    return {
+      id: "chrome_android",
+      label: "Chrome (Android)",
+      supportsBeforeInstallPrompt: true,
+      installMethod: "native_prompt",
+    };
+  }
+
+  if (/edg/i.test(ua)) {
+    return {
+      id: "edge",
+      label: "Microsoft Edge",
+      supportsBeforeInstallPrompt: true,
+      installMethod: "native_prompt",
+    };
+  }
+
+  if (/firefox/i.test(ua)) {
+    return {
+      id: "firefox",
+      label: "Firefox",
+      supportsBeforeInstallPrompt: false,
+      installMethod: "manual_firefox",
+    };
+  }
+
+  if (/chrome/i.test(ua)) {
+    return {
+      id: "chrome_desktop",
+      label: "Chrome (Desktop)",
+      supportsBeforeInstallPrompt: true,
+      installMethod: "native_prompt",
+    };
+  }
+
+  return {
+    id: "other",
+    label: "anderer Browser",
+    supportsBeforeInstallPrompt: false,
+    installMethod: "unknown",
+  };
+}
+
+export function detectBrowserProfile(): string {
+  return detectPwaBrowser().label;
+}
+
+export function getBrowserInstallGuide(browserId: PwaBrowserId): BrowserInstallGuide {
+  switch (browserId) {
+    case "safari_ios":
+      return {
+        browserId,
+        title: "Installation in Safari (iOS)",
+        introduction:
+          "Safari unterstützt keinen Install-Dialog (beforeinstallprompt) — das ist normal und kein Fehler. Die Admin-App wird über „Zum Home-Bildschirm“ installiert und startet im Vollbildmodus.",
+        steps: [
+          "Safari öffnen und den Adminbereich aufrufen",
+          "Teilen antippen (Quadrat mit Pfeil nach oben)",
+          "Zum Home-Bildschirm wählen",
+          "Hinzufügen bestätigen",
+          "App vom Home-Bildschirm öffnen (ohne Safari-Leiste)",
+        ],
+        expectsNativePrompt: false,
+        showShortcutVsPwaNote: false,
+      };
+    case "chrome_android":
+      return {
+        browserId,
+        title: "Installation in Chrome (Android)",
+        introduction:
+          "Ziel: „App installieren“ im Chrome-Menü oder über den Button unten — echte PWA mit Vollbild und Service Worker.",
+        steps: [
+          "Chrome-Menü ⋮ oben rechts öffnen",
+          "Wenn verfügbar: App installieren wählen (echte PWA)",
+          "Alternativ: Button „Admin-App installieren“ im Dashboard nutzen",
+          "Wenn nur Zum Startbildschirm hinzufügen erscheint: PWA-Kriterien prüfen und Seite neu laden",
+          "Nach Installation: App vom Startbildschirm öffnen (ohne Browserleiste)",
+        ],
+        note: "„Zum Startbildschirm hinzufügen“ allein ist nur eine Verknüpfung, keine echte PWA.",
+        expectsNativePrompt: true,
+        showShortcutVsPwaNote: true,
+      };
+    case "chrome_desktop":
+      return {
+        browserId,
+        title: "Installation in Chrome (Desktop)",
+        introduction:
+          "Ziel: Install-Icon in der Adressleiste oder „App installieren“ im Chrome-Menü.",
+        steps: [
+          "Install-Icon in der Adressleiste suchen (Monitor mit Pfeil) — ggf. Puzzle-Symbol prüfen",
+          "Oder Chrome-Menü ⋮ → App installieren",
+          "Alternativ: Button „Admin-App installieren“ im Dashboard",
+          "Nach Installation: App über Startmenü/Dock öffnen (eigenes Fenster)",
+        ],
+        expectsNativePrompt: true,
+        showShortcutVsPwaNote: true,
+      };
+    case "edge":
+      return {
+        browserId,
+        title: "Installation in Microsoft Edge",
+        introduction: "Ziel: „App installieren“ über das Edge-Menü oder den nativen Install-Dialog.",
+        steps: [
+          "Edge-Menü ⋯ oben rechts öffnen",
+          "Apps → Diese Website als App installieren wählen",
+          "Oder Install-Icon in der Adressleiste nutzen",
+          "Alternativ: Button „Admin-App installieren“ im Dashboard",
+          "Nach Installation: App über Startmenü öffnen",
+        ],
+        expectsNativePrompt: true,
+        showShortcutVsPwaNote: true,
+      };
+    case "firefox":
+      return {
+        browserId,
+        title: "Installation in Firefox",
+        introduction:
+          "Firefox bietet keinen zuverlässigen beforeinstallprompt-Dialog — das ist browserbedingt, kein PWA-Fehler. Nutze die manuelle Installation.",
+        steps: isAndroidDevice()
+          ? [
+              "Firefox-Menü ☰ öffnen",
+              "Installieren oder Zum Startbildschirm hinzufügen wählen (je nach Firefox-Version)",
+              "Admin-App vom Startbildschirm öffnen",
+            ]
+          : [
+              "Firefox unterstützt PWA-Installation auf dem Desktop eingeschränkt",
+              "Für die beste Erfahrung: Chrome oder Edge nutzen",
+              "Oder auf Android Firefox: Menü → Installieren / Zum Startbildschirm hinzufügen",
+            ],
+        note: "Kein nativer Install-Prompt in Firefox — manuelle Anleitung nutzen.",
+        expectsNativePrompt: false,
+        showShortcutVsPwaNote: false,
+      };
+    case "samsung_internet":
+      return {
+        browserId,
+        title: "Installation in Samsung Internet",
+        introduction:
+          "Samsung Internet unterstützt PWA-Installation ähnlich wie Chrome — per Menü oder nativem Dialog.",
+        steps: [
+          "Menü ☰ unten rechts öffnen",
+          "Seite hinzufügen → Startbildschirm wählen (oder Apps → Installieren, falls angezeigt)",
+          "Alternativ: Button „Admin-App installieren“ im Dashboard",
+          "App vom Startbildschirm öffnen (Vollbild)",
+        ],
+        expectsNativePrompt: true,
+        showShortcutVsPwaNote: true,
+      };
+    case "in_app_browser":
+      return {
+        browserId,
+        title: "In-App-Browser",
+        introduction:
+          "In-App-Browser (z. B. Instagram, Facebook) unterstützen keine PWA-Installation. Bitte in Chrome oder Samsung Internet öffnen.",
+        steps: [
+          "Menü des In-App-Browsers öffnen",
+          "In Chrome öffnen oder Im Browser öffnen wählen",
+          "Dort die Installation erneut versuchen",
+        ],
+        expectsNativePrompt: false,
+        showShortcutVsPwaNote: false,
+      };
+    default:
+      return {
+        browserId: "other",
+        title: "Installation",
+        introduction: "Nutze die Installationsoption deines Browsers oder wechsle zu Chrome, Edge oder Safari (iOS).",
+        steps: [
+          "Browser-Menü öffnen",
+          "Nach „App installieren“, „Zum Startbildschirm“ oder ähnlicher Option suchen",
+          "Installation bestätigen",
+        ],
+        expectsNativePrompt: false,
+        showShortcutVsPwaNote: false,
+      };
+  }
+}
+
+function pwaShellCriteriaMet(probe: Pick<
+  PwaProbeResult,
+  "manifestValid" | "icons192Ok" | "icons512Ok" | "iconsMaskable192Ok" | "iconsMaskable512Ok" | "https"
+>): boolean {
+  return (
+    probe.manifestValid &&
+    probe.icons192Ok &&
+    probe.icons512Ok &&
+    probe.iconsMaskable192Ok &&
+    probe.iconsMaskable512Ok &&
+    probe.https
+  );
+}
+
+export interface PwaPanelStatus {
+  headline: string;
+  detail: string | null;
+  isError: boolean;
+}
+
+export function getPwaPanelStatus(opts: {
+  canInstall: boolean;
+  installMode: PwaInstallMode | undefined;
+  browser: PwaBrowserInfo;
+  causeMessage: string | null;
+}): PwaPanelStatus {
+  const { canInstall, installMode, browser, causeMessage } = opts;
+
+  if (canInstall) {
+    const headline =
+      browser.id === "edge"
+        ? "App installieren verfügbar (Edge)"
+        : browser.id === "chrome_desktop"
+          ? "App installieren verfügbar (Chrome Desktop)"
+          : browser.id === "samsung_internet"
+            ? "App installieren verfügbar (Samsung Internet)"
+            : "Echte PWA-Installation verfügbar („App installieren“)";
+    return {
+      headline,
+      detail: causeMessage ?? "Nativer Install-Dialog ist bereit.",
+      isError: false,
+    };
+  }
+
+  if (!installMode && browser.id === "safari_ios") {
+    return {
+      headline: "Installation über Safari möglich",
+      detail:
+        "Safari hat keinen Install-Dialog — Teilen → Zum Home-Bildschirm. Das ist der vorgesehene Weg, kein Fehler.",
+      isError: false,
+    };
+  }
+
+  if (!installMode && browser.id === "firefox") {
+    return {
+      headline: "Manuelle Installation in Firefox",
+      detail: "Firefox hat keinen zuverlässigen Install-Dialog — siehe Installationshilfe.",
+      isError: false,
+    };
+  }
+
+  if (installMode === "manual_install_available") {
+    if (browser.id === "safari_ios") {
+      return {
+        headline: "Installation über Safari möglich",
+        detail:
+          causeMessage ??
+          "Safari hat keinen Install-Dialog — Teilen → Zum Home-Bildschirm. Das ist der vorgesehene Weg, kein Fehler.",
+        isError: false,
+      };
+    }
+    if (browser.id === "firefox") {
+      return {
+        headline: "Manuelle Installation in Firefox",
+        detail:
+          causeMessage ??
+          "Firefox hat keinen zuverlässigen Install-Dialog — siehe browser-spezifische Anleitung.",
+        isError: false,
+      };
+    }
+    if (browser.id === "samsung_internet") {
+      return {
+        headline: "Manuelle Installation in Samsung Internet",
+        detail: causeMessage ?? "Nutze das Samsung-Internet-Menü — siehe Installationshilfe.",
+        isError: false,
+      };
+    }
+  }
+
+  if (installMode === "manifest_or_icons_error" || installMode === "sw_not_controlling") {
+    return {
+      headline: installMode === "sw_not_controlling" ? "Service Worker übernimmt noch" : "Technischer PWA-Fehler",
+      detail: causeMessage,
+      isError: true,
+    };
+  }
+
+  if (installMode === "shortcut_only" && expectsBeforeInstallPrompt(browser)) {
+    return {
+      headline: "Nur Startbildschirm-Verknüpfung — keine echte PWA",
+      detail:
+        causeMessage ??
+        `${browser.label} erkennt die Admin-App aktuell nur als Verknüpfung, nicht als installierbare PWA.`,
+      isError: true,
+    };
+  }
+
+  if (browser.id === "in_app_browser") {
+    return {
+      headline: "In-App-Browser — Installation nicht möglich",
+      detail: causeMessage ?? "Bitte in Chrome oder Samsung Internet öffnen.",
+      isError: true,
+    };
+  }
+
+  if (expectsBeforeInstallPrompt(browser)) {
+    return {
+      headline: `${browser.label}: Install-Dialog noch nicht verfügbar`,
+      detail:
+        causeMessage ??
+        "Seite neu laden, Status prüfen oder Installationshilfe öffnen. Das bedeutet nicht automatisch „PWA kaputt“.",
+      isError: false,
+    };
+  }
+
+  return {
+    headline: "Installationshilfe verfügbar",
+    detail: causeMessage ?? `Siehe Anleitung für ${browser.label}.`,
+    isError: false,
+  };
 }
 
 /** Clears only PWA hint/dismiss flags — no user or CMS data. */
@@ -215,16 +621,143 @@ export function resetPwaInstallHints(): void {
     sessionStorage.removeItem(PWA_SESSION_CLOSED_KEY);
     sessionStorage.removeItem(PWA_SW_RELOAD_KEY);
   }
+  clearDeferredPrompt();
+  if (typeof window !== "undefined") {
+    window.__pbPwaPromptFired = false;
+    window.__pbPwaInstalledFired = false;
+  }
+}
+
+export async function resetPwaInstallCaches(): Promise<void> {
+  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(
+      registrations
+        .filter((reg) => reg.scope.includes("/admin"))
+        .map((reg) => reg.unregister()),
+    );
+  }
+  if (typeof caches === "undefined") return;
+  const keys = await caches.keys();
+  await Promise.all(keys.filter((key) => key.startsWith("pb-admin")).map((key) => caches.delete(key)));
+}
+
+export function resolvePwaInstallMode(
+  probe: PwaProbeResult,
+  opts: { canInstall?: boolean; promptDismissedRecently?: boolean } = {},
+): PwaInstallMode {
+  const browser = detectPwaBrowser();
+
+  if (probe.state === "installed" || isStandalonePwa()) return "installed";
+  if (opts.canInstall || probe.installPromptAvailable) return "true_installable";
+
+  if (browser.id === "in_app_browser") return "unsupported";
+
+  if (!probe.manifestValid || !probe.icons192Ok || !probe.icons512Ok || !probe.iconsMaskable192Ok || !probe.iconsMaskable512Ok) {
+    return "manifest_or_icons_error";
+  }
+
+  if (browser.installMethod === "manual_ios" && pwaShellCriteriaMet(probe)) {
+    return "manual_install_available";
+  }
+
+  if (browser.id === "firefox" && pwaShellCriteriaMet(probe)) {
+    return "manual_install_available";
+  }
+
+  if (!("serviceWorker" in navigator) && browser.installMethod !== "manual_ios") {
+    return "unsupported";
+  }
+
+  if (probe.serviceWorkerActive && !probe.serviceWorkerControlling && expectsBeforeInstallPrompt(browser)) {
+    return "sw_not_controlling";
+  }
+
+  if (opts.promptDismissedRecently && expectsBeforeInstallPrompt(browser)) return "prompt_blocked";
+
+  if (
+    probe.manifestValid &&
+    probe.serviceWorkerRegistered &&
+    !probe.serviceWorkerControlling &&
+    expectsBeforeInstallPrompt(browser)
+  ) {
+    return "sw_not_controlling";
+  }
+
+  if (
+    browser.id === "samsung_internet" &&
+    pwaShellCriteriaMet(probe) &&
+    !probe.installPromptAvailable &&
+    probe.serviceWorkerControlling
+  ) {
+    return "manual_install_available";
+  }
+
+  if (
+    expectsBeforeInstallPrompt(browser) &&
+    pwaShellCriteriaMet(probe) &&
+    probe.serviceWorkerControlling &&
+    !probe.installPromptAvailable
+  ) {
+    return "shortcut_only";
+  }
+
+  if (usesManualInstallPath(browser) && pwaShellCriteriaMet(probe)) {
+    return "manual_install_available";
+  }
+
+  return expectsBeforeInstallPrompt(browser) ? "shortcut_only" : "unsupported";
 }
 
 export function detectPwaInstallCause(
   probe: PwaProbeResult,
-  opts: { promptDismissedRecently?: boolean } = {},
+  opts: { promptDismissedRecently?: boolean; canInstall?: boolean } = {},
 ): { cause: PwaInstallCause | null; message: string | null } {
-  if (probe.state === "installed" || isStandalonePwa()) {
+  const mode = resolvePwaInstallMode(probe, opts);
+  const browser = detectPwaBrowser();
+
+  if (mode === "installed") {
     return {
       cause: "already_standalone",
       message: "Die Admin-App läuft bereits im Vollbildmodus (standalone).",
+    };
+  }
+  if (mode === "true_installable") {
+    const promptLabel =
+      browser.id === "edge"
+        ? "Edge bietet „App installieren“ an."
+        : browser.id === "chrome_desktop"
+          ? "Chrome bietet „App installieren“ oder das Install-Icon in der Adressleiste an."
+          : browser.id === "samsung_internet"
+            ? "Samsung Internet bietet eine PWA-Installation an."
+            : "Chrome bietet eine echte PWA-Installation an („App installieren“).";
+    return { cause: "true_installable", message: promptLabel };
+  }
+  if (mode === "manual_install_available") {
+    if (browser.id === "safari_ios") {
+      return {
+        cause: "manual_install_path",
+        message:
+          "Safari hat keinen Install-Dialog — Installation über Teilen → Zum Home-Bildschirm. Das ist normal, kein Fehler.",
+      };
+    }
+    if (browser.id === "firefox") {
+      return {
+        cause: "manual_install_path",
+        message:
+          "Firefox hat keinen zuverlässigen Install-Dialog — nutze die Firefox-Anleitung in der Installationshilfe.",
+      };
+    }
+    if (browser.id === "samsung_internet") {
+      return {
+        cause: "manual_install_path",
+        message:
+          "Samsung Internet: Installation über Menü → Seite hinzufügen → Startbildschirm (oder nativer Dialog, wenn verfügbar).",
+      };
+    }
+    return {
+      cause: "manual_install_path",
+      message: `Installation über ${browser.label} — siehe browser-spezifische Anleitung.`,
     };
   }
   if (isInAppBrowser()) {
@@ -234,37 +767,41 @@ export function detectPwaInstallCause(
         "In-App-Browser erkannt — bitte die Seite in Chrome öffnen (Menü → „In Chrome öffnen“).",
     };
   }
-  if (probe.state === "browser_unsupported" || !supportsNativePwaInstall()) {
+  if (mode === "unsupported") {
     return {
       cause: "browser_unsupported",
-      message: "Dieser Browser unterstützt keinen nativen Install-Prompt — manuelle Installation nutzen.",
+      message: `${browser.label} unterstützt diese PWA-Installation nicht zuverlässig — bitte Chrome, Edge oder Safari (iOS) nutzen.`,
     };
   }
-  if (!probe.manifestValid || !probe.icons192Ok || !probe.icons512Ok || !probe.https) {
+  if (mode === "manifest_or_icons_error") {
     return {
       cause: "technical_blocker",
-      message: "Technische PWA-Kriterien sind noch nicht vollständig erfüllt — siehe Diagnose.",
+      message: "Manifest oder Icons sind fehlerhaft — siehe technische Diagnose.",
     };
   }
-  if (probe.serviceWorkerActive && !probe.serviceWorkerControlling) {
+  if (mode === "sw_not_controlling") {
     return {
       cause: "sw_not_controlling",
       message:
-        "Der Service Worker kontrolliert diese Seite noch nicht — Seite einmal neu laden und erneut prüfen.",
+        "Der Service Worker kontrolliert /admin noch nicht — Seite einmal neu laden und erneut prüfen.",
     };
   }
-  if (opts.promptDismissedRecently) {
+  if (mode === "prompt_blocked") {
     return {
       cause: "prompt_dismissed_by_user",
-      message:
-        "Der Installationsdialog wurde zuvor abgelehnt — Chrome blockiert den Prompt temporär. Manuelle Installation über das Chrome-Menü nutzen.",
+      message: `Der Installationsdialog wurde zuvor abgelehnt — ${browser.label} blockiert den Prompt ggf. temporär.`,
     };
   }
-  if (!probe.installPromptAvailable && !readPromptFiredFlag()) {
+  if (mode === "shortcut_only") {
+    return {
+      cause: "shortcut_only",
+      message: `${browser.label} erkennt die Admin-App aktuell nur als Verknüpfung („Zum Startbildschirm hinzufügen“), nicht als installierbare PWA. PWA-Kriterien sind noch nicht vollständig erfüllt oder der Browser liefert keinen Install-Prompt.`,
+    };
+  }
+  if (!probe.installPromptAvailable && !readPromptFiredFlag() && expectsBeforeInstallPrompt(browser)) {
     return {
       cause: "prompt_not_yet_fired",
-      message:
-        "Chrome stellt aktuell keinen Installationsdialog bereit. Manuelle Installation über Chrome-Menü → „App installieren“ oder „Zum Startbildschirm hinzufügen“. Fehlt die Option, erkennt Chrome die Seite noch nicht als installierbar oder blockiert den Prompt temporär.",
+      message: `${browser.label} bietet aktuell keinen Installationsdialog an — Seite neu laden oder Installationshilfe öffnen.`,
     };
   }
   return { cause: null, message: null };
@@ -272,7 +809,7 @@ export function detectPwaInstallCause(
 
 export async function buildPwaDebugStatus(
   probe: PwaProbeResult,
-  opts: { promptDismissedRecently?: boolean } = {},
+  opts: { promptDismissedRecently?: boolean; canInstall?: boolean } = {},
 ): Promise<PwaDebugStatus> {
   const detected = detectPwaInstallCause(probe, opts);
   return {
@@ -290,6 +827,7 @@ export async function buildPwaDebugStatus(
     currentRoute: typeof window !== "undefined" ? window.location.pathname : "/admin",
     startUrl: "/admin",
     scope: "/admin",
+    installMode: probe.installMode,
     detectedCause: detected.cause,
     causeMessage: detected.message,
   };
@@ -306,7 +844,7 @@ async function checkIconUrl(path: string): Promise<{ ok: boolean; mimeOk: boolea
   }
 }
 
-export function explainPwaBlockers(result: PwaProbeResult): string[] {
+export function explainPwaBlockers(result: PwaProbeResult, browser: PwaBrowserInfo = detectPwaBrowser()): string[] {
   const messages: string[] = [];
   if (!result.https) messages.push("Die Seite muss über HTTPS erreichbar sein.");
   if (!result.manifestLoaded) messages.push("Das Web-App-Manifest konnte nicht geladen werden.");
@@ -316,24 +854,32 @@ export function explainPwaBlockers(result: PwaProbeResult): string[] {
   if (!result.icons192Ok || !result.icons512Ok) {
     messages.push("Die App-Icons (192×192 / 512×512) sind nicht erreichbar.");
   }
+  if (!result.iconsMaskable192Ok || !result.iconsMaskable512Ok) {
+    messages.push("Maskable Icons (192×192 / 512×512) fehlen oder sind nicht erreichbar.");
+  }
   if (result.icons192Ok && !result.icons192MimeOk) {
     messages.push("Das 192×192-Icon hat keinen gültigen PNG-MIME-Type.");
   }
   if (result.icons512Ok && !result.icons512MimeOk) {
     messages.push("Das 512×512-Icon hat keinen gültigen PNG-MIME-Type.");
   }
-  if (!result.serviceWorkerRegistered) {
+
+  const needsServiceWorker = expectsBeforeInstallPrompt(browser) || browser.id === "firefox";
+
+  if (needsServiceWorker && !result.serviceWorkerRegistered) {
     messages.push("Kein Service Worker für /admin registriert.");
   }
-  if (result.serviceWorkerRegistered && !result.serviceWorkerActive) {
+  if (needsServiceWorker && result.serviceWorkerRegistered && !result.serviceWorkerActive) {
     messages.push("Der Service Worker ist registriert, aber noch nicht aktiv.");
   }
-  if (result.serviceWorkerActive && !result.serviceWorkerControlling) {
+  if (needsServiceWorker && result.serviceWorkerActive && !result.serviceWorkerControlling) {
     messages.push(
-      "Der Service Worker kontrolliert diese Seite noch nicht — Chrome feuert beforeinstallprompt oft erst nach einem Seiten-Reload.",
+      `Der Service Worker kontrolliert diese Seite noch nicht — ${browser.label} feuert beforeinstallprompt oft erst nach einem Seiten-Reload.`,
     );
   }
+
   if (
+    expectsBeforeInstallPrompt(browser) &&
     result.manifestValid &&
     result.serviceWorkerActive &&
     result.serviceWorkerControlling &&
@@ -342,13 +888,18 @@ export function explainPwaBlockers(result: PwaProbeResult): string[] {
     !result.installPromptAvailable
   ) {
     messages.push(
-      "Alle technischen Kriterien sind erfüllt, aber Chrome meldet keinen Install-Prompt. Mögliche Ursachen: App bereits installiert, Prompt zuvor abgelehnt, In-App-Browser statt Chrome, oder Chromes Engagement-Heuristik (häufig erst nach erneutem Besuch / längerer Nutzung).",
+      `Alle technischen Kriterien sind erfüllt, aber ${browser.label} meldet keinen Install-Prompt. Mögliche Ursachen: App bereits installiert, Prompt zuvor abgelehnt, In-App-Browser, oder Browser-Engagement-Heuristik.`,
     );
   }
+
   return messages;
 }
 
-function buildStatusLabel(state: PwaInstallabilityState, issues: string[]): string {
+function buildStatusLabel(
+  state: PwaInstallabilityState,
+  issues: string[],
+  installMode: PwaInstallMode,
+): string {
   switch (state) {
     case "installed":
       return "Bereits installiert";
@@ -357,8 +908,10 @@ function buildStatusLabel(state: PwaInstallabilityState, issues: string[]): stri
     case "browser_unsupported":
       return "Browser nicht unterstützt";
     case "not_installable":
-      if (issues.includes("sw_not_controlling")) return "Service Worker kontrolliert Seite nicht";
-      if (issues.includes("prompt_pending")) return "Install-Prompt noch nicht verfügbar";
+      if (installMode === "manual_install_available") return "Manuelle Installation möglich";
+      if (issues.includes("sw_not_controlling")) return "Service Worker kontrolliert /admin nicht";
+      if (issues.includes("prompt_pending")) return "Install-Dialog noch ausstehend";
+      if (issues.includes("shortcut_only")) return "Nur Startbildschirm-Verknüpfung möglich";
       if (issues.includes("manifest_missing")) return "Manifest fehlt";
       if (issues.includes("service_worker_missing")) return "Service Worker fehlt";
       if (issues.includes("icons_missing")) return "Icon fehlt";
@@ -372,6 +925,7 @@ function buildStatusLabel(state: PwaInstallabilityState, issues: string[]): stri
 export async function probePwaInstallability(
   deferred: BeforeInstallPromptEvent | null,
 ): Promise<PwaProbeResult> {
+  const browser = detectPwaBrowser();
   const issues: string[] = [];
   const https =
     typeof window !== "undefined" &&
@@ -411,11 +965,16 @@ export async function probePwaInstallability(
 
   const icon192 = await checkIconUrl(`${BRAND.assets.icon192}?v=${BRAND.iconVersion}`);
   const icon512 = await checkIconUrl(`${BRAND.assets.icon512}?v=${BRAND.iconVersion}`);
+  const iconMaskable192 = await checkIconUrl(`${BRAND.assets.iconMaskable192}?v=${BRAND.iconVersion}`);
+  const iconMaskable512 = await checkIconUrl(`${BRAND.assets.iconMaskable512}?v=${BRAND.iconVersion}`);
   const icons192Ok = icon192.ok;
   const icons512Ok = icon512.ok;
   const icons192MimeOk = icon192.mimeOk;
   const icons512MimeOk = icon512.mimeOk;
+  const iconsMaskable192Ok = iconMaskable192.ok;
+  const iconsMaskable512Ok = iconMaskable512.ok;
   if (!icons192Ok || !icons512Ok) issues.push("icons_missing");
+  if (!iconsMaskable192Ok || !iconsMaskable512Ok) issues.push("maskable_icons_missing");
   if (icons192Ok && !icons192MimeOk) issues.push("icon192_mime");
   if (icons512Ok && !icons512MimeOk) issues.push("icon512_mime");
 
@@ -424,6 +983,8 @@ export async function probePwaInstallability(
   let serviceWorkerControlling = false;
   let offlineCapable = false;
 
+  const needsServiceWorker = expectsBeforeInstallPrompt(browser) || browser.id === "firefox";
+
   if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
     try {
       const reg = await navigator.serviceWorker.getRegistration("/admin");
@@ -431,14 +992,16 @@ export async function probePwaInstallability(
       serviceWorkerActive = Boolean(reg?.active);
       serviceWorkerControlling = Boolean(navigator.serviceWorker.controller);
       offlineCapable = serviceWorkerActive;
-      if (!serviceWorkerRegistered) issues.push("service_worker_missing");
-      else if (!serviceWorkerActive) issues.push("service_worker_inactive");
-      if (serviceWorkerActive && !serviceWorkerControlling) issues.push("sw_not_controlling");
-      if (!offlineCapable) issues.push("offline_missing");
+      if (needsServiceWorker && !serviceWorkerRegistered) issues.push("service_worker_missing");
+      else if (needsServiceWorker && !serviceWorkerActive) issues.push("service_worker_inactive");
+      if (needsServiceWorker && serviceWorkerActive && !serviceWorkerControlling) {
+        issues.push("sw_not_controlling");
+      }
+      if (needsServiceWorker && !offlineCapable) issues.push("offline_missing");
     } catch {
-      issues.push("service_worker_missing");
+      if (needsServiceWorker) issues.push("service_worker_missing");
     }
-  } else {
+  } else if (needsServiceWorker && browser.installMethod !== "manual_ios") {
     issues.push("browser_unsupported");
   }
 
@@ -446,45 +1009,55 @@ export async function probePwaInstallability(
   const installPromptAvailable = Boolean(deferred);
 
   if (
+    expectsBeforeInstallPrompt(browser) &&
     !standalone &&
     manifestValid &&
     serviceWorkerActive &&
     serviceWorkerControlling &&
     icons192Ok &&
     icons512Ok &&
+    iconsMaskable192Ok &&
+    iconsMaskable512Ok &&
     https &&
     !installPromptAvailable
   ) {
     issues.push("prompt_pending");
+    issues.push("shortcut_only");
   }
 
   let state: PwaInstallabilityState;
   if (standalone) {
     state = "installed";
-  } else if (!("serviceWorker" in navigator)) {
+  } else if (browser.id === "in_app_browser") {
     state = "browser_unsupported";
-  } else if (installPromptAvailable && manifestValid && serviceWorkerActive && icons192Ok && icons512Ok) {
+  } else if (!("serviceWorker" in navigator) && browser.installMethod !== "manual_ios") {
+    state = "browser_unsupported";
+  } else if (
+    installPromptAvailable &&
+    manifestValid &&
+    serviceWorkerActive &&
+    icons192Ok &&
+    icons512Ok &&
+    iconsMaskable192Ok &&
+    iconsMaskable512Ok
+  ) {
     state = "installable";
+  } else if (
+    browser.installMethod === "manual_ios" &&
+    manifestValid &&
+    icons192Ok &&
+    icons512Ok &&
+    iconsMaskable192Ok &&
+    iconsMaskable512Ok &&
+    https
+  ) {
+    state = "not_installable";
   } else {
     state = "not_installable";
   }
 
-  return {
-    state,
-    manifestLoaded,
-    manifestValid,
-    icons192Ok,
-    icons512Ok,
-    icons192MimeOk,
-    icons512MimeOk,
-    serviceWorkerRegistered,
-    serviceWorkerActive,
-    serviceWorkerControlling,
-    offlineCapable,
-    installPromptAvailable,
-    https,
-    issues,
-    blockers: explainPwaBlockers({
+  const installMode = resolvePwaInstallMode(
+    {
       state,
       manifestLoaded,
       manifestValid,
@@ -492,6 +1065,8 @@ export async function probePwaInstallability(
       icons512Ok,
       icons192MimeOk,
       icons512MimeOk,
+      iconsMaskable192Ok,
+      iconsMaskable512Ok,
       serviceWorkerRegistered,
       serviceWorkerActive,
       serviceWorkerControlling,
@@ -502,28 +1077,71 @@ export async function probePwaInstallability(
       blockers: [],
       statusLabel: "",
       checkedAt: "",
-    }),
-    statusLabel: buildStatusLabel(state, issues),
+      installMode: "shortcut_only",
+    },
+    { canInstall: installPromptAvailable },
+  );
+
+  const blockers = explainPwaBlockers(
+    {
+      state,
+      manifestLoaded,
+      manifestValid,
+      icons192Ok,
+      icons512Ok,
+      icons192MimeOk,
+      icons512MimeOk,
+      iconsMaskable192Ok,
+      iconsMaskable512Ok,
+      serviceWorkerRegistered,
+      serviceWorkerActive,
+      serviceWorkerControlling,
+      offlineCapable,
+      installPromptAvailable,
+      https,
+      issues,
+      blockers: [],
+      statusLabel: "",
+      checkedAt: "",
+      installMode,
+    },
+    browser,
+  );
+
+  return {
+    state,
+    manifestLoaded,
+    manifestValid,
+    icons192Ok,
+    icons512Ok,
+    icons192MimeOk,
+    icons512MimeOk,
+    iconsMaskable192Ok,
+    iconsMaskable512Ok,
+    serviceWorkerRegistered,
+    serviceWorkerActive,
+    serviceWorkerControlling,
+    offlineCapable,
+    installPromptAvailable,
+    https,
+    issues,
+    blockers,
+    statusLabel: buildStatusLabel(state, issues, installMode),
     checkedAt: new Date().toISOString(),
+    installMode,
   };
 }
 
-const SW_PATHS = ["/admin/sw.js", "/admin-sw.js"] as const;
+const ADMIN_SW_PATH = "/admin/sw.js";
 
 export async function registerAdminServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
 
   let reg: ServiceWorkerRegistration | null = null;
-  for (const path of SW_PATHS) {
-    try {
-      reg = await navigator.serviceWorker.register(path, { scope: "/admin/" });
-      break;
-    } catch {
-      continue;
-    }
-  }
-  if (!reg) {
-    console.warn("[pwa] registration failed for all SW paths");
+  try {
+    reg = await navigator.serviceWorker.register(ADMIN_SW_PATH, { scope: "/admin/" });
+  } catch (err) {
+    console.warn("[pwa] registration failed for", ADMIN_SW_PATH, err);
     return null;
   }
 

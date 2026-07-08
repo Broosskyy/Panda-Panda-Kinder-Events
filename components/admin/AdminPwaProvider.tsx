@@ -14,6 +14,8 @@ import {
   buildPwaDebugStatus,
   clearDeferredPrompt,
   clearPwaSessionClosed,
+  detectPwaBrowser,
+  getBrowserInstallGuide,
   isAndroidDevice,
   isIosDevice,
   markPwaDontShowAgain,
@@ -24,11 +26,14 @@ import {
   readPwaSessionClosed,
   registerAdminServiceWorker,
   resetPwaInstallHints,
+  resetPwaInstallCaches,
   resolvePwaInstalled,
   storeDeferredPrompt,
   supportsNativePwaInstall,
   takeEarlyCapturedPrompt,
   type BeforeInstallPromptEvent,
+  type BrowserInstallGuide,
+  type PwaBrowserInfo,
   type PwaDebugStatus,
   type PwaInstallOutcome,
   type PwaProbeResult,
@@ -43,6 +48,8 @@ export type PwaInstallFeedback =
 
 interface AdminPwaContextValue {
   canInstall: boolean;
+  browserInfo: PwaBrowserInfo;
+  installGuide: BrowserInstallGuide;
   showIosGuide: boolean;
   showAndroidGuide: boolean;
   showUnsupportedGuide: boolean;
@@ -76,6 +83,8 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const [installed, setInstalled] = useState(false);
   const [hiddenPermanently, setHiddenPermanently] = useState(false);
   const [sessionClosed, setSessionClosed] = useState(false);
+  const [browserInfo] = useState(() => detectPwaBrowser());
+  const [installGuide] = useState(() => getBrowserInstallGuide(detectPwaBrowser().id));
   const [ios] = useState(() => isIosDevice());
   const [android] = useState(() => isAndroidDevice());
   const [probeResult, setProbeResult] = useState<PwaProbeResult | null>(null);
@@ -95,7 +104,10 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
     async (prompt: BeforeInstallPromptEvent | null) => {
       const status = await probePwaInstallability(prompt);
       setProbeResult(status);
-      const debug = await buildPwaDebugStatus(status, { promptDismissedRecently });
+      const debug = await buildPwaDebugStatus(status, {
+        promptDismissedRecently,
+        canInstall: Boolean(prompt),
+      });
       setDebugStatus(debug);
       if (status.state === "installed") setInstalled(true);
       return status;
@@ -206,11 +218,12 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
 
   const resetInstallHints = useCallback(() => {
     resetPwaInstallHints();
+    void resetPwaInstallCaches();
     setHiddenPermanently(false);
     setSessionClosed(false);
     setForceShowCard(true);
     setInstallFeedback({ type: "idle" });
-    void refreshProbe(deferredRef.current);
+    void registerAdminServiceWorker().then(() => refreshProbe(deferredRef.current));
   }, [refreshProbe]);
 
   const openInstallHelp = useCallback(() => {
@@ -237,6 +250,8 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AdminPwaContextValue>(
     () => ({
       canInstall,
+      browserInfo,
+      installGuide,
       showIosGuide,
       showAndroidGuide,
       showUnsupportedGuide,
@@ -258,6 +273,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       reopenInstallCard,
     }),
     [
+      browserInfo,
       canInstall,
       checkInstallStatus,
       closeCard,
@@ -268,6 +284,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       hiddenPermanently,
       install,
       installFeedback,
+      installGuide,
       installed,
       openInstallHelp,
       probeResult,

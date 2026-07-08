@@ -1,10 +1,11 @@
-const CACHE = "pb-admin-shell-v3";
+const CACHE = "pb-admin-shell-v4";
 const SHELL = [
   "/admin",
   "/admin/manifest.webmanifest",
   "/offline",
   "/icons/panda-icon-192.png",
   "/icons/panda-icon-512.png",
+  "/icons/panda-icon-maskable-192.png",
   "/icons/panda-icon-maskable-512.png",
 ];
 
@@ -34,7 +35,7 @@ self.addEventListener("fetch", (event) => {
   const isAdminPath = url.pathname.startsWith("/admin");
   const isPwaAsset =
     url.pathname === "/admin/sw.js" ||
-    url.pathname === "/admin-sw.js" ||
+    url.pathname === "/admin/manifest.webmanifest" ||
     url.pathname.startsWith("/icons/") ||
     url.pathname === "/offline";
 

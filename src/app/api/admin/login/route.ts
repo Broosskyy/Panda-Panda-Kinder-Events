@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminCookieName, legacyCookieClearOptions } from "@/lib/admin-auth";
 import { verifyPassword } from "@/lib/auth/password";
+import { evaluateBootstrapAccess } from "@/lib/auth/bootstrap-guard";
 import { findUserByIdentifier, getRoleById, getUserPublicById, hasAdminUsers, updateUser } from "@/lib/auth/users";
 import { getLoginPolicy, getRateLimitPolicy } from "@/lib/auth/security-settings";
 import { recordLoginHistory } from "@/lib/auth/login-history";
@@ -285,21 +286,19 @@ export async function DELETE(request: Request) {
 }
 
 export async function GET() {
-  let usersExist = false;
-  try {
-    usersExist = await hasAdminUsers();
-  } catch {
-    const response = NextResponse.json({ authenticated: false, needsBootstrap: false, error: "Datenbank nicht erreichbar." });
-    return response;
-  }
+  const bootstrap = await evaluateBootstrapAccess();
 
   const ctx = await resolveAdminContext();
   if (!ctx) {
     const response = NextResponse.json({
       authenticated: false,
-      needsBootstrap: !usersExist,
+      needsBootstrap: bootstrap.allowed,
+      bootstrap,
+      ...(bootstrap.reason === "count_query_failed"
+        ? { error: "Datenbank nicht erreichbar." }
+        : {}),
     });
-    if (usersExist) clearLegacyAuthCookie(response);
+    if (bootstrap.reason === "admin_users_exist") clearLegacyAuthCookie(response);
     return response;
   }
 
@@ -309,6 +308,14 @@ export async function GET() {
 
   const response = NextResponse.json({
     authenticated: true,
+    needsBootstrap: false,
+    bootstrap: {
+      allowed: false,
+      reason: "authenticated_session" as const,
+      adminUserCount: null,
+      sessionActive: true,
+      sessionUserId: ctx.userId,
+    },
     userId: ctx.userId,
     displayName: profile?.display_name ?? ctx.displayName,
     email: profile?.email ?? ctx.email,

@@ -25,11 +25,14 @@ export function AdminGate({ children }: { children: ReactNode }) {
       .then((data) => {
         if (data.authenticated) {
           setGateState("authenticated");
-        } else if (data.needsBootstrap) {
-          setGateState("bootstrap");
-        } else {
-          setGateState("login");
+          return;
         }
+        const bootstrapAllowed = data.bootstrap?.allowed === true;
+        if (bootstrapAllowed && data.needsBootstrap === true) {
+          setGateState("bootstrap");
+          return;
+        }
+        setGateState("login");
       })
       .catch(() => setGateState("login"));
   }, [isPublicRoute]);

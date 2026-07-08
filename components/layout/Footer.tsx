@@ -37,8 +37,8 @@ export function Footer({
 
   return (
     <footer className="footer-premium text-text-inverse">
-      <Container className="footer-inner relative py-8 sm:py-16 md:py-20">
-        <div className="footer-grid grid gap-8 sm:gap-14 md:grid-cols-2 lg:grid-cols-4 md:gap-10">
+      <Container className="footer-inner relative py-6 sm:py-16 md:py-20">
+        <div className="footer-grid grid gap-6 sm:gap-14 md:grid-cols-2 lg:grid-cols-4 md:gap-10">
           <div className="flex flex-col items-center md:items-start lg:col-span-1">
             <Logo context="footer" variant="inverse" branding={branding} />
             <p className="font-accent mt-5 max-w-xs text-center text-lg leading-snug text-white/90 sm:mt-6 sm:text-xl md:max-w-none md:text-left md:text-2xl">

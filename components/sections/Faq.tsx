@@ -40,7 +40,7 @@ export function Faq({
             const panelId = `${baseId}-faq-panel-${index}`;
 
             return (
-              <div key={faq.question} className={`faq-item py-4 sm:py-6 ${isOpen ? "is-open" : ""}`} role="listitem">
+              <div key={faq.question} className={`faq-item py-3 sm:py-6 ${isOpen ? "is-open" : ""}`} role="listitem">
                 <button
                   id={buttonId}
                   type="button"
@@ -63,7 +63,7 @@ export function Faq({
                   className={`faq-panel grid transition-[grid-template-rows] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${isOpen ? "faq-panel-open" : "faq-panel-closed"}`}
                 >
                   <div className="overflow-hidden" aria-hidden={!isOpen}>
-                    <p className="pb-1 pt-3 max-w-prose text-base leading-relaxed text-text-secondary sm:pt-5 sm:text-lg sm:leading-8">
+                    <p className="pb-1 pt-2 max-w-prose text-base leading-relaxed text-text-secondary sm:pt-5 sm:text-lg sm:leading-8">
                       {faq.answer}
                     </p>
                   </div>

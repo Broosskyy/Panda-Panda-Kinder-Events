@@ -92,7 +92,7 @@ export function Contact({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid gap-8 sm:gap-12 lg:grid-cols-2 lg:gap-20">
+        <div className="grid gap-5 sm:gap-12 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal>
             <Card padding="lg" hover={false} className="form-luxury">
               <InquiryForm privacyHint={privacyHint} />

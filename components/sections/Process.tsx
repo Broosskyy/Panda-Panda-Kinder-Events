@@ -27,11 +27,11 @@ export function Process({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto] lg:gap-24">
+        <div className="grid items-center gap-5 lg:grid-cols-[1fr_auto] lg:gap-24">
           <div className="relative">
             <div className="timeline-line lg:hidden" aria-hidden />
             <ol
-              className="flex flex-col gap-5 sm:gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
+              className="flex flex-col gap-2.5 sm:gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
               role="list"
             >
               {steps.map((step, index) => {
@@ -76,7 +76,7 @@ export function Process({
             </ol>
           </div>
 
-          <ScrollReveal delay={200} className="relative mx-auto w-52 sm:w-64 xl:w-72">
+          <ScrollReveal delay={200} className="relative mx-auto hidden w-52 sm:w-64 lg:block xl:w-72">
             <BrandMark className="mx-auto w-full justify-center" />
             <div className="absolute -top-3 right-0 max-w-[min(100%,13rem)] rounded-[var(--radius-card)] rounded-br-md border border-white/60 bg-bg-card/95 px-5 py-4 text-sm leading-relaxed shadow-float backdrop-blur-md sm:max-w-[220px] sm:px-6 sm:py-5 sm:text-base">
               {process.speechBubble}{" "}

@@ -60,7 +60,7 @@ export function Gallery({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="gallery-filter-row mb-3 flex flex-wrap justify-center gap-1.5 sm:mb-6 sm:gap-2 md:mb-8" role="tablist" aria-label="Galerie Filter">
+        <div className="gallery-filter-row mb-2 flex flex-wrap justify-center gap-1.5 sm:mb-6 sm:gap-2 md:mb-8" role="tablist" aria-label="Galerie Filter">
           {categories.map((category) => (
             <button
               key={category}
@@ -86,7 +86,7 @@ export function Gallery({
                 <ScrollReveal delay={index * 80}>
                   <button
                     type="button"
-                    className="gallery-tile group relative aspect-[4/5] w-full md:aspect-[4/3]"
+                    className="gallery-tile group relative aspect-[3/4] w-full md:aspect-[4/3]"
                     onClick={() => setLightboxIndex(index)}
                     aria-label={`${image.alt} vergrößern`}
                   >

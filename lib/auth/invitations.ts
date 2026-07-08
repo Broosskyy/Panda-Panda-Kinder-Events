@@ -221,6 +221,16 @@ export async function hasPendingInviteForEmail(email: string): Promise<boolean> 
   return data.some((row) => new Date(String(row.expires_at)).getTime() > Date.now());
 }
 
+export async function deleteInvitation(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("admin_invitations").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}
+
+export async function issueInvitationLink(id: string): Promise<{ invitation: AdminInvitationPublic; token: string }> {
+  return resendInvitation(id);
+}
+
 export function deriveUsernameFromEmail(email: string): string {
   const local = email.split("@")[0] ?? "user";
   return local.replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 40) || "user";

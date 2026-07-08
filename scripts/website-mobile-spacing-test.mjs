@@ -56,13 +56,15 @@ if (floating.includes("useFloatingContactAboveCta") && hook.includes("sticky-cta
   fail("Floating WhatsApp CTA sync missing");
 }
 
-if (globals.includes("--section-header-gap: 1.125rem") || globals.includes("--section-header-gap: 1.75rem")) {
+if (globals.includes("--section-header-gap: 0.875rem") || globals.includes("--section-header-gap: 1.125rem")) {
   ok("Mobile section header gap reduced");
 } else {
   fail("Mobile section header gap not reduced");
 }
 
-if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*1\.25rem/)) {
+if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*1rem/)) {
+  ok("Mobile section padding tightened");
+} else if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*1\.25rem/)) {
   ok("Mobile section padding tightened");
 } else if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*2rem/)) {
   ok("Mobile section padding tightened");

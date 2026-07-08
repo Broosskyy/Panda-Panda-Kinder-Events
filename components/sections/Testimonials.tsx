@@ -26,7 +26,7 @@ function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
   const displayStars = Math.round(average * 2) / 2;
 
   return (
-    <div className="review-summary mb-3 flex flex-col items-center gap-2 text-center sm:mb-12 sm:gap-3 md:mb-16">
+    <div className="review-summary mb-2 flex flex-col items-center gap-1.5 text-center sm:mb-12 sm:gap-3 md:mb-16">
       <StarRating rating={displayStars} size="xl" />
       <div className="flex items-baseline gap-2">
         <span className="font-heading text-3xl font-bold text-text-primary sm:text-5xl md:text-6xl">{displayAverage}</span>
@@ -111,7 +111,7 @@ export function Testimonials({
               <p className="mx-auto mt-4 max-w-sm text-base leading-relaxed text-text-secondary sm:text-lg">
                 Seid die Ersten — teilt eure Erfahrung mit der Panda-Bande!
               </p>
-              <Button className="mt-9 w-full shadow-lg sm:mt-10 sm:w-auto" size="lg" onClick={scrollToForm}>
+              <Button className="mt-6 w-full shadow-lg sm:mt-10 sm:w-auto" size="lg" onClick={scrollToForm}>
                 Jetzt erste Bewertung abgeben
               </Button>
             </Card>
@@ -167,7 +167,7 @@ export function Testimonials({
             </div>
 
             {showAllLink ? (
-              <div className="mt-10 flex justify-center sm:mt-12">
+              <div className="mt-6 flex justify-center sm:mt-12">
                 <Button href="/bewertungen" variant="secondary" size="lg">
                   Alle {publishedTotal} Bewertungen anzeigen
                 </Button>

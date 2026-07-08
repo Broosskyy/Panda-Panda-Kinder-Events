@@ -210,36 +210,24 @@ export function AdminSidebar() {
       ) : null}
 
       <nav className="admin-bottom-nav md:hidden" aria-label="Schnellnavigation">
-        {mobileBottomNav.map(({ href, label, iconKey, mobileLabel }) => {
+        {mobileBottomNav.map(({ href, iconKey, mobileLabel, label }) => {
           const Icon = resolveAdminIcon(iconKey);
           const active = isAdminNavActive(pathname, href);
           const badge = badgeForHref(href);
-          const displayLabel =
-            mobileLabel ??
-            (href === "/admin"
-              ? "Dashboard"
-              : href === "/admin/anfragen"
-                ? "Anfragen"
-                : href === "/admin/kunden"
-                  ? "Kunden"
-                  : href === "/admin/angebote"
-                    ? "Angebote"
-                    : href === "/admin/rechnungen"
-                      ? "Rechnungen"
-                      : label);
+          const displayLabel = mobileLabel ?? label;
           return (
             <Link key={href} href={href} className={`admin-bottom-nav-item ${active ? "admin-bottom-nav-item-active" : ""}`}>
-              <span className="relative">
+              <span className="relative inline-flex">
                 <Icon className="admin-bottom-nav-icon" aria-hidden />
                 {badge > 0 ? <span className="admin-bottom-nav-badge">{badge > 9 ? "9+" : badge}</span> : null}
               </span>
-              <span>{displayLabel}</span>
+              <span className="admin-bottom-nav-label">{displayLabel}</span>
             </Link>
           );
         })}
         <button type="button" className="admin-bottom-nav-item" onClick={() => setDrawerOpen(true)} aria-label="Mehr Navigation">
           <Menu className="admin-bottom-nav-icon" aria-hidden />
-          <span>Mehr</span>
+          <span className="admin-bottom-nav-label">Mehr</span>
         </button>
       </nav>
     </>

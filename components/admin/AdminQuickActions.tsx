@@ -8,44 +8,27 @@ import Link from "next/link";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { ADMIN_GLOBAL_QUICK_ACTIONS, filterQuickActions } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
-
-const HIDE_FAB_PREFIXES = [
-  "/admin/einstellungen",
-  "/admin/angebote",
-  "/admin/rechnungen",
-  "/admin/galerie",
-  "/admin/bewertungen",
-  "/admin/team",
-  "/admin/inhalte",
-  "/admin/leistungen",
-  "/admin/beitraege",
-  "/admin/faq",
-  "/admin/emails",
-  "/admin/sicherheit",
-  "/admin/kunden",
-  "/admin/anfragen",
-  "/admin/analytics",
-  "/admin/erste-schritte",
-];
+import { useScrollVisible } from "@/lib/admin/use-scroll-visible";
 
 export function AdminQuickActions() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { permissions } = useAdminSession();
+  const scrollVisible = useScrollVisible(pathname === "/admin");
 
   const actions = useMemo(
     () => filterQuickActions(ADMIN_GLOBAL_QUICK_ACTIONS, permissions),
     [permissions],
   );
 
-  const hideFab =
-    pathname === "/admin" ||
-    pathname === "/admin/module" ||
-    HIDE_FAB_PREFIXES.some((prefix) => pathname?.startsWith(prefix));
-  if (hideFab || actions.length === 0) return null;
+  // FAB only on dashboard; hidden on mobile (quick actions + bottom nav cover needs).
+  const showFab = pathname === "/admin" && actions.length > 0;
+  if (!showFab) return null;
 
   return (
-    <div className={`admin-quick-actions-global ${open ? "admin-quick-actions-global-open" : ""}`}>
+    <div
+      className={`admin-quick-actions-global hidden md:flex ${open ? "admin-quick-actions-global-open" : ""} ${scrollVisible ? "" : "admin-quick-actions-global-hidden"}`}
+    >
       {open ? (
         <button
           type="button"

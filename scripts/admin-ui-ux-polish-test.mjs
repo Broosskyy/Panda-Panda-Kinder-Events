@@ -71,10 +71,10 @@ if (css.includes("admin-speed-dial")) ok("Speed dial FAB styles");
 else fail("Speed dial styles missing");
 
 const fab = read("components/admin/AdminQuickActions.tsx");
-if (fab.includes("admin-speed-dial") && !fab.includes("admin-quick-actions-menu")) {
-  ok("FAB uses speed dial pattern");
+if (fab.includes('pathname === "/admin"') && fab.includes("hidden md:flex")) {
+  ok("FAB dashboard-only on desktop");
 } else {
-  fail("FAB not converted to speed dial");
+  fail("FAB visibility rules incorrect");
 }
 
 for (const view of ["BookingsView.tsx", "GalleryView.tsx", "ReviewsView.tsx"]) {

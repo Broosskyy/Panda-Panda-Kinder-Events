@@ -11,22 +11,9 @@ const TONE_CLASS: Record<DashboardSemanticTone, string> = {
   muted: "dash-v2-chip-muted",
 };
 
-const TONE_DOT: Record<DashboardSemanticTone, string> = {
-  success: "🟢",
-  warning: "🟡",
-  danger: "🔴",
-  info: "🔵",
-  muted: "⚪",
-};
-
 function Chip({ chip }: { chip: DashboardStatusChip }) {
   const className = `dash-v2-chip ${TONE_CLASS[chip.tone]}`;
-  const content = (
-    <>
-      <span aria-hidden>{TONE_DOT[chip.tone]}</span>
-      <span>{chip.label}</span>
-    </>
-  );
+  const content = <span>{chip.label}</span>;
   return chip.href ? (
     <Link href={chip.href} className={className}>
       {content}

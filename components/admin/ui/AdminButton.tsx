@@ -1,6 +1,7 @@
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from "react";
+import { Loader2 } from "lucide-react";
 
-type AdminButtonVariant = "primary" | "secondary" | "danger" | "ghost";
+type AdminButtonVariant = "primary" | "secondary" | "danger" | "ghost" | "success";
 
 interface AdminButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: AdminButtonVariant;
@@ -8,6 +9,7 @@ interface AdminButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   target?: AnchorHTMLAttributes<HTMLAnchorElement>["target"];
   rel?: AnchorHTMLAttributes<HTMLAnchorElement>["rel"];
   icon?: ReactNode;
+  loading?: boolean;
   children: ReactNode;
 }
 
@@ -16,6 +18,7 @@ const variantClass: Record<AdminButtonVariant, string> = {
   secondary: "admin-btn-secondary",
   danger: "admin-btn-danger",
   ghost: "admin-btn-ghost",
+  success: "admin-btn-success",
 };
 
 export function AdminButton({
@@ -24,11 +27,19 @@ export function AdminButton({
   target,
   rel,
   icon,
+  loading = false,
   className = "",
   children,
+  disabled,
   ...props
 }: AdminButtonProps) {
-  const classes = `${variantClass[variant]} min-h-11 ${className}`;
+  const classes = `${variantClass[variant]} min-h-11 ${loading ? "admin-btn-loading" : ""} ${className}`;
+  const content = (
+    <>
+      {loading ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden /> : icon}
+      {children}
+    </>
+  );
 
   if (href) {
     return (
@@ -37,17 +48,16 @@ export function AdminButton({
         className={classes}
         target={target}
         rel={rel ?? (target === "_blank" ? "noopener noreferrer" : undefined)}
+        aria-busy={loading || undefined}
       >
-        {icon}
-        {children}
+        {content}
       </a>
     );
   }
 
   return (
-    <button type="button" className={classes} {...props}>
-      {icon}
-      {children}
+    <button type="button" className={classes} disabled={disabled || loading} aria-busy={loading || undefined} {...props}>
+      {content}
     </button>
   );
 }

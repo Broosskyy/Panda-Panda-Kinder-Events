@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
@@ -115,10 +114,6 @@ export function GalleryView() {
           }}
         />
       </AdminPageHeader>
-
-      <AdminHelpBlock title="Tipp" variant="tip" className="mb-6">
-        Lade hier Bilder hoch, die öffentlich in der Galerie auf der Website erscheinen. Ausgeblendete Bilder sind nur intern sichtbar.
-      </AdminHelpBlock>
 
       {images.length === 0 ? (
         <AdminEmptyState

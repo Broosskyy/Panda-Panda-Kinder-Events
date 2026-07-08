@@ -4,9 +4,19 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import type { BookingStatus } from "@/lib/supabase/admin";
 import { Inbox, UserPlus } from "lucide-react";
-import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
-import { AdminButton, AdminEmptyState, AdminFilterBar, AdminFilterSelect, AdminSearchInput } from "@/components/admin/ui";
+import { AdminPageHeader } from "@/components/admin/AdminSidebar";
+import {
+  AdminButton,
+  AdminEmptyState,
+  AdminFilterBar,
+  AdminFilterSelect,
+  AdminLoadingCard,
+  AdminPage,
+  AdminSearchInput,
+  AdminStatusBadge,
+  bookingStatusVariant,
+} from "@/components/admin/ui";
+import { AdminCard } from "@/components/admin/ui/AdminLayout";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
@@ -41,19 +51,22 @@ interface Booking {
 
 export function BookingsView() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
   const { toast, saveFailed, fromApi } = useAdminMessages();
   const page = adminPageHeaderProps("anfragen");
   const empty = ADMIN_EMPTY_STATES.bookings;
+  const activeFilters = (filter ? 1 : 0) + (search.trim() ? 1 : 0);
 
   const load = () =>
     fetch("/api/admin/bookings")
       .then((r) => r.json())
-      .then((d) => setBookings(d.bookings ?? []));
+      .then((d) => setBookings(d.bookings ?? []))
+      .finally(() => setLoading(false));
 
   useEffect(() => {
-    load();
+    void load();
   }, []);
 
   const update = async (id: string, updates: { status?: BookingStatus; admin_notes?: string }) => {
@@ -94,13 +107,17 @@ export function BookingsView() {
   });
 
   return (
-    <div>
+    <AdminPage>
       <AdminPageHeader {...page} />
 
-      <AdminHelpBlock title="Tipp" variant="tip" className="mb-6">
-        Neue Anfragen kommen vom Kontaktformular auf der Website. Setze den Status und lege bei Bedarf direkt einen Kunden an — Notizen sind nur intern sichtbar.
-      </AdminHelpBlock>
-      <AdminFilterBar>
+      <AdminFilterBar
+        collapsible
+        activeCount={activeFilters}
+        onReset={() => {
+          setFilter("");
+          setSearch("");
+        }}
+      >
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Name, E-Mail oder Event suchen…" />
         <AdminFilterSelect
           value={filter}
@@ -112,29 +129,34 @@ export function BookingsView() {
           ]}
         />
       </AdminFilterBar>
-      <div className="space-y-4">
-        {filtered.length === 0 ? (
-          <AdminEmptyState
-            icon={Inbox}
-            title={bookings.length === 0 ? empty.title : "Keine Anfragen gefunden"}
-            description={bookings.length === 0 ? empty.description : "Passe Suche oder Filter an."}
-            actionLabel={bookings.length === 0 ? empty.actionLabel : undefined}
-            actionHref={bookings.length === 0 ? empty.actionHref : undefined}
-          />
-        ) : (
-          filtered.map((b) => (
-            <AdminCard key={b.id}>
+
+      {loading ? (
+        <AdminLoadingCard message="Anfragen werden geladen…" />
+      ) : filtered.length === 0 ? (
+        <AdminEmptyState
+          icon={Inbox}
+          title={bookings.length === 0 ? empty.title : "Keine Anfragen gefunden"}
+          description={bookings.length === 0 ? empty.description : "Passe Suche oder Filter an."}
+          actionLabel={bookings.length === 0 ? empty.actionLabel : undefined}
+          actionHref={bookings.length === 0 ? empty.actionHref : undefined}
+        />
+      ) : (
+        <div className="admin-list-stack">
+          {filtered.map((b) => (
+            <AdminCard key={b.id} compact>
               <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-text-primary">{b.name}</p>
-                  <p className="text-xs text-text-muted">
-                    {new Date(b.created_at).toLocaleString("de-DE")}
-                  </p>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-semibold text-text-primary">{b.name}</p>
+                    <AdminStatusBadge label={STATUS_LABELS[b.status]} variant={bookingStatusVariant(b.status)} />
+                  </div>
+                  <p className="text-xs text-text-muted">{new Date(b.created_at).toLocaleString("de-DE")}</p>
                 </div>
                 <select
                   value={b.status}
                   onChange={(e) => update(b.id, { status: e.target.value as BookingStatus })}
-                  className="admin-input"
+                  className="admin-input admin-filter-select"
+                  aria-label={`Status für ${b.name}`}
                 >
                   {Object.entries(STATUS_LABELS).map(([v, l]) => (
                     <option key={v} value={v}>
@@ -143,14 +165,9 @@ export function BookingsView() {
                   ))}
                 </select>
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
+              <div className="mt-2 flex flex-wrap items-center gap-2">
                 {b.customer_id ? (
-                  <Link
-                    href={`/admin/kunden?id=${b.customer_id}`}
-                    className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                  >
-                    Kunde verknüpft
-                  </Link>
+                  <AdminStatusBadge label="Kunde verknüpft" variant="info" />
                 ) : (
                   <AdminButton
                     variant="secondary"
@@ -160,6 +177,11 @@ export function BookingsView() {
                     Kunde erstellen
                   </AdminButton>
                 )}
+                {b.customer_id ? (
+                  <Link href={`/admin/kunden?id=${b.customer_id}`} className="text-xs font-medium text-primary hover:underline">
+                    Zum Kunden
+                  </Link>
+                ) : null}
               </div>
               <div className="mt-3 grid gap-1 text-sm text-text-secondary sm:grid-cols-2">
                 <p>E-Mail: {b.email}</p>
@@ -170,14 +192,14 @@ export function BookingsView() {
                 </p>
                 <p>Ort: {b.location}</p>
                 <p>Kinder: {b.children_count}</p>
-                {b.message && <p className="sm:col-span-2">Nachricht: {b.message}</p>}
+                {b.message ? <p className="sm:col-span-2">Nachricht: {b.message}</p> : null}
               </div>
-              <div className="mt-4">
-                <label className="mb-1 block text-xs font-medium text-text-muted">Notizen</label>
+              <div className="mt-3">
+                <label className="mb-1 block text-xs font-medium text-text-muted">Notizen (intern)</label>
                 <textarea
                   defaultValue={b.admin_notes ?? ""}
                   rows={2}
-                  className="admin-input min-h-20"
+                  className="admin-input min-h-16"
                   onBlur={(e) => {
                     if (e.target.value !== (b.admin_notes ?? "")) {
                       update(b.id, { admin_notes: e.target.value });
@@ -186,9 +208,9 @@ export function BookingsView() {
                 />
               </div>
             </AdminCard>
-          ))
-        )}
-      </div>
-    </div>
+          ))}
+        </div>
+      )}
+    </AdminPage>
   );
 }

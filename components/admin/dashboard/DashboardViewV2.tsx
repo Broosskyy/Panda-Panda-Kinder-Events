@@ -191,8 +191,6 @@ export function DashboardViewV2() {
             {saving ? <span className="text-xs text-text-muted">Speichert…</span> : null}
           </div>
 
-          <DashboardHelpAccordion items={payload.roleHelp} />
-
           <DashboardTodaySection
             cards={todayCards}
             customize={customize}
@@ -211,11 +209,15 @@ export function DashboardViewV2() {
             }
           />
 
-          <DashboardStatsGrid items={payload.stats} />
-          <DashboardActivitySection
-            activity={filteredActivity}
-            showAllLink={hasPermission(permissions, "audit:read")}
-          />
+          <DashboardHelpAccordion items={payload.roleHelp} />
+
+          <div className="dash-v2-bottom-grid">
+            <DashboardStatsGrid items={payload.stats} />
+            <DashboardActivitySection
+              activity={filteredActivity}
+              showAllLink={hasPermission(permissions, "audit:read")}
+            />
+          </div>
         </>
       ) : null}
     </div>

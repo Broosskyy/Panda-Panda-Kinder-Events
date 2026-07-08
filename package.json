@@ -13,6 +13,7 @@
     "test:email": "node scripts/email-system-test.mjs",
     "test:backup": "node scripts/backup-test.mjs",
     "test:security": "node scripts/security-audit-pwa-test.mjs",
+    "test:admin-ui": "node scripts/admin-ui-ux-polish-test.mjs",
     "export:cms": "node scripts/export-cms.mjs",
     "export:crm": "node scripts/export-crm.mjs",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",

@@ -1,9 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Plus, X } from "lucide-react";
 import Link from "next/link";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { ADMIN_GLOBAL_QUICK_ACTIONS, filterQuickActions } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 
@@ -27,23 +28,17 @@ const HIDE_FAB_PREFIXES = [
 export function AdminQuickActions() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const [permissions, setPermissions] = useState<string[]>([]);
-
-  useEffect(() => {
-    fetch("/api/admin/login")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.permissions) setPermissions(data.permissions);
-      })
-      .catch(() => undefined);
-  }, []);
+  const { permissions } = useAdminSession();
 
   const actions = useMemo(
     () => filterQuickActions(ADMIN_GLOBAL_QUICK_ACTIONS, permissions),
     [permissions],
   );
 
-  const hideFab = HIDE_FAB_PREFIXES.some((prefix) => pathname?.startsWith(prefix));
+  const hideFab =
+    pathname === "/admin" ||
+    pathname === "/admin/module" ||
+    HIDE_FAB_PREFIXES.some((prefix) => pathname?.startsWith(prefix));
   if (hideFab || actions.length === 0) return null;
 
   return (

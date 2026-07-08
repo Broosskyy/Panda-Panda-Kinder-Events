@@ -3,21 +3,12 @@ import { requireAdmin, getAdminContext } from "@/lib/admin-route";
 import { fetchAdminAnalyticsDashboard } from "@/lib/analytics/stats";
 import { fetchSecurityDashboardStats } from "@/lib/admin/dashboard-stats";
 import { fetchAdminNotificationData } from "@/lib/admin/notifications";
-import { buildDashboardTasks } from "@/lib/admin/dashboard-tasks";
+import { buildDashboardV2Payload } from "@/lib/admin/dashboard-v2/build-payload";
+import { getDashboardPreferences } from "@/lib/admin/dashboard-preferences";
 import { roleDisplayLabel, isActiveRoleSlug } from "@/lib/admin/roles";
-import { ROLE_DASHBOARD_HELP, dashboardDescriptionForRole } from "@/lib/admin/role-help";
 import { fetchSiteSettings } from "@/lib/cms/data";
-import { listEmailLogs } from "@/lib/email/log";
-import { isTestEmailLog } from "@/lib/email/domain-status-copy";
-
-async function hasSuccessfulEmailTest(): Promise<boolean> {
-  try {
-    const logs = await listEmailLogs(30);
-    return logs.some(isTestEmailLog);
-  } catch {
-    return false;
-  }
-}
+import { getUserById } from "@/lib/auth/users";
+import { getSessionByToken, getSessionTokenFromCookies } from "@/lib/auth/session";
 
 export async function GET() {
   const authError = await requireAdmin("dashboard:read");
@@ -29,40 +20,45 @@ export async function GET() {
   }
 
   try {
-    const [stats, security, notifications, settings, emailStatus] = await Promise.all([
+    const [stats, security, notifications, settings] = await Promise.all([
       fetchAdminAnalyticsDashboard(),
       fetchSecurityDashboardStats(),
       fetchAdminNotificationData(),
       fetchSiteSettings().catch(() => null),
-      hasSuccessfulEmailTest(),
     ]);
 
     const roleSlug = isActiveRoleSlug(ctx.roleSlug) ? ctx.roleSlug : "manager";
 
-    const tasks = buildDashboardTasks({
+    const sessionToken = await getSessionTokenFromCookies();
+    const session = sessionToken ? await getSessionByToken(sessionToken) : null;
+    const user = await getUserById(ctx.userId);
+    const preferences = await getDashboardPreferences(ctx.userId);
+
+    const v2 = buildDashboardV2Payload({
       permissions: ctx.permissions,
       roleSlug,
       period: notifications.period,
       stats,
       security,
-      emailTestSucceeded: emailStatus,
       badgeCounts: notifications.counts,
+      sessionMeta: {
+        lastLoginAt: user?.last_login ?? null,
+        sessionStartedAt: session?.created_at ?? null,
+        lastActivityAt: session?.last_active_at ?? null,
+      },
+      emailTestMode: settings?.email?.testMode?.enabled
+        ? { enabled: true, address: settings.email.testMode.testAddress ?? "" }
+        : null,
     });
 
     return NextResponse.json({
-      ...stats,
-      security,
       user: {
         displayName: ctx.displayName,
         roleSlug,
         roleLabel: roleDisplayLabel(roleSlug, ctx.roleSlug),
       },
-      roleHelp: ROLE_DASHBOARD_HELP[roleSlug],
-      dashboardDescription: dashboardDescriptionForRole(roleSlug),
-      tasks,
-      emailTestMode: settings?.email?.testMode?.enabled
-        ? { enabled: true, address: settings.email.testMode.testAddress ?? "" }
-        : null,
+      v2,
+      preferences,
     });
   } catch {
     return NextResponse.json({ error: "Statistiken konnten nicht geladen werden." }, { status: 500 });

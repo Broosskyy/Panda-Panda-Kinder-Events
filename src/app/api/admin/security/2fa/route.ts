@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
 import { getUserById, updateUser } from "@/lib/auth/users";
-import { verifyPassword } from "@/lib/auth/password";
 import {
   generateTotpSecret,
   getTotpQrDataUrl,
@@ -68,21 +67,10 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "disable") {
-    if (!body.password) {
-      return NextResponse.json({ error: "Passwort zur Bestätigung erforderlich." }, { status: 400 });
-    }
-    const passwordOk = await verifyPassword(body.password, user.password_hash);
-    if (!passwordOk) {
-      return NextResponse.json({ error: "Passwort ist falsch." }, { status: 401 });
-    }
-    if (user.totp_enabled && user.totp_secret && body.code) {
-      if (!verifyTotpCode(user.totp_secret, body.code)) {
-        return NextResponse.json({ error: "Zusätzlich 2FA-Code erforderlich." }, { status: 400 });
-      }
-    }
-    await updateUser(user.id, { totpEnabled: false, totpSecret: null });
-    await writeAuditLogFromRequest(ctx, request, { action: "2fa_disable", area: "security" });
-    return NextResponse.json({ success: true, message: "2FA deaktiviert." });
+    return NextResponse.json(
+      { error: "2FA ist verpflichtend und kann nicht deaktiviert werden. Bitte Super Admin kontaktieren." },
+      { status: 403 },
+    );
   }
 
   if (body.action === "regenerate_backup") {

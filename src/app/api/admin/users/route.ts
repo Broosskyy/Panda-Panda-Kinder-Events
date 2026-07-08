@@ -135,13 +135,43 @@ export async function PATCH(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
+
+  const ctx = await getAdminContext();
+  if (!ctx) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+  }
+
+  if (body.action === "reset2fa") {
+    if (ctx.roleSlug !== "administrator") {
+      return NextResponse.json({ error: "Nur Super Admins dürfen 2FA zurücksetzen." }, { status: 403 });
+    }
+    const targetId = body.id as string | undefined;
+    if (!targetId) return NextResponse.json({ error: "Benutzer-ID erforderlich." }, { status: 400 });
+
+    const target = await getUserById(targetId);
+    if (!target) return NextResponse.json({ error: "Benutzer nicht gefunden." }, { status: 404 });
+
+    await revokeAllSessions(targetId);
+    await updateUser(targetId, { totpEnabled: false, totpSecret: null });
+    const supabase = (await import("@/lib/supabase/admin")).getSupabaseAdmin();
+    await supabase.from("admin_backup_codes").delete().eq("user_id", targetId);
+
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "2fa_reset",
+      area: "security",
+      entityId: targetId,
+      after: { email: target.email },
+    });
+
+    return NextResponse.json({ success: true, message: "2FA zurückgesetzt. Benutzer muss 2FA beim nächsten Login neu einrichten." });
+  }
+
   const parsed = updateSchema.safeParse(body);
   if (!parsed.success) {
     const msg = parsed.error.errors[0]?.message ?? "Ungültige Daten.";
     return NextResponse.json({ error: msg }, { status: 400 });
   }
 
-  const ctx = await getAdminContext();
   const { id, password, resetPassword, ...rest } = parsed.data;
   const before = await getUserById(id);
   const roleChanged = Boolean(rest.roleId && before && rest.roleId !== before.role_id);

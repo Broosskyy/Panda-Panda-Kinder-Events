@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
 
-type LoginStep = "credentials" | "2fa";
+type LoginStep = "credentials" | "2fa" | "2fa-setup";
 
 function friendlyLoginError(message: string): string {
   const map: Record<string, string> = {
@@ -30,6 +30,8 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [step, setStep] = useState<LoginStep>("credentials");
   const [pendingToken, setPendingToken] = useState("");
   const [pendingUserId, setPendingUserId] = useState("");
+  const [rememberMeState, setRememberMeState] = useState(false);
+  const [qrDataUrl, setQrDataUrl] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetSent, setResetSent] = useState(false);
@@ -49,11 +51,54 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
     if (res.ok && data.requires2fa) {
       setPendingToken(data.pendingToken);
       setPendingUserId(data.userId);
+      setRememberMeState(rememberMe);
       setStep("2fa");
+    } else if (res.ok && data.requires2faSetup) {
+      setPendingToken(data.pendingToken);
+      setPendingUserId(data.userId);
+      setRememberMeState(rememberMe);
+      const setupRes = await fetch("/api/admin/login/2fa-setup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pendingToken: data.pendingToken, userId: data.userId, action: "setup" }),
+      });
+      const setupData = await setupRes.json();
+      if (setupRes.ok) {
+        setQrDataUrl(setupData.qrDataUrl);
+        setStep("2fa-setup");
+      } else {
+        setError(friendlyLoginError(setupData.error ?? "2FA-Einrichtung fehlgeschlagen."));
+      }
     } else if (res.ok) {
       onSuccess();
     } else {
       setError(friendlyLoginError(data.error ?? "Anmeldung fehlgeschlagen."));
+    }
+    setLoading(false);
+  };
+
+  const submit2faSetup = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    const res = await fetch("/api/admin/login/2fa-setup", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        pendingToken,
+        userId: pendingUserId,
+        action: "verify",
+        code: totpCode,
+        rememberMe: rememberMeState,
+      }),
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      onSuccess();
+    } else {
+      setError(friendlyLoginError(data.error ?? "2FA-Einrichtung fehlgeschlagen."));
     }
     setLoading(false);
   };
@@ -69,7 +114,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
       body: JSON.stringify({
         pendingToken,
         userId: pendingUserId,
-        rememberMe,
+        rememberMe: rememberMeState,
         trustDevice,
         totpCode: useBackup ? undefined : totpCode,
         backupCode: useBackup ? backupCode : undefined,
@@ -108,14 +153,18 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
   return (
     <div className="flex min-h-screen items-center justify-center bg-bg-secondary px-4">
       <form
-        onSubmit={step === "credentials" ? submitCredentials : submit2fa}
+        onSubmit={step === "credentials" ? submitCredentials : step === "2fa-setup" ? submit2faSetup : submit2fa}
         className="w-full max-w-sm space-y-5 rounded-2xl border border-border bg-bg-card p-8 shadow-lg"
       >
         <div className="text-center">
           <Logo context="login" linked={false} className="mx-auto justify-center" />
           <h1 className="font-heading mt-5 text-2xl font-bold text-text-primary">Panda-Bande Verwaltung</h1>
           <p className="mt-2 text-sm text-text-muted">
-            {step === "credentials" ? "Melde dich mit deinem Zugang an." : "Gib deinen Sicherheitscode ein."}
+            {step === "credentials"
+              ? "Melde dich mit deinem Zugang an."
+              : step === "2fa-setup"
+                ? "2FA ist verpflichtend. Bitte jetzt einrichten."
+                : "Gib deinen Sicherheitscode ein."}
           </p>
         </div>
 
@@ -166,6 +215,30 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
                 ✓ Falls ein Konto existiert, wurde eine E-Mail zum Zurücksetzen gesendet.
               </p>
             ) : null}
+          </>
+        ) : step === "2fa-setup" ? (
+          <>
+            <p className="text-sm text-text-muted">
+              Scannen Sie den QR-Code mit Ihrer Authenticator-App.
+            </p>
+            {qrDataUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={qrDataUrl} alt="2FA QR-Code" className="mx-auto h-40 w-40 rounded-lg border border-border" />
+            ) : null}
+            <div>
+              <label htmlFor="setup-totp-code" className="mb-2 block text-sm font-medium">
+                Sicherheitscode (6 Ziffern)
+              </label>
+              <input
+                id="setup-totp-code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                value={totpCode}
+                onChange={(e) => setTotpCode(e.target.value)}
+                className="w-full min-h-12 rounded-xl border border-border px-4 tracking-widest"
+                required
+              />
+            </div>
           </>
         ) : (
           <>
@@ -225,7 +298,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
           disabled={loading}
           className="w-full min-h-12 rounded-full bg-primary font-medium text-white"
         >
-          {loading ? "Anmelden..." : step === "credentials" ? "Anmelden" : "Bestätigen"}
+          {loading ? "Anmelden..." : step === "credentials" ? "Anmelden" : step === "2fa-setup" ? "2FA aktivieren" : "Bestätigen"}
         </button>
         <p className="text-center text-xs text-text-muted">
           Probleme beim Anmelden? Nutze „Passwort vergessen?“ oder wende dich an deinen Ansprechpartner.

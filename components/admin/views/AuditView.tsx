@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Search } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
+import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
 import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { CriticalActionModal } from "@/components/admin/CriticalActionModal";
@@ -38,11 +39,11 @@ const AREA_OPTIONS = [
   { value: "settings_modules", label: "Module" },
   { value: "settings_email", label: "E-Mail-Einstellungen" },
   { value: "settings_seo", label: "Domain & SEO" },
-  { value: "backup", label: "Backup" },
+  { value: "admin_invites", label: "Einladungen" },
   { value: "website", label: "Website" },
 ];
 
-export function AuditView() {
+export function AuditView({ embedded = false }: { embedded?: boolean }) {
   const page = adminPageHeaderProps("audit");
   const [audit, setAudit] = useState<AuditLogRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -128,7 +129,7 @@ export function AuditView() {
   return (
     <div className="admin-page space-y-6">
       <AdminPageHeader {...page} />
-      <SecuritySubNav />
+      {embedded ? <UsersSecurityTabs /> : <SecuritySubNav />}
 
       <AdminCard title="Filter & Suche">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

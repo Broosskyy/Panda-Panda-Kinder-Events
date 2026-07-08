@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { KeyRound, Pencil, Plus, Shield, UserRound } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
+import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
 import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
@@ -93,14 +93,6 @@ export function UsersView() {
     void load();
   }, [load]);
 
-  const openCreate = () => {
-    setEditingId(null);
-    const defaultRole =
-      roles.find((r) => r.slug === DEFAULT_NEW_USER_ROLE_SLUG) ?? roles.find((r) => r.slug === "employee") ?? roles[0];
-    setForm({ ...emptyForm(), roleId: defaultRole?.id ?? "" });
-    setShowForm(true);
-  };
-
   const openEdit = (user: AdminUserPublic) => {
     setEditingId(user.id);
     setForm({
@@ -163,13 +155,13 @@ export function UsersView() {
     <div className="space-y-6">
       <AdminPageHeader {...page}>
         {meta?.canManageUsers ? (
-          <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
-            Benutzer anlegen
+          <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => (window.location.href = "/admin/sicherheit/benutzer/einladungen")}>
+            Benutzer einladen
           </AdminButton>
         ) : null}
       </AdminPageHeader>
 
-      <SecuritySubNav />
+      <UsersSecurityTabs />
 
       {meta?.selfOnly ? (
         <AdminCard>
@@ -288,6 +280,15 @@ export function UsersView() {
                       <dd><AdminStatusBadge label={u.role_label} variant="default" /></dd>
                     </div>
                     <div>
+                      <dt>2FA</dt>
+                      <dd>
+                        <AdminStatusBadge
+                          label={u.totp_enabled ? "Aktiv" : "Ausstehend"}
+                          variant={u.totp_enabled ? "success" : "warning"}
+                        />
+                      </dd>
+                    </div>
+                    <div>
                       <dt>Letzter Login</dt>
                       <dd>{formatLogin(u.last_login)}</dd>
                     </div>
@@ -321,6 +322,7 @@ export function UsersView() {
                 <th className="text-left">Benutzer</th>
                 <th className="text-left">Rolle</th>
                 <th className="text-left">Status</th>
+                <th className="text-left">2FA</th>
                 <th className="text-left">Letzter Login</th>
                 <th className="text-right">Aktionen</th>
               </tr>
@@ -352,6 +354,12 @@ export function UsersView() {
                   </td>
                   <td>
                     <AdminStatusBadge label={u.active ? "Aktiv" : "Deaktiviert"} variant={u.active ? "success" : "muted"} />
+                  </td>
+                  <td>
+                    <AdminStatusBadge
+                      label={u.totp_enabled ? "Aktiv" : "Ausstehend"}
+                      variant={u.totp_enabled ? "success" : "warning"}
+                    />
                   </td>
                   <td className="text-text-muted">{formatLogin(u.last_login)}</td>
                   <td>

@@ -32,6 +32,7 @@ const TEMPLATE_PURPOSES: Record<string, string> = {
   "invoice-send": "Text beim Versand einer Rechnung per E-Mail (PDF wird angehängt).",
   "password-reset": "E-Mail für Admin-Benutzer, die ihr Passwort vergessen haben.",
   "account-created": "Willkommens-E-Mail bei neuem Admin-Account.",
+  "admin-invite": "Einladungslink für neue Admin-Benutzer (einmalig, 48h).",
   "email-test": "Vorlage für Test-E-Mails aus dem Admin.",
   "newsletter-draft": "Grundgerüst für zukünftige Newsletter (noch inaktiv).",
   "general-message": "Allgemeine freie Nachricht an Kunden.",
@@ -47,6 +48,7 @@ const CORE_TEMPLATES = [
   "invoice-send",
   "password-reset",
   "account-created",
+  "admin-invite",
   "email-test",
 ] as const;
 

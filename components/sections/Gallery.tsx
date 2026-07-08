@@ -60,7 +60,7 @@ export function Gallery({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="gallery-filter-row mb-8 flex flex-wrap justify-center gap-2" role="tablist" aria-label="Galerie Filter">
+        <div className="gallery-filter-row mb-3 flex flex-wrap justify-center gap-1.5 sm:mb-6 sm:gap-2 md:mb-8" role="tablist" aria-label="Galerie Filter">
           {categories.map((category) => (
             <button
               key={category}

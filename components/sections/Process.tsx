@@ -27,11 +27,11 @@ export function Process({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-24">
+        <div className="grid items-center gap-8 lg:grid-cols-[1fr_auto] lg:gap-24">
           <div className="relative">
             <div className="timeline-line lg:hidden" aria-hidden />
             <ol
-              className="flex flex-col gap-10 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
+              className="flex flex-col gap-5 sm:gap-8 lg:flex-row lg:items-start lg:justify-between lg:gap-4"
               role="list"
             >
               {steps.map((step, index) => {
@@ -51,12 +51,12 @@ export function Process({
                     ) : null}
 
                     <ScrollReveal delay={index * 80} className="relative z-10 w-full lg:flex lg:flex-col lg:items-center">
-                      <div className="process-step-row flex gap-5 lg:flex-col lg:items-center lg:pl-0">
+                      <div className="process-step-row flex gap-3 sm:gap-5 lg:flex-col lg:items-center lg:pl-0">
                         <div className="step-circle relative z-10 h-11 w-11 shrink-0 text-sm sm:h-12 sm:w-12 sm:text-base lg:h-12 lg:w-12">
                           {step.number}
                         </div>
-                        <div className="process-step-body flex-1 pb-2 lg:pb-0">
-                          <div className="process-step-icon-row mb-2 flex items-center gap-3 lg:mb-0 lg:mt-6 lg:flex-col lg:gap-0">
+                        <div className="process-step-body flex-1 pb-0 lg:pb-0">
+                          <div className="process-step-icon-row mb-1 flex items-center gap-2 sm:mb-2 sm:gap-3 lg:mb-0 lg:mt-6 lg:flex-col lg:gap-0">
                             <Icon
                               className="h-5 w-5 text-primary sm:h-6 sm:w-6 lg:mt-6 lg:h-7 lg:w-7 lg:transition-transform lg:duration-500 lg:group-hover:scale-110"
                               strokeWidth={ICON_STROKE}

@@ -47,7 +47,12 @@ html {
   --site-max-width: 75rem;
   --site-padding-x: 1rem;
   --section-header-gap: 2.5rem;
-  --chrome-bottom-mobile: 7.75rem;
+  --sticky-cta-bar-height: 4.25rem;
+  --floating-contact-size: 3.5rem;
+  --floating-contact-gap: 0.75rem;
+  --chrome-bottom-mobile: calc(
+    var(--sticky-cta-bar-height) + var(--floating-contact-gap) + var(--floating-contact-size) + 0.5rem
+  );
 }
 
 @media (min-width: 640px) {
@@ -202,8 +207,8 @@ summary:focus-visible,
 
 /* Section spacing — mobile first, compact */
 .section-padding {
-  padding-top: 2.75rem;
-  padding-bottom: 2.75rem;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
 }
 
 @media (min-width: 640px) {
@@ -228,8 +233,8 @@ summary:focus-visible,
 }
 
 .section-padding-lg {
-  padding-top: 3rem;
-  padding-bottom: 3rem;
+  padding-top: 2.25rem;
+  padding-bottom: 2.25rem;
 }
 
 @media (min-width: 640px) {
@@ -403,7 +408,7 @@ img {
   justify-content: center;
   gap: 0.75rem;
   width: 100%;
-  margin-bottom: 1.75rem;
+  margin-bottom: 1.25rem;
 }
 
 @media (min-width: 640px) {
@@ -502,7 +507,7 @@ img {
 }
 
 .section-content-gap {
-  margin-top: 2.5rem;
+  margin-top: 1.75rem;
 }
 
 @media (min-width: 640px) {
@@ -523,6 +528,10 @@ img {
 }
 
 @media (max-width: 767px) {
+  html {
+    --section-header-gap: 1.75rem;
+  }
+
   .form-chrome-safe {
     padding-bottom: calc(1.5rem + var(--chrome-bottom-mobile) + env(safe-area-inset-bottom, 0px));
   }
@@ -572,17 +581,21 @@ img {
     align-items: center;
     text-align: center;
     padding-left: 0;
+    gap: 0.625rem;
   }
 
   #ablauf .process-step-body {
     display: flex;
     flex-direction: column;
     align-items: center;
+    padding-bottom: 0;
   }
 
   #ablauf .process-step-icon-row {
     flex-direction: column;
     align-items: center;
+    margin-bottom: 0.25rem;
+    gap: 0.375rem;
   }
 
   #ablauf .process-step-icon-row h3,
@@ -644,8 +657,45 @@ img {
 
   .gallery-filter-row {
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.375rem;
+    row-gap: 0.5rem;
+    margin-top: -0.5rem;
+    margin-bottom: 1rem;
     padding-inline: 0.125rem;
+  }
+
+  #leistungen .service-card {
+    padding: 1.125rem;
+  }
+
+  #leistungen .service-card .service-card-image {
+    margin-bottom: 0.75rem;
+  }
+
+  #leistungen .service-card .service-card-desc {
+    margin-top: 0.5rem;
+  }
+
+  #leistungen .service-card .service-card-highlights {
+    margin-top: 0.5rem;
+  }
+
+  #leistungen .service-card .service-card-cta {
+    margin-top: 1rem;
+  }
+
+  .footer-premium .footer-inner {
+    padding-top: 2rem;
+    padding-bottom: 2rem;
+  }
+
+  .footer-premium .footer-grid {
+    gap: 2rem;
+  }
+
+  .footer-premium .footer-copyright {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
   }
 
   .swipe-bleed .swipe-track {
@@ -2393,12 +2443,18 @@ img {
 
 @media (max-width: 767px) {
   .floating-contact-stack {
-    bottom: calc(9.5rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
     z-index: 48;
   }
 
+  .floating-contact-stack.floating-contact-stack--above-cta {
+    bottom: calc(
+      var(--sticky-cta-bar-height) + var(--floating-contact-gap) + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
   .cookie-banner {
-    bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: calc(var(--sticky-cta-bar-height) + 0.5rem + env(safe-area-inset-bottom, 0px));
   }
 
   .footer-premium {
@@ -2868,6 +2924,12 @@ body.splash-active {
 }
 
 /* ── Hero mobile rhythm ── */
+
+@media (max-width: 767px) {
+  .hero-section {
+    padding-top: calc(var(--header-offset) + 0.5rem);
+  }
+}
 
 @media (max-width: 1023px) {
   .hero-section .hero-content {

@@ -1,17 +1,18 @@
 import { NextResponse } from "next/server";
 import { BRAND, withIconVersion } from "@/lib/brand";
 
+/** Legacy SW scope alias — referenced by install probes and smoke tests. */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- kept for SW compat smoke tests
 const ADMIN_SCOPE = "/admin/";
 
-export async function GET(request: Request) {
-  const origin = new URL(request.url).origin;
+export async function GET() {
   const manifest = {
-    id: ADMIN_SCOPE,
+    id: "/admin",
     name: "Panda-Bande Admin",
     short_name: "Panda Admin",
     description: "Sichere Verwaltung für Panda-Bande Kinderevents",
-    start_url: `${origin}/admin`,
-    scope: ADMIN_SCOPE,
+    start_url: "/admin",
+    scope: "/admin",
     display: "standalone",
     display_override: ["standalone", "minimal-ui"],
     orientation: "portrait-primary",

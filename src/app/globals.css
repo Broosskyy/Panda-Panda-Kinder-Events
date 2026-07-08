@@ -209,6 +209,8 @@ summary:focus-visible,
 .section-padding {
   padding-top: 0.5rem;
   padding-bottom: 0.5rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 @media (min-width: 640px) {
@@ -529,7 +531,7 @@ img {
 
 @media (max-width: 767px) {
   html {
-    --section-header-gap: 0.625rem;
+    --section-header-gap: 0.875rem;
     --header-height: 3.5rem;
     --site-padding-x: max(0.75rem, env(safe-area-inset-left, 0px));
   }
@@ -561,6 +563,8 @@ img {
     z-index: 2;
     flex-shrink: 0;
     overflow: visible;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     min-width: 3rem;
     min-height: 3rem;
     width: 3rem;
@@ -597,8 +601,8 @@ img {
   #galerie,
   #leistungen,
   #warum-panda-bande {
-    padding-top: 0.5rem;
-    padding-bottom: 0.5rem;
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
   }
 
   #bewertungen {
@@ -686,7 +690,7 @@ img {
   }
 
   .footer-premium .footer-inner {
-    padding-top: 0.875rem;
+    padding-top: 1.25rem;
     padding-bottom: 0.5rem;
   }
 
@@ -1002,7 +1006,7 @@ img {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 0.5rem;
+    margin-top: 0.75rem;
   }
 
   .section-content-gap > * {
@@ -4827,7 +4831,10 @@ html[data-admin-action-sheet="open"] .admin-bottom-nav,
 html[data-admin-action-sheet="open"] .admin-quick-actions-global,
 html[data-admin-overlay-modal="open"] .admin-bottom-nav,
 html[data-admin-overlay-modal="open"] .admin-quick-actions-global,
-html[data-admin-overlay-modal="open"] .admin-mobile-header {
+html[data-admin-overlay-modal="open"] .admin-mobile-header,
+html[data-admin-pwa-help-sheet="open"] .admin-bottom-nav,
+html[data-admin-pwa-help-sheet="open"] .admin-quick-actions-global,
+html[data-admin-pwa-help-sheet="open"] .admin-mobile-header {
   visibility: hidden !important;
   pointer-events: none !important;
 }

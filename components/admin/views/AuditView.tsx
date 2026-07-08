@@ -8,6 +8,7 @@ import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
 import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { CriticalActionModal } from "@/components/admin/CriticalActionModal";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 
@@ -55,7 +56,8 @@ export function AuditView({ embedded = false }: { embedded?: boolean }) {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [exportOpen, setExportOpen] = useState(false);
-  const [canExportAudit, setCanExportAudit] = useState(false);
+  const { permissions } = useAdminSession();
+  const canExportAudit = permissions.includes("audit:export");
   const { error: showError, success } = useAdminMessages();
 
   const queryString = useMemo(() => {
@@ -87,17 +89,6 @@ export function AuditView({ embedded = false }: { embedded?: boolean }) {
   useEffect(() => {
     void load();
   }, [load]);
-
-  useEffect(() => {
-    fetch("/api/admin/login")
-      .then((r) => r.json())
-      .then((data) => {
-        setCanExportAudit(
-          Array.isArray(data.permissions) && data.permissions.includes("audit:export"),
-        );
-      })
-      .catch(() => undefined);
-  }, []);
 
   const exportLogs = async (format: "csv" | "json", confirmation?: { confirmPassword?: string; criticalAcknowledged?: boolean }) => {
     const params = new URLSearchParams(queryString);

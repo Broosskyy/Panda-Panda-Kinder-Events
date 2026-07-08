@@ -1,5 +1,10 @@
-import { LoginHistoryView } from "@/components/admin/views/LoginHistoryView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function SecurityLoginHistoryPage() {
+const LoginHistoryView = adminDynamicView(
+  () => import("@/components/admin/views/LoginHistoryView"),
+  "LoginHistoryView",
+);
+
+export default function AdminLoginHistoryPage() {
   return <LoginHistoryView />;
 }

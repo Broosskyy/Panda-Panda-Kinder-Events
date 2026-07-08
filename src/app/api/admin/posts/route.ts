@@ -5,6 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPublicUrl } from "@/lib/cms/storage";
 import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
+import { runSafeApi } from "@/lib/api/safe-route";
 import type { CmsPost } from "@/lib/cms/types";
 
 function slugify(text: string): string {
@@ -50,23 +51,25 @@ function pickPostFields(body: Record<string, unknown>) {
 }
 
 export async function GET() {
-  const authError = await requireAdmin("website:read");
-  if (authError) return authError;
+  return runSafeApi(async () => {
+    const authError = await requireAdmin("website:read");
+    if (authError) return authError;
 
-  const supabase = getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("cms_posts")
-    .select("*")
-    .order("created_at", { ascending: false });
+    const supabase = getSupabaseAdmin();
+    const { data, error } = await supabase
+      .from("cms_posts")
+      .select("*")
+      .order("created_at", { ascending: false });
 
-  if (error) return NextResponse.json({ error: "Laden fehlgeschlagen." }, { status: 500 });
+    if (error) return NextResponse.json({ error: "Laden fehlgeschlagen." }, { status: 500 });
 
-  const posts = ((data ?? []) as CmsPost[]).map((p) => ({
-    ...p,
-    hero_image_url: p.hero_image_path ? getPublicUrl("site-assets", p.hero_image_path) : null,
-  }));
+    const posts = ((data ?? []) as CmsPost[]).map((p) => ({
+      ...p,
+      hero_image_url: p.hero_image_path ? getPublicUrl("site-assets", p.hero_image_path) : null,
+    }));
 
-  return NextResponse.json({ posts });
+    return NextResponse.json({ posts });
+  }, "Beiträge konnten nicht geladen werden.");
 }
 
 export async function POST(request: Request) {

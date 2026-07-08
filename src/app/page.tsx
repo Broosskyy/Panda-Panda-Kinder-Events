@@ -29,7 +29,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { filterPublicNavItems, isModuleEnabled } from "@/lib/cms/modules";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: `${siteConfig.name} — Kinderbetreuung für Events`,

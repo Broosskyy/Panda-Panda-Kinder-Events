@@ -1,4 +1,5 @@
 import { unstable_noStore as noStore } from "next/cache";
+import { cache } from "react";
 import { faqs as staticFaqs } from "@/lib/faqs";
 import { galleryImages as staticGallery } from "@/lib/gallery";
 import { services as staticServices } from "@/lib/services";
@@ -220,8 +221,7 @@ function buildSettingsFromRows(
   }
 }
 
-export async function fetchSiteSettings(): Promise<SiteSettingsBundle> {
-  noStore();
+async function fetchSiteSettingsImpl(): Promise<SiteSettingsBundle> {
   if (!isSupabaseConfigured()) return normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
 
   try {
@@ -241,6 +241,8 @@ export async function fetchSiteSettings(): Promise<SiteSettingsBundle> {
     return normalizeSiteSettings(DEFAULT_SITE_SETTINGS);
   }
 }
+
+export const fetchSiteSettings = cache(fetchSiteSettingsImpl);
 
 export async function saveSiteSettings(
   section: keyof SiteSettingsBundle,
@@ -301,8 +303,7 @@ async function queryCmsServices(): Promise<Service[]> {
     }));
 }
 
-export async function fetchCmsServices(): Promise<Service[]> {
-  noStore();
+async function fetchCmsServicesImpl(): Promise<Service[]> {
   if (!isSupabaseConfigured()) return staticServices;
 
   try {
@@ -320,8 +321,9 @@ export async function fetchCmsServices(): Promise<Service[]> {
   }
 }
 
-export async function fetchCmsFaqs(): Promise<{ question: string; answer: string }[]> {
-  noStore();
+export const fetchCmsServices = cache(fetchCmsServicesImpl);
+
+async function fetchCmsFaqsImpl(): Promise<{ question: string; answer: string }[]> {
   if (!isSupabaseConfigured()) return staticFaqs;
 
   try {
@@ -351,6 +353,8 @@ export async function fetchCmsFaqs(): Promise<{ question: string; answer: string
   }
 }
 
+export const fetchCmsFaqs = cache(fetchCmsFaqsImpl);
+
 async function queryGalleryImages(): Promise<{ src: string; alt: string; category: string }[]> {
   const supabase = getSupabaseAdmin();
   const { data, error } = await supabase
@@ -374,8 +378,7 @@ async function queryGalleryImages(): Promise<{ src: string; alt: string; categor
     .filter((img) => img.src);
 }
 
-export async function fetchGalleryImages(): Promise<{ src: string; alt: string; category: string }[]> {
-  noStore();
+async function fetchGalleryImagesImpl(): Promise<{ src: string; alt: string; category: string }[]> {
   const withCategory = (images: { src: string; alt: string; category?: string }[]) =>
     images.map((img) => ({ ...img, category: img.category ?? "Sonstiges" }));
 
@@ -393,8 +396,9 @@ export async function fetchGalleryImages(): Promise<{ src: string; alt: string; 
   }
 }
 
-export async function fetchPublishedPosts(limit = 6): Promise<CmsPost[]> {
-  noStore();
+export const fetchGalleryImages = cache(fetchGalleryImagesImpl);
+
+async function fetchPublishedPostsImpl(limit = 6): Promise<CmsPost[]> {
   if (!isSupabaseConfigured()) return [];
 
   try {
@@ -426,8 +430,9 @@ export async function fetchPublishedPosts(limit = 6): Promise<CmsPost[]> {
   }
 }
 
-export async function fetchPostBySlug(slug: string): Promise<CmsPost | null> {
-  noStore();
+export const fetchPublishedPosts = cache(fetchPublishedPostsImpl);
+
+async function fetchPostBySlugImpl(slug: string): Promise<CmsPost | null> {
   if (!isSupabaseConfigured()) return null;
 
   const supabase = getSupabaseAdmin();
@@ -452,6 +457,8 @@ export async function fetchPostBySlug(slug: string): Promise<CmsPost | null> {
   };
   return isValidPublishedPost(resolved) ? resolved : null;
 }
+
+export const fetchPostBySlug = cache(fetchPostBySlugImpl);
 
 export async function fetchDashboardStats() {
   const supabase = getSupabaseAdmin();

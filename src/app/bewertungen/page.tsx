@@ -17,7 +17,7 @@ import { safeJsonLdStringify } from "@/lib/json-ld";
 import { siteConfig } from "@/config/site";
 import type { Metadata } from "next";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const reviews = await fetchApprovedReviews();

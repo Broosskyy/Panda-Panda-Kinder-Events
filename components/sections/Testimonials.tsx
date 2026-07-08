@@ -1,12 +1,12 @@
 "use client";
 
 import { useRef, useState } from "react";
+import dynamic from "next/dynamic";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { focusRing } from "@/lib/a11y";
 import type { PublicReview, SiteSectionHeading } from "@/lib/cms/types";
 import { resolveSectionHeading } from "@/lib/cms/normalize-settings";
 import { Card } from "@/components/ui/Card";
-import { ReviewForm } from "@/components/ui/ReviewForm";
 import { StarRating } from "@/components/ui/StarRating";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -16,6 +16,17 @@ import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 import { PublicReviewCard } from "@/components/reviews/PublicReviewCard";
 import { formatReviewDate } from "@/components/reviews/PublicReviewCard";
+
+const ReviewForm = dynamic(
+  () => import("@/components/ui/ReviewForm").then((m) => m.ReviewForm),
+  {
+    loading: () => (
+      <div className="flex min-h-[12rem] items-center justify-center rounded-2xl border border-border bg-bg-card/60 text-sm text-text-muted">
+        Bewertungsformular wird geladen…
+      </div>
+    ),
+  },
+);
 
 function RatingSummary({ reviews }: { reviews: PublicReview[] }) {
   const count = reviews.length;

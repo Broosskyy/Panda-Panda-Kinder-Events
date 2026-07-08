@@ -5,30 +5,26 @@ import { Shield, ShieldOff } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { UsersSecurityTabs } from "@/components/admin/UsersSecurityTabs";
 import { AdminButton, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import type { AdminUserPublic } from "@/lib/auth/types";
 
 export function UsersTwoFaOverview() {
   const [users, setUsers] = useState<AdminUserPublic[]>([]);
-  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const { isSuperAdmin } = useAdminSession();
   const [loading, setLoading] = useState(true);
   const { toast, fromApi } = useAdminMessages();
   const page = adminPageHeaderProps("twoFa");
 
   const load = useCallback(async () => {
     setLoading(true);
-    const [usersRes, sessionRes] = await Promise.all([
-      fetch("/api/admin/users"),
-      fetch("/api/admin/login"),
-    ]);
+    const usersRes = await fetch("/api/admin/users");
     const usersData = await usersRes.json();
-    const sessionData = await sessionRes.json();
 
     if (usersRes.ok) {
       setUsers(usersData.users ?? []);
     }
-    setIsSuperAdmin(Boolean(sessionData.isSuperAdmin));
     setLoading(false);
   }, []);
 

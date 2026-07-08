@@ -1,5 +1,10 @@
-import { ErsteSchritteView } from "@/components/admin/views/ErsteSchritteView";
+import { adminDynamicView } from "@/lib/admin/dynamic-view";
 
-export default function ErsteSchrittePage() {
+const ErsteSchritteView = adminDynamicView(
+  () => import("@/components/admin/views/ErsteSchritteView"),
+  "ErsteSchritteView",
+);
+
+export default function AdminErsteSchrittePage() {
   return <ErsteSchritteView />;
 }

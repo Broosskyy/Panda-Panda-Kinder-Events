@@ -8,6 +8,7 @@ export function revalidatePublicCms(postSlug?: string, previousSlug?: string) {
   revalidatePath("/aktuelles", "layout");
   revalidatePath("/impressum");
   revalidatePath("/datenschutz");
+  revalidatePath("/bewertungen");
   if (postSlug) {
     revalidatePath(`/aktuelles/${postSlug}`);
   }

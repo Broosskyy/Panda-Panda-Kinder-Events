@@ -102,6 +102,22 @@ export interface AuditLogInput {
   errorMessage?: string;
   ipAddress?: string | null;
   userAgent?: string | null;
+  deviceLabel?: string | null;
+  osLabel?: string | null;
+  browserLabel?: string | null;
+  countryCode?: string | null;
+  region?: string | null;
+  city?: string | null;
+}
+
+export interface LoginHistoryFilters {
+  userId?: string;
+  from?: string;
+  to?: string;
+  ipMasked?: string;
+  device?: string;
+  success?: boolean;
+  limit?: number;
 }
 
 export interface AuditLogFilters {

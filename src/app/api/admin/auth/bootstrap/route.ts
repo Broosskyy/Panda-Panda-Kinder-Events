@@ -3,6 +3,7 @@ import { timingSafeEqual } from "crypto";
 import { evaluateBootstrapAccess } from "@/lib/auth/bootstrap-guard";
 import { createUser, hasAdminUsers, listRoles } from "@/lib/auth/users";
 import { hashPassword } from "@/lib/auth/password";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -86,6 +87,13 @@ export async function POST(request: Request) {
     passwordHash,
     displayName: parsed.data.displayName,
     roleId: adminRole.id,
+  });
+
+  await writeAuditLogFromRequest(null, request, {
+    action: "create",
+    area: "admin_users",
+    entityId: user.id,
+    after: { username: user.username, bootstrap: true },
   });
 
   return NextResponse.json({ user, message: "Erster Super Admin angelegt." });

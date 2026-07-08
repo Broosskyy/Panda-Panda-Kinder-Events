@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
-import { writeAuditLog } from "@/lib/auth/audit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { fetchSiteSettings, saveSiteSettings } from "@/lib/cms/data";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import {
@@ -81,6 +81,8 @@ export async function POST(request: Request) {
       subtitle: parsed.data.subtitle ?? "",
     });
     revalidatePublicCms();
+    const ctx = await getAdminContext();
+    await writeAuditLogFromRequest(ctx, request, { action: "content_updated", area: "website" });
     return NextResponse.json({ success: true, message: "Team-Überschrift gespeichert." });
   }
 
@@ -95,7 +97,7 @@ export async function POST(request: Request) {
   try {
     const member = await createTeamMember(parsed.data);
     await syncTeamMembersToPublicCms();
-    await writeAuditLog(ctx, {
+    await writeAuditLogFromRequest(ctx, request, {
       action: "create",
       area: "public_team",
       entityId: member.id,
@@ -104,7 +106,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ member, message: "Teammitglied gespeichert und auf der Website veröffentlicht." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Speichern fehlgeschlagen.";
-    await writeAuditLog(ctx, { action: "create", area: "public_team", success: false, errorMessage: message });
+    await writeAuditLogFromRequest(ctx, request, { action: "create", area: "public_team", success: false, errorMessage: message });
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
@@ -129,7 +131,7 @@ export async function PATCH(request: Request) {
     const member = await updateTeamMember(id, parsed.data);
     await syncTeamMembersToPublicCms();
     const action = parsed.data.archived ? "archive" : parsed.data.active === false ? "deactivate" : "update";
-    await writeAuditLog(ctx, {
+    await writeAuditLogFromRequest(ctx, request, {
       action,
       area: "public_team",
       entityId: id,
@@ -154,7 +156,7 @@ export async function DELETE(request: Request) {
   try {
     await deleteTeamMember(id);
     await syncTeamMembersToPublicCms();
-    await writeAuditLog(ctx, { action: "delete", area: "public_team", entityId: id });
+    await writeAuditLogFromRequest(ctx, request, { action: "delete", area: "public_team", entityId: id });
     return NextResponse.json({ success: true, message: "Teammitglied entfernt." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";

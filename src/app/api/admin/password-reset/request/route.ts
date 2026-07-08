@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { findUserByIdentifier } from "@/lib/auth/users";
 import { createPasswordResetToken } from "@/lib/auth/password-reset";
 import { sendPasswordResetEmail } from "@/lib/email";
@@ -35,6 +36,11 @@ export async function POST(request: Request) {
         to: user.email,
         adminName: user.display_name,
         resetUrl,
+      });
+      await writeAuditLogFromRequest(null, request, {
+        action: "password_reset_requested",
+        area: "auth",
+        entityId: user.id,
       });
     } catch {
       // Do not reveal email delivery failures

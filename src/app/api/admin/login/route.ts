@@ -89,18 +89,28 @@ export async function POST(request: Request) {
         : false;
 
     if (!codeOk) {
+      const failRole = await getRoleById(user.role_id);
+      await writeAuditLogFromRequest(null, request, {
+        action: "login_failed",
+        area: "auth",
+        entityId: user.id,
+        success: false,
+        errorMessage: "invalid_2fa",
+      });
       await recordLoginHistory({
         userId: user.id,
         identifier: user.username,
         success: false,
         ip,
         userAgent: request.headers.get("user-agent"),
+        request,
+        roleSlug: failRole?.slug ?? null,
       });
       return NextResponse.json({ error: "Ungültiger 2FA-Code." }, { status: 401 });
     }
 
     const loginPolicy = await getLoginPolicy();
-    const { token, maxAgeSec } = await createSession({
+    const { token, session, maxAgeSec } = await createSession({
       userId: user.id,
       userAgent: request.headers.get("user-agent"),
       ip,
@@ -108,6 +118,7 @@ export async function POST(request: Request) {
       trustedDays: trustDevice ? 30 : undefined,
     });
 
+    const role2fa = await getRoleById(user.role_id);
     await updateUser(user.id, { lastLogin: new Date().toISOString(), failedLoginAttempts: 0, lockedUntil: null });
     await recordLoginHistory({
       userId: user.id,
@@ -115,7 +126,21 @@ export async function POST(request: Request) {
       success: true,
       ip,
       userAgent: request.headers.get("user-agent"),
+      request,
+      roleSlug: role2fa?.slug ?? null,
     });
+    await writeAuditLogFromRequest(
+      {
+        userId: user.id,
+        displayName: user.display_name,
+        email: user.email,
+        roleSlug: role2fa?.slug ?? "readonly",
+        permissions: [],
+        sessionId: session.id,
+      },
+      request,
+      { action: "login", area: "auth", entityId: user.id },
+    );
 
     const response = NextResponse.json({
       success: true,
@@ -163,6 +188,7 @@ export async function POST(request: Request) {
       success: false,
       ip,
       userAgent: request.headers.get("user-agent"),
+      request,
     });
     return NextResponse.json({ error: "Ungültige Anmeldedaten." }, { status: 401 });
   }
@@ -199,6 +225,8 @@ export async function POST(request: Request) {
       success: false,
       ip,
       userAgent: request.headers.get("user-agent"),
+      request,
+      roleSlug: (await getRoleById(user.role_id))?.slug ?? null,
     });
 
     return NextResponse.json({ error: "Ungültige Anmeldedaten." }, { status: 401 });
@@ -236,15 +264,17 @@ export async function POST(request: Request) {
     lockedUntil: null,
   });
 
+  const role = await getRoleById(user.role_id);
   await recordLoginHistory({
     userId: user.id,
     identifier,
     success: true,
     ip,
     userAgent: request.headers.get("user-agent"),
+    request,
+    roleSlug: role?.slug ?? null,
   });
 
-  const role = await getRoleById(user.role_id);
   await writeAuditLogFromRequest(
     {
       userId: user.id,

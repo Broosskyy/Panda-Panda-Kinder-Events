@@ -3453,6 +3453,29 @@ body.splash-active {
 .dash-v2-chip-info { background: color-mix(in srgb, var(--color-primary) 10%, var(--admin-surface)); border-color: color-mix(in srgb, var(--color-primary) 28%, var(--admin-border)); color: var(--color-primary); }
 .dash-v2-chip-muted { background: var(--admin-surface-muted); color: var(--admin-text-muted); }
 
+.admin-pwa-install-banner {
+  position: fixed;
+  bottom: calc(4.5rem + env(safe-area-inset-bottom, 0px));
+  left: 50%;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  max-width: min(28rem, calc(100vw - 2rem));
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  box-shadow: 0 8px 24px color-mix(in srgb, #000 12%, transparent);
+  transform: translateX(-50%);
+}
+
+@media (min-width: 768px) {
+  .admin-pwa-install-banner {
+    bottom: 1.25rem;
+  }
+}
+
 .dash-v2-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .dash-v2-section-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 .dash-v2-section-title { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--admin-text); }

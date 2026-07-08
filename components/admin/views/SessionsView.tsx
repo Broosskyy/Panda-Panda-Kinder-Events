@@ -39,13 +39,14 @@ export function SessionsView() {
     void load();
   }, [load]);
 
-  const sessionAction = async (action: string) => {
+  const sessionAction = async (action: string, sessionId?: string) => {
     if (action === "revoke_others" && !confirmDanger(ADMIN_CONFIRM.revokeAllSessions)) return;
     if (action === "revoke_all" && !confirmDanger(ADMIN_CONFIRM.revokeAllDevices)) return;
+    if (action === "revoke_one" && sessionId && !confirmDanger(ADMIN_CONFIRM.revokeAllSessions)) return;
     const res = await fetch("/api/admin/security/sessions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action }),
+      body: JSON.stringify({ action, sessionId }),
     });
     if (res.ok) {
       toast(ADMIN_MSG.sessionRevoked);
@@ -83,15 +84,25 @@ export function SessionsView() {
               sessions.map((s) => (
                 <li
                   key={s.id}
-                  className="flex flex-col gap-1 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-2 rounded-lg border border-border px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <span>
-                    {s.deviceLabel || "Unbekanntes Gerät"}
-                    {s.isCurrent ? " (dieses Gerät)" : ""}
-                  </span>
-                  <span className="text-text-muted">
-                    Zuletzt aktiv: {new Date(s.lastActiveAt).toLocaleString("de-DE")}
-                  </span>
+                  <div>
+                    <span>
+                      {s.deviceLabel || "Unbekanntes Gerät"}
+                      {s.isCurrent ? " (dieses Gerät)" : ""}
+                    </span>
+                    <p className="text-text-muted">
+                      Zuletzt aktiv: {new Date(s.lastActiveAt).toLocaleString("de-DE")}
+                    </p>
+                  </div>
+                  {!s.isCurrent ? (
+                    <AdminButton
+                      variant="secondary"
+                      onClick={() => void sessionAction("revoke_one", s.id)}
+                    >
+                      Session beenden
+                    </AdminButton>
+                  ) : null}
                 </li>
               ))
             )}

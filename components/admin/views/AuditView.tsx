@@ -21,6 +21,12 @@ interface AuditLogRow {
   success: boolean;
   ip_address: string | null;
   user_agent: string | null;
+  device_label: string | null;
+  os_label: string | null;
+  browser_label: string | null;
+  country_code: string | null;
+  region: string | null;
+  city: string | null;
   error_message: string | null;
 }
 
@@ -209,11 +215,19 @@ export function AuditView() {
                     {log.user_display_name} ({log.role_slug ?? "—"})
                     {log.success === false ? " — Fehler" : ""}
                   </p>
-                  {log.ip_address || log.user_agent ? (
+                  {log.ip_address || log.browser_label || log.device_label || log.country_code ? (
                     <p className="mt-1 text-xs text-text-muted">
-                      {log.ip_address ? `IP: ${log.ip_address}` : ""}
-                      {log.ip_address && log.user_agent ? " · " : ""}
-                      {log.user_agent ? `Gerät: ${log.user_agent.slice(0, 80)}` : ""}
+                      {[
+                        log.ip_address ? `IP: ${log.ip_address}` : null,
+                        log.country_code ? log.country_code : null,
+                        log.region ? log.region : null,
+                        log.city ? log.city : null,
+                        log.browser_label ? log.browser_label : null,
+                        log.os_label ? log.os_label : null,
+                        log.device_label ? log.device_label : null,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
                     </p>
                   ) : null}
                   {log.error_message ? (

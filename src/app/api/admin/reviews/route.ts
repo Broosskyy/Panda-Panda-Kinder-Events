@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
+import { requireAdmin, getAdminContext } from "@/lib/admin-route";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { deleteStorageFile } from "@/lib/cms/storage";
 import { mapReviewRow } from "@/lib/cms/reviews";
@@ -74,6 +75,16 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
   }
 
+  const ctx = await getAdminContext();
+  const auditAction =
+    typeof approved === "boolean" && approved ? "review_approved" : typeof approved === "boolean" ? "review_unapproved" : "update";
+  await writeAuditLogFromRequest(ctx, request, {
+    action: auditAction,
+    area: "reviews",
+    entityId: id,
+    after: updates,
+  });
+
   revalidatePublicCms();
   return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
@@ -94,6 +105,9 @@ export async function DELETE(request: Request) {
 
   const { error } = await supabase.from("reviews").delete().eq("id", id);
   if (error) return NextResponse.json({ error: "Löschen fehlgeschlagen." }, { status: 500 });
+
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, { action: "review_deleted", area: "reviews", entityId: id });
 
   if (review?.profile_image_url) {
     try {

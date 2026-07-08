@@ -14,6 +14,7 @@ import {
 } from "@/lib/crm/db";
 import { crmQuoteSchema, crmStatusUpdateSchema } from "@/lib/crm/schemas";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 
 function parseView(value: string | null): CrmListView {
   if (value === "archived" || value === "all") return value;
@@ -49,6 +50,15 @@ export async function POST(request: Request) {
 
   try {
     const quote = await createQuote(parsed.data);
+    if (quote) {
+      const ctx = await getAdminContext();
+      await writeAuditLogFromRequest(ctx, request, {
+        action: "quote_created",
+        area: "crm",
+        entityId: quote.id,
+        after: { quoteNumber: quote.quote_number },
+      });
+    }
     return NextResponse.json({ quote });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Angebot konnte nicht erstellt werden.";
@@ -136,6 +146,11 @@ export async function PATCH(request: Request) {
 
   try {
     const quote = await updateQuote(id, { ...rest, items: items as never });
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "quote_updated",
+      area: "crm",
+      entityId: id,
+    });
     return NextResponse.json({ quote });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Update fehlgeschlagen.";

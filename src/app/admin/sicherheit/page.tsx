@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import { SecurityCenterView } from "@/components/admin/views/SecurityCenterView";
 
 export default function SecurityIndexPage() {
-  redirect("/admin/sicherheit/benutzer");
+  return <SecurityCenterView />;
 }

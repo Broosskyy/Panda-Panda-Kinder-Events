@@ -120,13 +120,18 @@ export function ErsteSchritteView() {
         />
       )}
 
-      <AdminHelpBlock title="So funktioniert der Admin" variant="tip">
-        <p className="text-sm leading-relaxed">
-          Alles, was du hier speicherst, wird entweder <strong>auf der Website angezeigt</strong> oder ist{" "}
-          <strong>nur intern</strong> (z. B. Kunden, Angebote, Notizen). Grüne Meldungen bedeuten: Erfolgreich
-          gespeichert oder gesendet.
-        </p>
-      </AdminHelpBlock>
+      <details className="admin-help-collapsible">
+        <summary className="admin-page-help-toggle cursor-pointer list-none">
+          <BookOpen className="h-4 w-4 shrink-0 text-primary" aria-hidden />
+          <span>So funktioniert der Admin — Tipp anzeigen</span>
+        </summary>
+        <AdminHelpBlock title="Kurz erklärt" variant="tip" className="mt-2">
+          <p className="text-sm leading-relaxed">
+            Gespeicherte Inhalte erscheinen auf der Website oder bleiben intern (Kunden, Angebote). Grüne Meldungen =
+            erfolgreich gespeichert.
+          </p>
+        </AdminHelpBlock>
+      </details>
 
       <section>
         <h2 className="admin-dashboard-section-title mb-4">Deine wichtigsten Aufgaben</h2>

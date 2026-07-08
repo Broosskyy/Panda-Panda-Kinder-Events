@@ -60,7 +60,7 @@ export function EmailPreviewFrame({ slug, subject, bodyHtml, layout, enabled = t
   const frameBg = mode === "dark" ? "#1a1a18" : "#f7f3ea";
 
   return (
-    <div className="space-y-3">
+    <div className="admin-email-preview-frame space-y-3">
       <div className="flex flex-wrap items-center gap-2">
         {MODE_CONFIG.map(({ id, label, icon: Icon }) => (
           <button

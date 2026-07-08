@@ -1,31 +1,69 @@
 "use client";
 
+import { useMemo, useState } from "react";
+import { ChevronDown, Search } from "lucide-react";
 import { EMAIL_VARIABLE_HINTS } from "@/lib/email/variables";
 
 export function EmailVariableHelp({ compact = false }: { compact?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return EMAIL_VARIABLE_HINTS;
+    return EMAIL_VARIABLE_HINTS.filter(
+      (item) => item.key.toLowerCase().includes(q) || item.label.toLowerCase().includes(q),
+    );
+  }, [query]);
+
   if (compact) {
     return (
       <p className="text-xs text-text-muted">
-        Du kannst Platzhalter wie <code className="rounded bg-bg-secondary px-1">{`{{customer_name}}`}</code> verwenden.
-        Sie werden automatisch ersetzt. Fehlende Werte bleiben leer.
+        Platzhalter wie <code className="rounded bg-bg-secondary px-1">{`{{customer_name}}`}</code> werden automatisch
+        ersetzt.
       </p>
     );
   }
 
   return (
-    <div className="rounded-xl border border-border bg-bg-secondary/50 p-4 text-sm">
-      <p className="font-medium text-text-primary">Platzhalter-Hilfe</p>
-      <p className="mt-1 text-text-muted">
-        Du kannst diese Platzhalter verwenden. Sie werden automatisch ersetzt. Fehlende Werte bleiben leer.
-      </p>
-      <ul className="mt-3 grid gap-1 sm:grid-cols-2">
-        {EMAIL_VARIABLE_HINTS.map((item) => (
-          <li key={item.key} className="text-text-secondary">
-            <code className="rounded bg-bg-card px-1 text-xs">{`{{${item.key}}}`}</code>
-            <span className="text-text-muted"> = {item.label}</span>
-          </li>
-        ))}
-      </ul>
+    <div className="admin-email-variable-help">
+      <button
+        type="button"
+        className="admin-page-help-toggle w-full justify-between"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
+        <span>Platzhalter-Hilfe</span>
+        <ChevronDown className={`admin-page-help-chevron ${open ? "admin-page-help-chevron-open" : ""}`} aria-hidden />
+      </button>
+      {open ? (
+        <div className="admin-email-variable-help-panel">
+          <p className="text-xs text-text-muted">
+            Platzhalter werden automatisch ersetzt. Fehlende Werte bleiben leer.
+          </p>
+          <label className="admin-email-variable-search">
+            <Search className="h-4 w-4 shrink-0 text-text-muted" aria-hidden />
+            <input
+              type="search"
+              className="admin-input admin-input-compact"
+              placeholder="Platzhalter suchen…"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+          <ul className="admin-email-variable-list">
+            {filtered.map((item) => (
+              <li key={item.key}>
+                <code>{`{{${item.key}}}`}</code>
+                <span>{item.label}</span>
+              </li>
+            ))}
+          </ul>
+          {filtered.length === 0 ? (
+            <p className="text-xs text-text-muted">Keine Platzhalter gefunden.</p>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

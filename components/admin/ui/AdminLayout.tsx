@@ -18,9 +18,9 @@ export function AdminPageHeader({
       <div className="admin-page-header">
         <div className="min-w-0 flex-1">
           <h1 className="admin-page-title">{title}</h1>
-          {description ? <p className="admin-page-description">{description}</p> : null}
+          {description ? <p className="admin-page-description hidden sm:block">{description}</p> : null}
           {whereVisible ? (
-            <p className="admin-page-where-visible">
+            <p className="admin-page-where-visible hidden md:block">
               <span className="font-medium">Sichtbar:</span> {whereVisible}
             </p>
           ) : null}

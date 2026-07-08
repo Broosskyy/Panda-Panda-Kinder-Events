@@ -15,5 +15,6 @@ export {
   reviewStatusVariant,
 } from "./AdminStatusBadge";
 export { ReviewAdminImages } from "./ReviewAdminImages";
+export { AdminActionMenu, type AdminActionMenuItem } from "./AdminActionMenu";
 export { AdminStickySave } from "./AdminStickySave";
 export { AdminTooltip } from "./AdminTooltip";

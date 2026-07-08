@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Copy, Download, FileText, Loader2, Pencil, Plus, Send, Trash2 } from "lucide-react";
+import { Copy, Download, FileText, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { CrmDocumentListControls } from "@/components/admin/crm/CrmDocumentListControls";
 import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
 import {
@@ -19,6 +19,7 @@ import {
   AdminLoadingCard,
   AdminSearchInput,
   AdminStatusBadge,
+  AdminActionMenu,
   crmDocumentStatusVariant,
 } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
@@ -590,62 +591,68 @@ export function QuotesView() {
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => void startEdit(q.id)}>
-                      {ADMIN_BTN.edit}
-                    </AdminButton>
-                    <AdminButton
-                      variant="secondary"
-                      icon={<Copy className="h-4 w-4" />}
-                      onClick={() => void duplicateQuote(q.id)}
-                    >
-                      {ADMIN_BTN.duplicate}
-                    </AdminButton>
-                    <AdminButton
-                      variant="secondary"
-                      disabled={pdfBusy}
-                      icon={isPdfLoading(openKey) ? <Loader2 className="h-4 w-4 animate-spin" /> : undefined}
-                      onClick={() => void openPdf(pdfUrl(q.id), openKey)}
-                    >
-                      {isPdfLoading(openKey) ? "PDF wird erstellt…" : ADMIN_BTN.pdfOpen}
-                    </AdminButton>
-                    <AdminButton
-                      variant="secondary"
-                      disabled={pdfBusy}
-                      icon={
-                        isPdfLoading(downloadKey) ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )
-                      }
-                      onClick={() => void downloadPdf(pdfUrl(q.id), downloadKey, `${q.quote_number}.pdf`)}
-                    >
-                      {isPdfLoading(downloadKey) ? "Wird heruntergeladen…" : ADMIN_BTN.pdfDownload}
-                    </AdminButton>
-                    <AdminButton
-                      variant="primary"
-                      icon={<Send className="h-4 w-4" />}
-                      onClick={() => {
-                        setSendTarget(q);
-                        setSendToCustomer(true);
-                        setCopyToBusiness(true);
-                        setSendError(null);
+                  <div className="admin-document-actions">
+                    <AdminActionMenu
+                      primary={{
+                        label: ADMIN_BTN.send,
+                        icon: <Send className="h-4 w-4" />,
+                        onClick: () => {
+                          setSendTarget(q);
+                          setSendToCustomer(true);
+                          setCopyToBusiness(true);
+                          setSendError(null);
+                        },
                       }}
-                    >
-                      {ADMIN_BTN.send}
-                    </AdminButton>
-                    {!q.archived_at ? (
-                      <AdminButton variant="secondary" onClick={() => void archiveQuote(q.id)}>
-                        {ADMIN_BTN.archive}
-                      </AdminButton>
-                    ) : null}
-                    <AdminButton variant="danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void deleteQuote(q.id)}>
-                      {ADMIN_BTN.delete}
-                    </AdminButton>
-                    <AdminButton variant="secondary" onClick={() => toInvoice(q.id)}>
-                      → Rechnung
-                    </AdminButton>
+                      items={[
+                        {
+                          id: "edit",
+                          label: ADMIN_BTN.edit,
+                          icon: <Pencil className="h-4 w-4" />,
+                          onClick: () => void startEdit(q.id),
+                        },
+                        {
+                          id: "duplicate",
+                          label: ADMIN_BTN.duplicate,
+                          icon: <Copy className="h-4 w-4" />,
+                          onClick: () => void duplicateQuote(q.id),
+                        },
+                        {
+                          id: "pdf-open",
+                          label: isPdfLoading(openKey) ? "PDF wird erstellt…" : ADMIN_BTN.pdfOpen,
+                          disabled: pdfBusy,
+                          onClick: () => void openPdf(pdfUrl(q.id), openKey),
+                        },
+                        {
+                          id: "pdf-download",
+                          label: isPdfLoading(downloadKey) ? "Wird heruntergeladen…" : ADMIN_BTN.pdfDownload,
+                          icon: <Download className="h-4 w-4" />,
+                          disabled: pdfBusy,
+                          onClick: () => void downloadPdf(pdfUrl(q.id), downloadKey, `${q.quote_number}.pdf`),
+                        },
+                        {
+                          id: "invoice",
+                          label: "→ Rechnung",
+                          onClick: () => toInvoice(q.id),
+                        },
+                        ...(!q.archived_at
+                          ? [
+                              {
+                                id: "archive",
+                                label: ADMIN_BTN.archive,
+                                onClick: () => void archiveQuote(q.id),
+                              },
+                            ]
+                          : []),
+                      ]}
+                      dangerItems={[
+                        {
+                          id: "delete",
+                          label: ADMIN_BTN.delete,
+                          icon: <Trash2 className="h-4 w-4" />,
+                          onClick: () => void deleteQuote(q.id),
+                        },
+                      ]}
+                    />
                   </div>
                 </div>
               </AdminCard>

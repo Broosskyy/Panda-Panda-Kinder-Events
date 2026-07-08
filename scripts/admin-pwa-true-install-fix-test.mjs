@@ -46,13 +46,23 @@ if (pwa.includes('ADMIN_SW_PATH = "/admin/sw.js"') && !pwa.includes("/admin-sw.j
 else fail("SW registration path");
 if (pwa.includes("resetPwaInstallCaches")) ok("PWA cache reset helper");
 
-const panel = read("components/admin/AdminPwaInstallPanel.tsx");
-if (panel.includes("PWA-Installationsstatus zurücksetzen")) ok("Reset button label");
-else fail("Reset button label");
+if (pwa.includes("manual_install_available") && pwa.includes("detectPwaBrowser")) ok("Browser-aware install modes");
+else fail("Browser-aware install modes");
+if (pwa.includes("getBrowserInstallGuide") && pwa.includes("safari_ios")) ok("Per-browser install guides");
+else fail("Per-browser install guides");
+if (pwa.includes("getPwaPanelStatus")) ok("Browser-aware panel status");
 
 const help = read("components/admin/AdminPwaInstallHelpSheet.tsx");
+if (help.includes("installGuide") && help.includes("showShortcutVsPwaNote")) ok("Help sheet browser guides");
+else fail("Help sheet browser guides");
 if (help.includes("keine") && help.includes("Zum Startbildschirm hinzufügen")) ok("Help distinguishes shortcut vs PWA");
 else fail("Help sheet wording");
+
+const panel = read("components/admin/AdminPwaInstallPanel.tsx");
+if (panel.includes("getPwaPanelStatus") && panel.includes("browserInfo.label")) ok("Panel browser-aware status");
+else fail("Panel browser-aware status");
+if (panel.includes("PWA-Installationsstatus zurücksetzen")) ok("Reset button label");
+else fail("Reset button label");
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

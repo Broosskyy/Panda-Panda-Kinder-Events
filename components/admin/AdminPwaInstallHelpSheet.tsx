@@ -4,12 +4,18 @@ import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
-import type { PwaDebugStatus, PwaProbeResult } from "@/lib/admin/pwa-install";
+import {
+  expectsBeforeInstallPrompt,
+  type BrowserInstallGuide,
+  type PwaBrowserInfo,
+  type PwaDebugStatus,
+  type PwaProbeResult,
+} from "@/lib/admin/pwa-install";
 
 interface AdminPwaInstallHelpSheetProps {
   open: boolean;
   onClose: () => void;
-  showIosGuide: boolean;
+  installGuide: BrowserInstallGuide;
   blockers: string[];
   debugStatus?: PwaDebugStatus | null;
   canInstall?: boolean;
@@ -19,7 +25,7 @@ interface AdminPwaInstallHelpSheetProps {
 export function AdminPwaInstallHelpSheet({
   open,
   onClose,
-  showIosGuide,
+  installGuide,
   blockers,
   debugStatus,
   canInstall = false,
@@ -92,54 +98,53 @@ export function AdminPwaInstallHelpSheet({
         </header>
         <div className="admin-pwa-help-sheet-body">
           {debugStatus?.causeMessage ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+            <div
+              className={`rounded-xl border p-3 text-sm ${
+                debugStatus.detectedCause === "manual_install_path" ||
+                debugStatus.detectedCause === "true_installable"
+                  ? "border-[#c8e6d0] bg-[#f0faf3] text-[#1e4a2e]"
+                  : "border-amber-200 bg-amber-50 text-amber-950"
+              }`}
+            >
               {debugStatus.causeMessage}
             </div>
-          ) : !canInstall ? (
+          ) : !canInstall && installGuide.expectsNativePrompt ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-              Chrome bietet aktuell keinen nativen Installationsdialog an.
+              {installGuide.browserId === "chrome_android"
+                ? "Chrome bietet aktuell keinen nativen Installationsdialog an — Status prüfen oder Seite neu laden."
+                : "Aktuell kein nativer Installationsdialog — Status prüfen oder Anleitung befolgen."}
             </div>
           ) : null}
 
-          <p className="mt-3 text-sm font-medium text-text-primary">Echte PWA vs. Verknüpfung</p>
-          <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-text-secondary">
-            <li>
-              <strong>App installieren</strong> = echte PWA (Vollbild, standalone, Service Worker aktiv)
-            </li>
-            <li>
-              <strong>Zum Startbildschirm hinzufügen</strong> = nur Verknüpfung im Browser —{" "}
-              <strong>keine</strong> echte PWA-Installation
-            </li>
-          </ul>
+          <p className="mt-3 text-sm font-medium text-text-primary">{installGuide.title}</p>
+          <p className="mt-2 text-sm leading-relaxed text-text-secondary">{installGuide.introduction}</p>
+
+          {installGuide.showShortcutVsPwaNote ? (
+            <>
+              <p className="mt-4 text-sm font-medium text-text-primary">Echte PWA vs. Verknüpfung</p>
+              <ul className="mt-2 list-disc space-y-2 pl-5 text-sm text-text-secondary">
+                <li>
+                  <strong>App installieren</strong> = echte PWA (Vollbild, standalone, Service Worker aktiv)
+                </li>
+                <li>
+                  <strong>Zum Startbildschirm hinzufügen</strong> = nur Verknüpfung im Browser —{" "}
+                  <strong>keine</strong> echte PWA-Installation
+                </li>
+              </ul>
+            </>
+          ) : null}
 
           <p className="mt-4 text-sm text-text-secondary">So installierst du die Admin-App:</p>
 
-          {showIosGuide ? (
-            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
-              <li>Safari öffnen und den Adminbereich aufrufen</li>
-              <li>
-                <strong>Teilen</strong> antippen (Quadrat mit Pfeil)
-              </li>
-              <li>
-                <strong>Zum Home-Bildschirm</strong> wählen
-              </li>
-              <li>
-                <strong>Hinzufügen</strong> bestätigen
-              </li>
-            </ol>
-          ) : (
-            <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
-              <li>Chrome-Menü ⋮ oben rechts öffnen</li>
-              <li>
-                Wenn verfügbar: <strong>App installieren</strong> wählen (echte PWA)
-              </li>
-              <li>
-                Wenn nur <strong>Zum Startbildschirm hinzufügen</strong> erscheint: PWA-Kriterien sind
-                noch nicht erfüllt — Status prüfen, Seite neu laden, erneut testen
-              </li>
-              <li>Nach Installation: App vom Startbildschirm öffnen (ohne Browserleiste)</li>
-            </ol>
-          )}
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm text-text-secondary">
+            {installGuide.steps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+
+          {installGuide.note ? (
+            <p className="mt-3 text-xs leading-relaxed text-text-muted">{installGuide.note}</p>
+          ) : null}
 
           {debugStatus ? (
             <details className="mt-4 rounded-xl border border-border bg-bg-secondary p-3 text-sm">
@@ -176,15 +181,57 @@ export function AdminPwaInstallHelpSheet({
   );
 }
 
-export function ProbeDetails({ probeResult }: { probeResult: PwaProbeResult }) {
-  const rows: { label: string; ok: boolean }[] = [
-    { label: "Manifest", ok: probeResult.manifestLoaded && probeResult.manifestValid },
-    { label: "Service Worker aktiv", ok: probeResult.serviceWorkerActive },
-    { label: "SW kontrolliert /admin", ok: probeResult.serviceWorkerControlling },
-    { label: "Icons 192/512", ok: probeResult.icons192Ok && probeResult.icons512Ok },
-    { label: "Maskable Icons", ok: probeResult.iconsMaskable192Ok && probeResult.iconsMaskable512Ok },
-    { label: "HTTPS", ok: probeResult.https },
-    { label: "Echter Install-Prompt", ok: probeResult.installPromptAvailable },
+export function ProbeDetails({
+  probeResult,
+  browserInfo,
+}: {
+  probeResult: PwaProbeResult;
+  browserInfo?: PwaBrowserInfo;
+}) {
+  const expectsPrompt = browserInfo ? expectsBeforeInstallPrompt(browserInfo) : true;
+  const promptLabel = expectsPrompt ? "Echter Install-Prompt" : "Install-Prompt (Browser)";
+  const promptValue = expectsPrompt
+    ? probeResult.installPromptAvailable
+      ? "OK"
+      : "Fehlt"
+    : "N/A — manuell";
+
+  const rows: { label: string; value: string; ok?: boolean }[] = [
+    {
+      label: "Manifest",
+      value: probeResult.manifestLoaded && probeResult.manifestValid ? "OK" : "Fehlt",
+      ok: probeResult.manifestLoaded && probeResult.manifestValid,
+    },
+    {
+      label: "Service Worker aktiv",
+      value: probeResult.serviceWorkerActive ? "OK" : browserInfo?.installMethod === "manual_ios" ? "Optional" : "Fehlt",
+      ok: probeResult.serviceWorkerActive || browserInfo?.installMethod === "manual_ios",
+    },
+    {
+      label: "SW kontrolliert /admin",
+      value: probeResult.serviceWorkerControlling
+        ? "OK"
+        : browserInfo?.installMethod === "manual_ios"
+          ? "Optional"
+          : "Fehlt",
+      ok: probeResult.serviceWorkerControlling || browserInfo?.installMethod === "manual_ios",
+    },
+    {
+      label: "Icons 192/512",
+      value: probeResult.icons192Ok && probeResult.icons512Ok ? "OK" : "Fehlt",
+      ok: probeResult.icons192Ok && probeResult.icons512Ok,
+    },
+    {
+      label: "Maskable Icons",
+      value: probeResult.iconsMaskable192Ok && probeResult.iconsMaskable512Ok ? "OK" : "Fehlt",
+      ok: probeResult.iconsMaskable192Ok && probeResult.iconsMaskable512Ok,
+    },
+    {
+      label: "HTTPS",
+      value: probeResult.https ? "OK" : "Fehlt",
+      ok: probeResult.https,
+    },
+    { label: promptLabel, value: promptValue, ok: expectsPrompt ? probeResult.installPromptAvailable : true },
   ];
 
   return (
@@ -192,7 +239,17 @@ export function ProbeDetails({ probeResult }: { probeResult: PwaProbeResult }) {
       {rows.map((row) => (
         <li key={row.label} className="flex items-center justify-between gap-2">
           <span>{row.label}</span>
-          <span className={row.ok ? "text-[#2d5a3a]" : "text-amber-700"}>{row.ok ? "OK" : "Fehlt"}</span>
+          <span
+            className={
+              row.value.startsWith("N/A") || row.value === "Optional"
+                ? "text-text-secondary"
+                : row.ok
+                  ? "text-[#2d5a3a]"
+                  : "text-amber-700"
+            }
+          >
+            {row.value}
+          </span>
         </li>
       ))}
     </ul>

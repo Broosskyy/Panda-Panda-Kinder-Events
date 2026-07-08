@@ -135,15 +135,27 @@ const PUBLIC_ADMIN_PWA_PATHS = [
 
 **Neue Install-Modi** (`PwaInstallMode`):
 
-- `true_installable` — echter Install-Prompt
+- `true_installable` — echter Install-Prompt (Chrome, Edge, Samsung Internet)
+- `manual_install_available` — manueller Weg, kein Fehler (Safari iOS, Firefox)
 - `shortcut_only` — nur „Zum Startbildschirm hinzufügen“
 - `sw_not_controlling` — SW kontrolliert `/admin` noch nicht
 - `manifest_or_icons_error` — technische Blocker
 - `installed` — bereits standalone
 - `prompt_blocked` — Prompt zuvor abgelehnt
-- `unsupported` — Browser ohne SW
+- `unsupported` — In-App-Browser o. ä.
 
-**UI:** `AdminPwaInstallPanel` und `AdminPwaInstallHelpSheet` unterscheiden klar echte PWA vs. Verknüpfung.
+**Browser-Erkennung** (`detectPwaBrowser`):
+
+| Browser | Install-Weg | UI-Verhalten |
+|---------|-------------|--------------|
+| Chrome Android | `beforeinstallprompt` → „App installieren“ | Echter Prompt oder Shortcut-Warnung |
+| Chrome Desktop | Install-Icon / Menü | Browser-spezifische Anleitung |
+| Edge | Apps → Installieren | Browser-spezifische Anleitung |
+| Safari iOS | Teilen → Zum Home-Bildschirm | **Kein Fehler** — manuelle Anleitung |
+| Firefox | Manuell (kein zuverlässiger Prompt) | Browser-Anleitung, kein „PWA kaputt“ |
+| Samsung Internet | Prompt oder Menü | Eigene Anleitung |
+
+**UI:** `AdminPwaInstallPanel` und `AdminPwaInstallHelpSheet` zeigen browser-spezifische Status und Schritte.
 
 ---
 

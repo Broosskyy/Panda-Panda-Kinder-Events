@@ -5,6 +5,7 @@ import { CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Smartphone } from "luc
 import { AdminButton } from "@/components/admin/ui";
 import { AdminPwaInstallHelpSheet, ProbeDetails, PwaDebugDetails } from "@/components/admin/AdminPwaInstallHelpSheet";
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
+import { getPwaPanelStatus } from "@/lib/admin/pwa-install";
 
 interface AdminPwaInstallPanelProps {
   compact?: boolean;
@@ -29,7 +30,8 @@ function feedbackMessage(feedback: ReturnType<typeof useAdminPwa>["installFeedba
 export function AdminPwaInstallPanel({ compact = false, showTitle = true }: AdminPwaInstallPanelProps) {
   const {
     canInstall,
-    showIosGuide,
+    browserInfo,
+    installGuide,
     isInstalled,
     install,
     checkInstallStatus,
@@ -62,7 +64,12 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
   };
 
   const feedback = feedbackMessage(installFeedback);
-  const causeMessage = debugStatus?.causeMessage;
+  const panelStatus = getPwaPanelStatus({
+    canInstall,
+    installMode: probeResult?.installMode,
+    browser: browserInfo,
+    causeMessage: debugStatus?.causeMessage ?? null,
+  });
 
   if (isInstalled) {
     return (
@@ -94,24 +101,16 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
         ) : null}
 
         <div className="rounded-xl border border-border bg-bg-secondary p-3 text-sm">
-          <p className="font-medium text-text-primary">Status</p>
-          <p className="mt-1 text-text-muted">
-            {canInstall
-              ? "Echte PWA-Installation verfügbar („App installieren“)"
-              : probeResult?.installMode === "shortcut_only"
-                ? "Nur Startbildschirm-Verknüpfung — keine echte PWA"
-                : "Chrome bietet aktuell keinen Installationsdialog an."}
+          <p className="font-medium text-text-primary">Status · {browserInfo.label}</p>
+          <p className={`mt-1 ${panelStatus.isError ? "text-amber-800" : "text-text-muted"}`}>
+            {panelStatus.headline}
           </p>
-          {!canInstall ? (
-            <p className="mt-2 text-xs leading-relaxed text-text-secondary">
-              {causeMessage ??
-                "Wenn Chrome nur „Zum Startbildschirm hinzufügen“ zeigt, sind die PWA-Kriterien noch nicht erfüllt."}
-            </p>
+          {panelStatus.detail ? (
+            <p className="mt-2 text-xs leading-relaxed text-text-secondary">{panelStatus.detail}</p>
           ) : null}
-          {canInstall && causeMessage ? (
-            <p className="mt-2 text-xs leading-relaxed text-text-secondary">{causeMessage}</p>
+          {statusChecked && probeResult ? (
+            <ProbeDetails probeResult={probeResult} browserInfo={browserInfo} />
           ) : null}
-          {statusChecked && probeResult ? <ProbeDetails probeResult={probeResult} /> : null}
           {statusChecked && debugStatus ? (
             <div className="mt-3 border-t border-border/70 pt-3">
               <button
@@ -170,7 +169,7 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
       <AdminPwaInstallHelpSheet
         open={helpOpen}
         onClose={closeInstallHelp}
-        showIosGuide={showIosGuide}
+        installGuide={installGuide}
         blockers={probeResult?.blockers ?? []}
         debugStatus={debugStatus}
         canInstall={canInstall}

@@ -14,6 +14,8 @@ import {
   buildPwaDebugStatus,
   clearDeferredPrompt,
   clearPwaSessionClosed,
+  detectPwaBrowser,
+  getBrowserInstallGuide,
   isAndroidDevice,
   isIosDevice,
   markPwaDontShowAgain,
@@ -30,6 +32,8 @@ import {
   supportsNativePwaInstall,
   takeEarlyCapturedPrompt,
   type BeforeInstallPromptEvent,
+  type BrowserInstallGuide,
+  type PwaBrowserInfo,
   type PwaDebugStatus,
   type PwaInstallOutcome,
   type PwaProbeResult,
@@ -44,6 +48,8 @@ export type PwaInstallFeedback =
 
 interface AdminPwaContextValue {
   canInstall: boolean;
+  browserInfo: PwaBrowserInfo;
+  installGuide: BrowserInstallGuide;
   showIosGuide: boolean;
   showAndroidGuide: boolean;
   showUnsupportedGuide: boolean;
@@ -77,6 +83,8 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const [installed, setInstalled] = useState(false);
   const [hiddenPermanently, setHiddenPermanently] = useState(false);
   const [sessionClosed, setSessionClosed] = useState(false);
+  const [browserInfo] = useState(() => detectPwaBrowser());
+  const [installGuide] = useState(() => getBrowserInstallGuide(detectPwaBrowser().id));
   const [ios] = useState(() => isIosDevice());
   const [android] = useState(() => isAndroidDevice());
   const [probeResult, setProbeResult] = useState<PwaProbeResult | null>(null);
@@ -242,6 +250,8 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AdminPwaContextValue>(
     () => ({
       canInstall,
+      browserInfo,
+      installGuide,
       showIosGuide,
       showAndroidGuide,
       showUnsupportedGuide,
@@ -263,6 +273,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       reopenInstallCard,
     }),
     [
+      browserInfo,
       canInstall,
       checkInstallStatus,
       closeCard,
@@ -273,6 +284,7 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       hiddenPermanently,
       install,
       installFeedback,
+      installGuide,
       installed,
       openInstallHelp,
       probeResult,

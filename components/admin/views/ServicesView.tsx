@@ -15,11 +15,12 @@ import { SERVICE_ICON_KEYS } from "@/lib/cms/icons";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminEmptyState, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
-import { useAdminMessages } from "@/lib/admin/use-admin-messages";
+import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
-import { ADMIN_CONFIRM, confirmDanger } from "@/lib/admin/messages";
+import { ADMIN_CONFIRM } from "@/lib/admin/messages";
 
 interface ServiceRow {
   id: string;
@@ -62,7 +63,7 @@ export function ServicesView() {
   const [form, setForm] = useState(emptyForm);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadTarget, setUploadTarget] = useState<"create" | string>("create");
-  const { toast, saved, saveFailed, withLoading } = useAdminMessages();
+  const { confirm, runAction, showResult } = useAdminActionFeedback();
   const page = adminPageHeaderProps("leistungen");
   const empty = ADMIN_EMPTY_STATES.services;
 
@@ -73,13 +74,17 @@ export function ServicesView() {
     if (res.ok) {
       setServices(data.services ?? []);
       if (data.meta?.seeded) {
-        toast("Vorhandene Website-Leistungen wurden als bearbeitbare Startdaten übernommen.", "success");
+        showResult({
+          title: "Startdaten übernommen",
+          message: "Vorhandene Website-Leistungen wurden als bearbeitbare Startdaten übernommen.",
+          status: "success",
+        });
       }
     } else {
-      saveFailed();
+      showResult(ACTION_RESULTS.genericError(data.error ?? "Leistungen konnten nicht geladen werden."));
     }
     setLoading(false);
-  }, [saveFailed, toast]);
+  }, [showResult]);
 
   useEffect(() => {
     void load();
@@ -91,26 +96,119 @@ export function ServicesView() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
-    if (res.ok) {
-      saved();
-      await load();
-      return true;
-    }
     const data = await res.json();
-    toast(data.error ?? "Speichern fehlgeschlagen.", "error");
-    return false;
+    if (!res.ok) {
+      throw new Error(data.error ?? "Speichern fehlgeschlagen.");
+    }
+    await load();
+    return data;
+  };
+
+  const submitForm = async () => {
+    if (!form.title.trim() || !form.description.trim()) {
+      showResult(ACTION_RESULTS.genericError("Titel und Beschreibung sind Pflichtfelder."));
+      return;
+    }
+    const payload = {
+      icon_key: form.icon_key,
+      title: form.title.trim(),
+      description: form.description.trim(),
+      detail_text: form.detail_text.trim(),
+      image_url: form.image_url.trim(),
+      button_label: form.button_label.trim() || "Mehr erfahren",
+      button_link: form.button_link.trim(),
+      category: form.category.trim(),
+      price_from: form.price_from.trim(),
+      highlights: form.highlights
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
+      visible: form.visible,
+      ...(showCreate ? { sort_order: services.length } : {}),
+      ...(editingId ? { id: editingId } : {}),
+    };
+
+    const result = await runAction({
+      action: () => save(payload, showCreate ? "POST" : "PATCH"),
+      success: ACTION_RESULTS.serviceSaved(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
+    if (result) {
+      setShowCreate(false);
+      setEditingId(null);
+    }
+  };
+
+  const toggleVisible = async (service: ServiceRow) => {
+    await runAction({
+      action: () => save({ id: service.id, visible: !service.visible }, "PATCH"),
+      success: ACTION_RESULTS.serviceSaved(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
+  };
+
+  const remove = async (service: ServiceRow) => {
+    const ok = await confirm({
+      title: "Leistung löschen",
+      message: ADMIN_CONFIRM.deleteService,
+      confirmLabel: "Löschen",
+      destructive: true,
+    });
+    if (!ok) return;
+
+    await runAction({
+      action: () => save({ id: service.id }, "DELETE"),
+      success: ACTION_RESULTS.serviceDeleted(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
+    if (editingId === service.id) {
+      setEditingId(null);
+      setShowCreate(false);
+    }
   };
 
   const reorder = async (id: string, direction: "up" | "down") => {
-    const res = await fetch("/api/admin/services", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reorder", id, direction }),
+    await runAction({
+      action: async () => {
+        const res = await fetch("/api/admin/services", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "reorder", id, direction }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Reihenfolge konnte nicht geändert werden.");
+        await load();
+        return data;
+      },
+      success: ACTION_RESULTS.serviceSaved(),
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
     });
-    if (res.ok) {
-      saved();
-      await load();
-    } else saveFailed();
+  };
+
+  const uploadImage = async (file: File) => {
+    await runAction({
+      action: async () => {
+        const fd = new FormData();
+        fd.append("file", file);
+        fd.append("bucket", "gallery");
+        fd.append("folder", "services");
+        const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
+        const upData = await up.json();
+        if (!up.ok) throw new Error(upData.error ?? "Upload fehlgeschlagen");
+        const url = upData.url ?? "";
+        setForm((f) => ({ ...f, image_url: url }));
+        if (uploadTarget !== "create" && editingId) {
+          await save({ id: editingId, image_url: url }, "PATCH");
+        }
+        return url;
+      },
+      success: {
+        title: "Bild hochgeladen",
+        message: "Das Leistungsbild wurde gespeichert.",
+        status: "success",
+      },
+      error: (error) => ACTION_RESULTS.genericError(error instanceof Error ? error.message : undefined),
+    });
   };
 
   const openCreate = () => {
@@ -137,68 +235,6 @@ export function ServicesView() {
     });
   };
 
-  const submitForm = async () => {
-    if (!form.title.trim() || !form.description.trim()) {
-      return toast("Titel und Beschreibung sind Pflichtfelder.", "error");
-    }
-    const payload = {
-      icon_key: form.icon_key,
-      title: form.title.trim(),
-      description: form.description.trim(),
-      detail_text: form.detail_text.trim(),
-      image_url: form.image_url.trim(),
-      button_label: form.button_label.trim() || "Mehr erfahren",
-      button_link: form.button_link.trim(),
-      category: form.category.trim(),
-      price_from: form.price_from.trim(),
-      highlights: form.highlights
-        .split("\n")
-        .map((line) => line.trim())
-        .filter(Boolean),
-      visible: form.visible,
-      ...(showCreate ? { sort_order: services.length } : {}),
-      ...(editingId ? { id: editingId } : {}),
-    };
-
-    await withLoading(
-      (async () => {
-        const ok = await save(payload, showCreate ? "POST" : "PATCH");
-        if (ok) {
-          setShowCreate(false);
-          setEditingId(null);
-        }
-      })(),
-    );
-  };
-
-  const toggleVisible = async (service: ServiceRow) => {
-    await save({ id: service.id, visible: !service.visible }, "PATCH");
-  };
-
-  const remove = async (service: ServiceRow) => {
-    if (!confirmDanger(ADMIN_CONFIRM.deleteService)) return;
-    await save({ id: service.id }, "DELETE");
-    if (editingId === service.id) {
-      setEditingId(null);
-      setShowCreate(false);
-    }
-  };
-
-  const uploadImage = async (file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    fd.append("bucket", "gallery");
-    fd.append("folder", "services");
-    const up = await fetch("/api/admin/upload", { method: "POST", body: fd });
-    const upData = await up.json();
-    if (!up.ok) throw new Error(upData.error ?? "Upload fehlgeschlagen");
-    const url = upData.url ?? "";
-    setForm((f) => ({ ...f, image_url: url }));
-    if (uploadTarget !== "create" && editingId) {
-      await save({ id: editingId, image_url: url }, "PATCH");
-    }
-  };
-
   const editingOpen = showCreate || editingId !== null;
 
   return (
@@ -217,7 +253,7 @@ export function ServicesView() {
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) {
-            void withLoading(uploadImage(file));
+            void uploadImage(file);
           }
           e.target.value = "";
         }}

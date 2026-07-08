@@ -57,8 +57,9 @@ const panel = read("components/admin/AdminPwaInstallPanel.tsx");
 if (settings.includes("Admin-App") && panel.includes("Installationsstatus")) ok("Settings Admin-App section");
 else fail("Settings Admin-App section");
 
-if (panel.includes("App installieren") && panel.includes("Zum Home-Bildschirm")) ok("Install panel: Android + iOS guides");
-else fail("Install panel guides");
+if (panel.includes("App installieren") && (panel.includes("Installationshilfe öffnen") || read("components/admin/AdminPwaInstallHelpSheet.tsx").includes("Zum Home-Bildschirm"))) {
+  ok("Install panel: install CTA + help guides");
+} else fail("Install panel guides");
 
 const actionMenu = read("components/admin/ui/AdminActionMenu.tsx");
 if (actionMenu.includes("admin-action-sheet") && actionMenu.includes("createPortal")) ok("Action menu mobile bottom sheet");

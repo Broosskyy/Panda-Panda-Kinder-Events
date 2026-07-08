@@ -97,8 +97,12 @@ if (sw.includes('pathname.startsWith("/admin")') && sw.includes("LOCK_PWA")) {
   fail("Service worker protection incomplete");
 }
 
-const pwaRegister = read("components/admin/AdminPwaRegister.tsx");
-if (pwaRegister.includes('register("/admin-sw.js"') && pwaRegister.includes("beforeinstallprompt")) {
+const pwaEarly = read("components/admin/AdminPwaEarlyCapture.tsx");
+const pwaProvider = read("components/admin/AdminPwaProvider.tsx");
+if (
+  (pwaEarly.includes("registerAdminServiceWorker") || pwaProvider.includes("registerAdminServiceWorker")) &&
+  (pwaEarly.includes("beforeinstallprompt") || pwaProvider.includes("beforeinstallprompt"))
+) {
   ok("PWA registration + install prompt");
 } else {
   fail("PWA registration incomplete");

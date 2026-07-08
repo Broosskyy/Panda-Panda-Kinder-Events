@@ -73,7 +73,7 @@ if (pwaCard.includes("Admin-App installieren") && pwaPanel.includes("Installatio
 } else fail("PWA card incomplete");
 
 const pwaProvider = read("components/admin/AdminPwaProvider.tsx");
-if (pwaProvider.includes("showInstallCard") && pwaProvider.includes("probePwaStatus")) {
+if (pwaProvider.includes("showInstallCard") && pwaProvider.includes("probePwaInstallability")) {
   ok("PWA provider: debug + showInstallCard");
 } else fail("PWA provider incomplete");
 

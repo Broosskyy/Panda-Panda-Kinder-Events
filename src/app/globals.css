@@ -4122,6 +4122,79 @@ html[data-mobile-menu-open="true"] {
   flex-shrink: 0;
 }
 
+.admin-pwa-help-sheet-root {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.admin-pwa-help-sheet-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(20, 22, 16, 0.45);
+  backdrop-filter: blur(2px);
+}
+
+.admin-pwa-help-sheet-panel {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 28rem);
+  max-height: min(88dvh, 36rem);
+  overflow: auto;
+  border-radius: 1.25rem 1.25rem 0 0;
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  box-shadow: 0 -12px 40px rgba(20, 22, 16, 0.18);
+  padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+}
+
+.admin-pwa-help-sheet-handle {
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0.625rem auto 0;
+  border-radius: 9999px;
+  background: color-mix(in srgb, var(--admin-text-muted) 35%, transparent);
+}
+
+.admin-pwa-help-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem 0.5rem;
+}
+
+.admin-pwa-help-sheet-title {
+  font-family: var(--font-heading);
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--admin-text);
+}
+
+.admin-pwa-help-sheet-body {
+  padding: 0 1rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .admin-pwa-help-sheet-root {
+    align-items: center;
+    padding: 1rem;
+  }
+
+  .admin-pwa-help-sheet-panel {
+    border-radius: 1rem;
+    max-height: min(80dvh, 32rem);
+  }
+
+  .admin-pwa-help-sheet-handle {
+    display: none;
+  }
+}
+
 .dash-v2-section { display: flex; flex-direction: column; gap: 0.75rem; }
 .dash-v2-section-head { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
 .dash-v2-section-title { font-family: var(--font-heading); font-size: 1rem; font-weight: 700; color: var(--admin-text); }

@@ -3,8 +3,9 @@ import { BRAND, withIconVersion } from "@/lib/brand";
 
 export async function GET() {
   const manifest = {
+    id: "/admin",
     name: "Panda-Bande Admin",
-    short_name: "PB Admin",
+    short_name: "Panda Admin",
     description: "Sichere Verwaltung für Panda-Bande Kinderevents",
     start_url: "/admin",
     scope: "/admin",

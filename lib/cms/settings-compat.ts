@@ -57,7 +57,7 @@ export type ControlCenterSection =
   | "seo"
   | "legal";
 
-export type ControlCenterTab = ControlCenterSection | "system";
+export type ControlCenterTab = ControlCenterSection | "system" | "modules";
 
 export const CONTROL_CENTER_TABS: {
   id: ControlCenterTab;
@@ -72,5 +72,6 @@ export const CONTROL_CENTER_TABS: {
   { id: "bank", label: "Bank & Steuerdaten", auditArea: "settings_bank" },
   { id: "seo", label: "Domain & SEO", auditArea: "settings_seo" },
   { id: "legal", label: "Rechtliches", auditArea: "settings_legal" },
+  { id: "modules", label: "Module", auditArea: "settings_modules" },
   { id: "system", label: "Systemstatus", auditArea: "settings_system" },
 ];

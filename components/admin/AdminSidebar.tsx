@@ -2,23 +2,19 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { LogOut, Menu, X } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 import { AdminNavBadge, AdminNotificationCenter } from "@/components/admin/AdminNotificationCenter";
 import { useAdminNotificationsContext } from "@/components/admin/AdminNotificationsProvider";
-import {
-  ADMIN_NAV_GROUPS,
-  MOBILE_BOTTOM_NAV_HREFS,
-  isAdminNavActive,
-  type AdminNavGroup,
-} from "@/lib/admin/nav";
+import { MOBILE_BOTTOM_NAV_HREFS, isAdminNavActive, type AdminNavGroup } from "@/lib/admin/nav";
+import { filterAdminNavGroups } from "@/lib/admin/filter-nav";
+import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import type { SiteModulesSettings } from "@/lib/cms/types";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 import { AdminPageHelp } from "@/components/admin/ui/AdminHelpBlock";
 
-const MOBILE_BOTTOM_NAV = ADMIN_NAV_GROUPS.flatMap((g) => g.items).filter((item) =>
-  (MOBILE_BOTTOM_NAV_HREFS as readonly string[]).includes(item.href),
-);
+const MOBILE_BOTTOM_NAV_HREFS_SET = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
 
 function NavGroupSection({
   group,
@@ -62,6 +58,31 @@ export function AdminSidebar() {
   const { badgeCounts, markTypeRead } = useAdminNotificationsContext();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const scrollYRef = useRef(0);
+  const [permissions, setPermissions] = useState<string[]>([]);
+  const [modules, setModules] = useState<SiteModulesSettings>(DEFAULT_SITE_SETTINGS.modules);
+
+  useEffect(() => {
+    fetch("/api/admin/login")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.permissions) setPermissions(data.permissions);
+        if (data.modules) setModules(data.modules);
+      })
+      .catch(() => undefined);
+  }, []);
+
+  const navGroups = useMemo(
+    () => filterAdminNavGroups(permissions.length ? permissions : ["dashboard:read"], modules),
+    [permissions, modules],
+  );
+
+  const mobileBottomNav = useMemo(
+    () =>
+      navGroups
+        .flatMap((g) => g.items)
+        .filter((item) => MOBILE_BOTTOM_NAV_HREFS_SET.has(item.href.split("?")[0] ?? item.href)),
+    [navGroups],
+  );
 
   const badgeForHref = (href: string) => {
     const base = href.split("?")[0];
@@ -120,7 +141,7 @@ export function AdminSidebar() {
 
   const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
-      {ADMIN_NAV_GROUPS.map((group) => (
+      {navGroups.map((group) => (
         <NavGroupSection
           key={group.id}
           group={group}
@@ -134,7 +155,6 @@ export function AdminSidebar() {
 
   return (
     <>
-      {/* Desktop sidebar */}
       <aside className="admin-sidebar-desktop" aria-label="Admin Navigation">
         <div className="admin-sidebar-brand">
           <Logo context="admin" linked={false} />
@@ -154,7 +174,6 @@ export function AdminSidebar() {
         </div>
       </aside>
 
-      {/* Mobile top bar */}
       <header className="admin-mobile-header md:hidden">
         <button
           type="button"
@@ -172,7 +191,6 @@ export function AdminSidebar() {
         <AdminNotificationCenter />
       </header>
 
-      {/* Mobile drawer */}
       {drawerOpen ? (
         <div className="admin-drawer-root md:hidden" role="dialog" aria-modal="true" aria-label="Navigation">
           <button type="button" className="admin-drawer-backdrop" onClick={() => setDrawerOpen(false)} aria-label="Menü schließen" />
@@ -196,9 +214,8 @@ export function AdminSidebar() {
         </div>
       ) : null}
 
-      {/* Mobile bottom navigation */}
       <nav className="admin-bottom-nav md:hidden" aria-label="Schnellnavigation">
-        {MOBILE_BOTTOM_NAV.map(({ href, label, iconKey, mobileLabel }) => {
+        {mobileBottomNav.map(({ href, label, iconKey, mobileLabel }) => {
           const Icon = resolveAdminIcon(iconKey);
           const active = isAdminNavActive(pathname, href);
           const badge = badgeForHref(href);

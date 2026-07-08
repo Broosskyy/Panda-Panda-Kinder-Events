@@ -5,7 +5,8 @@ import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 import { CONTROL_CENTER_TABS } from "@/lib/cms/settings-compat";
 import { validateSiteSettingsSection } from "@/lib/cms/validate-settings";
-import { writeAuditLog } from "@/lib/auth/audit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
+import { parseCriticalBody, verifyCriticalConfirmation } from "@/lib/auth/critical-action";
 import type { SiteSettingsBundle } from "@/lib/cms/types";
 
 const VALID_SECTIONS: (keyof SiteSettingsBundle)[] = [
@@ -26,6 +27,7 @@ const VALID_SECTIONS: (keyof SiteSettingsBundle)[] = [
   "seo",
   "legal",
   "publicTeam",
+  "modules",
 ];
 
 const AUDIT_SECTIONS = new Set([
@@ -63,18 +65,38 @@ export async function GET() {
 }
 
 export async function PUT(request: Request) {
-  const authError = await requireAdmin("settings:write");
-  if (authError) return authError;
-
-  const ctx = await getAdminContext();
   const body = await request.json();
   const { section, value } = body as {
     section: keyof SiteSettingsBundle;
     value: SiteSettingsBundle[keyof SiteSettingsBundle];
   };
 
+  if (section === "modules") {
+    const authError = await requireAdmin("modules:write");
+    if (authError) return authError;
+  } else if (section === "email" || section === "seo") {
+    const authError = await requireAdmin("settings:system");
+    if (authError) {
+      const fallback = await requireAdmin("settings:write");
+      if (fallback) return fallback;
+    }
+  } else {
+    const authError = await requireAdmin("settings:write");
+    if (authError) return authError;
+  }
+
+  const ctx = await getAdminContext();
+  if (!ctx) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+  }
+
   if (!VALID_SECTIONS.includes(section)) {
     return NextResponse.json({ error: "Ungültige Sektion." }, { status: 400 });
+  }
+
+  if (section === "modules" || section === "email" || section === "seo") {
+    const critical = await verifyCriticalConfirmation(ctx, parseCriticalBody(body));
+    if (!critical.ok) return critical.response;
   }
 
   const validated = validateSiteSettingsSection(section, value);
@@ -83,20 +105,20 @@ export async function PUT(request: Request) {
   }
 
   let before: unknown;
-  if (AUDIT_SECTIONS.has(section)) {
+  if (AUDIT_SECTIONS.has(section) || section === "modules") {
     const current = await fetchSiteSettings();
-    before = redactForAudit(current[section]);
+    before = section === "modules" ? current.modules : redactForAudit(current[section]);
   }
 
   try {
     await saveSiteSettings(section, validated.value);
     revalidatePublicCms();
 
-    if (AUDIT_SECTIONS.has(section)) {
-      await writeAuditLog(ctx, {
-        action: "settings_updated",
-        area: auditLabel(section),
-        after: redactForAudit(validated.value),
+    if (AUDIT_SECTIONS.has(section) || section === "modules") {
+      await writeAuditLogFromRequest(ctx, request, {
+        action: section === "modules" ? "module_toggle" : "settings_updated",
+        area: section === "modules" ? "settings_modules" : auditLabel(section),
+        after: section === "modules" ? validated.value : redactForAudit(validated.value),
         before,
       });
     }

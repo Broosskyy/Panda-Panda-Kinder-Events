@@ -68,6 +68,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/einstellungen", label: "Unternehmensdaten", iconKey: "Settings" },
       { href: "/admin/einstellungen?tab=branding", label: "Branding", iconKey: "Image" },
       { href: "/admin/einstellungen?tab=email", label: "E-Mail", iconKey: "Mail" },
+      { href: "/admin/einstellungen?tab=modules", label: "Module", iconKey: "Layout" },
       { href: "/admin/einstellungen?tab=system", label: "System", iconKey: "Cpu" },
     ],
   },

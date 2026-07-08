@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
-import { listUsers, listRoles, createUser, updateUser, getUserById } from "@/lib/auth/users";
+import { listUsers, listRoles, createUser, updateUser, getUserById, deleteUser } from "@/lib/auth/users";
 import { hashPassword, validatePassword } from "@/lib/auth/password";
 import { getPasswordPolicy } from "@/lib/auth/security-settings";
-import { writeAuditLog } from "@/lib/auth/audit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { revokeAllSessions } from "@/lib/auth/session";
 import { listTeamMembersForSelect } from "@/lib/team/db";
+import { parseCriticalBody, verifyCriticalConfirmation } from "@/lib/auth/critical-action";
 
 const createSchema = z.object({
   username: z.string().min(2, "Benutzername erforderlich."),
@@ -70,6 +71,11 @@ export async function POST(request: Request) {
 
   try {
     const passwordHash = await hashPassword(parsed.data.password);
+  const roles = await listRoles();
+  const assignedRole = roles.find((r) => r.id === parsed.data.roleId);
+    if (assignedRole?.slug === "administrator" && ctx && !ctx.isLegacy && ctx.roleSlug !== "administrator") {
+      return NextResponse.json({ error: "Nur Super Admins dürfen weitere Super Admins anlegen." }, { status: 403 });
+    }
     const user = await createUser({
       username: parsed.data.username,
       email: parsed.data.email,
@@ -81,7 +87,7 @@ export async function POST(request: Request) {
       createdBy: ctx?.userId ?? undefined,
       teamMemberId: parsed.data.teamMemberId ?? null,
     });
-    await writeAuditLog(ctx, {
+    await writeAuditLogFromRequest(ctx, request, {
       action: "create",
       area: "admin_users",
       entityId: user.id,
@@ -108,6 +114,12 @@ export async function PATCH(request: Request) {
   const ctx = await getAdminContext();
   const { id, password, resetPassword, ...rest } = parsed.data;
   const before = await getUserById(id);
+  const roleChanged = Boolean(rest.roleId && before && rest.roleId !== before.role_id);
+
+  if (roleChanged) {
+    const critical = await verifyCriticalConfirmation(ctx!, parseCriticalBody(body));
+    if (!critical.ok) return critical.response;
+  }
 
   try {
     const patch: Parameters<typeof updateUser>[1] = {};
@@ -126,18 +138,17 @@ export async function PATCH(request: Request) {
       if (validationError) return NextResponse.json({ error: validationError }, { status: 400 });
       patch.passwordHash = await hashPassword(password);
       await revokeAllSessions(id);
-      await writeAuditLog(ctx, {
+      await writeAuditLogFromRequest(ctx, request, {
         action: resetPassword ? "password_reset_admin" : "password_change",
         area: "admin_users",
         entityId: id,
       });
     }
 
-    const roleChanged = rest.roleId && before && rest.roleId !== before.role_id;
     await updateUser(id, patch);
 
     if (roleChanged) {
-      await writeAuditLog(ctx, {
+      await writeAuditLogFromRequest(ctx, request, {
         action: "role_change",
         area: "admin_users",
         entityId: id,
@@ -145,16 +156,57 @@ export async function PATCH(request: Request) {
         after: { role_id: rest.roleId },
       });
     } else if (rest.active === false) {
-      await writeAuditLog(ctx, { action: "deactivate", area: "admin_users", entityId: id });
+      await writeAuditLogFromRequest(ctx, request, { action: "deactivate", area: "admin_users", entityId: id });
     } else if (rest.active === true) {
-      await writeAuditLog(ctx, { action: "activate", area: "admin_users", entityId: id });
+      await writeAuditLogFromRequest(ctx, request, { action: "activate", area: "admin_users", entityId: id });
     } else {
-      await writeAuditLog(ctx, { action: "update", area: "admin_users", entityId: id, after: rest });
+      await writeAuditLogFromRequest(ctx, request, { action: "update", area: "admin_users", entityId: id, after: rest });
     }
 
     return NextResponse.json({ success: true, message: "Benutzer aktualisiert." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Update fehlgeschlagen.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  const authError = await requireAdmin("users:write");
+  if (authError) return authError;
+
+  const ctx = await getAdminContext();
+  if (!ctx) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { id } = body as { id?: string };
+  if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+
+  if (ctx.userId === id) {
+    return NextResponse.json({ error: "Sie können sich nicht selbst löschen." }, { status: 400 });
+  }
+
+  const critical = await verifyCriticalConfirmation(ctx, parseCriticalBody(body));
+  if (!critical.ok) return critical.response;
+
+  const before = await getUserById(id);
+  if (!before) {
+    return NextResponse.json({ error: "Benutzer nicht gefunden." }, { status: 404 });
+  }
+
+  try {
+    await revokeAllSessions(id);
+    await deleteUser(id);
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "delete",
+      area: "admin_users",
+      entityId: id,
+      before: { username: before.username, email: before.email },
+    });
+    return NextResponse.json({ success: true, message: "Benutzer gelöscht." });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

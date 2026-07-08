@@ -172,3 +172,9 @@ export async function updateUser(
   const { error } = await supabase.from("admin_users").update(update).eq("id", id);
   if (error) throw new Error(error.message);
 }
+
+export async function deleteUser(id: string): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("admin_users").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}

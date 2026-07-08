@@ -130,15 +130,30 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin("invoices:write");
+  const authError = await requireAdmin("invoices:delete");
   if (authError) return authError;
 
   const ctx = await getAdminContext();
-  const { id } = await request.json();
+  if (!ctx) {
+    return NextResponse.json({ error: "Nicht autorisiert." }, { status: 401 });
+  }
+
+  const body = await request.json();
+  const { id } = body as { id?: string };
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+
+  const { parseCriticalBody, verifyCriticalConfirmation } = await import("@/lib/auth/critical-action");
+  const critical = await verifyCriticalConfirmation(ctx, parseCriticalBody(body));
+  if (!critical.ok) return critical.response;
 
   try {
     await deleteInvoice(id, ctx);
+    const { writeAuditLogFromRequest } = await import("@/lib/auth/audit");
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "invoice_deleted",
+      area: "crm",
+      entityId: id,
+    });
     return NextResponse.json({ success: true });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";

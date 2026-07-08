@@ -40,7 +40,7 @@ export function Faq({
             const panelId = `${baseId}-faq-panel-${index}`;
 
             return (
-              <div key={faq.question} className={`faq-item py-3 sm:py-6 ${isOpen ? "is-open" : ""}`} role="listitem">
+              <div key={faq.question} className={`faq-item py-2.5 sm:py-6 ${isOpen ? "is-open" : ""}`} role="listitem">
                 <button
                   id={buttonId}
                   type="button"

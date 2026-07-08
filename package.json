@@ -24,6 +24,7 @@
     "test:admin-user-management": "node scripts/admin-user-management-complete-test.mjs",
     "test:website-mobile": "node scripts/website-mobile-spacing-test.mjs",
     "test:website-mobile-compact": "node scripts/website-mobile-compactness-test.mjs",
+    "test:website-mobile-header": "node scripts/website-mobile-header-spacing-test.mjs",
     "export:cms": "node scripts/export-cms.mjs",
     "export:crm": "node scripts/export-crm.mjs",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",

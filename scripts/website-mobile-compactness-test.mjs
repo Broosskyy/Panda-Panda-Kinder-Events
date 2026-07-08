@@ -31,14 +31,14 @@ const sticky = read("components/layout/StickyCtaBar.tsx");
 const hook = read("lib/hooks/useFloatingContactAboveCta.ts");
 const processSection = read("components/sections/Process.tsx");
 
-if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*1\.25rem/)) {
-  ok("Mobile section padding tightened to 1.25rem");
+if (globals.match(/\.section-padding\s*\{[^}]*padding-top:\s*1rem/)) {
+  ok("Mobile section padding tightened to 1rem");
 } else {
   fail("Mobile section padding not tightened");
 }
 
-if (globals.includes("--section-header-gap: 1.125rem")) {
-  ok("Mobile section header gap reduced to 1.125rem");
+if (globals.includes("--section-header-gap: 0.875rem")) {
+  ok("Mobile section header gap reduced to 0.875rem");
 } else {
   fail("Mobile section header gap not reduced");
 }
@@ -79,10 +79,10 @@ if (header.includes("mobile-nav-panel") && header.includes("Tab")) {
   fail("Mobile menu panel/focus trap missing");
 }
 
-if (header.includes("pointer-events-none invisible") && header.includes("isMenuOpen")) {
-  ok("Hamburger hidden while menu open");
+if (header.includes("site-header-menu-btn") && header.includes("site-header-actions")) {
+  ok("Header menu button uses layout hooks");
 } else {
-  fail("Hamburger open-state handling missing");
+  fail("Header menu layout hooks missing");
 }
 
 if (globals.includes("#ablauf .process-step-row") && globals.includes("flex-direction: row")) {

@@ -127,17 +127,17 @@ export function Header({
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-50 pt-[env(safe-area-inset-top,0px)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        className={`site-header fixed inset-x-0 top-0 z-50 overflow-visible pt-[env(safe-area-inset-top,0px)] transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isScrolled
             ? "border-b border-border/40 bg-bg-primary/88 shadow-[0_4px_24px_rgba(45,49,38,0.06)] backdrop-blur-lg"
             : "bg-bg-primary/50 backdrop-blur-md"
         }`}
       >
-        <div className="site-header-bar section-container flex items-center justify-between gap-2 py-1.5 md:gap-4 md:py-3">
+        <div className="site-header-bar section-container flex items-center justify-between gap-2 overflow-visible py-1.5 md:gap-4 md:py-3">
           <Logo
             context="header"
             branding={branding}
-            className={`min-w-0 max-w-[min(100%,11rem)] sm:max-w-none ${isMenuOpen ? "invisible" : ""}`}
+            className={`site-header-logo min-w-0 max-w-[min(100%,9.5rem)] sm:max-w-none ${isMenuOpen ? "invisible" : ""}`}
           />
 
           <nav className="hidden items-center gap-0.5 lg:flex" aria-label="Hauptnavigation">
@@ -152,7 +152,7 @@ export function Header({
             })}
           </nav>
 
-          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+          <div className="site-header-actions flex shrink-0 items-center gap-1.5 overflow-visible sm:gap-2">
             <Button
               href="#kontakt"
               size="default"
@@ -165,14 +165,14 @@ export function Header({
             <button
               ref={menuButtonRef}
               type="button"
-              className={`inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/70 bg-bg-card/90 text-text-primary shadow-sm backdrop-blur-sm transition-all duration-500 hover:border-primary/25 hover:bg-bg-secondary hover:shadow-md lg:hidden ${focusRing} ${isMenuOpen ? "pointer-events-none invisible" : ""}`}
+              className={`site-header-menu-btn inline-flex h-11 w-11 min-h-11 min-w-11 shrink-0 items-center justify-center overflow-visible rounded-full border border-border/70 bg-bg-card/90 p-0 text-text-primary shadow-sm backdrop-blur-sm transition-all duration-500 hover:border-primary/25 hover:bg-bg-secondary hover:shadow-md lg:hidden ${focusRing} ${isMenuOpen ? "pointer-events-none invisible" : ""}`}
               onClick={() => setIsMenuOpen(true)}
               aria-label="Menü öffnen"
               aria-expanded={isMenuOpen}
               aria-controls={menuId}
               tabIndex={isMenuOpen ? -1 : 0}
             >
-              <Menu className="h-5 w-5" aria-hidden />
+              <Menu className="block h-5 w-5 shrink-0" aria-hidden />
             </button>
           </div>
         </div>

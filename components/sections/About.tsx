@@ -39,7 +39,7 @@ export function About({
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />
         </ScrollReveal>
 
-        <div className="grid items-start gap-6 sm:gap-14 lg:grid-cols-2 lg:gap-20">
+        <div className="grid items-start gap-5 sm:gap-14 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal>
             <div className="relative">
               <FlowerOrnament className="pointer-events-none absolute -left-2 -top-4 h-16 w-16 opacity-25 sm:-left-6 sm:-top-6 sm:h-24 sm:w-24 sm:opacity-35" />
@@ -74,7 +74,7 @@ export function About({
           </ScrollReveal>
         </div>
 
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 sm:gap-5">
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-5">
           {[
             { label: "Unsere Mission", text: about.missionText },
             { label: "Unsere Werte", text: about.valuesText },
@@ -91,7 +91,7 @@ export function About({
         </div>
 
         <ScrollReveal>
-          <div className="about-contact-card mt-6 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-4 sm:mt-10 sm:p-6">
+          <div className="about-contact-card mt-5 rounded-[var(--radius-card)] border border-primary/15 bg-primary/5 p-4 sm:mt-10 sm:p-6">
             <p className="text-xs font-semibold uppercase tracking-[0.12em] text-primary">Persönliche Ansprechpartnerin</p>
             <p className="mt-2 font-heading text-xl font-bold text-text-primary">{contactName}</p>
             <p className="mt-1 text-sm text-text-secondary">Liebevolle Betreuung mit Erfahrung.</p>
@@ -99,7 +99,7 @@ export function About({
         </ScrollReveal>
 
         {teamItems.length > 0 ? (
-          <div id="unser-team" className="mt-10 sm:mt-20">
+          <div id="unser-team" className="mt-8 sm:mt-20">
             <ScrollReveal>
               <h3 className="font-heading text-center text-2xl font-bold text-text-primary sm:text-3xl">
                 {teamHeading}
@@ -111,7 +111,7 @@ export function About({
               ) : null}
             </ScrollReveal>
 
-            <ul className="mt-6 grid gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8" role="list">
+            <ul className="mt-5 grid gap-3.5 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 lg:gap-8" role="list">
               {teamItems.map((member, i) => (
                 <li key={`${member.name}-${member.role}-${i}`}>
                   <ScrollReveal delay={i * 80}>

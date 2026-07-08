@@ -59,7 +59,7 @@ export function News({
                           />
                         </div>
                       ) : null}
-                      <div className="p-5 md:p-6">
+                      <div className="p-4 md:p-6">
                         <p className="text-xs font-semibold uppercase tracking-wide text-primary">{post.category}</p>
                         <h3 className="mt-2 font-heading text-lg font-bold text-text-primary md:text-xl">{post.title}</h3>
                         {post.subtitle ? (

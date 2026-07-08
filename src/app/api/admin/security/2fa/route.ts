@@ -9,7 +9,7 @@ import {
   generateBackupCodes,
   countUnusedBackupCodes,
 } from "@/lib/auth/totp";
-import { writeAuditLog } from "@/lib/auth/audit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 
 /** Personal 2FA — any authenticated multi-user admin can manage their own 2FA. */
 async function requirePersonalAuth() {
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
     }
     const backupCodes = await generateBackupCodes(user.id);
     await updateUser(user.id, { totpEnabled: true });
-    await writeAuditLog(ctx, { action: "2fa_enable", area: "security" });
+    await writeAuditLogFromRequest(ctx, request, { action: "2fa_enable", area: "security" });
     return NextResponse.json({ success: true, backupCodes });
   }
 
@@ -81,7 +81,7 @@ export async function POST(request: Request) {
       }
     }
     await updateUser(user.id, { totpEnabled: false, totpSecret: null });
-    await writeAuditLog(ctx, { action: "2fa_disable", area: "security" });
+    await writeAuditLogFromRequest(ctx, request, { action: "2fa_disable", area: "security" });
     return NextResponse.json({ success: true, message: "2FA deaktiviert." });
   }
 
@@ -93,7 +93,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Ungültiger 2FA-Code." }, { status: 400 });
     }
     const backupCodes = await generateBackupCodes(user.id);
-    await writeAuditLog(ctx, { action: "2fa_backup_regenerate", area: "security" });
+    await writeAuditLogFromRequest(ctx, request, { action: "2fa_backup_regenerate", area: "security" });
     return NextResponse.json({ backupCodes });
   }
 

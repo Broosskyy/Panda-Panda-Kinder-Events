@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
+import { requireAdmin, getAdminContext } from "@/lib/admin-route";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { cmsFaqPatchSchema, cmsFaqSchema } from "@/lib/cms/admin-schemas";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
@@ -46,6 +47,8 @@ export async function POST(request: Request) {
     console.error("faqs POST:", error.message);
     return NextResponse.json({ error: "Erstellen fehlgeschlagen." }, { status: 500 });
   }
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, { action: "create", area: "website", entityId: data.id });
   revalidatePublicCms();
   return NextResponse.json({ faq: data, ...OK });
 }
@@ -73,6 +76,8 @@ export async function PATCH(request: Request) {
     console.error("faqs PATCH:", error.message);
     return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
   }
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, { action: "content_updated", area: "website", entityId: id });
   revalidatePublicCms();
   return NextResponse.json({ success: true, ...OK });
 }
@@ -88,6 +93,8 @@ export async function DELETE(request: Request) {
   const { error } = await supabase.from("cms_faqs").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: "Löschen fehlgeschlagen." }, { status: 500 });
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, { action: "delete", area: "website", entityId: id });
   revalidatePublicCms();
   return NextResponse.json({ success: true, ...OK });
 }

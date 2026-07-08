@@ -1,20 +1,19 @@
-import type { MetadataRoute } from "next";
+import { NextResponse } from "next/server";
 import { BRAND, withIconVersion } from "@/lib/brand";
-import { siteConfig } from "@/config/site";
 
-export default function manifest(): MetadataRoute.Manifest {
-  return {
-    name: siteConfig.name,
-    short_name: BRAND.shortName,
-    description: siteConfig.description,
-    start_url: "/",
-    scope: "/",
-    display: "browser",
+export async function GET() {
+  const manifest = {
+    name: "Panda-Bande Admin",
+    short_name: "PB Admin",
+    description: "Sichere Verwaltung für Panda-Bande Kinderevents",
+    start_url: "/admin",
+    scope: "/admin",
+    display: "standalone",
     orientation: "portrait-primary",
     background_color: BRAND.backgroundColor,
     theme_color: BRAND.themeColor,
     lang: "de",
-    categories: ["business", "lifestyle"],
+    categories: ["business", "productivity"],
     icons: [
       {
         src: withIconVersion(BRAND.assets.icon192),
@@ -36,4 +35,11 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
   };
+
+  return NextResponse.json(manifest, {
+    headers: {
+      "Content-Type": "application/manifest+json",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }

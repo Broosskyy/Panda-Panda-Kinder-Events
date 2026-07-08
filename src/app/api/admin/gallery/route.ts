@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
+import { requireAdmin, getAdminContext } from "@/lib/admin-route";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { galleryImageInsertSchema, galleryImagePatchSchema } from "@/lib/cms/admin-schemas";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPublicUrl } from "@/lib/cms/storage";
@@ -56,6 +57,14 @@ export async function POST(request: Request) {
 
   if (error) return NextResponse.json({ error: "Erstellen fehlgeschlagen." }, { status: 500 });
 
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, {
+    action: "create",
+    area: "gallery",
+    entityId: data.id,
+    after: { title: data.title, category: data.category },
+  });
+
   revalidatePublicCms();
   return NextResponse.json({
     image: { ...data, url: getPublicUrl("gallery", data.storage_path) },
@@ -83,6 +92,13 @@ export async function PATCH(request: Request) {
     .eq("id", id);
 
   if (error) return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, {
+    action: "update",
+    area: "gallery",
+    entityId: id,
+    after: parsed.data,
+  });
   revalidatePublicCms();
   return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
@@ -99,6 +115,9 @@ export async function DELETE(request: Request) {
 
   const { error } = await supabase.from("gallery_images").delete().eq("id", id);
   if (error) return NextResponse.json({ error: "Löschen fehlgeschlagen." }, { status: 500 });
+
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, { action: "delete", area: "gallery", entityId: id });
 
   if (img?.storage_path) {
     try {

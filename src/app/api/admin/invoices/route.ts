@@ -13,6 +13,7 @@ import {
   type CrmListView,
 } from "@/lib/crm/db";
 import { crmStatusUpdateSchema } from "@/lib/crm/schemas";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 
 function parseView(value: string | null): CrmListView {
   if (value === "archived" || value === "all") return value;
@@ -45,6 +46,15 @@ export async function POST(request: Request) {
   if (body.quote_id) {
     try {
       const invoice = await createInvoiceFromQuote(body.quote_id);
+      if (invoice) {
+        const ctx = await getAdminContext();
+        await writeAuditLogFromRequest(ctx, request, {
+          action: "invoice_created",
+          area: "crm",
+          entityId: invoice.id,
+          after: { invoiceNumber: invoice.invoice_number },
+        });
+      }
       return NextResponse.json({ invoice });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Rechnung konnte nicht erstellt werden.";
@@ -122,6 +132,12 @@ export async function PATCH(request: Request) {
 
   try {
     const invoice = await updateInvoiceStatus(parsed.data.id, parsed.data.status);
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "invoice_updated",
+      area: "crm",
+      entityId: parsed.data.id,
+      after: { status: parsed.data.status },
+    });
     return NextResponse.json({ invoice });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Update fehlgeschlagen.";

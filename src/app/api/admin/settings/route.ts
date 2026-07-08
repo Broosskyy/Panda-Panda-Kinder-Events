@@ -41,8 +41,27 @@ const AUDIT_SECTIONS = new Set([
   "legal",
 ]);
 
+const WEBSITE_SECTIONS = new Set<keyof SiteSettingsBundle>([
+  "hero",
+  "about",
+  "footer",
+  "navigation",
+  "trustBadges",
+  "usps",
+  "process",
+  "sections",
+  "publicTeam",
+]);
+
 function auditLabel(section: keyof SiteSettingsBundle): string {
   return CONTROL_CENTER_TABS.find((t) => t.id === section)?.auditArea ?? `settings_${section}`;
+}
+
+function settingsAuditMeta(section: keyof SiteSettingsBundle): { action: string; area: string } {
+  if (section === "modules") return { action: "module_toggle", area: "settings_modules" };
+  if (WEBSITE_SECTIONS.has(section)) return { action: "content_updated", area: "website" };
+  if (AUDIT_SECTIONS.has(section)) return { action: "settings_updated", area: auditLabel(section) };
+  return { action: "settings_updated", area: "settings" };
 }
 
 function redactForAudit(value: unknown): unknown {
@@ -102,8 +121,8 @@ export async function PUT(request: Request) {
   }
 
   let before: unknown;
+  const current = await fetchSiteSettings();
   if (AUDIT_SECTIONS.has(section) || section === "modules") {
-    const current = await fetchSiteSettings();
     before = section === "modules" ? current.modules : redactForAudit(current[section]);
   }
 
@@ -111,14 +130,13 @@ export async function PUT(request: Request) {
     await saveSiteSettings(section, validated.value);
     revalidatePublicCms();
 
-    if (AUDIT_SECTIONS.has(section) || section === "modules") {
-      await writeAuditLogFromRequest(ctx, request, {
-        action: section === "modules" ? "module_toggle" : "settings_updated",
-        area: section === "modules" ? "settings_modules" : auditLabel(section),
-        after: section === "modules" ? validated.value : redactForAudit(validated.value),
-        before,
-      });
-    }
+    const meta = settingsAuditMeta(section);
+    await writeAuditLogFromRequest(ctx, request, {
+      action: meta.action,
+      area: meta.area,
+      after: section === "modules" ? validated.value : redactForAudit(validated.value),
+      before,
+    });
 
     return NextResponse.json({
       success: true,

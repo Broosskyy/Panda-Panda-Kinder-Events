@@ -1,38 +1,103 @@
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import type { AdminContext, AuditLogFilters, AuditLogInput } from "@/lib/auth/types";
+import { getRequestClientContext } from "@/lib/auth/request-context";
+
+function sanitizeAuditPayload(value: unknown): unknown {
+  if (value == null) return value;
+  if (typeof value !== "object") return value;
+  if (Array.isArray(value)) return value.map(sanitizeAuditPayload);
+
+  const blocked = new Set([
+    "password",
+    "passwordHash",
+    "password_hash",
+    "totpSecret",
+    "totp_secret",
+    "token",
+    "pendingToken",
+    "backupCode",
+    "adminPassword",
+    "secret",
+  ]);
+
+  const out: Record<string, unknown> = {};
+  for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+    if (blocked.has(key)) continue;
+    out[key] = sanitizeAuditPayload(val);
+  }
+  return out;
+}
+
+async function insertAuditLog(ctx: AdminContext | null, input: AuditLogInput): Promise<void> {
+  const supabase = getSupabaseAdmin();
+  await supabase.from("admin_audit_logs").insert({
+    user_id: ctx?.userId ?? null,
+    user_display_name: ctx?.displayName ?? "System",
+    role_slug: ctx?.roleSlug ?? null,
+    action: input.action,
+    area: input.area,
+    entity_id: input.entityId ?? null,
+    before_json: sanitizeAuditPayload(input.before) ?? null,
+    after_json: sanitizeAuditPayload(input.after) ?? null,
+    success: input.success ?? true,
+    error_message: input.errorMessage ?? null,
+    ip_address: input.ipAddress ?? null,
+    user_agent: input.userAgent ?? null,
+    device_label: input.deviceLabel ?? null,
+    os_label: input.osLabel ?? null,
+    browser_label: input.browserLabel ?? null,
+    country_code: input.countryCode ?? null,
+    region: input.region ?? null,
+    city: input.city ?? null,
+  });
+}
+
+async function insertWithRetry(ctx: AdminContext | null, input: AuditLogInput): Promise<void> {
+  try {
+    await insertAuditLog(ctx, input);
+  } catch (first) {
+    console.error("[audit] write failed, retrying once:", first);
+    await new Promise((r) => setTimeout(r, 250));
+    await insertAuditLog(ctx, input);
+  }
+}
+
+/** Non-blocking audit write with single retry. */
+export function queueAuditLog(ctx: AdminContext | null, input: AuditLogInput): void {
+  void insertWithRetry(ctx, input).catch((err) => {
+    console.error("[audit] permanent failure:", err);
+  });
+}
 
 export async function writeAuditLog(ctx: AdminContext | null, input: AuditLogInput): Promise<void> {
-  try {
-    const supabase = getSupabaseAdmin();
-    await supabase.from("admin_audit_logs").insert({
-      user_id: ctx?.userId ?? null,
-      user_display_name: ctx?.displayName ?? "System",
-      role_slug: ctx?.roleSlug ?? null,
-      action: input.action,
-      area: input.area,
-      entity_id: input.entityId ?? null,
-      before_json: input.before ?? null,
-      after_json: input.after ?? null,
-      success: input.success ?? true,
-      error_message: input.errorMessage ?? null,
-      ip_address: input.ipAddress ?? null,
-      user_agent: input.userAgent ?? null,
-    });
-  } catch {
-    // Audit failures must not break primary operations
-  }
+  queueAuditLog(ctx, input);
+}
+
+export function queueAuditLogFromRequest(
+  ctx: AdminContext | null,
+  request: Request,
+  input: Omit<AuditLogInput, "ipAddress" | "userAgent" | "deviceLabel" | "osLabel" | "browserLabel" | "countryCode" | "region" | "city">,
+): void {
+  const client = getRequestClientContext(request);
+  queueAuditLog(ctx, {
+    ...input,
+    ipAddress: client.ipMasked,
+    userAgent: client.userAgent,
+    deviceLabel: client.deviceLabel,
+    osLabel: client.osLabel,
+    browserLabel: client.browserLabel,
+    countryCode: client.countryCode,
+    region: client.region,
+    city: client.city,
+  });
 }
 
 export async function writeAuditLogFromRequest(
   ctx: AdminContext | null,
   request: Request,
-  input: Omit<AuditLogInput, "ipAddress" | "userAgent">,
+  input: Omit<AuditLogInput, "ipAddress" | "userAgent" | "deviceLabel" | "osLabel" | "browserLabel" | "countryCode" | "region" | "city">,
 ): Promise<void> {
-  await writeAuditLog(ctx, {
-    ...input,
-    ipAddress: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? request.headers.get("x-real-ip"),
-    userAgent: request.headers.get("user-agent"),
-  });
+  queueAuditLogFromRequest(ctx, request, input);
 }
 
 export async function listAuditLogs(filters: AuditLogFilters = {}) {
@@ -72,6 +137,12 @@ export function auditLogsToCsv(logs: Array<Record<string, unknown>>): string {
     "entity_id",
     "success",
     "ip_address",
+    "country_code",
+    "region",
+    "city",
+    "browser_label",
+    "os_label",
+    "device_label",
     "user_agent",
     "error_message",
   ];

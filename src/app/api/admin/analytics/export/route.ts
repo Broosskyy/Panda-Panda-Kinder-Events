@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
+import { requireAdmin, getAdminContext } from "@/lib/admin-route";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { analyticsToCsv, fetchFullAnalyticsDashboard } from "@/lib/analytics/full-stats";
 
-export async function GET() {
+export async function GET(request: Request) {
   const authError = await requireAdmin("analytics:read");
   if (authError) return authError;
 
@@ -10,6 +11,9 @@ export async function GET() {
     const data = await fetchFullAnalyticsDashboard();
     const csv = analyticsToCsv(data);
     const filename = `panda-bande-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const ctx = await getAdminContext();
+    await writeAuditLogFromRequest(ctx, request, { action: "export", area: "analytics" });
 
     return new NextResponse(csv, {
       headers: {

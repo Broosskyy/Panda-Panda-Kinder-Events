@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
+import { requireAdmin, getAdminContext } from "@/lib/admin-route";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getPublicUrl } from "@/lib/cms/storage";
 import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
@@ -87,6 +88,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: `Erstellen fehlgeschlagen: ${error.message}` }, { status: 500 });
   }
 
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, {
+    action: "create",
+    area: "blog",
+    entityId: data.id,
+    after: { title: data.title, slug: data.slug },
+  });
+
   revalidatePublicCms(data.slug);
   return NextResponse.json({ post: data, message: CMS_SAVE_SUCCESS_MESSAGE });
 }
@@ -120,6 +129,14 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ error: `Update fehlgeschlagen: ${error.message}` }, { status: 500 });
   }
 
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, {
+    action: "update",
+    area: "blog",
+    entityId: id,
+    after: { slug: newSlug ?? existing?.slug },
+  });
+
   const slug = newSlug ?? existing?.slug;
   const previousSlug = existing?.slug;
   revalidatePublicCms(slug, previousSlug !== slug ? previousSlug : undefined);
@@ -138,6 +155,15 @@ export async function DELETE(request: Request) {
   const { error } = await supabase.from("cms_posts").delete().eq("id", id);
 
   if (error) return NextResponse.json({ error: "Löschen fehlgeschlagen." }, { status: 500 });
+
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, {
+    action: "delete",
+    area: "blog",
+    entityId: id,
+    before: { slug: existing?.slug },
+  });
+
   revalidatePublicCms(existing?.slug);
   return NextResponse.json({ success: true, message: CMS_SAVE_SUCCESS_MESSAGE });
 }

@@ -13,6 +13,7 @@ import { resolveAdminIcon } from "@/lib/admin/icons";
 import { AdminPageHelp } from "@/components/admin/ui/AdminHelpBlock";
 import { AdminIdentityPanel } from "@/components/admin/AdminIdentityPanel";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
+import { lockAdminPwa } from "@/components/admin/AdminPwaRegister";
 
 const MOBILE_BOTTOM_NAV_HREFS_SET = new Set<string>(MOBILE_BOTTOM_NAV_HREFS);
 
@@ -126,6 +127,7 @@ export function AdminSidebar() {
 
   const logout = async () => {
     await fetch("/api/admin/login", { method: "DELETE" });
+    await lockAdminPwa();
     window.location.href = "/admin";
   };
 

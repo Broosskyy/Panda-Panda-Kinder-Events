@@ -38,7 +38,7 @@ export async function fetchSecurityDashboardStats(): Promise<AdminSecurityDashbo
 
   let recentLogins = 0;
   try {
-    const history = await listLoginHistory(undefined, 20);
+    const history = await listLoginHistory({ limit: 20 });
     recentLogins = history.filter((h) => h.success).length;
   } catch {
     recentLogins = 0;

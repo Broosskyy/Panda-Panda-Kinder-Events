@@ -4,7 +4,7 @@ import {
   getSecuritySettingsBundle,
   updateSecuritySettings,
 } from "@/lib/auth/security-settings";
-import { writeAuditLog } from "@/lib/auth/audit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 
 export async function GET() {
   const authError = await requireAdmin("security:read");
@@ -32,7 +32,7 @@ export async function PUT(request: Request) {
       loginPolicy: body.loginPolicy,
       rateLimit: body.rateLimit,
     });
-    await writeAuditLog(ctx, { action: "update", area: "security", after: body });
+    await writeAuditLogFromRequest(ctx, request, { action: "permissions_changed", area: "security", after: body });
     return NextResponse.json({ success: true, message: "Sicherheitseinstellungen gespeichert." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Speichern fehlgeschlagen.";

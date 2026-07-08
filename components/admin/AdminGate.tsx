@@ -9,6 +9,7 @@ import { AdminSessionProvider } from "./AdminSessionProvider";
 import { AdminNotificationsProvider } from "./AdminNotificationsProvider";
 import { AdminLoginForm } from "./AdminLoginForm";
 import { AdminBootstrapWizard } from "./AdminBootstrapWizard";
+import { AdminPwaRegister } from "./AdminPwaRegister";
 
 const PUBLIC_ADMIN_PATHS = ["/admin/passwort-reset"];
 
@@ -62,8 +63,9 @@ export function AdminGate({ children }: { children: ReactNode }) {
     <AdminSessionProvider>
       <AdminUiProvider>
         <AdminNotificationsProvider>
-          <div className="admin-shell flex min-h-[100dvh] flex-col md:flex-row" data-admin-theme="light">
-            <AdminSidebar />
+        <div className="admin-shell flex min-h-[100dvh] flex-col md:flex-row" data-admin-theme="light">
+          <AdminPwaRegister />
+          <AdminSidebar />
             <main className="admin-main flex-1 overflow-x-hidden">{children}</main>
             <AdminQuickActions />
           </div>

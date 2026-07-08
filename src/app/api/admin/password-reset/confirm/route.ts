@@ -5,7 +5,7 @@ import { hashPassword, validatePassword } from "@/lib/auth/password";
 import { getPasswordPolicy } from "@/lib/auth/security-settings";
 import { updateUser } from "@/lib/auth/users";
 import { revokeAllSessions } from "@/lib/auth/session";
-import { writeAuditLog } from "@/lib/auth/audit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   const passwordHash = await hashPassword(parsed.data.password);
   await updateUser(userId, { passwordHash, failedLoginAttempts: 0, lockedUntil: null });
   await revokeAllSessions(userId);
-  await writeAuditLog(null, { action: "password_reset", area: "auth", entityId: userId });
+  await writeAuditLogFromRequest(null, request, { action: "password_reset", area: "auth", entityId: userId });
 
   return NextResponse.json({ success: true, message: "Passwort wurde aktualisiert." });
 }

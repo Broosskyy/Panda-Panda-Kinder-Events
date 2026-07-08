@@ -1,4 +1,6 @@
 /** Ersetzt {{variable}} und {variable} — fehlende Werte werden leer gelassen */
+import { cleanEmailDisplayValue } from "@/lib/email/placeholder-filter";
+
 export function applyTemplateVariables(
   template: string,
   vars: Record<string, string | number | null | undefined>,
@@ -31,6 +33,8 @@ export const EMAIL_VARIABLE_HINTS: EmailVariableHint[] = [
   { key: "phone", label: "Telefonnummer" },
   { key: "event_type", label: "Art der Veranstaltung", aliases: ["eventType"] },
   { key: "event_date", label: "Datum der Veranstaltung", aliases: ["eventDate"] },
+  { key: "event_location", label: "Veranstaltungsort", aliases: ["eventLocation"] },
+  { key: "eventLocation", label: "Veranstaltungsort" },
   { key: "children_count", label: "Anzahl der Kinder" },
   { key: "message", label: "Nachricht des Kunden" },
   { key: "reviewText", label: "Bewertungstext", aliases: ["message"] },
@@ -60,6 +64,8 @@ export const EMAIL_VARIABLE_HINTS: EmailVariableHint[] = [
   { key: "submitted_at", label: "Eingangsdatum und -uhrzeit" },
   { key: "logo_url", label: "Logo-URL (absolut)" },
   { key: "primary_color", label: "Primärfarbe (Hex)" },
+  { key: "slogan", label: "Slogan / Tagline" },
+  { key: "tagline", label: "Tagline" },
 ];
 
 export const EMAIL_VARIABLE_HINT_KEYS = EMAIL_VARIABLE_HINTS.map((h) => h.key);
@@ -73,6 +79,7 @@ export function normalizeEmailVariables(vars: Record<string, string>): Record<st
     phone: "customer_phone",
     eventType: "event_type",
     eventDate: "event_date",
+    eventLocation: "event_location",
     offerNumber: "quote_number",
     invoiceNumber: "invoice_number",
     amount: "total_amount",
@@ -92,5 +99,21 @@ export function normalizeEmailVariables(vars: Record<string, string>): Record<st
   if (!out.current_year) out.current_year = String(new Date().getFullYear());
   if (!out.currentYear) out.currentYear = out.current_year;
 
+  return out;
+}
+
+/** Strip null/undefined literals and placeholder demo values from template variables */
+export function sanitizeEmailVariables(vars: Record<string, string>): Record<string, string> {
+  const out: Record<string, string> = {};
+  const sensitiveKeys = new Set([
+    "customer_name", "name", "customer_email", "email", "customer_phone", "phone",
+    "message", "reviewText", "event_location", "eventLocation",
+  ]);
+  for (const [key, raw] of Object.entries(vars)) {
+    let value = raw == null ? "" : String(raw).trim();
+    if (value === "undefined" || value === "null") value = "";
+    if (sensitiveKeys.has(key)) value = cleanEmailDisplayValue(value);
+    out[key] = value;
+  }
   return out;
 }

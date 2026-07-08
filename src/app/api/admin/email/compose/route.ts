@@ -23,6 +23,7 @@ export async function POST(request: Request) {
     to,
     subject,
     bodyHtml,
+    layout,
     templateSlug,
     variables,
     copyTo,
@@ -33,6 +34,7 @@ export async function POST(request: Request) {
     to: string;
     subject?: string;
     bodyHtml?: string;
+    layout?: import("@/lib/cms/types").EmailTemplateLayout | null;
     templateSlug?: string;
     variables?: Record<string, string>;
     copyTo?: string;
@@ -63,7 +65,11 @@ export async function POST(request: Request) {
     let finalText = "";
 
     if (templateSlug) {
-      const rendered = await renderEmailFromTemplate(templateSlug, variables ?? {});
+      const rendered = await renderEmailFromTemplate(templateSlug, variables ?? {}, {
+        subject,
+        bodyHtml,
+        layout: layout ?? undefined,
+      });
       if (rendered) {
         finalSubject = rendered.subject;
         finalHtml = rendered.html;

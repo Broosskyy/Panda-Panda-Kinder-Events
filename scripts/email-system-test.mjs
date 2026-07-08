@@ -206,43 +206,42 @@ if (types.includes("SiteEmailSignatureSettings") && types.includes("SiteEmailTes
 if (read("lib/email/transport.ts").includes("prepareOutboundEmail")) ok("Test mode in transport");
 else fail("Test mode transport missing");
 
-// 15. Email logo: absolute public URLs
-const resolveImageUrl = read("lib/email/resolve-image-url.ts");
+// 15. Email logo: absolute public HTTPS URLs on www.pb-kinderevents.de
+const resolveImageUrlFile = read("lib/email/resolve-image-url.ts");
+const assetUrlFile = read("lib/email/asset-url.ts");
 const htmlModule = read("lib/email/html.ts");
-const siteUrl = read("lib/site-url.ts");
 
-if (resolveImageUrl.includes("NEXT_PUBLIC_SITE_URL") && resolveImageUrl.includes("https://pb-kinderevents.de")) {
-  ok("Email asset base uses NEXT_PUBLIC_SITE_URL with pb-kinderevents.de fallback");
+if (
+  assetUrlFile.includes("https://www.pb-kinderevents.de") &&
+  assetUrlFile.includes("EMAIL_LOGO_DEFAULT_URL") &&
+  !resolveImageUrlFile.includes("process.env.NEXT_PUBLIC_SITE_URL") &&
+  !resolveImageUrlFile.includes("getSiteUrl()")
+) {
+  ok("Email asset base uses www.pb-kinderevents.de (no NEXT_PUBLIC_SITE_URL)");
 } else {
-  fail("Email asset base URL fallback missing");
+  fail("Email asset base URL not locked to www.pb-kinderevents.de");
 }
 
-if (resolveImageUrl.includes('EMAIL_LOGO_ALT = "Panda-Bande Kinderevents"')) {
+if (resolveImageUrlFile.includes('EMAIL_LOGO_ALT = "Panda-Bande Kinderevents"')) {
   ok("Email logo alt text constant");
 } else {
   fail("Email logo alt text missing");
 }
 
 if (
-  resolveImageUrl.includes("buildEmailLogoHeaderHtml") &&
-  resolveImageUrl.includes("!absolute") &&
-  htmlModule.includes("buildEmailLogoHeaderHtml")
+  resolveImageUrlFile.includes("resolveEmailImageUrl") &&
+  resolveImageUrlFile.includes("isUnsafeEmailAssetUrl") &&
+  resolveImageUrlFile.includes("buildEmailHeaderBlock")
 ) {
-  ok("Logo header uses text fallback when image unavailable");
+  ok("Email image resolver blocks preview/localhost URLs");
 } else {
-  fail("Logo text fallback missing");
+  fail("Email preview/localhost guard missing");
 }
 
-if (htmlModule.includes("buildEmailLogoHeaderHtml") && !htmlModule.match(/src="\/[^"]+"/)) {
-  ok("Email layout does not emit relative img src paths");
+if (htmlModule.includes("buildEmailHeaderBlock") && !htmlModule.match(/src="\/[^"]+"/)) {
+  ok("Email layout uses buildEmailHeaderBlock without relative img src");
 } else {
   fail("Email layout may still use relative img src");
-}
-
-if (siteUrl.includes('DEFAULT_SITE_URL = "https://pb-kinderevents.de"')) {
-  ok("Site URL default matches production domain");
-} else {
-  fail("Site URL default not updated to pb-kinderevents.de");
 }
 
 const composeRoute = read("src/app/api/admin/email/compose/route.ts");
@@ -252,18 +251,44 @@ if (!composeRoute.includes("baseUrl: getSiteUrl()")) {
   fail("Compose route still uses getSiteUrl for email images");
 }
 
-function testResolveEmailImageUrl(path, base = "https://pb-kinderevents.de") {
-  const trimmed = path?.trim();
+const PRODUCTION_BASE = "https://www.pb-kinderevents.de";
+const LOGO_URL = `${PRODUCTION_BASE}/assets/Logo.png`;
+const UNSAFE = /localhost|127\.0\.0\.1|vercel\.app/i;
+
+function testResolveEmailImageUrl(path, base = PRODUCTION_BASE) {
+  const isAbsolute = (p) => /^https?:\/\//i.test((p ?? "").trim());
+  const normalizeLogo = (p) => {
+    const t = (p ?? "").trim();
+    if (isAbsolute(t)) return t;
+    if (t === "/logo.png" || t === "logo.png" || t === "/Logo.png") return "/assets/Logo.png";
+    if (/logo\.png$/i.test(t) && !/assets\/Logo\.png$/i.test(t)) return "/assets/Logo.png";
+    return t;
+  };
+  const trimmed = normalizeLogo(path);
   if (!trimmed) return null;
   if (trimmed.startsWith("data:")) return null;
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  if (/^https?:\/\//i.test(trimmed)) {
+    if (UNSAFE.test(trimmed)) {
+      try {
+        const pathname = new URL(trimmed).pathname;
+        if (/\/assets\/logo\.png$/i.test(pathname) || pathname === "/assets/Logo.png") return LOGO_URL;
+      } catch {
+        return LOGO_URL;
+      }
+    }
+    return trimmed.replace("https://pb-kinderevents.de", PRODUCTION_BASE);
+  }
+  if (/\/assets\/logo\.png$/i.test(trimmed) || trimmed === "/assets/Logo.png") return LOGO_URL;
   const normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   return `${base.replace(/\/$/, "")}${normalized}`;
 }
 
 const logoCases = [
-  ["/assets/Logo.png", "https://pb-kinderevents.de/assets/Logo.png"],
-  ["logo.png", "https://pb-kinderevents.de/logo.png"],
+  ["/assets/Logo.png", LOGO_URL],
+  ["logo.png", LOGO_URL],
+  ["/logo.png", LOGO_URL],
+  ["https://preview.vercel.app/assets/Logo.png", LOGO_URL],
+  ["https://pb-kinderevents.de/assets/Logo.png", LOGO_URL],
   ["https://cdn.example.com/logo.png", "https://cdn.example.com/logo.png"],
   ["", null],
   ["data:image/png;base64,abc", null],
@@ -273,6 +298,22 @@ for (const [input, expected] of logoCases) {
   const result = testResolveEmailImageUrl(input);
   if (result === expected) ok(`resolveEmailImageUrl("${input}") → ${expected ?? "null"}`);
   else fail(`resolveEmailImageUrl("${input}")`, `expected ${expected}, got ${result}`);
+}
+
+// Verify all email render paths import shared resolver
+for (const file of [
+  "lib/email/branding.ts",
+  "lib/email/render.ts",
+  "lib/email/html.ts",
+  "lib/email/builders.ts",
+  "lib/brand/resolve.ts",
+]) {
+  const content = read(file);
+  if (content.includes("resolve-image-url") || content.includes("resolveEmailImageUrl") || content.includes("getDefaultEmailLogoUrl")) {
+    ok(`${file} uses shared email image resolver`);
+  } else {
+    fail(`${file} does not use shared email image resolver`);
+  }
 }
 
 // 16. System status polish

@@ -3,12 +3,8 @@ import { getBusinessProfile } from "@/lib/crm/company";
 import { resolveBrandLogo, resolvePrimaryColor } from "@/lib/brand/resolve";
 import { getSiteUrl } from "@/lib/site-url";
 import { getDefaultEmailLogoUrl, resolveEmailImageUrl } from "@/lib/email/resolve-image-url";
-import { applyTemplateVariables, normalizeEmailVariables } from "@/lib/email/variables";
+import { normalizeEmailVariables, sanitizeEmailVariables } from "@/lib/email/variables";
 import { getEmailSettings } from "@/lib/email/sender";
-import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
-import { resolveEmailBranding } from "@/lib/email/branding";
-import { resolveActiveDesignTokens } from "@/lib/email/design-system";
-import { composeTemplateBodyHtml } from "@/lib/email/template-compose";
 
 /** Standard-Variablen für E-Mail-Vorlagen aus CMS-Settings */
 export async function buildEmailVariableContext(
@@ -48,6 +44,8 @@ export async function buildEmailVariableContext(
     appointment_date: "",
     event_type: "",
     event_date: "",
+    event_location: "",
+    eventLocation: "",
     children_count: "",
     message: "",
     reviewText: "",
@@ -58,6 +56,9 @@ export async function buildEmailVariableContext(
     reset_link: "",
     rating: "",
     submitted_at: "",
+    sender_from: "",
+    reply_to: "",
+    domain_status: "",
     opening_hours: settings.contact.openingHours || settings.email.signature.openingHours || "",
     current_year: String(new Date().getFullYear()),
     currentYear: String(new Date().getFullYear()),
@@ -75,40 +76,32 @@ export async function buildEmailVariableContext(
   if (base.customer_name && !base.name) base.name = base.customer_name.split(/\s+/)[0] || base.customer_name;
   if (base.name && !base.customer_name) base.customer_name = base.name;
 
-  return normalizeEmailVariables(base);
+  return sanitizeEmailVariables(normalizeEmailVariables(base));
 }
 
 export async function renderEmailFromTemplate(
   slug: string,
   overrides: Record<string, string | number | null | undefined> = {},
-  options?: { previewMode?: "desktop" | "tablet" | "mobile" | "dark" },
+  options?: {
+    previewMode?: "desktop" | "tablet" | "mobile" | "dark" | "light";
+    layout?: import("@/lib/cms/types").EmailTemplateLayout | null;
+    subject?: string;
+    bodyHtml?: string;
+  },
 ): Promise<{ subject: string; html: string; text: string } | null> {
   const { getEmailTemplateBySlug } = await import("@/lib/email/templates-db");
   const template = await getEmailTemplateBySlug(slug);
   if (!template || !template.is_active) return null;
 
-  const [vars, branding] = await Promise.all([
-    buildEmailVariableContext(overrides),
-    resolveEmailBranding(),
-  ]);
-
-  const tokens = resolveActiveDesignTokens(
-    options?.previewMode === "dark" ? { ...branding, theme: "dark" } : branding,
-  );
-
-  const subject = applyTemplateVariables(template.subject, vars);
-  const composed = template.layout ? composeTemplateBodyHtml(template.layout, vars, tokens) : "";
-  const rawBody = template.body_html?.trim() ? applyTemplateVariables(template.body_html, vars) : composed;
-  const bodyHtml = rawBody || composed;
-  const bodyText = applyTemplateVariables(
-    template.body_text || template.body_html.replace(/<[^>]+>/g, ""),
-    vars,
-  );
-
-  const html = await wrapBrandedEmailHtml(bodyHtml, vars.company_name, undefined, {
+  const { renderGlobalEmail } = await import("@/lib/email/global-renderer");
+  const result = await renderGlobalEmail({
+    slug,
+    subject: options?.subject ?? template.subject,
+    bodyHtml: options?.bodyHtml ?? (template.body_html?.trim() ? template.body_html : undefined),
+    layout: options?.layout ?? template.layout ?? null,
+    variables: overrides,
     previewMode: options?.previewMode,
-    branding: options?.previewMode === "dark" ? { ...branding, theme: "dark" } : branding,
   });
 
-  return { subject, html, text: bodyText };
+  return result;
 }

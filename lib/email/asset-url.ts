@@ -7,12 +7,29 @@ export const EMAIL_ASSET_BASE_DEFAULT = "https://www.pb-kinderevents.de";
 export const EMAIL_LOGO_DEFAULT_URL = `${EMAIL_ASSET_BASE_DEFAULT}/assets/Logo.png`;
 
 const UNSAFE_HOST_PATTERN = /localhost|127\.0\.0\.1|vercel\.app/i;
+const PRODUCTION_HOSTS = new Set(["pb-kinderevents.de", "www.pb-kinderevents.de"]);
+
+/** Normalize pb-kinderevents.de → https://www.pb-kinderevents.de (keeps path/query) */
+export function canonicalizeEmailAssetUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.toLowerCase();
+    if (PRODUCTION_HOSTS.has(host)) {
+      parsed.protocol = "https:";
+      parsed.hostname = "www.pb-kinderevents.de";
+      return parsed.href;
+    }
+  } catch {
+    // not a full URL
+  }
+  return url;
+}
 
 /** CMS/ENV base URL for resolving relative email asset paths */
 export function getEmailAssetBaseUrl(): string {
   const fromEnv = process.env.EMAIL_ASSET_BASE_URL?.trim();
   if (fromEnv && /^https?:\/\//i.test(fromEnv)) {
-    const normalized = fromEnv.replace(/\/$/, "");
+    const normalized = canonicalizeEmailAssetUrl(fromEnv.replace(/\/$/, ""));
     if (!UNSAFE_HOST_PATTERN.test(normalized)) return normalized;
   }
   return EMAIL_ASSET_BASE_DEFAULT;

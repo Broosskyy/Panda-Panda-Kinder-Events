@@ -14,7 +14,6 @@ import {
   applyEmailTemplate,
   type ResolvedEmailSender,
 } from "@/lib/email/sender";
-import { DOMAIN_MANUAL_CONFIRM_MESSAGE } from "@/lib/email/domain-status-copy";
 import { getDefaultEmailLogoUrl } from "@/lib/email/resolve-image-url";
 import { wrapBrandedEmailHtml } from "@/lib/email/wrap-branded";
 import type { BusinessProfile } from "@/lib/crm/company";
@@ -516,14 +515,6 @@ export async function sendTransactionalEmail(opts: {
 export async function sendTestEmail(to: string) {
   const emailSettings = await getEmailSettings();
   const sender = await resolveEmailSender(emailSettings);
-  const companyName = emailSettings.companyName;
-
-  const domainNote =
-    sender.domainStatus === "verified"
-      ? "Produktionsdomain verifiziert — Versand über die konfigurierte Absenderadresse."
-      : sender.domainStatus === "unknown"
-        ? DOMAIN_MANUAL_CONFIRM_MESSAGE
-        : "Test-E-Mail wurde zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.";
 
   const domainStatusLabel =
     sender.domainStatus === "verified"
@@ -532,47 +523,38 @@ export async function sendTestEmail(to: string) {
         ? "Automatische Prüfung nicht möglich"
         : "Nicht verifiziert";
 
-  const text = `Dies ist eine Test-E-Mail von ${companyName}.
+  const { renderEmailFromTemplate } = await import("@/lib/email/render");
+  const rendered = await renderEmailFromTemplate("email-test", {
+    sender_from: sender.displayFrom,
+    reply_to: sender.replyTo,
+    domain_status: domainStatusLabel,
+  });
 
-Absender: ${sender.displayFrom}
-Reply-To: ${sender.replyTo}
-Domain: ${domainStatusLabel}
-${domainNote}
-
-Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.`;
-
-  const domainBanner =
-    sender.domainStatus === "verified"
-      ? '<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:12px;">Produktionsdomain verifiziert.</p>'
-      : sender.domainStatus === "unknown"
-        ? `<p style="color:#3d6649;background:#eef5f0;padding:12px;border-radius:12px;">${DOMAIN_MANUAL_CONFIRM_MESSAGE}</p>`
-        : '<p style="color:#8a6d12;background:#fff8e6;padding:12px;border-radius:12px;">Test-E-Mail zugestellt. Domain-Status bitte im Resend-Dashboard prüfen.</p>';
-
-  const bodyHtml = `<p style="margin:0 0 16px;font-size:16px;line-height:1.65;">Dies ist eine Test-E-Mail aus den CMS-Einstellungen.</p>
-    <table cellpadding="0" cellspacing="0" role="presentation" style="background:#F4F6EE;border:1px solid #E8E2D6;border-radius:12px;padding:16px 20px;margin:16px 0;width:100%;max-width:480px;">
-      <tr><td style="padding:6px 0;font-size:14px;"><strong>Absender:</strong> ${sender.displayFrom}</td></tr>
-      <tr><td style="padding:6px 0;font-size:14px;"><strong>Reply-To:</strong> ${sender.replyTo}</td></tr>
-      <tr><td style="padding:6px 0;font-size:14px;"><strong>Domain:</strong> ${domainStatusLabel}</td></tr>
-      <tr><td style="padding:6px 0;font-size:14px;"><strong>Logo:</strong> geladen ✓</td></tr>
-    </table>
-    ${domainBanner}
-    <p style="color:#6F6F66;font-size:13px;margin:16px 0 0;">Wenn Sie diese E-Mail erhalten haben, ist die Resend-Konfiguration korrekt.</p>`;
-
-  const html = await wrapBrandedEmailHtml(bodyHtml, companyName);
+  const companyName = emailSettings.companyName;
+  const subject = rendered?.subject ?? `Test-E-Mail — ${companyName}`;
+  const html =
+    rendered?.html ??
+    (await wrapBrandedEmailHtml(
+      `<p>Test-E-Mail von ${companyName}</p>`,
+      companyName,
+    ));
+  const text =
+    rendered?.text ??
+    `Test-E-Mail von ${companyName}\nAbsender: ${sender.displayFrom}\nReply-To: ${sender.replyTo}`;
 
   const result = await sendEmailWithRetry({
     payload: {
       from: sender.from,
       to,
       replyTo: sender.replyTo,
-      subject: `Test-E-Mail — ${companyName}`,
+      subject,
       text,
       html,
     },
     log: {
       recipient: to,
-      subject: `Test-E-Mail — ${companyName}`,
-      templateSlug: "test",
+      subject,
+      templateSlug: "email-test",
       area: "general",
     },
   });

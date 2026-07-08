@@ -30,7 +30,22 @@ interface Invitation {
   expires_at: string;
   accepted_at: string | null;
   created_at: string;
+  email_delivery_status?: "sent" | "failed" | "pending";
+  last_email_sent_at?: string | null;
+  last_email_error?: string | null;
 }
+
+const EMAIL_STATUS_LABELS: Record<NonNullable<Invitation["email_delivery_status"]>, string> = {
+  sent: "Gesendet",
+  failed: "Fehlgeschlagen",
+  pending: "Ausstehend",
+};
+
+const EMAIL_STATUS_VARIANT: Record<NonNullable<Invitation["email_delivery_status"]>, "success" | "warning" | "muted" | "default"> = {
+  sent: "success",
+  failed: "default",
+  pending: "warning",
+};
 
 const STATUS_LABELS: Record<Invitation["status"], string> = {
   pending: "Ausstehend",
@@ -55,7 +70,7 @@ export function InvitesView() {
   const [inviterRole, setInviterRole] = useState<AdminRoleSlug>("readonly");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const { toast, withLoading, fromApi } = useAdminMessages();
+  const { toast, withLoading } = useAdminMessages();
   const page = adminPageHeaderProps("benutzer");
 
   const load = useCallback(async () => {
@@ -99,42 +114,61 @@ export function InvitesView() {
   }, [searchParams, canInvite]);
 
   const patchInvite = async (id: string, action: "resend" | "revoke" | "copy_link") => {
-    const res = await fetch("/api/admin/invites", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, action }),
-    });
-    const data = await res.json();
-    if (!res.ok) return fromApi(data, "Aktion fehlgeschlagen.");
-    if (action === "copy_link" && data.inviteUrl) {
-      await navigator.clipboard.writeText(data.inviteUrl);
-      toast("Einladungslink kopiert.");
-    } else {
-      toast(
-        action === "resend"
-          ? "Einladung erneut gesendet."
-          : action === "revoke"
-            ? "Einladung widerrufen."
-            : "Link erstellt.",
-      );
-    }
-    await load();
+    await withLoading(
+      (async () => {
+        const res = await fetch("/api/admin/invites", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, action }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast(data.error ?? "Aktion fehlgeschlagen.", "error");
+          return;
+        }
+
+        if (action === "copy_link" && data.inviteUrl) {
+          try {
+            await navigator.clipboard.writeText(data.inviteUrl);
+            toast("Einladungslink kopiert.");
+          } catch {
+            toast("Link erstellt, Zwischenablage nicht verfügbar.", "error");
+          }
+        } else if (data.emailSent === false && data.emailError) {
+          toast(`E-Mail konnte nicht versendet werden. ${data.emailError}`, "error");
+        } else if (action === "resend" && data.emailSent) {
+          toast("E-Mail erfolgreich versendet.");
+        } else if (action === "revoke") {
+          toast("Einladung widerrufen.");
+        } else {
+          toast(data.message ?? "Aktion abgeschlossen.");
+        }
+        await load();
+      })(),
+    );
   };
 
   const deleteInvite = async (id: string) => {
-    const res = await fetch("/api/admin/invites", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id }),
-    });
-    const data = await res.json();
-    if (!res.ok) return fromApi(data, "Löschen fehlgeschlagen.");
-    toast("Einladung gelöscht.");
-    await load();
+    await withLoading(
+      (async () => {
+        const res = await fetch("/api/admin/invites", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast(data.error ?? "Löschen fehlgeschlagen.", "error");
+          return;
+        }
+        toast("Einladung gelöscht.");
+        await load();
+      })(),
+    );
   };
 
   const formatDate = (iso: string) => new Date(iso).toLocaleString("de-DE");
-  const canManage = canInvite || canCreateManually;
+  const emailStatus = (inv: Invitation) => inv.email_delivery_status ?? "pending";
 
   const inviteActions = (inv: Invitation) => (
     <AdminActionMenu
@@ -168,11 +202,14 @@ export function InvitesView() {
           id: "delete",
           label: "Löschen",
           icon: <Trash2 className="h-4 w-4" />,
+          confirmMessage: "Einladung wirklich löschen?",
           onClick: () => deleteInvite(inv.id),
         },
       ]}
     />
   );
+
+  const canManage = canInvite || canCreateManually;
 
   return (
     <div className="space-y-6">
@@ -233,9 +270,20 @@ export function InvitesView() {
                     <dd>{formatDate(inv.expires_at)}</dd>
                   </div>
                   <div>
-                    <dt className="text-text-muted">Erstellt von</dt>
-                    <dd>{inv.invited_by_name ?? "—"}</dd>
+                    <dt className="text-text-muted">Versand</dt>
+                    <dd>
+                      <AdminStatusBadge
+                        label={EMAIL_STATUS_LABELS[emailStatus(inv)]}
+                        variant={EMAIL_STATUS_VARIANT[emailStatus(inv)]}
+                      />
+                    </dd>
                   </div>
+                  {inv.last_email_sent_at ? (
+                    <div className="col-span-2">
+                      <dt className="text-text-muted">Zuletzt gesendet</dt>
+                      <dd>{formatDate(inv.last_email_sent_at)}</dd>
+                    </div>
+                  ) : null}
                 </dl>
                 {canInvite ? <div className="mt-4">{inviteActions(inv)}</div> : null}
               </AdminCard>
@@ -251,7 +299,8 @@ export function InvitesView() {
                   <th className="text-left">Status</th>
                   <th className="text-left">Erstellt von</th>
                   <th className="text-left">Erstellt am</th>
-                  <th className="text-left">Läuft ab</th>
+                  <th className="text-left">Versandstatus</th>
+                  <th className="text-left">Zuletzt gesendet</th>
                   <th className="text-right">Aktionen</th>
                 </tr>
               </thead>
@@ -268,7 +317,15 @@ export function InvitesView() {
                     </td>
                     <td className="text-text-muted">{inv.invited_by_name ?? "—"}</td>
                     <td className="text-text-muted">{formatDate(inv.created_at)}</td>
-                    <td className="text-text-muted">{formatDate(inv.expires_at)}</td>
+                    <td>
+                      <AdminStatusBadge
+                        label={EMAIL_STATUS_LABELS[emailStatus(inv)]}
+                        variant={EMAIL_STATUS_VARIANT[emailStatus(inv)]}
+                      />
+                    </td>
+                    <td className="text-text-muted">
+                      {inv.last_email_sent_at ? formatDate(inv.last_email_sent_at) : "—"}
+                    </td>
                     <td>
                       <div className="flex justify-end">{canInvite ? inviteActions(inv) : "—"}</div>
                     </td>

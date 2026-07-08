@@ -5,6 +5,7 @@ import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { findUserByIdentifier } from "@/lib/auth/users";
 import { createPasswordResetToken } from "@/lib/auth/password-reset";
 import { sendPasswordResetEmail } from "@/lib/email";
+import { getSiteUrl } from "@/lib/site-url";
 
 const requestSchema = z.object({
   email: z.string().email(),
@@ -26,10 +27,7 @@ export async function POST(request: Request) {
   const user = await findUserByIdentifier(parsed.data.email);
   if (user?.active) {
     const { token } = await createPasswordResetToken(user.id);
-    const baseUrl =
-      process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ||
-      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const resetUrl = `${baseUrl}/admin/passwort-reset?token=${token}`;
+    const resetUrl = `${getSiteUrl()}/admin/passwort-reset?token=${token}`;
 
     try {
       await sendPasswordResetEmail({

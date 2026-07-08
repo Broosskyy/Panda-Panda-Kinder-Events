@@ -12,6 +12,7 @@ export interface AdminActionMenuItem {
   icon?: ReactNode;
   disabled?: boolean;
   hidden?: boolean;
+  confirmMessage?: string;
 }
 
 interface AdminActionMenuProps {
@@ -27,8 +28,13 @@ interface AdminActionMenuProps {
   className?: string;
 }
 
+function readIsMobileSheet(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 767px)").matches;
+}
+
 function useIsMobileSheet() {
-  const [mobile, setMobile] = useState(false);
+  const [mobile, setMobile] = useState(readIsMobileSheet);
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
     const update = () => setMobile(mq.matches);
@@ -44,6 +50,7 @@ export function AdminActionMenu({ primary, items, dangerItems = [], className = 
   const rootRef = useRef<HTMLDivElement>(null);
   const menuId = useId();
   const isMobileSheet = useIsMobileSheet();
+  const scrollLockY = useRef(0);
 
   const visibleItems = items.filter((item) => !item.hidden);
   const visibleDanger = dangerItems.filter((item) => !item.hidden);
@@ -66,18 +73,47 @@ export function AdminActionMenu({ primary, items, dangerItems = [], className = 
   }, [open, isMobileSheet]);
 
   useEffect(() => {
-    if (!open || !isMobileSheet) return;
-    const prev = document.body.style.overflow;
+    const root = document.documentElement;
+    if (!open || !isMobileSheet) {
+      root.removeAttribute("data-admin-action-sheet");
+      return;
+    }
+
+    scrollLockY.current = window.scrollY;
+    root.setAttribute("data-admin-action-sheet", "open");
+    const prevOverflow = document.body.style.overflow;
+    const prevPosition = document.body.style.position;
+    const prevTop = document.body.style.top;
+    const prevWidth = document.body.style.width;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollLockY.current}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
     document.body.style.overflow = "hidden";
+
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") setOpen(false);
     };
     document.addEventListener("keydown", onKeyDown);
+
     return () => {
-      document.body.style.overflow = prev;
+      root.removeAttribute("data-admin-action-sheet");
+      document.body.style.overflow = prevOverflow;
+      document.body.style.position = prevPosition;
+      document.body.style.top = prevTop;
+      document.body.style.width = prevWidth;
+      window.scrollTo(0, scrollLockY.current);
       document.removeEventListener("keydown", onKeyDown);
     };
   }, [open, isMobileSheet]);
+
+  const runItem = async (item: AdminActionMenuItem) => {
+    if (item.confirmMessage && !window.confirm(item.confirmMessage)) return;
+    setOpen(false);
+    await item.onClick();
+  };
 
   const renderMenuItem = (item: AdminActionMenuItem, danger = false) => (
     <button
@@ -86,10 +122,7 @@ export function AdminActionMenu({ primary, items, dangerItems = [], className = 
       role="menuitem"
       className={`admin-action-menu-item${danger ? " admin-action-menu-item-danger" : ""}`}
       disabled={item.disabled}
-      onClick={() => {
-        setOpen(false);
-        void item.onClick();
-      }}
+      onClick={() => void runItem(item)}
     >
       {item.icon ? <span className="admin-action-menu-item-icon">{item.icon}</span> : null}
       {item.label}

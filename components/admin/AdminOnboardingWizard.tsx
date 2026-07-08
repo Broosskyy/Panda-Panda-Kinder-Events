@@ -14,6 +14,7 @@ interface AdminOnboardingWizardProps {
   onStepIndexChange: (index: number) => void;
   onComplete: () => void;
   onDismissPermanent: () => void;
+  onCloseSession: () => void;
   onSkipToEnd: () => void;
   displayName: string;
 }
@@ -24,6 +25,7 @@ export function AdminOnboardingWizard({
   onStepIndexChange,
   onComplete,
   onDismissPermanent,
+  onCloseSession,
   onSkipToEnd,
   displayName,
 }: AdminOnboardingWizardProps) {
@@ -35,12 +37,26 @@ export function AdminOnboardingWizard({
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-admin-onboarding", "open");
+    const scrollY = window.scrollY;
     const prevOverflow = document.body.style.overflow;
+    const prevPosition = document.body.style.position;
+    const prevTop = document.body.style.top;
+    const prevWidth = document.body.style.width;
+
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
     document.body.style.overflow = "hidden";
 
     return () => {
       root.removeAttribute("data-admin-onboarding");
       document.body.style.overflow = prevOverflow;
+      document.body.style.position = prevPosition;
+      document.body.style.top = prevTop;
+      document.body.style.width = prevWidth;
+      window.scrollTo(0, scrollY);
     };
   }, []);
 
@@ -75,7 +91,7 @@ export function AdminOnboardingWizard({
           <button
             type="button"
             className="admin-onboarding-v2-close"
-            onClick={onDismissPermanent}
+            onClick={onCloseSession}
             aria-label="Tutorial schließen"
           >
             <X className="h-5 w-5" />
@@ -101,7 +117,7 @@ export function AdminOnboardingWizard({
             </ul>
           ) : null}
           {step.href ? (
-            <Link href={step.href} className="admin-onboarding-v2-link" onClick={onDismissPermanent}>
+            <Link href={step.href} className="admin-onboarding-v2-link" onClick={onCloseSession}>
               {step.hrefLabel ?? "Bereich öffnen"} →
             </Link>
           ) : null}

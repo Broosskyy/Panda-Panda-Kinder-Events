@@ -152,16 +152,24 @@ export async function POST(request: Request) {
       mustChangePassword: parsed.data.mustChangePassword ?? false,
     });
 
+    let welcomeEmailSent = false;
+    let welcomeEmailError: string | undefined;
+
     if (parsed.data.sendWelcomeEmail) {
-      await sendAccountCreatedEmail({
-        to: user.email,
-        adminName: user.display_name,
-        roleLabel: user.role_label,
-        adminUrl: `${getSiteUrl()}/admin`,
-        message: parsed.data.mustChangePassword
-          ? "Bitte melden Sie sich an und ändern Sie Ihr Passwort beim ersten Login."
-          : undefined,
-      }).catch(() => undefined);
+      try {
+        await sendAccountCreatedEmail({
+          to: user.email,
+          adminName: user.display_name,
+          roleLabel: user.role_label,
+          adminUrl: `${getSiteUrl()}/admin`,
+          message: parsed.data.mustChangePassword
+            ? "Bitte melden Sie sich an und ändern Sie Ihr Passwort beim ersten Login."
+            : undefined,
+        });
+        welcomeEmailSent = true;
+      } catch (err) {
+        welcomeEmailError = err instanceof Error ? err.message : "Willkommens-E-Mail fehlgeschlagen.";
+      }
     }
 
     await writeAuditLogFromRequest(ctx, request, {
@@ -170,7 +178,12 @@ export async function POST(request: Request) {
       entityId: user.id,
       after: { username: user.username, role: user.role_slug, email: user.email },
     });
-    return NextResponse.json({ user, message: "Benutzer angelegt." });
+    return NextResponse.json({
+      user,
+      welcomeEmailSent,
+      welcomeEmailError,
+      message: "Benutzer angelegt.",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Speichern fehlgeschlagen.";
     return NextResponse.json({ error: message }, { status: 400 });

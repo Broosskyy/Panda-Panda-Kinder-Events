@@ -125,7 +125,16 @@ export function AdminUserManageDialog({
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Einladung fehlgeschlagen");
         setLastInviteUrl(data.inviteUrl ?? null);
-        toast("Einladung gesendet.");
+        if (data.emailSent) {
+          toast("E-Mail erfolgreich versendet.");
+        } else {
+          toast(
+            data.emailError
+              ? `E-Mail konnte nicht versendet werden. ${data.emailError}`
+              : "Einladung erstellt, E-Mail konnte nicht versendet werden.",
+            "error",
+          );
+        }
         setInviteForm(emptyInvite());
         if (allowedRoles[0]) {
           setInviteForm({ ...emptyInvite(), roleId: allowedRoles[0]!.id });
@@ -161,11 +170,26 @@ export function AdminUserManageDialog({
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Benutzer konnte nicht angelegt werden");
-        toast(
-          manualForm.useGeneratedPassword
-            ? `Benutzer angelegt. Temporäres Passwort: ${password}`
-            : "Benutzer angelegt.",
-        );
+        if (manualForm.sendWelcomeEmail && data.welcomeEmailSent === false) {
+          toast(
+            data.welcomeEmailError
+              ? `E-Mail konnte nicht versendet werden. ${data.welcomeEmailError}`
+              : "Benutzer angelegt, Willkommens-E-Mail konnte nicht versendet werden.",
+            "error",
+          );
+        } else if (manualForm.sendWelcomeEmail && data.welcomeEmailSent) {
+          toast(
+            manualForm.useGeneratedPassword
+              ? `Benutzer angelegt. E-Mail erfolgreich versendet. Temporäres Passwort: ${password}`
+              : "Benutzer angelegt. E-Mail erfolgreich versendet.",
+          );
+        } else {
+          toast(
+            manualForm.useGeneratedPassword
+              ? `Benutzer angelegt. Temporäres Passwort: ${password}`
+              : "Benutzer angelegt.",
+          );
+        }
         setManualForm(emptyManual());
         if (allowedRoles[0]) {
           setManualForm({ ...emptyManual(), roleId: allowedRoles[0]!.id });

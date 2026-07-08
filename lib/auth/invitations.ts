@@ -2,6 +2,7 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { sha256, randomToken } from "@/lib/auth/crypto";
 import type { AdminRoleSlug } from "@/lib/auth/types";
 import { roleDisplayLabel } from "@/lib/admin/roles";
+import { getAdminInviteUrl } from "@/lib/site-url";
 
 export const INVITE_EXPIRY_HOURS = 48;
 
@@ -228,7 +229,12 @@ export async function deleteInvitation(id: string): Promise<void> {
 }
 
 export async function issueInvitationLink(id: string): Promise<{ invitation: AdminInvitationPublic; token: string }> {
+  // Re-issue token only for resend flows; copy_link uses resend to obtain a fresh link.
   return resendInvitation(id);
+}
+
+export function buildInviteUrl(token: string): string {
+  return getAdminInviteUrl(token);
 }
 
 export function deriveUsernameFromEmail(email: string): string {

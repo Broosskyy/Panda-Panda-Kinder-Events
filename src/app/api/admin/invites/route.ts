@@ -12,10 +12,11 @@ import {
   hasPendingInviteForEmail,
   deleteInvitation,
   issueInvitationLink,
+  buildInviteUrl,
 } from "@/lib/auth/invitations";
+import { enrichInvitationsWithEmailStatus } from "@/lib/auth/invitation-email-status";
 import { findUserByEmail } from "@/lib/auth/users";
-import { sendAdminInviteEmail } from "@/lib/email";
-import { getSiteUrl } from "@/lib/site-url";
+import { sendAdminInviteEmail, isResendConfigured } from "@/lib/email";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { getRateLimitPolicy } from "@/lib/auth/security-settings";
 
@@ -37,6 +38,55 @@ function resolveDisplayName(data: z.infer<typeof createSchema>): string {
   return combined;
 }
 
+async function sendInviteEmailSafe(
+  ctx: NonNullable<Awaited<ReturnType<typeof getAdminContext>>>,
+  request: Request,
+  invitation: { id: string; email: string; display_name: string; role_label: string; message?: string | null },
+  inviteUrl: string,
+  message?: string,
+): Promise<{ emailSent: boolean; emailError?: string }> {
+  if (!isResendConfigured()) {
+    const emailError = "E-Mail-Versand ist nicht konfiguriert.";
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "invite_send_failed",
+      area: "admin_invites",
+      entityId: invitation.id,
+      success: false,
+      errorMessage: emailError,
+      after: { email: invitation.email },
+    });
+    return { emailSent: false, emailError };
+  }
+
+  try {
+    await sendAdminInviteEmail({
+      to: invitation.email,
+      adminName: invitation.display_name,
+      roleLabel: invitation.role_label,
+      inviteUrl,
+      message: message ?? invitation.message ?? undefined,
+    });
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "invite_sent",
+      area: "admin_invites",
+      entityId: invitation.id,
+      after: { email: invitation.email, inviteUrl },
+    });
+    return { emailSent: true };
+  } catch (err) {
+    const emailError = err instanceof Error ? err.message : "E-Mail konnte nicht versendet werden.";
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "invite_send_failed",
+      area: "admin_invites",
+      entityId: invitation.id,
+      success: false,
+      errorMessage: emailError,
+      after: { email: invitation.email },
+    });
+    return { emailSent: false, emailError };
+  }
+}
+
 export async function GET() {
   const authError = await requireAdmin();
   if (authError) return authError;
@@ -47,7 +97,7 @@ export async function GET() {
   }
 
   try {
-    const invitations = await listInvitations();
+    const invitations = await enrichInvitationsWithEmailStatus(await listInvitations());
     return NextResponse.json({
       invitations,
       meta: {
@@ -122,15 +172,7 @@ export async function POST(request: Request) {
       message: parsed.data.message,
     });
 
-    const inviteUrl = `${getSiteUrl()}/admin/einladung/${token}`;
-
-    await sendAdminInviteEmail({
-      to: invitation.email,
-      adminName: invitation.display_name,
-      roleLabel: invitation.role_label,
-      inviteUrl,
-      message: parsed.data.message,
-    });
+    const inviteUrl = buildInviteUrl(token);
 
     await writeAuditLogFromRequest(ctx, request, {
       action: "invite_created",
@@ -138,14 +180,26 @@ export async function POST(request: Request) {
       entityId: invitation.id,
       after: { email: invitation.email, role: invitation.role_slug },
     });
-    await writeAuditLogFromRequest(ctx, request, {
-      action: "invite_sent",
-      area: "admin_invites",
-      entityId: invitation.id,
-      after: { email: invitation.email },
-    });
 
-    return NextResponse.json({ invitation, inviteUrl, message: "Einladung gesendet." });
+    const { emailSent, emailError } = await sendInviteEmailSafe(
+      ctx,
+      request,
+      invitation,
+      inviteUrl,
+      parsed.data.message,
+    );
+
+    const enriched = (await enrichInvitationsWithEmailStatus([invitation]))[0]!;
+
+    return NextResponse.json({
+      invitation: enriched,
+      inviteUrl,
+      emailSent,
+      emailError,
+      message: emailSent
+        ? "Einladung gesendet."
+        : "Einladung erstellt, E-Mail konnte nicht versendet werden.",
+    });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Einladung fehlgeschlagen.";
     return NextResponse.json({ error: message }, { status: 400 });
@@ -181,33 +235,40 @@ export async function PATCH(request: Request) {
 
     if (action === "resend") {
       const { invitation, token } = await resendInvitation(id);
-      const inviteUrl = `${getSiteUrl()}/admin/einladung/${token}`;
-      await sendAdminInviteEmail({
-        to: invitation.email,
-        adminName: invitation.display_name,
-        roleLabel: invitation.role_label,
-        inviteUrl,
-        message: invitation.message ?? undefined,
-      });
+      const inviteUrl = buildInviteUrl(token);
+      const { emailSent, emailError } = await sendInviteEmailSafe(ctx, request, invitation, inviteUrl);
       await writeAuditLogFromRequest(ctx, request, {
         action: "invite_resent",
         area: "admin_invites",
         entityId: id,
         after: { email: invitation.email },
       });
-      return NextResponse.json({ invitation, inviteUrl, message: "Einladung erneut gesendet." });
+      const enriched = (await enrichInvitationsWithEmailStatus([invitation]))[0]!;
+      return NextResponse.json({
+        invitation: enriched,
+        inviteUrl,
+        emailSent,
+        emailError,
+        message: emailSent ? "Einladung erneut gesendet." : "Link erstellt, E-Mail konnte nicht versendet werden.",
+      });
     }
 
     if (action === "copy_link") {
       const { invitation, token } = await issueInvitationLink(id);
-      const inviteUrl = `${getSiteUrl()}/admin/einladung/${token}`;
+      const inviteUrl = buildInviteUrl(token);
       await writeAuditLogFromRequest(ctx, request, {
         action: "invite_link_copied",
         area: "admin_invites",
         entityId: id,
-        after: { email: invitation.email },
+        after: { email: invitation.email, inviteUrl },
       });
-      return NextResponse.json({ invitation, inviteUrl, message: "Einladungslink erstellt." });
+      const enriched = (await enrichInvitationsWithEmailStatus([invitation]))[0]!;
+      return NextResponse.json({
+        invitation: enriched,
+        inviteUrl,
+        emailSent: false,
+        message: "Einladungslink erstellt.",
+      });
     }
 
     return NextResponse.json({ error: "Unbekannte Aktion." }, { status: 400 });

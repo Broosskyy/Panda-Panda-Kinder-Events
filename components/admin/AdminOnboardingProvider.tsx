@@ -95,6 +95,11 @@ export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
     await loadStatus();
   }, [identity, loadStatus, permissions]);
 
+  const closeSession = useCallback(() => {
+    setForcedOpen(false);
+    setStepIndex(0);
+  }, []);
+
   const dismissPermanent = useCallback(() => {
     void finish();
   }, [finish]);
@@ -117,6 +122,7 @@ export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
           onStepIndexChange={setStepIndex}
           onComplete={() => void finish()}
           onDismissPermanent={dismissPermanent}
+          onCloseSession={closeSession}
           onSkipToEnd={skipToEnd}
           displayName={identity.displayName}
         />

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { requireAdmin, getAdminContext } from "@/lib/admin-route";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import { isResendConfigured } from "@/lib/email";
 import { resolveEmailSender } from "@/lib/email/sender";
 import { logEmailSend, saveEmailDraft } from "@/lib/email/log";
@@ -117,6 +118,12 @@ export async function POST(request: Request) {
       sentByAdminId: ctx?.userId ?? null,
     });
 
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "email_sent",
+      area: area ?? templateSlug ?? "email",
+      after: { recipient: to.trim(), subject: finalSubject },
+    });
+
     if (copyTo?.trim()) {
       const copyResult = await sendEmailWithRetry({
         payload: {
@@ -150,6 +157,13 @@ export async function POST(request: Request) {
       status: "failed",
       errorMessage: message,
       sentByAdminId: ctx?.userId ?? null,
+    });
+    await writeAuditLogFromRequest(ctx, request, {
+      action: "email_failed",
+      area: area ?? "email",
+      success: false,
+      errorMessage: message,
+      after: { recipient: to.trim(), subject: subject ?? "" },
     });
     return NextResponse.json({ error: message }, { status: 500 });
   }

@@ -52,6 +52,7 @@ export async function buildEmailVariableContext(
     admin_name: "",
     admin_url: `${getSiteUrl()}/admin`,
     adminUrl: `${getSiteUrl()}/admin`,
+    invite_link: `${getSiteUrl()}/admin/einladung/example-token`,
     review_link: "",
     reset_link: "",
     rating: "",

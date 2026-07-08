@@ -10,30 +10,32 @@ import {
   type ReactNode,
 } from "react";
 import {
-  isIosDevice,
+  clearDeferredPrompt,
+  clearPwaSessionClosed,
   isAndroidDevice,
-  supportsNativePwaInstall,
+  isIosDevice,
   markPwaDontShowAgain,
   markPwaInstalled,
   markPwaSessionClosed,
+  probePwaInstallability,
   readPwaDontShowAgain,
   readPwaSessionClosed,
+  registerAdminServiceWorker,
   resolvePwaInstalled,
-  takeEarlyCapturedPrompt,
   storeDeferredPrompt,
-  clearDeferredPrompt,
+  supportsNativePwaInstall,
+  takeEarlyCapturedPrompt,
   type BeforeInstallPromptEvent,
   type PwaInstallOutcome,
+  type PwaProbeResult,
 } from "@/lib/admin/pwa-install";
 
-export interface PwaDebugStatus {
-  beforeInstallPrompt: boolean;
-  manifestLoaded: boolean;
-  serviceWorkerActive: boolean;
-  standalone: boolean;
-  installPromptAvailable: boolean;
-  checkedAt: string;
-}
+export type PwaInstallFeedback =
+  | { type: "idle" }
+  | { type: "started" }
+  | { type: "accepted" }
+  | { type: "dismissed" }
+  | { type: "unavailable" };
 
 interface AdminPwaContextValue {
   canInstall: boolean;
@@ -41,50 +43,22 @@ interface AdminPwaContextValue {
   showAndroidGuide: boolean;
   showUnsupportedGuide: boolean;
   showInstallCard: boolean;
+  sessionClosed: boolean;
   isInstalled: boolean;
   hiddenPermanently: boolean;
-  debugStatus: PwaDebugStatus | null;
+  probeResult: PwaProbeResult | null;
+  installFeedback: PwaInstallFeedback;
+  helpOpen: boolean;
   install: () => Promise<PwaInstallOutcome>;
   closeCard: () => void;
   dontShowAgain: () => void;
-  checkInstallStatus: () => Promise<PwaDebugStatus>;
-  showInstallHelp: () => void;
+  checkInstallStatus: () => Promise<PwaProbeResult>;
+  openInstallHelp: () => void;
+  closeInstallHelp: () => void;
   reopenInstallCard: () => void;
 }
 
 const AdminPwaContext = createContext<AdminPwaContextValue | null>(null);
-
-async function probePwaStatus(deferred: BeforeInstallPromptEvent | null): Promise<PwaDebugStatus> {
-  let manifestLoaded = false;
-  try {
-    const res = await fetch("/admin/manifest.webmanifest", { cache: "no-store" });
-    manifestLoaded = res.ok;
-  } catch {
-    manifestLoaded = false;
-  }
-
-  let serviceWorkerActive = false;
-  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
-    try {
-      const reg = await navigator.serviceWorker.getRegistration("/admin");
-      serviceWorkerActive = Boolean(reg?.active);
-    } catch {
-      serviceWorkerActive = false;
-    }
-  }
-
-  const standalone = resolvePwaInstalled();
-  const installPromptAvailable = Boolean(deferred);
-
-  return {
-    beforeInstallPrompt: installPromptAvailable,
-    manifestLoaded,
-    serviceWorkerActive,
-    standalone,
-    installPromptAvailable,
-    checkedAt: new Date().toISOString(),
-  };
-}
 
 export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
@@ -93,8 +67,17 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const [sessionClosed, setSessionClosed] = useState(false);
   const [ios] = useState(() => isIosDevice());
   const [android] = useState(() => isAndroidDevice());
-  const [debugStatus, setDebugStatus] = useState<PwaDebugStatus | null>(null);
+  const [probeResult, setProbeResult] = useState<PwaProbeResult | null>(null);
   const [forceShowCard, setForceShowCard] = useState(false);
+  const [installFeedback, setInstallFeedback] = useState<PwaInstallFeedback>({ type: "idle" });
+  const [helpOpen, setHelpOpen] = useState(false);
+
+  const refreshProbe = useCallback(async (prompt: BeforeInstallPromptEvent | null) => {
+    const status = await probePwaInstallability(prompt);
+    setProbeResult(status);
+    if (status.state === "installed") setInstalled(true);
+    return status;
+  }, []);
 
   useEffect(() => {
     setInstalled(resolvePwaInstalled());
@@ -104,17 +87,14 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
     const early = takeEarlyCapturedPrompt();
     if (early) setDeferred(early);
 
-    if (!("serviceWorker" in navigator)) return;
-
-    navigator.serviceWorker
-      .register("/admin-sw.js", { scope: "/admin" })
-      .catch((err) => console.warn("[pwa] registration failed", err));
+    void registerAdminServiceWorker().then(() => refreshProbe(early));
 
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
       storeDeferredPrompt(promptEvent);
       setDeferred(promptEvent);
+      void refreshProbe(promptEvent);
     };
 
     const onInstalled = () => {
@@ -123,26 +103,42 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       setDeferred(null);
       clearDeferredPrompt();
       setForceShowCard(false);
+      setInstallFeedback({ type: "accepted" });
+      void refreshProbe(null);
     };
+
+    const onPromptAvailable = () => {
+      const prompt = takeEarlyCapturedPrompt();
+      if (prompt) setDeferred(prompt);
+      void refreshProbe(prompt);
+    };
+
+    const onExternalInstalled = () => onInstalled();
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);
     window.addEventListener("appinstalled", onInstalled);
-
-    void probePwaStatus(early).then(setDebugStatus);
+    window.addEventListener("pb-pwa-prompt-available", onPromptAvailable);
+    window.addEventListener("pb-pwa-installed", onExternalInstalled);
 
     return () => {
       window.removeEventListener("beforeinstallprompt", onBeforeInstall);
       window.removeEventListener("appinstalled", onInstalled);
+      window.removeEventListener("pb-pwa-prompt-available", onPromptAvailable);
+      window.removeEventListener("pb-pwa-installed", onExternalInstalled);
     };
-  }, []);
+  }, [refreshProbe]);
 
   useEffect(() => {
-    void probePwaStatus(deferred).then(setDebugStatus);
-  }, [deferred, installed]);
+    void refreshProbe(deferred);
+  }, [deferred, installed, refreshProbe]);
 
   const install = useCallback(async (): Promise<PwaInstallOutcome> => {
     const promptEvent = deferred ?? takeEarlyCapturedPrompt();
-    if (!promptEvent) return "unavailable";
+    if (!promptEvent) {
+      setInstallFeedback({ type: "unavailable" });
+      return "unavailable";
+    }
+    setInstallFeedback({ type: "started" });
     try {
       await promptEvent.prompt();
       const { outcome } = await promptEvent.userChoice;
@@ -150,15 +146,20 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
         markPwaInstalled();
         setInstalled(true);
         setForceShowCard(false);
+        setInstallFeedback({ type: "accepted" });
+      } else {
+        setInstallFeedback({ type: "dismissed" });
       }
       setDeferred(null);
       clearDeferredPrompt();
+      void refreshProbe(null);
       return outcome;
     } catch (err) {
       console.warn("[pwa] install failed", err);
+      setInstallFeedback({ type: "unavailable" });
       return "unavailable";
     }
-  }, [deferred]);
+  }, [deferred, refreshProbe]);
 
   const closeCard = useCallback(() => {
     markPwaSessionClosed();
@@ -175,33 +176,30 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
   const checkInstallStatus = useCallback(async () => {
     const currentDeferred = deferred ?? takeEarlyCapturedPrompt();
     if (currentDeferred && !deferred) setDeferred(currentDeferred);
-    const status = await probePwaStatus(currentDeferred);
-    setDebugStatus(status);
-    if (status.standalone) {
-      setInstalled(true);
-    }
-    return status;
-  }, [deferred]);
+    await registerAdminServiceWorker();
+    return refreshProbe(currentDeferred);
+  }, [deferred, refreshProbe]);
 
-  const showInstallHelp = useCallback(() => {
-    setForceShowCard(true);
-    setSessionClosed(false);
-    import("@/lib/admin/pwa-install").then(({ clearPwaSessionClosed }) => clearPwaSessionClosed());
+  const openInstallHelp = useCallback(() => {
+    setHelpOpen(true);
+  }, []);
+
+  const closeInstallHelp = useCallback(() => {
+    setHelpOpen(false);
   }, []);
 
   const reopenInstallCard = useCallback(() => {
-    setForceShowCard(true);
+    clearPwaSessionClosed();
     setSessionClosed(false);
-    import("@/lib/admin/pwa-install").then(({ clearPwaSessionClosed }) => clearPwaSessionClosed());
+    setForceShowCard(true);
   }, []);
 
   const canInstall = Boolean(deferred ?? takeEarlyCapturedPrompt()) && !installed;
-  const showIosGuide = ios && !installed;
+  const showIosGuide = ios && !installed && !canInstall;
   const showAndroidGuide = android && !installed && !canInstall && supportsNativePwaInstall();
   const showUnsupportedGuide =
     typeof navigator !== "undefined" && !("serviceWorker" in navigator) && !installed;
-  const showInstallCard =
-    !installed && !hiddenPermanently && (!sessionClosed || forceShowCard);
+  const showInstallCard = !installed && !hiddenPermanently && (!sessionClosed || forceShowCard);
 
   const value = useMemo<AdminPwaContextValue>(
     () => ({
@@ -210,29 +208,37 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
       showAndroidGuide,
       showUnsupportedGuide,
       showInstallCard,
+      sessionClosed,
       isInstalled: installed,
       hiddenPermanently,
-      debugStatus,
+      probeResult,
+      installFeedback,
+      helpOpen,
       install,
       closeCard,
       dontShowAgain,
       checkInstallStatus,
-      showInstallHelp,
+      openInstallHelp,
+      closeInstallHelp,
       reopenInstallCard,
     }),
     [
       canInstall,
       checkInstallStatus,
       closeCard,
-      debugStatus,
+      closeInstallHelp,
       dontShowAgain,
+      helpOpen,
       hiddenPermanently,
       install,
+      installFeedback,
       installed,
+      openInstallHelp,
+      probeResult,
       reopenInstallCard,
+      sessionClosed,
       showAndroidGuide,
       showInstallCard,
-      showInstallHelp,
       showIosGuide,
       showUnsupportedGuide,
     ],

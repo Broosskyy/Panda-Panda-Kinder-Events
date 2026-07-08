@@ -1,18 +1,27 @@
 "use client";
 
 import { useEffect } from "react";
-import { storeDeferredPrompt, type BeforeInstallPromptEvent } from "@/lib/admin/pwa-install";
+import {
+  markPwaInstalled,
+  registerAdminServiceWorker,
+  storeDeferredPrompt,
+  type BeforeInstallPromptEvent,
+} from "@/lib/admin/pwa-install";
 
-/** Captures beforeinstallprompt before AdminPwaProvider mounts (e.g. on login screen). */
+/** Captures beforeinstallprompt and registers the admin service worker on every /admin page. */
 export function AdminPwaEarlyCapture() {
   useEffect(() => {
+    void registerAdminServiceWorker();
+
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       storeDeferredPrompt(e as BeforeInstallPromptEvent);
+      window.dispatchEvent(new CustomEvent("pb-pwa-prompt-available"));
     };
 
     const onInstalled = () => {
-      import("@/lib/admin/pwa-install").then(({ markPwaInstalled }) => markPwaInstalled());
+      markPwaInstalled();
+      window.dispatchEvent(new CustomEvent("pb-pwa-installed"));
     };
 
     window.addEventListener("beforeinstallprompt", onBeforeInstall);

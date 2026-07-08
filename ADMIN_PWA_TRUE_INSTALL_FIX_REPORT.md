@@ -186,17 +186,17 @@ Löscht nur:
 | `lib/admin/pwa-install.ts` | Install-Modi, Diagnose, Reset, SW nur `/admin/sw.js` |
 | `components/admin/AdminPwaProvider.tsx` | Reset inkl. Cache + SW-Neuregistrierung |
 | `components/admin/AdminPwaInstallPanel.tsx` | Status A–F, Reset-Button |
-| `components/admin/AdminPwaInstallHelpSheet.tsx` | Echte PWA vs. Verknüpfung Text |
+| `components/admin/AdminPwaInstallHelpSheet.tsx` | Browser-spezifische Anleitungen, ProbeDetails N/A für manuelle Browser |
 | `scripts/generate-brand-assets.mjs` | maskable-192 Generierung |
 | `public/icons/panda-icon-maskable-192.png` | Neues Asset |
-| `scripts/admin-pwa-true-install-fix-test.mjs` | Statische Verifikation (9 Checks) |
+| `scripts/admin-pwa-true-install-fix-test.mjs` | Statische Verifikation inkl. Browser-Support (14 Checks) |
 
 ---
 
 ## Tests (automatisiert)
 
 ```text
-node scripts/admin-pwa-true-install-fix-test.mjs  → 9/9 passed
+node scripts/admin-pwa-true-install-fix-test.mjs  → 14/14 passed
 npm run typecheck                                 → OK
 npm run lint                                      → OK
 npm run build                                     → OK

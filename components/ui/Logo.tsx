@@ -11,6 +11,7 @@ import {
 import { resolveBrandAlt, resolveBrandLogo } from "@/lib/brand/resolve";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteBrandingSettings } from "@/lib/cms/types";
+import { resolvePublicHref } from "@/lib/public-href";
 
 interface LogoProps {
   context?: LogoContext;
@@ -153,7 +154,7 @@ export function Logo({
 
   return (
     <a
-      href="#startseite"
+      href={resolvePublicHref("#startseite")}
       className={`inline-flex shrink-0 items-center overflow-visible ${focusClass}`}
       aria-label={`${primary} ${secondary} — Startseite`}
     >

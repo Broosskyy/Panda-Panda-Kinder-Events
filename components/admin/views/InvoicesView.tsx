@@ -13,6 +13,7 @@ import {
   AdminSearchInput,
   AdminStatusBadge,
   AdminActionMenu,
+  AdminButton,
   crmDocumentStatusVariant,
 } from "@/components/admin/ui";
 import { paginateRows, sortCrmRows, type CrmSortDir, type CrmSortField } from "@/lib/admin/crm-list";
@@ -83,6 +84,7 @@ function exportInvoicesCsv(rows: InvoiceRow[]) {
 export function InvoicesView() {
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [listLoading, setListLoading] = useState(true);
+  const [listLoadError, setListLoadError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<InvoiceView>("active");
   const [sortField, setSortField] = useState<CrmSortField>("date");
@@ -111,14 +113,20 @@ export function InvoicesView() {
 
   const load = useCallback(() => {
     setListLoading(true);
+    setListLoadError(null);
     const params = new URLSearchParams();
     if (search) params.set("q", search);
     params.set("view", view);
     fetch(`/api/admin/invoices?${params}`)
-      .then((r) => r.json())
-      .then((d) => {
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? "Rechnungen konnten nicht geladen werden.");
         setInvoices(d.invoices ?? []);
         setSelected(new Set());
+      })
+      .catch((err) => {
+        setListLoadError(err instanceof Error ? err.message : "Rechnungen konnten nicht geladen werden.");
+        setInvoices([]);
       })
       .finally(() => setListLoading(false));
   }, [search, view]);
@@ -387,6 +395,13 @@ export function InvoicesView() {
 
       {listLoading ? (
         <AdminLoadingCard message="Rechnungen werden geladen…" />
+      ) : listLoadError ? (
+        <AdminCard>
+          <p className="admin-text-body">{listLoadError}</p>
+          <AdminButton variant="secondary" className="mt-4" onClick={() => void load()}>
+            Erneut laden
+          </AdminButton>
+        </AdminCard>
       ) : filteredInvoices.length === 0 ? (
         <AdminEmptyState
           icon={Receipt}

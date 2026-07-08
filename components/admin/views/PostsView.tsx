@@ -45,18 +45,25 @@ export function PostsView() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const load = useCallback(async () => {
     const res = await fetch("/api/admin/posts");
-    if (!res.ok) throw new Error("Laden fehlgeschlagen");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error((data as { error?: string }).error ?? "Beiträge konnten nicht geladen werden.");
+    }
     const data = await res.json();
     setPosts(data.posts ?? []);
   }, []);
 
   useEffect(() => {
     void load()
-      .catch(() => undefined)
+      .catch((err) => {
+        setLoadError(err instanceof Error ? err.message : "Beiträge konnten nicht geladen werden.");
+        setPosts([]);
+      })
       .finally(() => setLoading(false));
   }, [load]);
 
@@ -161,6 +168,20 @@ export function PostsView() {
       <div className="space-y-6">
         <AdminPageHeader {...page} />
         <AdminLoadingCard message="Beiträge werden geladen…" />
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader {...page} />
+        <AdminCard>
+          <p className="admin-text-body">{loadError}</p>
+          <AdminButton variant="secondary" className="mt-4" onClick={() => { setLoadError(null); setLoading(true); void load().finally(() => setLoading(false)); }}>
+            Erneut laden
+          </AdminButton>
+        </AdminCard>
       </div>
     );
   }

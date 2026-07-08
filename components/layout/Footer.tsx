@@ -1,6 +1,7 @@
 import { Instagram, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
 import type { SiteBrandingSettings, SiteContactSettings, SiteFooterSettings } from "@/lib/cms/types";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
+import { resolvePublicHref } from "@/lib/public-href";
 import { ICON_STROKE } from "@/lib/design";
 import { Logo } from "@/components/ui/Logo";
 import { Container } from "@/components/ui/Container";
@@ -50,7 +51,7 @@ export function Footer({
             <p className="footer-col-title mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-white/60 sm:mb-6">Navigation</p>
             <nav className="footer-nav flex flex-col gap-1 text-sm sm:gap-3 sm:text-base" aria-label="Footer Navigation">
               {FOOTER_NAV.map((item) => (
-                <a key={item.href} href={item.href} className="footer-tap-link transition-opacity duration-300 hover:opacity-85">
+                <a key={item.href} href={resolvePublicHref(item.href)} className="footer-tap-link transition-opacity duration-300 hover:opacity-85">
                   {item.label}
                 </a>
               ))}

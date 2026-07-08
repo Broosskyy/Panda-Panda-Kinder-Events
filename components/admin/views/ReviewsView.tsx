@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Mail, Pencil, Shield, Star, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import {
@@ -49,6 +49,7 @@ function formatReviewDate(dateStr: string) {
 export function ReviewsView() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [filter, setFilter] = useState<"all" | "pending" | "approved">("all");
   const [lightboxItems, setLightboxItems] = useState<LightboxItem[]>([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
@@ -63,16 +64,25 @@ export function ReviewsView() {
   const page = adminPageHeaderProps("bewertungen");
   const empty = ADMIN_EMPTY_STATES.reviews;
 
-  const load = async () => {
-    const res = await fetch("/api/admin/reviews");
-    const d = await res.json();
-    setReviews(d.reviews ?? []);
-    setLoading(false);
-  };
+  const load = useCallback(async () => {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const res = await fetch("/api/admin/reviews");
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error ?? "Bewertungen konnten nicht geladen werden.");
+      setReviews(d.reviews ?? []);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : "Bewertungen konnten nicht geladen werden.");
+      setReviews([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const sortedReviews = useMemo(
     () =>
@@ -302,6 +312,13 @@ export function ReviewsView() {
 
       {loading ? (
         <AdminLoadingCard message="Bewertungen werden geladen…" />
+      ) : loadError ? (
+        <AdminCard>
+          <p className="admin-text-body">{loadError}</p>
+          <AdminButton variant="secondary" className="mt-4" onClick={() => void load()}>
+            Erneut laden
+          </AdminButton>
+        </AdminCard>
       ) : filtered.length === 0 ? (
         <AdminEmptyState
           icon={Star}

@@ -6,5 +6,5 @@ const AuditView = adminDynamicView(
 );
 
 export default function AdminUserAuditPage() {
-  return <AuditView />;
+  return <AuditView embedded />;
 }

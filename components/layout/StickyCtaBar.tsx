@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/Button";
+import { resolvePublicHref } from "@/lib/public-href";
 
 interface StickyCtaBarProps {
   label?: string;
@@ -80,7 +81,7 @@ export function StickyCtaBar({
     >
       <div className="sticky-cta-inner">
         <p className="sticky-cta-text hidden sm:block">{sublabel}</p>
-        <Button href="#kontakt" size="lg" className="sticky-cta-button min-h-12 flex-1 sm:flex-none">
+        <Button href={resolvePublicHref("#kontakt")} size="lg" className="sticky-cta-button min-h-12 flex-1 sm:flex-none">
           {label}
         </Button>
       </div>

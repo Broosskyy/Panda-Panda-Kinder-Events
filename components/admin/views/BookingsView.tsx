@@ -14,6 +14,7 @@ import {
   AdminSearchInput,
   AdminStatusBadge,
   AdminActionMenu,
+  AdminButton,
   bookingStatusVariant,
 } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/ui/AdminLayout";
@@ -58,6 +59,7 @@ type BookingView = "active" | "archived";
 export function BookingsView() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [view, setView] = useState<BookingView>("active");
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
@@ -72,9 +74,17 @@ export function BookingsView() {
 
   const load = useCallback(() => {
     setLoading(true);
+    setLoadError(null);
     fetch(`/api/admin/bookings?view=${view}`)
-      .then((r) => r.json())
-      .then((d) => setBookings(d.bookings ?? []))
+      .then(async (r) => {
+        const d = await r.json();
+        if (!r.ok) throw new Error(d.error ?? "Anfragen konnten nicht geladen werden.");
+        setBookings(d.bookings ?? []);
+      })
+      .catch((err) => {
+        setLoadError(err instanceof Error ? err.message : "Anfragen konnten nicht geladen werden.");
+        setBookings([]);
+      })
       .finally(() => setLoading(false));
   }, [view]);
 
@@ -218,6 +228,13 @@ export function BookingsView() {
 
       {loading ? (
         <AdminLoadingCard message="Anfragen werden geladen…" />
+      ) : loadError ? (
+        <AdminCard>
+          <p className="admin-text-body">{loadError}</p>
+          <AdminButton variant="secondary" className="mt-4" onClick={() => void load()}>
+            Erneut laden
+          </AdminButton>
+        </AdminCard>
       ) : filtered.length === 0 ? (
         <AdminEmptyState
           icon={Inbox}

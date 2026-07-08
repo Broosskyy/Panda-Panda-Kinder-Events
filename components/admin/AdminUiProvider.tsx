@@ -11,14 +11,20 @@ interface Toast {
   type: ToastType;
 }
 
+type LoadingInput<T> = Promise<T> | (() => Promise<T>);
+
 interface AdminUiContextValue {
   toast: (message: string, type?: ToastType) => void;
   loading: boolean;
   setLoading: (v: boolean) => void;
-  withLoading: <T>(promise: Promise<T>) => Promise<T>;
+  withLoading: <T>(input: LoadingInput<T>) => Promise<T>;
 }
 
 const AdminUiContext = createContext<AdminUiContextValue | null>(null);
+
+function resolveLoadingPromise<T>(input: LoadingInput<T>): Promise<T> {
+  return typeof input === "function" ? input() : input;
+}
 
 export function AdminUiProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
@@ -31,12 +37,17 @@ export function AdminUiProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setToasts((t) => t.filter((x) => x.id !== id)), 4000);
   }, []);
 
-  const withLoading = useCallback(async <T,>(promise: Promise<T>): Promise<T> => {
-    if (loadingRef.current) return promise;
+  const withLoading = useCallback(async <T,>(input: LoadingInput<T>): Promise<T> => {
+    if (loadingRef.current) {
+      if (typeof input === "function") {
+        return Promise.reject(new Error("Eine Aktion läuft bereits."));
+      }
+      return input;
+    }
     loadingRef.current = true;
     setLoading(true);
     try {
-      return await promise;
+      return await resolveLoadingPromise(input);
     } finally {
       loadingRef.current = false;
       setLoading(false);

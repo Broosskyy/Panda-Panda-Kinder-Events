@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Archive, Pencil, Plus, Trash2, Users } from "lucide-react";
 import Link from "next/link";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
-import { AdminButton, AdminEmptyState, AdminStatusBadge } from "@/components/admin/ui";
+import { AdminButton, AdminEmptyState, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
 import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
 import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
@@ -29,6 +29,7 @@ const emptyForm = () => ({
 
 export function TeamView() {
   const [members, setMembers] = useState<TeamMember[]>([]);
+  const [loading, setLoading] = useState(true);
   const [section, setSection] = useState({ title: "Unser Team", subtitle: "" });
   const [configured, setConfigured] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -40,6 +41,7 @@ export function TeamView() {
   const empty = ADMIN_EMPTY_STATES.team;
 
   const load = useCallback(async () => {
+    setLoading(true);
     const res = await fetch("/api/admin/team");
     const data = await res.json();
     if (res.ok) {
@@ -49,6 +51,7 @@ export function TeamView() {
     } else {
       toast(data.error ?? ADMIN_MSG.loadFailed, "error");
     }
+    setLoading(false);
   }, [toast]);
 
   useEffect(() => {
@@ -190,6 +193,15 @@ export function TeamView() {
 
   const activeMembers = members.filter((m) => !m.archived);
   const archivedMembers = members.filter((m) => m.archived);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader {...page} />
+        <AdminLoadingCard message="Team wird geladen…" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

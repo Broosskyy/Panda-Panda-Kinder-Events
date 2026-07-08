@@ -226,6 +226,8 @@ export type PwaInstallMode =
 
 export interface PwaDebugStatus {
   manifestReachable: boolean;
+  manifestLinkHref: string | null;
+  manifestLinkCorrect: boolean;
   serviceWorkerRegistered: boolean;
   serviceWorkerControlling: boolean;
   https: boolean;
@@ -242,6 +244,87 @@ export interface PwaDebugStatus {
   installMode: PwaInstallMode;
   detectedCause: PwaInstallCause | null;
   causeMessage: string | null;
+  chromeInstallBlockers: string[];
+}
+
+const ADMIN_MANIFEST_PATH = "/admin/manifest.webmanifest";
+
+export function readPageManifestLinkHref(): string | null {
+  if (typeof document === "undefined") return null;
+  const link = document.querySelector('link[rel="manifest"]');
+  return link?.getAttribute("href") ?? null;
+}
+
+export function isAdminManifestLinkCorrect(): boolean {
+  const href = readPageManifestLinkHref();
+  if (!href) return false;
+  return href === ADMIN_MANIFEST_PATH || href.endsWith(ADMIN_MANIFEST_PATH);
+}
+
+export function auditChromeInstallBlockers(
+  probe: PwaProbeResult,
+  opts: { canInstall?: boolean } = {},
+): string[] {
+  const browser = detectPwaBrowser();
+  const blockers: string[] = [];
+
+  if (!probe.https) blockers.push("Chrome: Seite muss über HTTPS laufen.");
+
+  const manifestHref = readPageManifestLinkHref();
+  if (!manifestHref) {
+    blockers.push("Chrome DevTools: Kein <link rel=\"manifest\"> im Dokument.");
+  } else if (!isAdminManifestLinkCorrect()) {
+    blockers.push(
+      `Chrome DevTools: Falsches Manifest verlinkt (${manifestHref}) — erwartet ${ADMIN_MANIFEST_PATH}. Öffentliches Manifest (display: browser) verhindert „App installieren“.`,
+    );
+  }
+
+  if (!probe.manifestLoaded) {
+    blockers.push("Chrome DevTools → Application → Manifest: Manifest nicht erreichbar (kein 200 OK).");
+  } else if (!probe.manifestValid) {
+    blockers.push(
+      "Chrome DevTools → Application → Manifest: Pflichtfelder fehlen (name, start_url, scope, display: standalone, icons).",
+    );
+  }
+
+  if (!probe.icons192Ok || !probe.icons512Ok) {
+    blockers.push("Chrome/Lighthouse: Icons 192×192 und 512×512 müssen mit 200 OK laden.");
+  }
+  if (!probe.iconsMaskable192Ok || !probe.iconsMaskable512Ok) {
+    blockers.push("Chrome/Lighthouse: Maskable Icons 192×192 und 512×512 fehlen oder sind nicht erreichbar.");
+  }
+
+  if (expectsBeforeInstallPrompt(browser)) {
+    if (!probe.serviceWorkerRegistered) {
+      blockers.push("Chrome DevTools → Application → Service Workers: Kein SW für /admin registriert.");
+    }
+    if (probe.serviceWorkerRegistered && !probe.serviceWorkerActive) {
+      blockers.push("Chrome DevTools: Service Worker registriert, aber nicht aktiv.");
+    }
+    if (probe.serviceWorkerActive && !probe.serviceWorkerControlling) {
+      blockers.push(
+        "Chrome DevTools: navigator.serviceWorker.controller ist null — Seite einmal neu laden nach SW-Aktivierung.",
+      );
+    }
+  }
+
+  if (
+    probe.manifestValid &&
+    probe.serviceWorkerControlling &&
+    probe.icons192Ok &&
+    probe.icons512Ok &&
+    probe.iconsMaskable192Ok &&
+    probe.iconsMaskable512Ok &&
+    isAdminManifestLinkCorrect() &&
+    !opts.canInstall &&
+    !probe.installPromptAvailable
+  ) {
+    blockers.push(
+      "Alle Lighthouse-PWA-Kriterien erfüllt, aber beforeinstallprompt fehlt — Chrome-Heuristik (Engagement, Prompt zuvor abgelehnt, oder App bereits installiert).",
+    );
+  }
+
+  return blockers;
 }
 
 export function readPromptFiredFlag(): boolean {
@@ -812,8 +895,11 @@ export async function buildPwaDebugStatus(
   opts: { promptDismissedRecently?: boolean; canInstall?: boolean } = {},
 ): Promise<PwaDebugStatus> {
   const detected = detectPwaInstallCause(probe, opts);
+  const chromeInstallBlockers = auditChromeInstallBlockers(probe, opts);
   return {
     manifestReachable: probe.manifestLoaded && probe.manifestValid,
+    manifestLinkHref: readPageManifestLinkHref(),
+    manifestLinkCorrect: isAdminManifestLinkCorrect(),
     serviceWorkerRegistered: probe.serviceWorkerRegistered,
     serviceWorkerControlling: probe.serviceWorkerControlling,
     https: probe.https,
@@ -830,6 +916,7 @@ export async function buildPwaDebugStatus(
     installMode: probe.installMode,
     detectedCause: detected.cause,
     causeMessage: detected.message,
+    chromeInstallBlockers,
   };
 }
 
@@ -846,6 +933,12 @@ async function checkIconUrl(path: string): Promise<{ ok: boolean; mimeOk: boolea
 
 export function explainPwaBlockers(result: PwaProbeResult, browser: PwaBrowserInfo = detectPwaBrowser()): string[] {
   const messages: string[] = [];
+  if (!isAdminManifestLinkCorrect()) {
+    const href = readPageManifestLinkHref();
+    messages.push(
+      `Falsches Manifest im HTML (${href ?? "fehlt"}) — Chrome lädt ${ADMIN_MANIFEST_PATH}, nicht /manifest.webmanifest.`,
+    );
+  }
   if (!result.https) messages.push("Die Seite muss über HTTPS erreichbar sein.");
   if (!result.manifestLoaded) messages.push("Das Web-App-Manifest konnte nicht geladen werden.");
   if (result.manifestLoaded && !result.manifestValid) {
@@ -912,6 +1005,7 @@ function buildStatusLabel(
       if (issues.includes("sw_not_controlling")) return "Service Worker kontrolliert /admin nicht";
       if (issues.includes("prompt_pending")) return "Install-Dialog noch ausstehend";
       if (issues.includes("shortcut_only")) return "Nur Startbildschirm-Verknüpfung möglich";
+      if (issues.includes("wrong_manifest_link")) return "Falsches Manifest verlinkt";
       if (issues.includes("manifest_missing")) return "Manifest fehlt";
       if (issues.includes("service_worker_missing")) return "Service Worker fehlt";
       if (issues.includes("icons_missing")) return "Icon fehlt";
@@ -942,19 +1036,29 @@ export async function probePwaInstallability(
       issues.push("manifest_missing");
     } else {
       const manifest = (await res.json()) as {
+        id?: string;
         name?: string;
+        short_name?: string;
         start_url?: string;
         scope?: string;
         display?: string;
-        icons?: { sizes?: string }[];
+        icons?: { sizes?: string; purpose?: string }[];
       };
+      const startUrl = String(manifest.start_url ?? "");
+      const scope = String(manifest.scope ?? "");
+      const has192 = manifest.icons?.some((i) => i.sizes?.includes("192"));
+      const has512 = manifest.icons?.some((i) => i.sizes?.includes("512"));
+      const hasMaskable = manifest.icons?.some((i) => i.purpose === "maskable");
       manifestValid = Boolean(
         manifest.name &&
-          (manifest.start_url === "/admin" || String(manifest.start_url).endsWith("/admin")) &&
-          (manifest.scope === "/admin" || manifest.scope === "/admin/") &&
-          manifest.display === "standalone" &&
-          Array.isArray(manifest.icons) &&
-          manifest.icons.length > 0,
+          manifest.short_name &&
+          (startUrl.includes("/admin") || startUrl.endsWith("/admin")) &&
+          (scope.includes("/admin") || scope.endsWith("/admin")) &&
+          (manifest.display === "standalone" || manifest.display === "fullscreen") &&
+          has192 &&
+          has512 &&
+          hasMaskable &&
+          manifest.id,
       );
       if (!manifestValid) issues.push("manifest_invalid");
     }
@@ -1081,6 +1185,10 @@ export async function probePwaInstallability(
     },
     { canInstall: installPromptAvailable },
   );
+
+  if (!isAdminManifestLinkCorrect()) {
+    issues.push("wrong_manifest_link");
+  }
 
   const blockers = explainPwaBlockers(
     {

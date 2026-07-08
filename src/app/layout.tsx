@@ -90,7 +90,6 @@ export async function generateMetadata(): Promise<Metadata> {
     },
     alternates: { canonical: seo.baseUrl },
     robots: seo.robotsIndex ? { index: true, follow: true } : { index: false, follow: false },
-    manifest: "/manifest.webmanifest",
     verification: seo.googleSiteVerification
       ? { google: seo.googleSiteVerification }
       : undefined,

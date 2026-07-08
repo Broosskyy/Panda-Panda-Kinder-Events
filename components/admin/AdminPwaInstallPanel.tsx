@@ -124,6 +124,14 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
               {debugOpen ? <PwaDebugDetails debug={debugStatus} className="mt-2" /> : null}
             </div>
           ) : null}
+          {statusChecked && debugStatus?.chromeInstallBlockers?.length ? (
+            <ul className="mt-3 space-y-1.5 border-t border-border/70 pt-3 text-xs text-text-secondary">
+              <li className="font-medium text-text-primary">Chrome Installability</li>
+              {debugStatus.chromeInstallBlockers.map((item) => (
+                <li key={item}>• {item}</li>
+              ))}
+            </ul>
+          ) : null}
           {statusChecked && probeResult?.blockers?.length ? (
             <ul className="mt-3 space-y-1.5 border-t border-border/70 pt-3 text-xs text-text-secondary">
               {probeResult.blockers.map((item) => (

@@ -3,16 +3,24 @@ import Script from "next/script";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AdminPwaEarlyCapture } from "@/components/admin/AdminPwaEarlyCapture";
 
-export const metadata: Metadata = {
-  title: "Panda-Bande Admin",
-  robots: { index: false, follow: false },
-  manifest: "/admin/manifest.webmanifest",
-  appleWebApp: {
-    capable: true,
-    title: "Panda-Bande Admin",
-    statusBarStyle: "default",
-  },
-};
+const ADMIN_MANIFEST = "/admin/manifest.webmanifest";
+
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: { absolute: "Panda-Bande Admin" },
+    robots: { index: false, follow: false },
+    manifest: ADMIN_MANIFEST,
+    applicationName: "Panda-Bande Admin",
+    appleWebApp: {
+      capable: true,
+      title: "Panda-Bande Admin",
+      statusBarStyle: "default",
+    },
+    other: {
+      "mobile-web-app-capable": "yes",
+    },
+  };
+}
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {
   return (

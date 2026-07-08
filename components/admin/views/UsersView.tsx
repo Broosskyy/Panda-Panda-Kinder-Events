@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Pencil, Plus, UserPlus } from "lucide-react";
+import { KeyRound, Pencil, Plus, Shield, UserPlus, UserRound } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { SecuritySubNav } from "@/components/admin/SecuritySubNav";
 import { AdminButton, AdminEmptyState, AdminLoadingCard, AdminStatusBadge } from "@/components/admin/ui";
@@ -38,6 +38,13 @@ const emptyForm = () => ({
 function formatLogin(date: string | null) {
   if (!date) return "—";
   return new Date(date).toLocaleString("de-DE");
+}
+
+function userInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
+  return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
 }
 
 interface UsersMeta {
@@ -164,6 +171,9 @@ export function UsersView() {
 
   const showAuthenticatedEmpty = !loading && !loadError && users.length === 0 && Boolean(meta?.authenticated);
 
+  const visibleUsers = users.filter((u) => meta?.isLegacy || u.id !== "legacy-session");
+  const isCurrentUser = (id: string) => meta?.currentUserId === id;
+
   return (
     <div className="space-y-6">
       <AdminPageHeader {...page}>
@@ -186,9 +196,8 @@ export function UsersView() {
 
       {meta?.isLegacy && users.some((u) => u.id === "legacy-session") ? (
         <AdminCard>
-          <p className="text-sm text-text-muted">
-            Sie sind mit dem Legacy-Zugang angemeldet. Legen Sie einen echten Admin-Benutzer an, um Multi-User und
-            2FA zu nutzen.
+          <p className="admin-status-warn text-sm">
+            Legacy-Zugang aktiv — bitte einen echten Benutzer anlegen. Der virtuelle „Administrator“ ist kein Datenbank-Konto.
           </p>
         </AdminCard>
       ) : null}
@@ -281,43 +290,80 @@ export function UsersView() {
           onAction={openCreate}
         />
       ) : users.length === 0 ? null : (
-        <div className="space-y-3">
-          {users.map((u) => (
-            <AdminCard key={u.id}>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-text-primary">{u.display_name}</p>
-                  <p className="text-sm text-text-muted">@{u.username} · {u.email}</p>
-                  <p className="mt-1 text-xs text-text-muted">Letzter Login: {formatLogin(u.last_login)}</p>
-                  {u.team_member_name ? (
-                    <p className="mt-1 text-xs text-text-muted">Verknüpft mit Team: {u.team_member_name}</p>
-                  ) : null}
-                  <div className="mt-2 flex flex-wrap gap-2">
+        <AdminCard className="overflow-x-auto p-0">
+          <table className="admin-users-table w-full min-w-[720px] text-sm">
+            <thead>
+              <tr>
+                <th className="text-left">Benutzer</th>
+                <th className="text-left">Rolle</th>
+                <th className="text-left">Status</th>
+                <th className="text-left">Letzter Login</th>
+                <th className="text-right">Aktionen</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visibleUsers.map((u) => (
+                <tr key={u.id} className={isCurrentUser(u.id) ? "admin-users-row-current" : undefined}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="admin-users-avatar" aria-hidden>
+                        {u.avatar ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={u.avatar} alt="" className="h-full w-full rounded-full object-cover" />
+                        ) : (
+                          userInitials(u.display_name)
+                        )}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-semibold text-text-primary">{u.display_name}</p>
+                        <p className="truncate text-text-muted">{u.email || "—"}</p>
+                        <p className="font-mono text-[10px] text-text-muted" title={u.id}>
+                          {u.id}
+                        </p>
+                      </div>
+                    </div>
+                  </td>
+                  <td>
                     <AdminStatusBadge label={u.role_label} variant="default" />
+                  </td>
+                  <td>
                     <AdminStatusBadge label={u.active ? "Aktiv" : "Deaktiviert"} variant={u.active ? "success" : "muted"} />
-                    {u.totp_enabled ? (
-                      <AdminStatusBadge label="2FA aktiv" variant="success" />
-                    ) : (
-                      <AdminStatusBadge label="2FA aus" variant="muted" />
-                    )}
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-2">
-                  {meta?.canManageUsers && u.id !== "legacy-session" ? (
-                    <>
-                      <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(u)}>Bearbeiten</AdminButton>
-                      <AdminButton variant="secondary" onClick={() => void toggleActive(u)}>
-                        {u.active ? "Deaktivieren" : "Aktivieren"}
+                  </td>
+                  <td className="text-text-muted">{formatLogin(u.last_login)}</td>
+                  <td>
+                    <div className="flex flex-wrap justify-end gap-1.5">
+                      <AdminButton variant="secondary" icon={<UserRound className="h-4 w-4" />} onClick={() => openEdit(u)}>
+                        Öffnen
                       </AdminButton>
-                    </>
-                  ) : (
-                    <AdminStatusBadge label="Nur Ansicht" variant="muted" />
-                  )}
-                </div>
-              </div>
-            </AdminCard>
-          ))}
-        </div>
+                      {meta?.canManageUsers && u.id !== "legacy-session" ? (
+                        <>
+                          <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(u)}>
+                            Bearbeiten
+                          </AdminButton>
+                          <AdminButton variant="secondary" icon={<Shield className="h-4 w-4" />} onClick={() => openEdit(u)}>
+                            Rechte
+                          </AdminButton>
+                          <AdminButton
+                            variant="secondary"
+                            icon={<KeyRound className="h-4 w-4" />}
+                            onClick={() => openEdit(u)}
+                          >
+                            Passwort
+                          </AdminButton>
+                          <AdminButton variant="secondary" onClick={() => void toggleActive(u)}>
+                            {u.active ? "Deaktivieren" : "Aktivieren"}
+                          </AdminButton>
+                        </>
+                      ) : (
+                        <AdminStatusBadge label="Nur Ansicht" variant="muted" />
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </AdminCard>
       )}
     </div>
   );

@@ -68,6 +68,7 @@ export interface AdminSession {
 export interface AdminContext {
   userId: string | null;
   displayName: string;
+  email: string | null;
   roleSlug: AdminRoleSlug | "legacy";
   permissions: string[];
   sessionId: string | null;

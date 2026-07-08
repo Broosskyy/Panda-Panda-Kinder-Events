@@ -5,9 +5,10 @@ import {
   getAdminCookieName,
   getAdminSessionMaxAge,
   isAdminConfigured,
+  legacyCookieClearOptions,
 } from "@/lib/admin-auth";
 import { verifyPassword } from "@/lib/auth/password";
-import { countAdminUsersSafe, findUserByIdentifier, updateUser } from "@/lib/auth/users";
+import { findUserByIdentifier, getUserPublicById, hasAdminUsers, updateUser } from "@/lib/auth/users";
 import { getLoginPolicy, getRateLimitPolicy } from "@/lib/auth/security-settings";
 import { recordLoginHistory } from "@/lib/auth/login-history";
 import { writeAuditLogFromRequest } from "@/lib/auth/audit";
@@ -23,6 +24,12 @@ import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { sha256, randomToken } from "@/lib/auth/crypto";
 import { resolveAdminContext } from "@/lib/auth/context";
 import { fetchSiteSettings } from "@/lib/cms/data";
+import { roleDisplayLabel } from "@/lib/admin/roles";
+
+function attachMultiUserSessionCookies(response: NextResponse, token: string, maxAgeSec: number) {
+  response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(maxAgeSec));
+  response.cookies.set(getAdminCookieName(), "", legacyCookieClearOptions());
+}
 
 function passwordsMatch(input: string, expected: string): boolean {
   const a = Buffer.from(input);
@@ -130,17 +137,26 @@ export async function POST(request: Request) {
 
     const response = NextResponse.json({
       success: true,
-      user: { displayName: user.display_name, role: user.role_id },
+      user: {
+        id: user.id,
+        displayName: user.display_name,
+        email: user.email,
+      },
     });
-    response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(maxAgeSec));
+    attachMultiUserSessionCookies(response, token, maxAgeSec);
     response.cookies.set(PENDING_2FA_COOKIE, "", clearSessionCookieOptions());
     return response;
   }
 
-  const userCount = await countAdminUsersSafe();
+  let multiUserEnabled = false;
+  try {
+    multiUserEnabled = await hasAdminUsers();
+  } catch {
+    return NextResponse.json({ error: "Anmeldung vorübergehend nicht verfügbar." }, { status: 503 });
+  }
 
-  // Legacy single-password mode
-  if (userCount === 0) {
+  // Legacy single-password mode — only when no admin_users exist
+  if (!multiUserEnabled) {
     if (!isAdminConfigured()) {
       return NextResponse.json({ error: "Admin ist nicht konfiguriert." }, { status: 503 });
     }
@@ -281,6 +297,7 @@ export async function POST(request: Request) {
     {
       userId: user.id,
       displayName: user.display_name,
+      email: user.email,
       roleSlug: "readonly",
       permissions: [],
       sessionId: null,
@@ -292,9 +309,13 @@ export async function POST(request: Request) {
 
   const response = NextResponse.json({
     success: true,
-    user: { displayName: user.display_name },
+    user: {
+      id: user.id,
+      displayName: user.display_name,
+      email: user.email,
+    },
   });
-  response.cookies.set(SESSION_COOKIE, token, sessionCookieOptions(maxAgeSec));
+  attachMultiUserSessionCookies(response, token, maxAgeSec);
   return response;
 }
 
@@ -307,7 +328,7 @@ export async function DELETE(request: Request) {
   }
 
   const response = NextResponse.json({ success: true });
-  response.cookies.set(getAdminCookieName(), "", clearSessionCookieOptions());
+  response.cookies.set(getAdminCookieName(), "", legacyCookieClearOptions());
   response.cookies.set(SESSION_COOKIE, "", clearSessionCookieOptions());
   response.cookies.set(PENDING_2FA_COOKIE, "", clearSessionCookieOptions());
   return response;
@@ -319,13 +340,26 @@ export async function GET() {
     return NextResponse.json({ authenticated: false });
   }
   const settings = await fetchSiteSettings().catch(() => null);
+  const profile = ctx.userId ? await getUserPublicById(ctx.userId) : null;
+  const roleLabel = profile?.role_label ?? roleDisplayLabel(ctx.roleSlug);
+
   return NextResponse.json({
     authenticated: true,
+    userId: ctx.userId,
     displayName: ctx.displayName,
+    email: ctx.email ?? profile?.email ?? null,
     roleSlug: ctx.roleSlug,
+    roleLabel,
     isLegacy: ctx.isLegacy,
     permissions: ctx.permissions,
     modules: settings?.modules ?? null,
     isSuperAdmin: ctx.isLegacy || ctx.roleSlug === "administrator",
+    identity: {
+      id: ctx.userId,
+      displayName: ctx.displayName,
+      email: ctx.email ?? profile?.email ?? null,
+      roleSlug: ctx.roleSlug,
+      roleLabel,
+    },
   });
 }

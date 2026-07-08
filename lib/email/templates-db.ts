@@ -216,6 +216,32 @@ Der Link ist 1 Stunde gültig und kann nur einmal verwendet werden.`,
     variables: ["company_name", "sender_from", "reply_to", "domain_status"],
   },
   {
+    slug: "admin-invite",
+    name: "Admin-Einladung",
+    description: "Einladungslink für neue Admin-Benutzer.",
+    subject: "Einladung zum Panda-Bande Admin",
+    body_html: "",
+    body_text: `Hallo {{admin_name}},
+
+Sie wurden als {{role_label}} zum Panda-Bande Admin eingeladen.
+
+{{message}}
+
+Der Link ist einmalig und läuft in 48 Stunden ab. Es wird kein Passwort per E-Mail versendet.`,
+    layout: {
+      headline: "Einladung zum Panda-Bande Admin",
+      intro: "Hallo {{admin_name}},",
+      body: "Sie wurden als {{role_label}} eingeladen.\n\n{{message}}\n\nDer Link ist einmalig und läuft in 48 Stunden ab. Es wird kein Passwort per E-Mail versendet.",
+      ctaText: "Zugang einrichten",
+      ctaUrl: "{{invite_link}}",
+      footerEnabled: true,
+    },
+    area: "security",
+    is_active: true,
+    is_default: true,
+    variables: ["company_name", "admin_name", "role_label", "invite_link", "message"],
+  },
+  {
     slug: "account-created",
     name: "Account erstellt",
     description: "Willkommens-E-Mail bei neuem Admin-Account.",

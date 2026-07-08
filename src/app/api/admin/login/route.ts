@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     if (!codeOk) {
       const failRole = await getRoleById(user.role_id);
       await writeAuditLogFromRequest(null, request, {
-        action: "login_failed",
+        action: "2fa_failed",
         area: "auth",
         entityId: user.id,
         success: false,
@@ -250,54 +250,22 @@ export async function POST(request: Request) {
     return response;
   }
 
-  const loginPolicy = await getLoginPolicy();
-  const { token, session, maxAgeSec } = await createSession({
+  // Mandatory 2FA: users without 2FA must set it up before receiving a session
+  const pending = randomToken(24);
+  const setupResponse = NextResponse.json({
+    requires2faSetup: true,
     userId: user.id,
-    userAgent: request.headers.get("user-agent"),
-    ip,
-    rememberDays: rememberMe ? loginPolicy.rememberDays : undefined,
+    pendingToken: pending,
+    message: "2FA ist verpflichtend. Bitte jetzt einrichten.",
   });
-
-  await updateUser(user.id, {
-    lastLogin: new Date().toISOString(),
-    failedLoginAttempts: 0,
-    lockedUntil: null,
+  setupResponse.cookies.set(PENDING_2FA_COOKIE, sha256(pending), {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/",
+    maxAge: 600,
   });
-
-  const role = await getRoleById(user.role_id);
-  await recordLoginHistory({
-    userId: user.id,
-    identifier,
-    success: true,
-    ip,
-    userAgent: request.headers.get("user-agent"),
-    request,
-    roleSlug: role?.slug ?? null,
-  });
-
-  await writeAuditLogFromRequest(
-    {
-      userId: user.id,
-      displayName: user.display_name,
-      email: user.email,
-      roleSlug: role?.slug ?? "readonly",
-      permissions: [],
-      sessionId: session.id,
-    },
-    request,
-    { action: "login", area: "auth", entityId: user.id },
-  );
-
-  const response = NextResponse.json({
-    success: true,
-    user: {
-      id: user.id,
-      displayName: user.display_name,
-      email: user.email,
-    },
-  });
-  attachSessionCookies(response, token, maxAgeSec);
-  return response;
+  return setupResponse;
 }
 
 export async function DELETE(request: Request) {

@@ -1,13 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState, type MouseEvent } from "react";
 import { Calendar, Menu, X } from "lucide-react";
 import { navigation as defaultNavigation } from "@/lib/navigation";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteBrandingSettings, SiteNavItem, SiteNavigationSettings } from "@/lib/cms/types";
 import { useActiveSection } from "@/lib/hooks/useActiveSection";
 import { focusRing } from "@/lib/a11y";
-import { resolvePublicHref } from "@/lib/public-href";
+import { resolvePublicHref, isPublicHomePath, scrollToPublicSection, navigateToPublicSection } from "@/lib/public-href";
 import { Logo } from "@/components/ui/Logo";
 import { Button } from "@/components/ui/Button";
 
@@ -43,6 +43,40 @@ export function Header({
     setIsMenuOpen(false);
     requestAnimationFrame(() => menuButtonRef.current?.focus());
   }, []);
+
+  const handleMobileContactCta = useCallback(
+    (event: MouseEvent<HTMLButtonElement>) => {
+      event.preventDefault();
+      const onHome = isPublicHomePath(window.location.pathname);
+      closeMenu();
+      window.setTimeout(() => {
+        if (onHome && scrollToPublicSection("kontakt")) return;
+        navigateToPublicSection("kontakt");
+      }, 320);
+    },
+    [closeMenu],
+  );
+
+  const handleMobileNavClick = useCallback(
+    (event: MouseEvent<HTMLAnchorElement>, href: string) => {
+      if (!href.includes("#")) {
+        closeMenu();
+        return;
+      }
+      const hash = href.split("#")[1];
+      if (!hash) return;
+      if (!isPublicHomePath(window.location.pathname)) {
+        closeMenu();
+        return;
+      }
+      event.preventDefault();
+      closeMenu();
+      window.setTimeout(() => {
+        scrollToPublicSection(hash);
+      }, 320);
+    },
+    [closeMenu],
+  );
 
   useEffect(() => {
     const root = document.documentElement;
@@ -222,7 +256,7 @@ export function Header({
                   <a
                     key={item.href}
                     href={href}
-                    onClick={closeMenu}
+                    onClick={(event) => handleMobileNavClick(event, href)}
                     className={`rounded-xl px-4 py-3 text-base font-medium transition-all duration-300 min-h-11 flex items-center ${focusRing} ${
                       isActive
                         ? "bg-primary/10 text-primary shadow-sm"
@@ -236,11 +270,10 @@ export function Header({
             </nav>
             <div className="border-t border-border p-4 pb-[max(1rem,env(safe-area-inset-bottom,0px))]">
               <Button
-                href={resolvePublicHref("#kontakt")}
                 className="w-full"
                 size="lg"
                 icon={<Calendar className="h-4 w-4" aria-hidden />}
-                onClick={closeMenu}
+                onClick={handleMobileContactCta}
               >
                 {navigation.ctaLabel || "Unverbindlich anfragen"}
               </Button>

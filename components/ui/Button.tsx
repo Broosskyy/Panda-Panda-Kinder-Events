@@ -1,4 +1,4 @@
-import { type ButtonHTMLAttributes, type ReactNode } from "react";
+import { type AnchorHTMLAttributes, type ButtonHTMLAttributes, type ReactNode } from "react";
 import { focusRing } from "@/lib/a11y";
 
 type ButtonVariant = "primary" | "secondary" | "ghost";
@@ -38,8 +38,10 @@ export function Button({
   const classes = `inline-flex max-w-full items-center justify-center gap-2.5 rounded-full font-medium transition-all duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${variants[variant]} ${sizes[size]} ${focusRing} ${className}`;
 
   if (href) {
+    const { type, ...anchorProps } = props;
+    void type;
     return (
-      <a href={href} className={classes}>
+      <a href={href} className={classes} {...(anchorProps as AnchorHTMLAttributes<HTMLAnchorElement>)}>
         {icon}
         {children}
       </a>

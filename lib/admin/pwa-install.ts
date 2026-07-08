@@ -264,7 +264,7 @@ export function detectPwaInstallCause(
     return {
       cause: "prompt_not_yet_fired",
       message:
-        "Chrome hat aktuell keinen nativen Installationsdialog bereitgestellt. Technische Kriterien sind erfüllt — Seite neu laden, Admin erneut besuchen oder Chrome-Menü → „App installieren“ prüfen.",
+        "Chrome stellt aktuell keinen Installationsdialog bereit. Manuelle Installation über Chrome-Menü → „App installieren“ oder „Zum Startbildschirm hinzufügen“. Fehlt die Option, erkennt Chrome die Seite noch nicht als installierbar oder blockiert den Prompt temporär.",
     };
   }
   return { cause: null, message: null };

@@ -100,7 +100,7 @@ export function Contact({
           </ScrollReveal>
 
           <ScrollReveal delay={100}>
-            <div className="flex flex-col gap-4 sm:gap-5">
+            <div className="contact-cards flex flex-col gap-3 sm:gap-5">
               {(contact.responseTime || contact.openingHours) ? (
                 <Card className="border-primary/15 bg-primary/5" padding="md" hover={false}>
                   <div className="flex items-start gap-4">

@@ -4,6 +4,7 @@ import { MessageCircle } from "lucide-react";
 import { DEFAULT_SITE_SETTINGS } from "@/lib/cms/defaults";
 import type { SiteContactSettings } from "@/lib/cms/types";
 import { useHideNearFormSections } from "@/lib/hooks/useHideNearFormSections";
+import { useFloatingContactAboveCta } from "@/lib/hooks/useFloatingContactAboveCta";
 
 interface FloatingContactButtonsProps {
   contact?: SiteContactSettings;
@@ -14,12 +15,13 @@ export function FloatingContactButtons({
   contact = DEFAULT_SITE_SETTINGS.contact,
 }: FloatingContactButtonsProps) {
   const hidden = useHideNearFormSections();
+  const aboveCta = useFloatingContactAboveCta();
   const whatsapp = contact.whatsapp?.trim();
   if (!whatsapp) return null;
 
   return (
     <div
-      className={`floating-contact-stack${hidden ? " is-hidden" : ""}`}
+      className={`floating-contact-stack${hidden ? " is-hidden" : ""}${aboveCta ? " floating-contact-stack--above-cta" : ""}`}
       aria-label="WhatsApp Schnellkontakt"
       aria-hidden={hidden}
     >

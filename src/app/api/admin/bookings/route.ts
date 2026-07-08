@@ -1,9 +1,10 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
+import { requireAdmin, getAdminContext } from "@/lib/admin-route";
 import { getSupabaseAdmin, type BookingStatus } from "@/lib/supabase/admin";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("crm:read");
   if (authError) return authError;
 
   const supabase = getSupabaseAdmin();
@@ -20,7 +21,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("inquiries:write");
   if (authError) return authError;
 
   const { id, status, admin_notes } = await request.json();
@@ -57,6 +58,14 @@ export async function PATCH(request: Request) {
   if (error) {
     return NextResponse.json({ error: "Update fehlgeschlagen." }, { status: 500 });
   }
+
+  const ctx = await getAdminContext();
+  await writeAuditLogFromRequest(ctx, request, {
+    action: "update",
+    area: "inquiries",
+    entityId: id,
+    after: updates,
+  });
 
   return NextResponse.json({ success: true });
 }

@@ -23,6 +23,7 @@ import type {
   SiteEmailSettings,
   SiteInvoiceSettings,
   SiteLegalSettings,
+  SiteModulesSettings,
   SiteSeoSettings,
   SiteSettingsBundle,
 } from "@/lib/cms/types";
@@ -30,6 +31,7 @@ import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-sta
 import { EmailSettingsShell, parseEmailSubTab } from "@/components/admin/email/EmailSettingsShell";
 import { DomainVerificationBanner } from "@/components/admin/email/DomainVerificationBanner";
 import { SystemSettingsShell, parseSystemSubTab } from "@/components/admin/settings/SystemSettingsShell";
+import { ModulesSettingsPanel } from "@/components/admin/settings/ModulesSettingsPanel";
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
 interface EmailStatusResponse {
@@ -83,6 +85,9 @@ export function SettingsView() {
   const [bank, setBank] = useState<SiteBankSettings | null>(null);
   const [seo, setSeo] = useState<SiteSeoSettings | null>(null);
   const [legal, setLegal] = useState<SiteLegalSettings | null>(null);
+  const [modules, setModules] = useState<SiteModulesSettings | null>(null);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+  const [isLegacy, setIsLegacy] = useState(false);
   const [emailStatus, setEmailStatus] = useState<EmailStatusResponse | null>(null);
   const [systemStatus, setSystemStatus] = useState<SystemStatusResponse | null>(null);
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -101,6 +106,17 @@ export function SettingsView() {
     setBank(settings.bank);
     setSeo(settings.seo);
     setLegal(settings.legal);
+    setModules(settings.modules ?? DEFAULT_SITE_SETTINGS.modules);
+  }, []);
+
+  useEffect(() => {
+    fetch("/api/admin/login")
+      .then((r) => r.json())
+      .then((data) => {
+        setIsSuperAdmin(Boolean(data.isSuperAdmin));
+        setIsLegacy(Boolean(data.isLegacy));
+      })
+      .catch(() => undefined);
   }, []);
 
   const loadSettings = useCallback(async () => {
@@ -780,6 +796,10 @@ export function SettingsView() {
           </div>
           <AdminStickySave label={`${ADMIN_BTN.save} — Rechtliches`} onSave={() => void saveSection("legal", legal)} />
         </AdminCard>
+      ) : null}
+
+      {!settingsLoading && tab === "modules" && modules ? (
+        <ModulesSettingsPanel initial={modules} isSuperAdmin={isSuperAdmin} isLegacy={isLegacy} />
       ) : null}
 
       {!settingsLoading && tab === "system" ? (

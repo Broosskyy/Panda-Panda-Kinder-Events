@@ -9,7 +9,7 @@ import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("website:read");
   if (authError) return authError;
 
   const supabase = getSupabaseAdmin();
@@ -29,7 +29,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("gallery:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("gallery:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -88,7 +88,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("gallery:write");
   if (authError) return authError;
 
   const { id } = await request.json();

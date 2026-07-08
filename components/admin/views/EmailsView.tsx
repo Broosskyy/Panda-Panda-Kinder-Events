@@ -70,7 +70,7 @@ function layoutFromTemplate(t: EmailTemplateRecord): EmailTemplateLayout {
 }
 
 export function EmailsView() {
-  const { toast, withLoading, error: showError } = useAdminMessages();
+  const { toast, withLoading, error: showError, testEmailSent } = useAdminMessages();
   const page = adminPageHeaderProps("emails");
   const emptyLog = ADMIN_EMPTY_STATES.emailLogs;
   const [tab, setTab] = useState<Tab>("templates");
@@ -211,7 +211,7 @@ export function EmailsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? ADMIN_MSG.sendFailed);
-        toast("Test-E-Mail wurde erfolgreich gesendet.");
+        testEmailSent();
         await load();
       })(),
     );

@@ -14,9 +14,6 @@ import { FlowerOrnament } from "@/components/ui/FlowerOrnament";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import { SectionHeading } from "@/components/ui/SectionHeading";
 
-const TEAM_IMAGE_FALLBACK =
-  DEFAULT_SITE_SETTINGS.about.imageUrl?.trim() || "";
-
 interface AboutProps {
   about?: SiteAboutSettings;
   team?: SitePublicTeamSettings;
@@ -124,7 +121,6 @@ export function About({
                           src={member.imageUrl}
                           name={member.name}
                           role={member.role}
-                          fallbackSrc={TEAM_IMAGE_FALLBACK}
                         />
                       </div>
                       <div className="p-5 md:p-6">

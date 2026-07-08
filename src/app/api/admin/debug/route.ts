@@ -3,6 +3,10 @@ import { requireAdmin } from "@/lib/admin-route";
 import { fetchCmsDebugSnapshot } from "@/lib/cms/data";
 
 export async function GET() {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ error: "Nicht gefunden." }, { status: 404 });
+  }
+
   const authError = await requireAdmin();
   if (authError) return authError;
 

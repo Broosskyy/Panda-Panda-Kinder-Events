@@ -11,7 +11,7 @@ import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_MSG } from "@/lib/admin/messages";
-import { ADMIN_ROLE_DESCRIPTIONS, ADMIN_ROLE_SHORT } from "@/lib/admin/role-descriptions";
+import { ADMIN_ROLE_DESCRIPTIONS, ADMIN_ROLE_SHORT, DEFAULT_NEW_USER_ROLE_SLUG } from "@/lib/admin/role-descriptions";
 import type { AdminUserPublic, AdminRoleSlug } from "@/lib/auth/types";
 
 interface Role {
@@ -58,8 +58,10 @@ export function UsersView() {
       setUsers(data.users ?? []);
       setRoles(data.roles ?? []);
       setTeamMembers(data.teamMembers ?? []);
-      if (!form.roleId && data.roles?.[0]) {
-        setForm((f) => ({ ...f, roleId: data.roles[0].id }));
+      if (!form.roleId && data.roles?.length) {
+        const defaultRole =
+          data.roles.find((r: Role) => r.slug === DEFAULT_NEW_USER_ROLE_SLUG) ?? data.roles[0];
+        setForm((f) => ({ ...f, roleId: defaultRole.id }));
       }
     } else {
       toast(data.error ?? ADMIN_MSG.loadFailed, "error");
@@ -72,7 +74,9 @@ export function UsersView() {
 
   const openCreate = () => {
     setEditingId(null);
-    setForm({ ...emptyForm(), roleId: roles[0]?.id ?? "" });
+    const defaultRole =
+      roles.find((r) => r.slug === DEFAULT_NEW_USER_ROLE_SLUG) ?? roles.find((r) => r.slug === "employee") ?? roles[0];
+    setForm({ ...emptyForm(), roleId: defaultRole?.id ?? "" });
     setShowForm(true);
   };
 
@@ -171,12 +175,17 @@ export function UsersView() {
             >
               <input className="admin-input" type="password" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
             </AdminFormField>
-            <AdminFormField label="Rolle" required>
+            <AdminFormField label="Rolle" required hint="Neue Benutzer erhalten standardmäßig die Rolle Admin — nie automatisch Super Admin.">
               <select className="admin-input" value={form.roleId} onChange={(e) => setForm({ ...form, roleId: e.target.value })}>
                 {roles.map((r) => (
                   <option key={r.id} value={r.id}>{r.label}</option>
                 ))}
               </select>
+              {form.roleId ? (
+                <p className="mt-2 text-xs text-text-muted">
+                  {ADMIN_ROLE_DESCRIPTIONS[roles.find((r) => r.id === form.roleId)?.slug as AdminRoleSlug] ?? ""}
+                </p>
+              ) : null}
             </AdminFormField>
             <AdminFormField label="Team-Verknüpfung" hint="Optional: öffentliches Teammitglied verknüpfen (kein Login).">
               <select

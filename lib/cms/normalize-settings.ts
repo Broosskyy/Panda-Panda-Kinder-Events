@@ -292,5 +292,9 @@ export function normalizeSiteSettings(bundle: Partial<SiteSettingsBundle> | null
       },
     },
     publicTeam,
+    modules: {
+      ...defaults.modules,
+      ...(base.modules ?? {}),
+    },
   };
 }

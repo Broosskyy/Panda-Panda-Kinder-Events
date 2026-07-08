@@ -9,16 +9,27 @@ export interface AdminPageMeta {
 
 export const ADMIN_PAGE_META = {
   dashboard: {
-    title: "Dashboard",
-    description: "Überblick über Website, Anfragen, Kunden und letzte Aktivitäten.",
+    title: "Übersicht",
+    description: "Deine Tageszentrale — sieh auf einen Blick, was heute zu tun ist.",
+    whereVisible: "Nur hier im Admin — Besucher sehen das Dashboard nicht.",
     help: [
-      "Sieh auf einen Blick, was Aufmerksamkeit braucht.",
-      "Springe per Schnellzugriff zu häufigen Aufgaben.",
-      "Prüfe Hinweise zu E-Mail und Analytics.",
+      "Prüfe neue Anfragen, Bewertungen und offene Angebote.",
+      "Nutze die Karten — ein Klick führt dich direkt zum richtigen Bereich.",
+      "Bei Fragen: Erste Schritte in der Navigation.",
+    ],
+  },
+  ersteSchritte: {
+    title: "Erste Schritte",
+    description: "Deine Einführung — die wichtigsten Aufgaben Schritt für Schritt.",
+    whereVisible: "Nur hier im Admin.",
+    help: [
+      "Lies die Kurzanleitungen zu Texten, Bildern und Anfragen.",
+      "Springe per Karte direkt zum passenden Bereich.",
+      "Grün = gespeichert, Gelb = wartet, Rot = Fehler.",
     ],
   },
   analytics: {
-    title: "Analytics",
+    title: "Besucherstatistik",
     description: "Besucherstatistiken — datenschutzfreundlich, ohne externe Tracking-Pflicht.",
     whereVisible: "Nur hier im Admin — Besucher sehen keine Analytics-Oberfläche.",
     help: [

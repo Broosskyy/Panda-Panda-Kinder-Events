@@ -26,6 +26,7 @@ import { fetchApprovedReviews } from "@/lib/cms/reviews";
 import { safeJsonLdStringify } from "@/lib/json-ld";
 import { breadcrumbJsonLd, getSeoDefaultImage, organizationJsonLd, serviceJsonLd } from "@/lib/seo";
 import { getSiteUrl } from "@/lib/site-url";
+import { filterPublicNavItems, isModuleEnabled } from "@/lib/cms/modules";
 import type { Metadata } from "next";
 
 export const dynamic = "force-dynamic";
@@ -58,6 +59,12 @@ export default async function HomePage() {
     fetchPublishedPosts(6),
     fetchApprovedReviews(),
   ]);
+
+  const modules = settings.modules;
+  const navigation = {
+    ...settings.navigation,
+    items: filterPublicNavItems(settings.navigation.items, modules),
+  };
 
   const rating =
     reviews.length > 0
@@ -118,31 +125,42 @@ export default async function HomePage() {
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: safeJsonLdStringify(jsonLd) }} />
       <SkipLink />
-      <Header navigation={settings.navigation} branding={settings.branding} />
+      <Header navigation={navigation} branding={settings.branding} />
       <main id="main-content" className="public-main">
         <Hero hero={settings.hero} trustBadges={settings.trustBadges} rating={rating} />
         <PublicStats stats={settings.publicStats} />
         <Usps usps={settings.usps} />
-        <Services items={services} heading={settings.sections.services} />
+        {isModuleEnabled(modules, "services") ? (
+          <Services items={services} heading={settings.sections.services} />
+        ) : null}
         <Process process={settings.process} heading={settings.sections.process} />
-        <Gallery images={galleryImages} contact={settings.contact} heading={settings.sections.gallery} />
-        <Testimonials
-          reviews={reviews}
-          totalReviewCount={reviews.length}
-          heading={settings.sections.testimonials}
-          privacyHint={settings.legal.reviewPrivacyHint}
+        {isModuleEnabled(modules, "gallery") ? (
+          <Gallery images={galleryImages} contact={settings.contact} heading={settings.sections.gallery} />
+        ) : null}
+        {isModuleEnabled(modules, "reviews") ? (
+          <Testimonials
+            reviews={reviews}
+            totalReviewCount={reviews.length}
+            heading={settings.sections.testimonials}
+            privacyHint={settings.legal.reviewPrivacyHint}
+          />
+        ) : null}
+        <About
+          about={settings.about}
+          team={isModuleEnabled(modules, "team") ? team : undefined}
+          heading={settings.sections.about}
         />
-        <About about={settings.about} team={team} heading={settings.sections.about} />
-        <News posts={posts} heading={settings.sections.news} />
-        <Faq items={faqs} heading={settings.sections.faq} />
+        {isModuleEnabled(modules, "blog") ? <News posts={posts} heading={settings.sections.news} /> : null}
+        {isModuleEnabled(modules, "faq") ? <Faq items={faqs} heading={settings.sections.faq} /> : null}
         <Contact contact={settings.contact} heading={settings.sections.contact} privacyHint={settings.legal.inquiryPrivacyHint} />
       </main>
       <Footer contact={settings.contact} footer={settings.footer} branding={settings.branding} />
       <PublicChrome
         contact={settings.contact}
-        ctaLabel={settings.navigation.ctaLabel}
+        ctaLabel={navigation.ctaLabel}
         cookieNoticeText={settings.legal.cookieNoticeText}
         footer={settings.footer}
+        modules={modules}
       />
     </>
   );

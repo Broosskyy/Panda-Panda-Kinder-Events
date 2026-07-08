@@ -5,7 +5,7 @@ import { sendTransactionalEmail } from "@/lib/email";
 import { renderEmailFromTemplate } from "@/lib/email/render";
 
 export async function POST(_request: Request, context: { params: Promise<{ id: string }> }) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const { id } = await context.params;

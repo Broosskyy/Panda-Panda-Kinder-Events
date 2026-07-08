@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { deleteEmailAlias, listEmailAliases, upsertEmailAlias } from "@/lib/email/aliases-db";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const aliases = await listEmailAliases();
@@ -11,7 +11,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -32,7 +32,7 @@ export async function POST(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const { searchParams } = new URL(request.url);

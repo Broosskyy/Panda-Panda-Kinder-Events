@@ -6,7 +6,7 @@ import { getBusinessProfile } from "@/lib/crm/company";
 import { generateCrmPdf, invoiceToPdfData } from "@/lib/crm/pdf";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("crm:read");
   if (authError) return authError;
 
   const { id } = await params;

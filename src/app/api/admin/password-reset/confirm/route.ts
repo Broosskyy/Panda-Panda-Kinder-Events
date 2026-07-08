@@ -6,6 +6,7 @@ import { getPasswordPolicy } from "@/lib/auth/security-settings";
 import { updateUser } from "@/lib/auth/users";
 import { revokeAllSessions } from "@/lib/auth/session";
 import { writeAuditLog } from "@/lib/auth/audit";
+import { getClientIp, rateLimit } from "@/lib/rate-limit";
 
 const schema = z.object({
   token: z.string().min(10),
@@ -13,6 +14,15 @@ const schema = z.object({
 });
 
 export async function POST(request: Request) {
+  const ip = getClientIp(request);
+  const limited = rateLimit(`pwd-reset-confirm:${ip}`, 10, 15 * 60 * 1000);
+  if (!limited.ok) {
+    return NextResponse.json(
+      { error: "Zu viele Versuche. Bitte später erneut versuchen." },
+      { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+    );
+  }
+
   const body = await request.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {

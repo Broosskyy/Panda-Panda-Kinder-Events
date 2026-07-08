@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { AdminCard } from "@/components/admin/AdminSidebar";
 import { AdminButton } from "@/components/admin/ui";
+import { CriticalActionModal } from "@/components/admin/CriticalActionModal";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 
 function parseWarningsHeader(value: string | null): string[] {
@@ -20,16 +21,37 @@ export function SystemBackupPanel() {
   const { withLoading, success, error } = useAdminMessages();
   const [lastWarnings, setLastWarnings] = useState<string[]>([]);
   const [downloading, setDownloading] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [isLegacy, setIsLegacy] = useState(false);
 
-  const downloadBackup = async () => {
+  useEffect(() => {
+    fetch("/api/admin/login")
+      .then((r) => r.json())
+      .then((data) => setIsLegacy(Boolean(data.isLegacy)))
+      .catch(() => undefined);
+  }, []);
+
+  const downloadBackup = async (confirmation?: { confirmPassword?: string; criticalAcknowledged?: boolean }) => {
     setDownloading(true);
     setLastWarnings([]);
     try {
       await withLoading(
         (async () => {
-          const res = await fetch("/api/admin/backup/export");
+          const params = new URLSearchParams();
+          if (confirmation?.confirmPassword) params.set("confirmPassword", confirmation.confirmPassword);
+          if (confirmation?.criticalAcknowledged) params.set("criticalAcknowledged", "true");
+
+          const res = await fetch(`/api/admin/backup/export?${params}`);
           if (!res.ok) {
-            const data = (await res.json().catch(() => ({}))) as { error?: string };
+            const data = (await res.json().catch(() => ({}))) as {
+              error?: string;
+              needsPassword?: boolean;
+              needsConfirmation?: boolean;
+            };
+            if (data.needsPassword || data.needsConfirmation) {
+              setConfirmOpen(true);
+              return;
+            }
             throw new Error(data.error ?? "Backup konnte nicht erstellt werden.");
           }
 
@@ -58,6 +80,7 @@ export function SystemBackupPanel() {
           } else {
             success("Backup wurde erstellt.");
           }
+          setConfirmOpen(false);
         })(),
       );
     } catch (err) {
@@ -69,37 +92,47 @@ export function SystemBackupPanel() {
   };
 
   return (
-    <AdminCard title="Daten sichern">
-      <p className="mb-4 text-sm text-text-muted">
-        Dieses Backup sichert wichtige Panda-Bande Daten wie Anfragen, Kunden, Bewertungen, Galerie, Blog, Angebote,
-        Rechnungen und E-Mail-Vorlagen. Es ersetzt kein vollständiges Datenbank-Backup, reicht aber als Sicherheitskopie
-        für den Alltag.
-      </p>
+    <>
+      <AdminCard title="Daten sichern">
+        <p className="mb-4 text-sm text-text-muted">
+          Dieses Backup sichert wichtige Panda-Bande Daten wie Anfragen, Kunden, Bewertungen, Galerie, Blog, Angebote,
+          Rechnungen und E-Mail-Vorlagen. Nur Super Admins können ein Backup erstellen. Die Aktion wird protokolliert.
+        </p>
 
-      <AdminButton
-        variant="primary"
-        icon={<Download className="h-4 w-4" />}
-        onClick={() => void downloadBackup()}
-        disabled={downloading}
-      >
-        Backup herunterladen
-      </AdminButton>
+        <AdminButton
+          variant="primary"
+          icon={<Download className="h-4 w-4" />}
+          onClick={() => void downloadBackup()}
+          disabled={downloading}
+        >
+          Backup herunterladen
+        </AdminButton>
 
-      {lastWarnings.length > 0 ? (
-        <div className="mt-4 rounded-xl border border-amber-400/50 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-          <p className="font-medium">Hinweise zum letzten Export:</p>
-          <ul className="mt-2 list-disc space-y-1 pl-5">
-            {lastWarnings.map((warning) => (
-              <li key={warning}>{warning}</li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
+        {lastWarnings.length > 0 ? (
+          <div className="mt-4 rounded-xl border border-amber-400/50 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+            <p className="font-medium">Hinweise zum letzten Export:</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {lastWarnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
-      <p className="mt-4 text-xs text-text-muted">
-        Enthalten: JSON- und CSV-Dateien pro Tabelle, plus backup-info.json mit Exportdatum und Datensatz-Zählern. Keine
-        Passwörter, API-Keys oder Session-Tokens.
-      </p>
-    </AdminCard>
+        <p className="mt-4 text-xs text-text-muted">
+          Enthalten: JSON- und CSV-Dateien pro Tabelle, plus backup-info.json mit Exportdatum und Datensatz-Zählern. Keine
+          Passwörter, API-Keys oder Session-Tokens.
+        </p>
+      </AdminCard>
+
+      <CriticalActionModal
+        open={confirmOpen}
+        title="Backup erstellen — Bestätigung nötig"
+        description="Ein Backup enthält sensible Geschäftsdaten. Bitte bestätigen Sie mit Ihrem Super-Admin-Passwort."
+        isLegacy={isLegacy}
+        onCancel={() => setConfirmOpen(false)}
+        onConfirm={async (confirmation) => downloadBackup(confirmation)}
+      />
+    </>
   );
 }

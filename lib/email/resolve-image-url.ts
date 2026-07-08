@@ -1,9 +1,19 @@
 import { resolveImageUrl } from "@/lib/cms/resolve-image";
 import {
+  canonicalizeEmailAssetUrl,
   getDefaultEmailLogoUrl,
   getEmailAssetBaseUrl,
   isUnsafeEmailAssetUrl,
 } from "@/lib/email/asset-url";
+
+/** Alt-Text für E-Mail-Logos (Barrierefreiheit in Mail-Clients) */
+export const EMAIL_LOGO_ALT = "Panda-Bande Kinderevents";
+
+/**
+ * E-Mail-Bilder nutzen ausschließlich https://www.pb-kinderevents.de —
+ * nicht NEXT_PUBLIC_SITE_URL (Vercel-Preview-Schutz).
+ * Logo-Fallback: https://www.pb-kinderevents.de/assets/Logo.png
+ */
 
 export {
   EMAIL_ASSET_BASE_DEFAULT,
@@ -22,6 +32,7 @@ function looksLikeSiteAssetsPath(value: string): boolean {
 
 function normalizeLogoPath(path: string): string {
   const trimmed = path.trim();
+  if (isAbsoluteHttpUrl(trimmed)) return trimmed;
   if (trimmed === "/logo.png" || trimmed === "logo.png" || trimmed === "/Logo.png") {
     return "/assets/Logo.png";
   }
@@ -35,10 +46,16 @@ function isLogoAssetPath(path: string): boolean {
   return /\/assets\/logo\.png$/i.test(path) || path === "/assets/Logo.png" || /^logo\.png$/i.test(path);
 }
 
+function finalizeAbsoluteUrl(url: string): string | null {
+  const canonical = canonicalizeEmailAssetUrl(url);
+  if (isUnsafeEmailAssetUrl(canonical)) return null;
+  return canonical;
+}
+
 /**
- * Wandelt CMS-/Branding-Bildpfade in öffentliche absolute URLs um.
- * Relative Logo-Pfade → EMAIL_ASSET_BASE_URL (www.pb-kinderevents.de).
- * Vercel-Preview-URLs werden verworfen und neu aufgelöst.
+ * Wandelt CMS-/Branding-Bildpfade in öffentliche absolute HTTPS-URLs um.
+ * Relative Logo-Pfade → https://www.pb-kinderevents.de/assets/Logo.png
+ * Vercel-Preview- und localhost-URLs werden verworfen und neu aufgelöst.
  */
 export function resolveEmailImageUrl(
   path: string | null | undefined,
@@ -58,7 +75,7 @@ export function resolveEmailImageUrl(
         return isLogoAssetPath(trimmed) ? getDefaultEmailLogoUrl() : null;
       }
     }
-    return trimmed;
+    return finalizeAbsoluteUrl(trimmed);
   }
 
   if (isLogoAssetPath(trimmed.startsWith("/") ? trimmed : `/${trimmed}`)) {
@@ -68,14 +85,16 @@ export function resolveEmailImageUrl(
   if (looksLikeSiteAssetsPath(trimmed)) {
     const storagePath = trimmed.replace(/^\//, "");
     const fromStorage = resolveImageUrl("site-assets", storagePath);
-    if (fromStorage && !isUnsafeEmailAssetUrl(fromStorage)) return fromStorage;
+    if (fromStorage) {
+      const safe = finalizeAbsoluteUrl(fromStorage);
+      if (safe) return safe;
+    }
   }
 
-  const base = (baseUrl ?? getEmailAssetBaseUrl()).replace(/\/$/, "");
+  const base = canonicalizeEmailAssetUrl((baseUrl ?? getEmailAssetBaseUrl()).replace(/\/$/, ""));
   const normalized = trimmed.startsWith("/") ? trimmed : `/${trimmed}`;
   const resolved = `${base}${normalized}`;
-  if (isUnsafeEmailAssetUrl(resolved)) return null;
-  return resolved;
+  return finalizeAbsoluteUrl(resolved);
 }
 
 function escapeHtml(value: string): string {
@@ -95,12 +114,12 @@ export function buildEmailLogoHeaderHtml(opts: {
   logoHeight?: number;
 }): string {
   const resolved = opts.logoUrl ? resolveEmailImageUrl(opts.logoUrl, opts.baseUrl) : null;
-  const absolute = resolved && !isUnsafeEmailAssetUrl(resolved) ? resolved : getDefaultEmailLogoUrl();
+  const absolute = resolved ?? getDefaultEmailLogoUrl();
   const companyName = opts.companyName?.trim() || "Panda-Bande Kinderevents";
   const width = opts.logoWidth ?? 140;
   const heightAttr = opts.logoHeight && opts.logoHeight > 0 ? ` height="${opts.logoHeight}"` : "";
 
-  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName)}" width="${width}"${heightAttr} style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto;" />`;
+  return `<img src="${escapeHtml(absolute)}" alt="${escapeHtml(companyName || EMAIL_LOGO_ALT)}" width="${width}"${heightAttr} style="display:block;border:0;outline:none;text-decoration:none;margin:0 auto;" />`;
 }
 
 export function buildEmailHeaderBlock(opts: {
@@ -157,7 +176,7 @@ export function buildEmailHeaderImageRow(
   baseUrl?: string,
 ): string {
   const absolute = resolveEmailImageUrl(headerImageUrl, baseUrl);
-  if (!absolute || isUnsafeEmailAssetUrl(absolute)) return "";
+  if (!absolute) return "";
 
   return `<tr><td style="padding:0;"><img src="${escapeHtml(absolute)}" alt="" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none;" /></td></tr>`;
 }

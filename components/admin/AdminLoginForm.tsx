@@ -6,6 +6,19 @@ import { Logo } from "@/components/ui/Logo";
 
 type LoginStep = "credentials" | "2fa";
 
+function friendlyLoginError(message: string): string {
+  const map: Record<string, string> = {
+    "Ungültiges Passwort.": "Das Passwort ist nicht korrekt. Bitte erneut versuchen.",
+    "Ungültige Anmeldedaten.": "Benutzername oder Passwort ist nicht korrekt.",
+    "Ungültiger 2FA-Code.": "Der Sicherheitscode ist nicht korrekt. Bitte erneut eingeben.",
+    "2FA-Sitzung abgelaufen. Bitte erneut anmelden.": "Die Anmeldung ist abgelaufen. Bitte von vorne starten.",
+    "Zu viele Loginversuche. Bitte später erneut versuchen.":
+      "Zu viele Versuche. Bitte einige Minuten warten und es dann erneut versuchen.",
+    "Admin ist nicht konfiguriert.": "Der Zugang ist noch nicht eingerichtet. Bitte den technischen Ansprechpartner kontaktieren.",
+  };
+  return map[message] ?? message ?? "Anmeldung fehlgeschlagen. Bitte Zugangsdaten prüfen.";
+}
+
 export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
@@ -40,7 +53,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
     } else if (res.ok) {
       onSuccess();
     } else {
-      setError(data.error ?? "Anmeldung fehlgeschlagen.");
+      setError(friendlyLoginError(data.error ?? "Anmeldung fehlgeschlagen."));
     }
     setLoading(false);
   };
@@ -67,7 +80,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
     if (res.ok) {
       onSuccess();
     } else {
-      setError(data.error ?? "2FA fehlgeschlagen.");
+      setError(friendlyLoginError(data.error ?? "Der Sicherheitscode ist nicht korrekt."));
     }
     setLoading(false);
   };
@@ -87,7 +100,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
     if (res.ok) setResetSent(true);
     else {
       const data = await res.json();
-      setError(data.error ?? "Anfrage fehlgeschlagen.");
+      setError(data.error ?? "Die Anfrage konnte nicht gesendet werden. Bitte später erneut versuchen.");
     }
     setLoading(false);
   };
@@ -100,9 +113,9 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
       >
         <div className="text-center">
           <Logo context="login" linked={false} className="mx-auto justify-center" />
-          <h1 className="font-heading mt-5 text-2xl font-bold text-text-primary">Panda-Bande CMS</h1>
+          <h1 className="font-heading mt-5 text-2xl font-bold text-text-primary">Panda-Bande Verwaltung</h1>
           <p className="mt-2 text-sm text-text-muted">
-            {step === "credentials" ? "Admin-Anmeldung" : "Zwei-Faktor-Authentifizierung"}
+            {step === "credentials" ? "Melde dich mit deinem Zugang an." : "Gib deinen Sicherheitscode ein."}
           </p>
         </div>
 
@@ -149,7 +162,9 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
               Passwort vergessen?
             </button>
             {resetSent ? (
-              <p className="text-sm text-primary">Falls ein Konto existiert, wurde eine E-Mail versendet.</p>
+              <p className="rounded-lg bg-[#4a7c59]/10 px-3 py-2 text-sm text-[#4a7c59]">
+                ✓ Falls ein Konto existiert, wurde eine E-Mail zum Zurücksetzen gesendet.
+              </p>
             ) : null}
           </>
         ) : (
@@ -157,7 +172,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
             {!useBackup ? (
               <div>
                 <label htmlFor="totp-code" className="mb-2 block text-sm font-medium">
-                  Authenticator-Code
+                  Sicherheitscode (6 Ziffern)
                 </label>
                 <input
                   id="totp-code"
@@ -213,7 +228,7 @@ export function AdminLoginForm({ onSuccess }: { onSuccess: () => void }) {
           {loading ? "Anmelden..." : step === "credentials" ? "Anmelden" : "Bestätigen"}
         </button>
         <p className="text-center text-xs text-text-muted">
-          Legacy-Modus: nur Passwort, wenn noch kein Benutzer angelegt ist.
+          Probleme beim Anmelden? Nutze „Passwort vergessen?“ oder wende dich an deinen Ansprechpartner.
         </p>
       </form>
     </div>

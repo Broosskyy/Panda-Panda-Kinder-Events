@@ -10,7 +10,7 @@ import { verifyPassword } from "@/lib/auth/password";
 import { countAdminUsers, findUserByIdentifier, updateUser } from "@/lib/auth/users";
 import { getLoginPolicy, getRateLimitPolicy } from "@/lib/auth/security-settings";
 import { recordLoginHistory } from "@/lib/auth/login-history";
-import { writeAuditLog } from "@/lib/auth/audit";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 import {
   createSession,
   PENDING_2FA_COOKIE,
@@ -22,6 +22,7 @@ import { verifyTotpCode, verifyBackupCode } from "@/lib/auth/totp";
 import { getClientIp, rateLimit } from "@/lib/rate-limit";
 import { sha256, randomToken } from "@/lib/auth/crypto";
 import { resolveAdminContext } from "@/lib/auth/context";
+import { fetchSiteSettings } from "@/lib/cms/data";
 
 function passwordsMatch(input: string, expected: string): boolean {
   const a = Buffer.from(input);
@@ -146,6 +147,12 @@ export async function POST(request: Request) {
     const legacyPassword = password ?? identifier;
     const token = await legacyLogin(legacyPassword ?? "");
     if (!token) {
+      await writeAuditLogFromRequest(null, request, {
+        action: "login_failed",
+        area: "auth",
+        success: false,
+        errorMessage: "legacy_invalid_password",
+      });
       await recordLoginHistory({
         identifier: "legacy",
         success: false,
@@ -178,6 +185,12 @@ export async function POST(request: Request) {
 
   const user = await findUserByIdentifier(identifier);
   if (!user || !user.active) {
+    await writeAuditLogFromRequest(null, request, {
+      action: "login_failed",
+      area: "auth",
+      success: false,
+      errorMessage: "invalid_credentials",
+    });
     await recordLoginHistory({
       identifier,
       success: false,
@@ -203,6 +216,14 @@ export async function POST(request: Request) {
     await updateUser(user.id, {
       failedLoginAttempts: attempts,
       lockedUntil,
+    });
+
+    await writeAuditLogFromRequest(null, request, {
+      action: "login_failed",
+      area: "auth",
+      entityId: user.id,
+      success: false,
+      errorMessage: "invalid_password",
     });
 
     await recordLoginHistory({
@@ -256,6 +277,19 @@ export async function POST(request: Request) {
     userAgent: request.headers.get("user-agent"),
   });
 
+  await writeAuditLogFromRequest(
+    {
+      userId: user.id,
+      displayName: user.display_name,
+      roleSlug: "readonly",
+      permissions: [],
+      sessionId: null,
+      isLegacy: false,
+    },
+    request,
+    { action: "login", area: "auth", entityId: user.id },
+  );
+
   const response = NextResponse.json({
     success: true,
     user: { displayName: user.display_name },
@@ -264,12 +298,12 @@ export async function POST(request: Request) {
   return response;
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   const ctx = await resolveAdminContext();
   if (ctx?.userId && ctx.sessionId) {
     const { revokeSession } = await import("@/lib/auth/session");
     await revokeSession(ctx.sessionId, ctx.userId);
-    await writeAuditLog(ctx, { action: "logout", area: "auth" });
+    await writeAuditLogFromRequest(ctx, request, { action: "logout", area: "auth" });
   }
 
   const response = NextResponse.json({ success: true });
@@ -284,11 +318,14 @@ export async function GET() {
   if (!ctx) {
     return NextResponse.json({ authenticated: false });
   }
+  const settings = await fetchSiteSettings().catch(() => null);
   return NextResponse.json({
     authenticated: true,
     displayName: ctx.displayName,
     roleSlug: ctx.roleSlug,
     isLegacy: ctx.isLegacy,
     permissions: ctx.permissions,
+    modules: settings?.modules ?? null,
+    isSuperAdmin: ctx.isLegacy || ctx.roleSlug === "administrator",
   });
 }

@@ -16,14 +16,19 @@ const ALL_PERMISSIONS = [
   "inquiries:write",
   "quotes:write",
   "invoices:write",
+  "invoices:delete",
   "users:read",
   "users:write",
   "settings:write",
+  "settings:system",
   "security:read",
   "security:write",
   "audit:read",
+  "audit:export",
   "team:write",
   "email:write",
+  "modules:write",
+  "backup:write",
 ] as const;
 
 export async function getPermissionsForRole(roleId: string): Promise<string[]> {

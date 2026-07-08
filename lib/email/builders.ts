@@ -99,7 +99,7 @@ export function buildInquiryAdminEmail(
         ...(data.message ? [{ label: "Nachricht", value: data.message }] : []),
       ],
     )}
-    ${buildEmailButton(adminUrl, "Anfrage im Admin öffnen", primary)}
+    ${buildEmailButton(adminUrl, "Anfrage im Dashboard öffnen", primary)}
     <p style="margin:0;font-size:13px;color:${SYSTEM_EMAIL_DEFAULTS.textMuted};">Antworten direkt an <a href="mailto:${escapeHtml(data.email)}" style="color:${primary};">${escapeHtml(data.email)}</a></p>`;
 
   const text = [
@@ -153,7 +153,7 @@ export function buildReviewAdminEmail(
       ],
     )}
     <blockquote style="margin:0 0 20px;padding:16px 18px;border-left:4px solid ${primary};background:${SYSTEM_EMAIL_DEFAULTS.accent};border-radius:0 16px 16px 0;font-size:15px;line-height:1.7;color:${SYSTEM_EMAIL_DEFAULTS.text};">&ldquo;${escapeHtml(data.text)}&rdquo;</blockquote>
-    ${buildEmailButton(adminUrl, "Bewertung im Admin prüfen", primary)}`;
+    ${buildEmailButton(adminUrl, "Bewertung im Dashboard prüfen", primary)}`;
 
   const text = [
     "Neue Bewertung wartet auf Prüfung",

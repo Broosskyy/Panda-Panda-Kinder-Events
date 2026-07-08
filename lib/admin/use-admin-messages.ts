@@ -51,9 +51,14 @@ export function useAdminMessages() {
 
   const customerSaved = useCallback(() => toast(ADMIN_MSG.customerSaved), [toast]);
   const imageUploaded = useCallback(() => toast(ADMIN_MSG.imageUploaded), [toast]);
+  const imageDeleted = useCallback(() => toast(ADMIN_MSG.imageDeleted), [toast]);
   const gallerySaved = useCallback(() => toast(ADMIN_MSG.gallerySaved), [toast]);
   const reviewSaved = useCallback(() => toast(ADMIN_MSG.reviewSaved), [toast]);
   const reviewPublished = useCallback(() => toast(ADMIN_MSG.reviewPublished), [toast]);
+  const reviewDeleted = useCallback(() => toast(ADMIN_MSG.reviewDeleted), [toast]);
+  const reviewRequestSent = useCallback(() => toast(ADMIN_MSG.reviewRequestSent), [toast]);
+  const teamVisible = useCallback(() => toast(ADMIN_MSG.teamVisible), [toast]);
+  const teamHidden = useCallback(() => toast(ADMIN_MSG.teamHidden), [toast]);
   const postCreated = useCallback(() => toast(ADMIN_MSG.postCreated), [toast]);
   const postUpdated = useCallback(() => toast(ADMIN_MSG.postUpdated), [toast]);
   const emailSent = useCallback(() => toast(ADMIN_MSG.emailSent), [toast]);
@@ -87,9 +92,14 @@ export function useAdminMessages() {
     invoiceCancelled,
     customerSaved,
     imageUploaded,
+    imageDeleted,
     gallerySaved,
     reviewSaved,
     reviewPublished,
+    reviewDeleted,
+    reviewRequestSent,
+    teamVisible,
+    teamHidden,
     postCreated,
     postUpdated,
     emailSent,

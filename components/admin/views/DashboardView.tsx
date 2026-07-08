@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   BarChart3,
+  BookOpen,
   FileText,
   Image,
   Inbox,
@@ -15,6 +16,7 @@ import {
 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminEmptyState } from "@/components/admin/ui";
+import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import { useAdminNotificationsContext } from "@/components/admin/AdminNotificationsProvider";
 import type { AdminActivityItem } from "@/lib/admin/activity";
 import { DASHBOARD_QUICK_ACTIONS } from "@/lib/admin/quickActions";
@@ -124,10 +126,24 @@ export function DashboardView() {
   return (
     <div className="space-y-8">
       <AdminPageHeader
-        title={`${greeting}!`}
-        description="Willkommen im Panda-Bande Admin — hier verwaltest du Website, Anfragen und CRM an einem Ort."
+        title={`${greeting}, Samira!`}
+        description="Hier siehst du auf einen Blick, was heute zu tun ist — Website, Anfragen und Rechnungen an einem Ort."
+        whereVisible={dashboardHelp.whereVisible}
         helpItems={dashboardHelp.helpItems}
       />
+
+      <Link
+        href="/admin/erste-schritte"
+        className="admin-card flex items-center gap-4 border-primary/20 bg-primary/5 transition-colors hover:border-primary/40"
+      >
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-primary/15">
+          <BookOpen className="h-6 w-6 text-primary" aria-hidden />
+        </div>
+        <div>
+          <p className="font-semibold text-text-primary">Erste Schritte — Anleitung für den Einstieg</p>
+          <p className="text-sm text-text-secondary">Texte, Bilder, Anfragen, Angebote und Rechnungen Schritt für Schritt erklärt.</p>
+        </div>
+      </Link>
 
       {error ? (
         <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
@@ -154,8 +170,59 @@ export function DashboardView() {
       ) : null}
 
       {loading ? (
-        <p className="text-sm text-text-muted">Dashboard wird geladen…</p>
+        <p className="text-sm text-text-muted">Übersicht wird geladen…</p>
       ) : null}
+
+      <section className="admin-dashboard-section">
+        <h2 className="admin-dashboard-section-title">Heute zu tun</h2>
+        <div className="admin-stat-grid">
+          <StatCard
+            label="Neue Anfragen"
+            value={period.bookingsToday}
+            href="/admin/anfragen"
+            icon={Inbox}
+            sublabel={badgeCounts.bookings > 0 ? `${badgeCounts.bookings} unbearbeitet` : "Alles erledigt"}
+            highlight={badgeCounts.bookings > 0}
+          />
+          <StatCard
+            label="Bewertungen prüfen"
+            value={period.reviewsPending}
+            href="/admin/bewertungen"
+            icon={Star}
+            sublabel={badgeCounts.reviews > 0 ? "Wartet auf Freigabe" : "Keine offenen"}
+            highlight={badgeCounts.reviews > 0}
+          />
+          <StatCard
+            label="Offene Angebote"
+            value={stats?.crm.openQuotesCount ?? "—"}
+            href="/admin/angebote"
+            icon={FileText}
+            sublabel="CRM"
+          />
+          <StatCard
+            label="Offene Rechnungen"
+            value={stats?.crm.openInvoicesCount ?? "—"}
+            href="/admin/rechnungen"
+            icon={FileText}
+            sublabel="CRM"
+          />
+          <StatCard
+            label="E-Mail-Status"
+            value={emailTestSucceeded ? "Funktioniert" : "Prüfen"}
+            href="/admin/einstellungen?tab=email"
+            icon={Mail}
+            sublabel={emailTestSucceeded ? "Testmail erfolgreich" : "Testmail empfohlen"}
+            highlight={!emailTestSucceeded}
+          />
+          <StatCard
+            label="Website"
+            value="Online"
+            href="/"
+            icon={Image}
+            sublabel="Öffentliche Seite öffnen"
+          />
+        </div>
+      </section>
 
       <section className="admin-dashboard-section">
         <h2 className="admin-dashboard-section-title">Schnellaktionen</h2>
@@ -173,7 +240,7 @@ export function DashboardView() {
       </section>
 
       <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">Vorgänge</h2>
+        <h2 className="admin-dashboard-section-title">Letzte Zahlen</h2>
         <div className="admin-stat-grid">
           <StatCard
             label="Neue Anfragen"
@@ -270,7 +337,7 @@ export function DashboardView() {
       </section>
 
       <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">CRM</h2>
+        <h2 className="admin-dashboard-section-title">Kunden & Dokumente</h2>
         <div className="admin-stat-grid">
           <StatCard label="Kunden" value={stats?.crm.customersCount ?? "—"} href="/admin/kunden" icon={Users} />
           <StatCard label="Offene Angebote" value={stats?.crm.openQuotesCount ?? "—"} href="/admin/angebote" icon={FileText} />
@@ -278,26 +345,16 @@ export function DashboardView() {
         </div>
       </section>
 
-      <section className="admin-dashboard-section">
-        <h2 className="admin-dashboard-section-title">Website</h2>
-        <div className="admin-stat-grid">
-          <StatCard label="Neue Anfragen" value={stats?.bookings.new ?? "—"} href="/admin/anfragen" icon={Inbox} highlight={(stats?.bookings.new ?? 0) > 0} />
-          <StatCard label="Offene Bewertungen" value={stats?.reviews.pending ?? "—"} href="/admin/bewertungen" icon={Star} highlight={(stats?.reviews.pending ?? 0) > 0} />
-          <StatCard label="Beiträge" value={stats?.postsCount ?? "—"} href="/admin/beitraege" icon={Newspaper} />
-          <StatCard label="Galerie-Bilder" value={stats?.galleryCount ?? "—"} href="/admin/galerie" icon={Image} />
-        </div>
-      </section>
-
       {stats && !stats.trackingEnabled ? (
-        <p className="rounded-xl border border-border bg-bg-secondary px-4 py-3 text-sm text-text-secondary">
-          <strong>Statistik noch nicht eingerichtet.</strong> Supabase ist nicht konfiguriert.
-        </p>
+        <AdminHelpBlock title="Besucherstatistik" variant="info">
+          Die Besucherzahlen sind noch nicht aktiv — das beeinträchtigt Website und Anfragen nicht.
+        </AdminHelpBlock>
       ) : null}
 
       {stats?.trackingEnabled && stats.trackingTableReady === false ? (
-        <p className="rounded-xl border border-accent-heart/30 bg-accent-heart/10 px-4 py-3 text-sm text-accent-heart">
-          <strong>Statistik noch nicht eingerichtet – page_views Migration ausführen.</strong>
-        </p>
+        <AdminHelpBlock title="Besucherstatistik" variant="warning">
+          Die Statistik wird gerade eingerichtet. Du kannst alle anderen Bereiche normal nutzen.
+        </AdminHelpBlock>
       ) : null}
 
       <section className="grid gap-6 lg:grid-cols-2">
@@ -337,7 +394,7 @@ export function DashboardView() {
               { href: "/admin/kunden", label: "Kunden & CRM" },
               { href: "/admin/angebote", label: "Angebote" },
               { href: "/admin/inhalte", label: "Website-Inhalte" },
-              { href: "/admin/analytics", label: "Analytics" },
+              { href: "/admin/analytics", label: "Besucherstatistik" },
             ].map((link) => (
               <Link
                 key={link.href}

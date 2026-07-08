@@ -49,7 +49,7 @@ function pickPostFields(body: Record<string, unknown>) {
 }
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("website:read");
   if (authError) return authError;
 
   const supabase = getSupabaseAdmin();
@@ -69,7 +69,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("posts:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -92,7 +92,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("posts:write");
   if (authError) return authError;
 
   const { id, slug: rawSlug, ...rawUpdates } = await request.json();
@@ -127,7 +127,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("posts:write");
   if (authError) return authError;
 
   const { id } = await request.json();

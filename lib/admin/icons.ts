@@ -1,6 +1,7 @@
 import type { LucideIcon } from "lucide-react";
 import {
   BarChart3,
+  BookOpen,
   Cpu,
   FileText,
   HelpCircle,
@@ -24,6 +25,7 @@ import {
 
 export const ADMIN_ICON_MAP: Record<string, LucideIcon> = {
   Home,
+  BookOpen,
   BarChart3,
   Users,
   FileText,

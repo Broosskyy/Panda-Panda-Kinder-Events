@@ -212,6 +212,7 @@ function buildSettingsFromRows(
     seo: cmsSection("seo", DEFAULT_SITE_SETTINGS.seo, byKey.get("seo"), byKey.has("seo")),
     legal: cmsSection("legal", DEFAULT_SITE_SETTINGS.legal, byKey.get("legal"), byKey.has("legal")),
     publicTeam: mergePublicTeamSettings(byKey.get("publicTeam"), byKey.has("publicTeam")),
+    modules: cmsSection("modules", DEFAULT_SITE_SETTINGS.modules, byKey.get("modules"), byKey.has("modules")),
   };
   } catch (err) {
     console.error("buildSettingsFromRows:", err);

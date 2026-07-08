@@ -16,7 +16,7 @@ function normalizeCustomerFields(data: Record<string, unknown>): Record<string, 
 }
 
 export async function GET(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("crm:read");
   if (authError) return authError;
 
   const { searchParams } = new URL(request.url);
@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("customers:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("customers:write");
   if (authError) return authError;
 
   const body = await request.json();
@@ -95,7 +95,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("customers:write");
   if (authError) return authError;
 
   const { id } = await request.json();

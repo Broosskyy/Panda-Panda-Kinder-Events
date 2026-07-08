@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import { AdminButton, AdminEmptyState } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
@@ -25,7 +26,7 @@ interface GalleryItem {
 export function GalleryView() {
   const [images, setImages] = useState<GalleryItem[]>([]);
   const fileRef = useRef<HTMLInputElement>(null);
-  const { toast, withLoading, gallerySaved, imageUploaded, uploading, saveFailed } = useAdminMessages();
+  const { toast, withLoading, gallerySaved, imageUploaded, imageDeleted, uploading, saveFailed } = useAdminMessages();
   const page = adminPageHeaderProps("galerie");
   const empty = ADMIN_EMPTY_STATES.gallery;
 
@@ -91,7 +92,7 @@ export function GalleryView() {
       body: JSON.stringify({ id }),
     });
     if (res.ok) {
-      toast("✓ Bild gelöscht.");
+      imageDeleted();
       load();
     } else toast("❌ Löschen fehlgeschlagen.", "error");
   };
@@ -114,6 +115,10 @@ export function GalleryView() {
           }}
         />
       </AdminPageHeader>
+
+      <AdminHelpBlock title="Tipp" variant="tip" className="mb-6">
+        Lade hier Bilder hoch, die öffentlich in der Galerie auf der Website erscheinen. Ausgeblendete Bilder sind nur intern sichtbar.
+      </AdminHelpBlock>
 
       {images.length === 0 ? (
         <AdminEmptyState

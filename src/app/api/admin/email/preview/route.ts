@@ -4,7 +4,7 @@ import { renderGlobalEmail } from "@/lib/email/global-renderer";
 import type { EmailTemplateLayout } from "@/lib/cms/types";
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const body = await request.json();

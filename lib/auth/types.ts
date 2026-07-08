@@ -100,6 +100,18 @@ export interface AuditLogInput {
   after?: unknown;
   success?: boolean;
   errorMessage?: string;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+}
+
+export interface AuditLogFilters {
+  limit?: number;
+  area?: string;
+  action?: string;
+  userId?: string;
+  search?: string;
+  from?: string;
+  to?: string;
 }
 
 export interface TeamSocialLinks {

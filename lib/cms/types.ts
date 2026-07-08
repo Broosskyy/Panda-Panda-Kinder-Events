@@ -523,6 +523,24 @@ export interface TeamMember {
   updated_at: string;
 }
 
+export interface SiteModulesSettings {
+  blog: boolean;
+  gallery: boolean;
+  reviews: boolean;
+  team: boolean;
+  faq: boolean;
+  services: boolean;
+  quotes: boolean;
+  invoices: boolean;
+  crm: boolean;
+  email: boolean;
+  backup: boolean;
+  analytics: boolean;
+  pwa: boolean;
+  whatsapp: boolean;
+  stickyCta: boolean;
+}
+
 export interface SiteSettingsBundle {
   hero: SiteHeroSettings;
   contact: SiteContactSettings;
@@ -542,6 +560,7 @@ export interface SiteSettingsBundle {
   invoice: SiteInvoiceSettings;
   seo: SiteSeoSettings;
   legal: SiteLegalSettings;
+  modules: SiteModulesSettings;
 }
 
 export interface CmsService {

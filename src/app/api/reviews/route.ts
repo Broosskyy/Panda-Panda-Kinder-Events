@@ -132,8 +132,17 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const ip = getClientIp(request);
+    const limited = rateLimit(`reviews-get:${ip}`, 120, 60 * 1000);
+    if (!limited.ok) {
+      return NextResponse.json(
+        { reviews: [], error: "Zu viele Anfragen. Bitte kurz warten." },
+        { status: 429, headers: { "Retry-After": String(limited.retryAfterSec) } },
+      );
+    }
+
     if (!isSupabaseConfigured()) {
       return NextResponse.json({ reviews: [] });
     }

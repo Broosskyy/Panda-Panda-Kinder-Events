@@ -8,7 +8,7 @@ import { CMS_SAVE_SUCCESS_MESSAGE } from "@/lib/cms/messages";
 import { revalidatePublicCms } from "@/lib/cms/revalidate";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("website:read");
   if (authError) return authError;
 
   const supabase = getSupabaseAdmin();
@@ -35,7 +35,7 @@ export async function GET() {
 }
 
 export async function PATCH(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("reviews:write");
   if (authError) return authError;
 
   const { id, approved, admin_reply, verified, profile_image_url, event_image_url, name, text, rating, event_type, sort_order } =
@@ -79,7 +79,7 @@ export async function PATCH(request: Request) {
 }
 
 export async function DELETE(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("reviews:write");
   if (authError) return authError;
 
   const { id } = await request.json();

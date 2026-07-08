@@ -61,7 +61,7 @@ Vollständige Code-Analyse, statische Prüfung, Build-Verifikation und gezielte 
 | ID | Fix |
 |----|-----|
 | B-01 | `src/app/api/admin/login/route.ts` — Cookie-Hash wird vor 2FA-Verifikation geprüft |
-| B-02 | `supabase/migrations/20260725_zero_trust_rls_hardening.sql` — Deny-Policies für `anon`/`authenticated` |
+| B-02 | `supabase/migrations/20260725_zero_trust_rls_hardening.sql` — Deny-Policies für `anon`/`authenticated` (idempotent, prüft `information_schema`, korrekter Tabellenname `admin_audit_logs`) |
 | B-03 | `lib/email.ts` — Standard-Link `/bewertungen` |
 | B-04 | `lib/email.ts` — `normalizeProductionEmail()` für Inquiry-Kopie |
 | B-05 | `src/app/api/admin/email/compose/route.ts` — `sendEmailWithRetry` + Logging |

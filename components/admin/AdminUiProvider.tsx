@@ -3,7 +3,7 @@
 import { createContext, useCallback, useContext, useState, type ReactNode } from "react";
 import { ADMIN_MSG } from "@/lib/admin/messages";
 
-type ToastType = "success" | "error" | "info";
+type ToastType = "success" | "error" | "info" | "warning";
 
 interface Toast {
   id: number;
@@ -46,12 +46,15 @@ export function AdminUiProvider({ children }: { children: ReactNode }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`rounded-xl px-5 py-3 text-sm font-medium shadow-lg ${
+            role="status"
+            className={`admin-toast admin-toast-${t.type} rounded-xl px-5 py-3 text-sm font-medium shadow-lg ${
               t.type === "error"
                 ? "bg-accent-heart text-white"
-                : t.type === "info"
-                  ? "bg-primary text-white"
-                  : "bg-bg-card text-text-primary border border-border"
+                : t.type === "warning"
+                  ? "bg-amber-500 text-white"
+                  : t.type === "info"
+                    ? "bg-primary text-white"
+                    : "bg-[#4a7c59] text-white"
             }`}
           >
             {t.message}

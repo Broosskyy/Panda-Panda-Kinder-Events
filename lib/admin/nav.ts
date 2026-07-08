@@ -15,8 +15,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     id: "overview",
     items: [
-      { href: "/admin", label: "Dashboard", iconKey: "Home" },
-      { href: "/admin/analytics", label: "Analytics", iconKey: "BarChart3" },
+      { href: "/admin", label: "Übersicht", iconKey: "Home" },
+      { href: "/admin/erste-schritte", label: "Erste Schritte", iconKey: "BookOpen" },
+      { href: "/admin/analytics", label: "Besucherstatistik", iconKey: "BarChart3" },
     ],
   },
   {
@@ -54,9 +55,9 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
     label: "Sicherheit",
     items: [
       { href: "/admin/sicherheit/benutzer", label: "Benutzer & Rollen", iconKey: "Users" },
-      { href: "/admin/sicherheit/2fa", label: "2FA", iconKey: "Shield" },
+      { href: "/admin/sicherheit/2fa", label: "Zwei-Faktor-Schutz", iconKey: "Shield" },
       { href: "/admin/sicherheit/sitzungen", label: "Sitzungen", iconKey: "Monitor" },
-      { href: "/admin/sicherheit/login-historie", label: "Login-Historie", iconKey: "History" },
+      { href: "/admin/sicherheit/login-historie", label: "Anmelde-Verlauf", iconKey: "History" },
       { href: "/admin/sicherheit/audit", label: "Aktivitätsprotokoll", iconKey: "ScrollText" },
     ],
   },
@@ -67,6 +68,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
       { href: "/admin/einstellungen", label: "Unternehmensdaten", iconKey: "Settings" },
       { href: "/admin/einstellungen?tab=branding", label: "Branding", iconKey: "Image" },
       { href: "/admin/einstellungen?tab=email", label: "E-Mail", iconKey: "Mail" },
+      { href: "/admin/einstellungen?tab=modules", label: "Module", iconKey: "Layout" },
       { href: "/admin/einstellungen?tab=system", label: "System", iconKey: "Cpu" },
     ],
   },

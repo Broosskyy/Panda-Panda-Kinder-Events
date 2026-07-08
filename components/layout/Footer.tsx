@@ -28,6 +28,12 @@ export function Footer({
   branding = DEFAULT_SITE_SETTINGS.branding,
 }: FooterProps) {
   const mapsHref = contact.mapsUrl?.trim() || `https://maps.google.com/?q=${encodeURIComponent(contact.location)}`;
+  const phone = contact.phone?.trim() ?? "";
+  const email = contact.email?.trim() ?? "";
+  const whatsapp = contact.whatsapp?.trim() ?? "";
+  const instagram = contact.instagram?.trim() ?? "";
+  const instagramHandle = contact.instagramHandle?.trim() ?? "";
+  const location = contact.location?.trim() ?? "";
 
   return (
     <footer className="footer-premium text-text-inverse">
@@ -54,27 +60,32 @@ export function Footer({
           <div className="text-center md:text-left">
             <p className="mb-6 text-xs font-semibold uppercase tracking-[0.2em] text-white/60">Kontakt</p>
             <ul className="space-y-4 text-base">
+              {phone ? (
               <li>
                 <a
-                  href={`tel:${contact.phone.replace(/\s/g, "")}`}
+                  href={`tel:${phone.replace(/\s/g, "")}`}
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
                 >
                   <Phone className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                  {contact.phone}
+                  {phone}
                 </a>
               </li>
+              ) : null}
+              {email ? (
               <li>
                 <a
-                  href={`mailto:${contact.email}`}
+                  href={`mailto:${email}`}
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
                 >
                   <Mail className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                  {contact.email}
+                  {email}
                 </a>
               </li>
+              ) : null}
+              {whatsapp ? (
               <li>
                 <a
-                  href={`https://wa.me/${contact.whatsapp}`}
+                  href={`https://wa.me/${whatsapp}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
@@ -83,17 +94,20 @@ export function Footer({
                   WhatsApp
                 </a>
               </li>
+              ) : null}
+              {instagram ? (
               <li>
                 <a
-                  href={contact.instagram}
+                  href={instagram}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
                 >
                   <Instagram className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                  {contact.instagramHandle}
+                  {instagramHandle || "Instagram"}
                 </a>
               </li>
+              ) : null}
               {contact.facebook ? (
                 <li>
                   <a
@@ -106,6 +120,7 @@ export function Footer({
                   </a>
                 </li>
               ) : null}
+              {location ? (
               <li>
                 <a
                   href={mapsHref}
@@ -114,9 +129,10 @@ export function Footer({
                   className="inline-flex items-center gap-3 transition-opacity duration-300 hover:opacity-85"
                 >
                   <MapPin className="h-5 w-5" strokeWidth={ICON_STROKE} />
-                  {contact.location}
+                  {location}
                 </a>
               </li>
+              ) : null}
             </ul>
           </div>
 

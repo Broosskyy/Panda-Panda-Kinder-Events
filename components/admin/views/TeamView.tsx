@@ -32,7 +32,7 @@ export function TeamView() {
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState(emptyForm);
-  const { toast, withLoading, saved, fromApi } = useAdminMessages();
+  const { toast, withLoading, saved, fromApi, teamVisible, teamHidden } = useAdminMessages();
   const page = adminPageHeaderProps("team");
   const empty = ADMIN_EMPTY_STATES.team;
 
@@ -123,7 +123,8 @@ export function TeamView() {
     });
     const data = await res.json();
     if (!res.ok) return fromApi(data, "Status konnte nicht geändert werden.");
-    toast(member.active ? "Auf Website ausgeblendet" : "Auf Website sichtbar");
+    if (member.active) teamHidden();
+    else teamVisible();
     await load();
   };
 

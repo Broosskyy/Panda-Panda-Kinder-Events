@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/admin-route";
 import { fetchAdminRecentActivity } from "@/lib/admin/activity";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("dashboard:read");
   if (authError) return authError;
 
   try {

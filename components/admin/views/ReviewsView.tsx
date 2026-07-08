@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ChevronDown, ChevronUp, Mail, Star } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
+import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import {
   AdminButton,
   AdminEmptyState,
@@ -54,7 +55,7 @@ export function ReviewsView() {
   const [requestEmail, setRequestEmail] = useState("");
   const [requestName, setRequestName] = useState("");
   const [requestEventType, setRequestEventType] = useState("");
-  const { toast, withLoading, reviewPublished, reviewSaved, error: showError } = useAdminMessages();
+  const { toast, withLoading, reviewPublished, reviewSaved, reviewDeleted, reviewRequestSent, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("bewertungen");
   const empty = ADMIN_EMPTY_STATES.reviews;
 
@@ -145,7 +146,7 @@ export function ReviewsView() {
     });
     const data = await res.json();
     if (res.ok) {
-      toast("Bewertung gelöscht.");
+      reviewDeleted();
       load();
     } else {
       showError("Bewertung konnte nicht gelöscht werden.", data.error, "Bitte erneut versuchen.");
@@ -234,7 +235,7 @@ export function ReviewsView() {
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error ?? "Versand fehlgeschlagen");
-        toast(data.message ?? "Bewertungsanfrage gesendet.");
+        reviewRequestSent();
         setRequestEmail("");
         setRequestName("");
         setRequestEventType("");
@@ -245,6 +246,10 @@ export function ReviewsView() {
   return (
     <div className="review-admin-page">
       <AdminPageHeader {...page} />
+
+      <AdminHelpBlock title="Wichtig" variant="tip" className="mb-6">
+        Neue Bewertungen werden erst nach deiner Freigabe öffentlich auf der Website angezeigt. Grün = veröffentlicht.
+      </AdminHelpBlock>
 
       <AdminCard title="Bewertungsanfrage per E-Mail" className="mb-6">
         <p className="mb-4 text-sm text-text-muted">

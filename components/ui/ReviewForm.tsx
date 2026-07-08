@@ -40,6 +40,7 @@ export function ReviewForm({ privacyHint }: { privacyHint?: string }) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
     setSuccess("");
 

@@ -54,6 +54,7 @@ const REQUIRED_FIELDS: Record<keyof SiteSettingsBundle, readonly string[]> = {
   invoice: ["quotePrefix", "invoicePrefix"],
   seo: ["metaTitle", "metaDescription"],
   legal: [],
+  modules: [],
 };
 
 function hasNonEmptyItems(value: unknown): boolean {
@@ -269,6 +270,23 @@ export function validateSiteSettingsSection(
     if (iban && !/^DE\d{20}$/i.test(iban) && iban.length > 4) {
       return { ok: false, error: "IBAN-Format ungültig (erwartet DE + 20 Ziffern)." };
     }
+  }
+
+  if (section === "modules") {
+    if (!value || typeof value !== "object") {
+      return { ok: false, error: "Ungültige Modul-Einstellungen." };
+    }
+    const mod = value as Record<string, unknown>;
+    const boolKeys = [
+      "blog", "gallery", "reviews", "team", "faq", "services",
+      "quotes", "invoices", "crm", "email", "backup", "analytics",
+      "pwa", "whatsapp", "stickyCta",
+    ];
+    const normalized: Record<string, boolean> = {};
+    for (const key of boolKeys) {
+      normalized[key] = mod[key] !== false;
+    }
+    return { ok: true, value: normalized as unknown as SiteSettingsBundle["modules"] };
   }
 
   return { ok: true, value: value as SiteSettingsBundle[keyof SiteSettingsBundle] };

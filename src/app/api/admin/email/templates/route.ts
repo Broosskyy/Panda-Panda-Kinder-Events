@@ -4,14 +4,14 @@ import { listEmailTemplates, upsertEmailTemplate } from "@/lib/email/templates-d
 import type { EmailTemplateArea } from "@/lib/cms/types";
 
 export async function GET() {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
   const templates = await listEmailTemplates();
   return NextResponse.json({ templates });
 }
 
 export async function POST(request: Request) {
-  const authError = await requireAdmin();
+  const authError = await requireAdmin("email:write");
   if (authError) return authError;
 
   const body = await request.json();

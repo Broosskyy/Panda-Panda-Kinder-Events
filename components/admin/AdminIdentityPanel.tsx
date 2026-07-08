@@ -21,12 +21,11 @@ function initials(name: string): string {
 
 export function AdminIdentitySkeleton() {
   return (
-    <div className="admin-identity-panel animate-pulse" aria-hidden>
-      <div className="admin-identity-avatar bg-border" />
-      <div className="min-w-0 flex-1 space-y-2">
-        <div className="h-4 w-28 rounded bg-border" />
-        <div className="h-3 w-36 rounded bg-border" />
-        <div className="h-3 w-20 rounded bg-border" />
+    <div className="admin-identity-panel admin-identity-panel-compact animate-pulse" aria-hidden>
+      <div className="admin-identity-avatar admin-identity-avatar-sm bg-border" />
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <div className="h-3.5 w-24 rounded bg-border" />
+        <div className="h-3 w-32 rounded bg-border" />
       </div>
     </div>
   );
@@ -35,9 +34,11 @@ export function AdminIdentitySkeleton() {
 export function AdminIdentityPanel({
   identity,
   loading = false,
+  compact = false,
 }: {
   identity: AdminIdentity | null;
   loading?: boolean;
+  compact?: boolean;
 }) {
   if (loading) return <AdminIdentitySkeleton />;
   if (!identity?.userId) return null;
@@ -45,17 +46,25 @@ export function AdminIdentityPanel({
   const roleLabel = identity.roleLabel || roleDisplayLabel(identity.roleSlug);
 
   return (
-    <div className="admin-identity-panel" aria-label="Angemeldeter Benutzer">
-      <div className="admin-identity-avatar" aria-hidden>
+    <div
+      className={`admin-identity-panel ${compact ? "admin-identity-panel-compact" : ""}`}
+      aria-label="Angemeldeter Benutzer"
+    >
+      <div className={`admin-identity-avatar ${compact ? "admin-identity-avatar-sm" : ""}`} aria-hidden>
         {identity.displayName ? initials(identity.displayName) : <User className="h-4 w-4" />}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-semibold text-text-primary">{identity.displayName}</p>
-        <p className="truncate text-xs text-text-muted">{identity.email}</p>
-        <p className="mt-1 text-xs font-medium text-primary">{roleLabel}</p>
-        <p className="mt-0.5 truncate font-mono text-[10px] text-text-muted" title={identity.userId}>
-          ID: {identity.userId}
+        <p className="truncate text-sm font-semibold text-text-primary">{identity.displayName}</p>
+        <p className="truncate text-xs text-text-muted" title={identity.email}>
+          {identity.email}
         </p>
+        <p className="mt-0.5 text-[11px] font-medium text-primary">{roleLabel}</p>
+        <details className="admin-identity-id-details">
+          <summary className="cursor-pointer text-[10px] text-text-muted">ID anzeigen</summary>
+          <p className="mt-0.5 truncate font-mono text-[10px] text-text-muted" title={identity.userId}>
+            {identity.userId}
+          </p>
+        </details>
       </div>
     </div>
   );

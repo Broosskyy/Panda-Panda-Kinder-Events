@@ -1,119 +1,221 @@
-import { hasPermission } from "@/lib/auth/permissions";
 import type { AdminRoleSlug } from "@/lib/auth/types";
+import { hasPermission } from "@/lib/auth/permissions";
 
 export interface OnboardingStep {
   id: string;
   title: string;
   body: string;
-  /** Required permission slug — step hidden if user lacks access */
   permission?: string;
-  /** Optional role gate (e.g. super-admin-only steps) */
-  roles?: AdminRoleSlug[];
   href?: string;
   hrefLabel?: string;
 }
 
-export const ONBOARDING_STEPS: OnboardingStep[] = [
-  {
-    id: "welcome",
-    title: "Willkommen im Panda-Bande Admin",
-    body: "In wenigen Schritten zeigen wir dir die wichtigsten Bereiche. Du kannst jederzeit überspringen oder das Tutorial später erneut starten.",
-  },
-  {
-    id: "dashboard",
-    title: "Dashboard verstehen",
-    body: "Die Übersicht zeigt offene Aufgaben, Kennzahlen und Schnellzugriffe. Starte hier jeden Tag.",
-    permission: "dashboard:read",
-    href: "/admin",
-    hrefLabel: "Zum Dashboard",
-  },
-  {
-    id: "anfragen",
-    title: "Anfragen bearbeiten",
-    body: "Neue Kontaktanfragen prüfen, Status setzen und bei Bedarf Kunden anlegen.",
-    permission: "inquiries:write",
-    href: "/admin/anfragen",
-    hrefLabel: "Zu Anfragen",
-  },
-  {
-    id: "kunden",
-    title: "Kunden verwalten",
-    body: "Kundenstamm pflegen — Grundlage für Angebote, Rechnungen und E-Mail-Versand.",
-    permission: "crm:read",
-    href: "/admin/kunden",
-    hrefLabel: "Zu Kunden",
-  },
-  {
-    id: "angebote",
-    title: "Angebote erstellen",
-    body: "Kunde wählen, Positionen erfassen, PDF prüfen und per E-Mail versenden.",
-    permission: "quotes:write",
-    href: "/admin/angebote",
-    hrefLabel: "Zu Angeboten",
-  },
-  {
-    id: "rechnungen",
-    title: "Rechnungen senden",
-    body: "Rechnungen aus Angeboten erzeugen, Status pflegen und PDFs versenden.",
-    permission: "invoices:write",
-    href: "/admin/rechnungen",
-    hrefLabel: "Zu Rechnungen",
-  },
-  {
-    id: "galerie",
-    title: "Galerie & Website ändern",
-    body: "Eventfotos hochladen und Website-Inhalte anpassen — Änderungen erscheinen live.",
-    permission: "gallery:write",
-    href: "/admin/galerie",
-    hrefLabel: "Zur Galerie",
-  },
-  {
-    id: "bewertungen",
-    title: "Bewertungen freigeben",
-    body: "Neue Bewertungen prüfen und freigeben — erst dann sind sie öffentlich sichtbar.",
-    permission: "reviews:write",
-    href: "/admin/bewertungen",
-    hrefLabel: "Zu Bewertungen",
-  },
-  {
-    id: "sicherheit",
-    title: "Sicherheit & Benutzer",
-    body: "Admin-Zugänge, Rollen und Sicherheitseinstellungen verwalten.",
-    permission: "users:read",
-    roles: ["administrator"],
-    href: "/admin/sicherheit/benutzer",
-    hrefLabel: "Zu Benutzer & Rollen",
-  },
-  {
-    id: "audit",
-    title: "Aktivitätsprotokoll",
-    body: "Nachvollziehen, wer im Admin was geändert hat — nur für Super Admins.",
-    permission: "audit:read",
-    roles: ["administrator"],
-    href: "/admin/sicherheit/audit",
-    hrefLabel: "Zum Protokoll",
-  },
-  {
-    id: "readonly-hint",
-    title: "Nur-Lesen-Ansicht",
-    body: "Deine Rolle erlaubt das Ansehen von Bereichen. Bearbeiten ist nur für berechtigte Rollen möglich — Rechte werden serverseitig geschützt.",
-    roles: ["readonly"],
-  },
-  {
-    id: "done",
-    title: "Fertig!",
-    body: "Du kennst jetzt die wichtigsten Bereiche. Nutze die Navigation unten oder das Menü oben links für alles Weitere.",
-  },
-];
+const ROLE_TRACKS: Record<ActiveOnboardingRole, OnboardingStep[]> = {
+  administrator: [
+    {
+      id: "welcome",
+      title: "Willkommen im Panda-Bande Admin",
+      body: "Kurzes Tutorial zu den wichtigsten Bereichen. Du kannst überspringen oder es später erneut starten.",
+    },
+    {
+      id: "dashboard",
+      title: "Dashboard",
+      body: "Offene Aufgaben, Kennzahlen und Schnellzugriffe — starte hier jeden Tag.",
+      href: "/admin",
+      hrefLabel: "Zum Dashboard",
+    },
+    {
+      id: "anfragen",
+      title: "Anfragen",
+      body: "Kontaktanfragen prüfen, Status setzen, archivieren und Kunden anlegen.",
+      permission: "inquiries:write",
+      href: "/admin/anfragen",
+      hrefLabel: "Zu Anfragen",
+    },
+    {
+      id: "kunden",
+      title: "Kunden",
+      body: "Kundenstamm pflegen — Grundlage für Angebote und Rechnungen.",
+      permission: "crm:read",
+      href: "/admin/kunden",
+      hrefLabel: "Zu Kunden",
+    },
+    {
+      id: "crm-docs",
+      title: "Angebote & Rechnungen",
+      body: "Angebote erstellen, PDFs versenden und Rechnungen verwalten.",
+      permission: "quotes:write",
+      href: "/admin/angebote",
+      hrefLabel: "Zu Angeboten",
+    },
+    {
+      id: "website",
+      title: "Website, Galerie & Bewertungen",
+      body: "Inhalte, Eventfotos und Bewertungsfreigaben steuern.",
+      permission: "gallery:write",
+      href: "/admin/galerie",
+      hrefLabel: "Zur Galerie",
+    },
+    {
+      id: "users",
+      title: "Benutzer & Rollen",
+      body: "Admin-Zugänge und Rollen verwalten.",
+      permission: "users:read",
+      href: "/admin/sicherheit/benutzer",
+      hrefLabel: "Zu Benutzer & Rollen",
+    },
+    {
+      id: "security",
+      title: "Sicherheit & Audit Logs",
+      body: "Sitzungen, Login-Historie und Aktivitätsprotokoll einsehen.",
+      permission: "audit:read",
+      href: "/admin/sicherheit/audit",
+      hrefLabel: "Zum Protokoll",
+    },
+    {
+      id: "done",
+      title: "Fertig!",
+      body: "Du kennst die wichtigsten Bereiche. Nutze die Navigation unten für alles Weitere.",
+    },
+  ],
+  manager: [
+    {
+      id: "welcome",
+      title: "Willkommen im Panda-Bande Admin",
+      body: "Kurzes Tutorial zu deinen täglichen Aufgaben im Admin.",
+    },
+    {
+      id: "dashboard",
+      title: "Dashboard",
+      body: "Übersicht über offene Aufgaben und Kennzahlen.",
+      href: "/admin",
+      hrefLabel: "Zum Dashboard",
+    },
+    {
+      id: "anfragen",
+      title: "Anfragen",
+      body: "Neue Anfragen bearbeiten und Kunden anlegen.",
+      permission: "inquiries:write",
+      href: "/admin/anfragen",
+      hrefLabel: "Zu Anfragen",
+    },
+    {
+      id: "kunden",
+      title: "Kunden",
+      body: "Kunden verwalten und Historie einsehen.",
+      permission: "crm:read",
+      href: "/admin/kunden",
+      hrefLabel: "Zu Kunden",
+    },
+    {
+      id: "crm-docs",
+      title: "Angebote & Rechnungen",
+      body: "Angebote erstellen und Rechnungen versenden.",
+      permission: "quotes:write",
+      href: "/admin/angebote",
+      hrefLabel: "Zu Angeboten",
+    },
+    {
+      id: "website",
+      title: "Website, Galerie & Bewertungen",
+      body: "Website-Inhalte und Bewertungen pflegen.",
+      permission: "website:read",
+      href: "/admin/bewertungen",
+      hrefLabel: "Zu Bewertungen",
+    },
+    {
+      id: "done",
+      title: "Fertig!",
+      body: "Viel Erfolg — bei Fragen findest du Hilfe unter „Erste Schritte“.",
+    },
+  ],
+  employee: [
+    {
+      id: "welcome",
+      title: "Willkommen",
+      body: "Kurze Einführung in deine Aufgaben als Mitarbeiter.",
+    },
+    {
+      id: "anfragen",
+      title: "Anfragen",
+      body: "Kontaktanfragen prüfen, Status setzen und archivieren.",
+      permission: "inquiries:write",
+      href: "/admin/anfragen",
+      hrefLabel: "Zu Anfragen",
+    },
+    {
+      id: "kunden",
+      title: "Kunden",
+      body: "Kunden anlegen und Daten pflegen.",
+      permission: "crm:read",
+      href: "/admin/kunden",
+      hrefLabel: "Zu Kunden",
+    },
+    {
+      id: "tasks",
+      title: "Aufgaben & Notizen",
+      body: "Nutze interne Notizen bei Anfragen und halte den Status aktuell.",
+      permission: "inquiries:write",
+      href: "/admin/anfragen",
+      hrefLabel: "Zu Anfragen",
+    },
+    {
+      id: "done",
+      title: "Fertig!",
+      body: "Du kannst jederzeit über Einstellungen das Tutorial erneut starten.",
+    },
+  ],
+  readonly: [
+    {
+      id: "welcome",
+      title: "Willkommen",
+      body: "Du hast Lesezugriff auf den Admin — keine Bearbeitung möglich.",
+    },
+    {
+      id: "overview",
+      title: "Übersicht ansehen",
+      body: "Das Dashboard zeigt dir Kennzahlen und offene Punkte zur Information.",
+      permission: "dashboard:read",
+      href: "/admin",
+      hrefLabel: "Zum Dashboard",
+    },
+    {
+      id: "areas",
+      title: "Bereiche verstehen",
+      body: "Navigation unten und Menü oben links führen zu den erlaubten Bereichen. Rechte werden serverseitig geschützt.",
+    },
+    {
+      id: "done",
+      title: "Fertig!",
+      body: "Bei Fragen wende dich an einen Admin.",
+    },
+  ],
+};
+
+type ActiveOnboardingRole = "administrator" | "manager" | "employee" | "readonly";
+
+function resolveTrackRole(roleSlug: AdminRoleSlug): ActiveOnboardingRole {
+  if (roleSlug === "administrator") return "administrator";
+  if (roleSlug === "manager") return "manager";
+  if (roleSlug === "employee") return "employee";
+  return "readonly";
+}
 
 export function filterOnboardingSteps(
   permissions: string[],
   roleSlug: AdminRoleSlug,
 ): OnboardingStep[] {
-  return ONBOARDING_STEPS.filter((step) => {
-    if (step.roles && !step.roles.includes(roleSlug)) return false;
-    if (step.id === "readonly-hint" && roleSlug !== "readonly") return false;
-    if (step.permission && !hasPermission(permissions, step.permission)) return false;
-    return true;
+  const track = ROLE_TRACKS[resolveTrackRole(roleSlug)];
+  return track.filter((step) => {
+    if (!step.permission) return true;
+    return hasPermission(permissions, step.permission);
   });
+}
+
+/** Client-side fallback when API is unavailable */
+export function getClientOnboardingSteps(
+  permissions: string[],
+  roleSlug: AdminRoleSlug,
+): OnboardingStep[] {
+  return filterOnboardingSteps(permissions, roleSlug);
 }

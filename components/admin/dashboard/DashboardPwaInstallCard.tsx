@@ -6,10 +6,18 @@ import { AdminCard } from "@/components/admin/ui/AdminLayout";
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
 
 export function DashboardPwaInstallCard() {
-  const { canInstall, showIosGuide, isInstalled, dismissed, install, dismiss } = useAdminPwa();
+  const {
+    canInstall,
+    showIosGuide,
+    showManualGuide,
+    showInstallCard,
+    install,
+    dismiss,
+    checkInstallStatus,
+    installHelpVisible,
+  } = useAdminPwa();
 
-  if (isInstalled || dismissed) return null;
-  if (!canInstall && !showIosGuide) return null;
+  if (!showInstallCard) return null;
 
   return (
     <AdminCard compact className="admin-pwa-install-card">
@@ -30,16 +38,35 @@ export function DashboardPwaInstallCard() {
             </button>
           </div>
           <p className="mt-1 text-sm text-text-muted">
-            Öffne den Adminbereich wie eine App auf deinem Handy.
+            Installiere den Adminbereich als App auf deinem Handy.
           </p>
+
           {showIosGuide ? (
             <p className="mt-2 text-sm text-text-secondary">
               Auf dem iPhone: <strong>Teilen</strong> → <strong>Zum Home-Bildschirm</strong>
             </p>
-          ) : (
+          ) : canInstall ? (
             <div className="mt-3">
               <AdminButton variant="primary" onClick={() => void install()}>
                 App installieren
+              </AdminButton>
+            </div>
+          ) : showManualGuide || installHelpVisible ? (
+            <div className="mt-3 space-y-2">
+              <p className="text-sm text-text-secondary">
+                Falls kein Installationsfenster erscheint: Chrome-Menü ⋮ → <strong>App installieren</strong>.
+              </p>
+              <p className="text-xs text-text-muted">
+                Öffne das Chrome-Menü oben rechts und wähle „App installieren“.
+              </p>
+              <AdminButton variant="secondary" onClick={() => void checkInstallStatus()}>
+                Installationsstatus prüfen
+              </AdminButton>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <AdminButton variant="secondary" onClick={() => void checkInstallStatus()}>
+                Installationsstatus prüfen
               </AdminButton>
             </div>
           )}

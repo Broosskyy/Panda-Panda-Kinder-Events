@@ -1,16 +1,17 @@
 "use client";
 
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
+import { AdminButton } from "@/components/admin/ui";
 
-/** Subtle hint when native install prompt is not yet available. */
+/** Re-open PWA install card from dashboard help section. */
 export function DashboardPwaInstallHint() {
-  const { isInstalled, dismissed, canInstall, showIosGuide } = useAdminPwa();
+  const { isInstalled, showInstallHelp } = useAdminPwa();
 
-  if (isInstalled || dismissed || canInstall || showIosGuide) return null;
+  if (isInstalled) return null;
 
   return (
-    <p className="text-xs text-text-muted">
-      Installation über das Browser-Menü möglich, sobald dein Gerät es unterstützt.
-    </p>
+    <AdminButton variant="ghost" className="text-xs" onClick={showInstallHelp}>
+      Admin-App installieren
+    </AdminButton>
   );
 }

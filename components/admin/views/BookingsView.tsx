@@ -1,12 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { Archive, Inbox, Trash2, UserPlus } from "lucide-react";
 import type { BookingStatus } from "@/lib/supabase/admin";
-import { Inbox, UserPlus } from "lucide-react";
 import { AdminPageHeader } from "@/components/admin/AdminSidebar";
 import {
-  AdminButton,
   AdminEmptyState,
   AdminFilterBar,
   AdminFilterSelect,
@@ -14,13 +13,17 @@ import {
   AdminPage,
   AdminSearchInput,
   AdminStatusBadge,
+  AdminActionMenu,
   bookingStatusVariant,
 } from "@/components/admin/ui";
 import { AdminCard } from "@/components/admin/ui/AdminLayout";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_MSG } from "@/lib/admin/messages";
+import { hasPermission } from "@/lib/auth/permissions";
+import { BOOKING_DELETE_BLOCKED_MESSAGE } from "@/lib/admin/booking-lifecycle";
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
   new: "Neu",
@@ -47,27 +50,37 @@ interface Booking {
   status: BookingStatus;
   admin_notes: string | null;
   customer_id: string | null;
+  archived_at?: string | null;
 }
+
+type BookingView = "active" | "archived";
 
 export function BookingsView() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
+  const [view, setView] = useState<BookingView>("active");
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
-  const { toast, saveFailed, fromApi } = useAdminMessages();
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const { permissions } = useAdminSession();
+  const { toast, saveFailed, fromApi, error: showError } = useAdminMessages();
   const page = adminPageHeaderProps("anfragen");
   const empty = ADMIN_EMPTY_STATES.bookings;
-  const activeFilters = (filter ? 1 : 0) + (search.trim() ? 1 : 0);
+  const canWrite = hasPermission(permissions, "inquiries:write");
+  const canDelete = hasPermission(permissions, "inquiries:delete");
+  const activeFilters = (filter ? 1 : 0) + (search.trim() ? 1 : 0) + (view !== "active" ? 1 : 0);
 
-  const load = () =>
-    fetch("/api/admin/bookings")
+  const load = useCallback(() => {
+    setLoading(true);
+    fetch(`/api/admin/bookings?view=${view}`)
       .then((r) => r.json())
       .then((d) => setBookings(d.bookings ?? []))
       .finally(() => setLoading(false));
+  }, [view]);
 
   useEffect(() => {
     void load();
-  }, []);
+  }, [load]);
 
   const update = async (id: string, updates: { status?: BookingStatus; admin_notes?: string }) => {
     const res = await fetch("/api/admin/bookings", {
@@ -79,6 +92,41 @@ export function BookingsView() {
       toast(ADMIN_MSG.bookingSaved);
       load();
     } else saveFailed();
+  };
+
+  const archiveBooking = async (id: string) => {
+    const res = await fetch("/api/admin/bookings", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id, action: "archive" }),
+    });
+    const data = await res.json();
+    if (!res.ok) return fromApi(data, "Archivierung fehlgeschlagen.");
+    toast("Anfrage archiviert.");
+    load();
+  };
+
+  const deleteBooking = async (id: string) => {
+    const confirmed = window.confirm(
+      "Diese Anfrage wird dauerhaft gelöscht. Diese Aktion wird protokolliert.\n\nFortfahren?",
+    );
+    if (!confirmed) return;
+
+    const res = await fetch("/api/admin/bookings", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      return showError(
+        "Anfrage konnte nicht gelöscht werden.",
+        data.error ?? BOOKING_DELETE_BLOCKED_MESSAGE,
+        res.status === 409 ? "Nutze stattdessen Archivieren." : undefined,
+      );
+    }
+    toast("Anfrage gelöscht.");
+    load();
   };
 
   const createCustomer = async (bookingId: string) => {
@@ -116,9 +164,19 @@ export function BookingsView() {
         onReset={() => {
           setFilter("");
           setSearch("");
+          setView("active");
         }}
       >
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Name, E-Mail oder Event suchen…" />
+        <AdminFilterSelect
+          value={view}
+          onChange={(v) => setView(v as BookingView)}
+          label="Ansicht"
+          options={[
+            { value: "active", label: "Aktiv" },
+            { value: "archived", label: "Archiviert" },
+          ]}
+        />
         <AdminFilterSelect
           value={filter}
           onChange={setFilter}
@@ -142,73 +200,170 @@ export function BookingsView() {
         />
       ) : (
         <div className="admin-list-stack">
-          {filtered.map((b) => (
-            <AdminCard key={b.id} compact>
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="font-semibold text-text-primary">{b.name}</p>
-                    <AdminStatusBadge label={STATUS_LABELS[b.status]} variant={bookingStatusVariant(b.status)} />
+          {filtered.map((b) => {
+            const longMessage = Boolean(b.message && b.message.length > 120);
+            return (
+              <AdminCard key={b.id} compact className={b.archived_at ? "opacity-90" : ""}>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-semibold text-text-primary">{b.name}</p>
+                      <AdminStatusBadge label={STATUS_LABELS[b.status]} variant={bookingStatusVariant(b.status)} />
+                      {b.archived_at ? <AdminStatusBadge label="Archiviert" variant="muted" /> : null}
+                      {b.customer_id ? <AdminStatusBadge label="Kunde verknüpft" variant="info" /> : null}
+                    </div>
+                    <p className="text-xs text-text-muted">{new Date(b.created_at).toLocaleString("de-DE")}</p>
                   </div>
-                  <p className="text-xs text-text-muted">{new Date(b.created_at).toLocaleString("de-DE")}</p>
+                  {canWrite ? (
+                    <select
+                      value={b.status}
+                      onChange={(e) => update(b.id, { status: e.target.value as BookingStatus })}
+                      className="admin-input admin-filter-select w-full sm:w-auto"
+                      aria-label={`Status für ${b.name}`}
+                    >
+                      {Object.entries(STATUS_LABELS).map(([v, l]) => (
+                        <option key={v} value={v}>
+                          {l}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
                 </div>
-                <select
-                  value={b.status}
-                  onChange={(e) => update(b.id, { status: e.target.value as BookingStatus })}
-                  className="admin-input admin-filter-select"
-                  aria-label={`Status für ${b.name}`}
-                >
-                  {Object.entries(STATUS_LABELS).map(([v, l]) => (
-                    <option key={v} value={v}>
-                      {l}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                {b.customer_id ? (
-                  <AdminStatusBadge label="Kunde verknüpft" variant="info" />
-                ) : (
-                  <AdminButton
-                    variant="secondary"
-                    icon={<UserPlus className="h-4 w-4" />}
-                    onClick={() => createCustomer(b.id)}
-                  >
-                    Kunde erstellen
-                  </AdminButton>
-                )}
-                {b.customer_id ? (
-                  <Link href={`/admin/kunden?id=${b.customer_id}`} className="text-xs font-medium text-primary hover:underline">
-                    Zum Kunden
-                  </Link>
+
+                <dl className="admin-booking-meta mt-2">
+                  <div><dt>E-Mail</dt><dd>{b.email}</dd></div>
+                  <div><dt>Telefon</dt><dd>{b.phone}</dd></div>
+                  <div><dt>Event</dt><dd>{b.event_type}</dd></div>
+                  <div><dt>Datum</dt><dd>{b.event_date} · {b.event_time}</dd></div>
+                  <div><dt>Ort</dt><dd>{b.location}</dd></div>
+                  <div><dt>Kinder</dt><dd>{b.children_count}</dd></div>
+                </dl>
+
+                {b.message ? (
+                  longMessage ? (
+                    <details className="admin-booking-message mt-2">
+                      <summary className="cursor-pointer text-sm text-text-secondary">Nachricht anzeigen</summary>
+                      <p className="mt-1 text-sm text-text-secondary">{b.message}</p>
+                    </details>
+                  ) : (
+                    <p className="mt-2 text-sm text-text-secondary">{b.message}</p>
+                  )
                 ) : null}
-              </div>
-              <div className="mt-3 grid gap-1 text-sm text-text-secondary sm:grid-cols-2">
-                <p>E-Mail: {b.email}</p>
-                <p>Telefon: {b.phone}</p>
-                <p>Event: {b.event_type}</p>
-                <p>
-                  Datum: {b.event_date} · {b.event_time}
-                </p>
-                <p>Ort: {b.location}</p>
-                <p>Kinder: {b.children_count}</p>
-                {b.message ? <p className="sm:col-span-2">Nachricht: {b.message}</p> : null}
-              </div>
-              <div className="mt-3">
-                <label className="mb-1 block text-xs font-medium text-text-muted">Notizen (intern)</label>
-                <textarea
-                  defaultValue={b.admin_notes ?? ""}
-                  rows={2}
-                  className="admin-input min-h-16"
-                  onBlur={(e) => {
-                    if (e.target.value !== (b.admin_notes ?? "")) {
-                      update(b.id, { admin_notes: e.target.value });
-                    }
-                  }}
-                />
-              </div>
-            </AdminCard>
-          ))}
+
+                {canWrite ? (
+                  <details
+                    className="mt-2"
+                    open={expandedNotes.has(b.id)}
+                    onToggle={(e) => {
+                      const open = (e.target as HTMLDetailsElement).open;
+                      setExpandedNotes((prev) => {
+                        const next = new Set(prev);
+                        if (open) next.add(b.id);
+                        else next.delete(b.id);
+                        return next;
+                      });
+                    }}
+                  >
+                    <summary className="cursor-pointer text-xs font-medium text-text-muted">
+                      {b.admin_notes ? "Notizen bearbeiten" : "Notizen hinzufügen"}
+                    </summary>
+                    <textarea
+                      defaultValue={b.admin_notes ?? ""}
+                      rows={2}
+                      className="admin-input mt-2 min-h-16"
+                      placeholder="Interne Notizen…"
+                      onBlur={(e) => {
+                        if (e.target.value !== (b.admin_notes ?? "")) {
+                          update(b.id, { admin_notes: e.target.value });
+                        }
+                      }}
+                    />
+                  </details>
+                ) : null}
+
+                {canWrite ? (
+                  <div className="admin-document-actions mt-3">
+                    <AdminActionMenu
+                      primary={
+                        b.customer_id
+                          ? {
+                              label: "Zum Kunden",
+                              onClick: () => {
+                                window.location.href = `/admin/kunden?id=${b.customer_id}`;
+                              },
+                            }
+                          : {
+                              label: "Kunde erstellen",
+                              icon: <UserPlus className="h-4 w-4" />,
+                              onClick: () => void createCustomer(b.id),
+                            }
+                      }
+                      items={[
+                        {
+                          id: "open",
+                          label: "Öffnen",
+                          onClick: () => {
+                            setExpandedNotes((prev) => new Set(prev).add(b.id));
+                          },
+                        },
+                        ...(b.customer_id
+                          ? [
+                              {
+                                id: "customer",
+                                label: "Zum Kunden",
+                                onClick: () => {
+                                  window.location.href = `/admin/kunden?id=${b.customer_id}`;
+                                },
+                              },
+                            ]
+                          : [
+                              {
+                                id: "create-customer",
+                                label: "Kunde erstellen",
+                                icon: <UserPlus className="h-4 w-4" />,
+                                onClick: () => void createCustomer(b.id),
+                              },
+                            ]),
+                        ...(!b.archived_at
+                          ? [
+                              {
+                                id: "archive",
+                                label: "Archivieren",
+                                icon: <Archive className="h-4 w-4" />,
+                                onClick: () => void archiveBooking(b.id),
+                              },
+                            ]
+                          : []),
+                      ]}
+                      dangerItems={
+                        canDelete
+                          ? [
+                              {
+                                id: "delete",
+                                label: "Löschen",
+                                icon: <Trash2 className="h-4 w-4" />,
+                                onClick: () => void deleteBooking(b.id),
+                              },
+                            ]
+                          : []
+                      }
+                    />
+                  </div>
+                ) : (
+                  <div className="mt-3">
+                    {b.customer_id ? (
+                      <Link href={`/admin/kunden?id=${b.customer_id}`} className="text-sm font-medium text-primary hover:underline">
+                        Zum Kunden
+                      </Link>
+                    ) : (
+                      <AdminStatusBadge label="Nur Ansicht" variant="muted" />
+                    )}
+                  </div>
+                )}
+                <span id={`booking-${b.id}`} className="sr-only" />
+              </AdminCard>
+            );
+          })}
         </div>
       )}
     </AdminPage>

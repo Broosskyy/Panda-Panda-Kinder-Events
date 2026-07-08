@@ -11,7 +11,7 @@ import {
 } from "react";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { AdminOnboardingWizard } from "@/components/admin/AdminOnboardingWizard";
-import type { OnboardingStep } from "@/lib/admin/onboarding";
+import { getClientOnboardingSteps, type OnboardingStep } from "@/lib/admin/onboarding";
 
 interface OnboardingContextValue {
   openWizard: () => void;
@@ -21,57 +21,79 @@ interface OnboardingContextValue {
 const OnboardingContext = createContext<OnboardingContextValue | null>(null);
 
 export function AdminOnboardingProvider({ children }: { children: ReactNode }) {
-  const { status, identity } = useAdminSession();
+  const { status, identity, permissions } = useAdminSession();
   const [steps, setSteps] = useState<OnboardingStep[]>([]);
-  const [completed, setCompleted] = useState(true);
+  const [completed, setCompleted] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [forcedOpen, setForcedOpen] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
+
+  const applyClientFallback = useCallback(() => {
+    if (!identity) return;
+    const clientSteps = getClientOnboardingSteps(permissions, identity.roleSlug);
+    setSteps(clientSteps);
+    setCompleted(false);
+  }, [identity, permissions]);
 
   const loadStatus = useCallback(async () => {
     try {
       const res = await fetch("/api/admin/onboarding");
       const data = await res.json();
-      if (!res.ok) return;
-      setSteps(Array.isArray(data.steps) ? data.steps : []);
-      setCompleted(Boolean(data.completed));
+      if (res.ok) {
+        const apiSteps = Array.isArray(data.steps) ? data.steps : [];
+        setSteps(apiSteps.length > 0 ? apiSteps : getClientOnboardingSteps(permissions, identity!.roleSlug));
+        setCompleted(Boolean(data.completed));
+        return;
+      }
+      applyClientFallback();
     } catch {
-      setCompleted(true);
+      applyClientFallback();
     } finally {
       setLoaded(true);
     }
-  }, []);
+  }, [applyClientFallback, identity, permissions]);
 
   useEffect(() => {
-    if (status !== "ready") return;
+    if (status !== "ready" || !identity) return;
     void loadStatus();
-  }, [status, loadStatus]);
+  }, [status, identity, loadStatus]);
 
-  const shouldAutoOpen = loaded && !completed && !forcedOpen && steps.length > 0;
+  const shouldAutoOpen = loaded && !completed && steps.length > 0;
   const isOpen = forcedOpen || shouldAutoOpen;
 
   const finish = useCallback(async () => {
-    await fetch("/api/admin/onboarding", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "complete" }),
-    });
+    try {
+      await fetch("/api/admin/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "complete" }),
+      });
+    } catch {
+      // still close locally
+    }
     setCompleted(true);
     setForcedOpen(false);
     setStepIndex(0);
   }, []);
 
   const openWizard = useCallback(async () => {
-    await fetch("/api/admin/onboarding", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "restart" }),
-    });
+    try {
+      await fetch("/api/admin/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "restart" }),
+      });
+    } catch {
+      // continue with local open
+    }
     setCompleted(false);
     setForcedOpen(true);
     setStepIndex(0);
+    if (identity) {
+      setSteps(getClientOnboardingSteps(permissions, identity.roleSlug));
+    }
     await loadStatus();
-  }, [loadStatus]);
+  }, [identity, loadStatus, permissions]);
 
   const closeWizard = useCallback(() => {
     setForcedOpen(false);

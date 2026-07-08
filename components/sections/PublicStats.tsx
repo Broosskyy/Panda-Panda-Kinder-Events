@@ -33,7 +33,7 @@ export function PublicStats({ stats }: PublicStatsProps) {
   if (items.length === 0) return null;
 
   return (
-    <section className="border-y border-border/50 bg-bg-secondary/40 py-10 sm:py-12" aria-label="Kennzahlen">
+    <section className="border-y border-border/50 bg-bg-secondary/40 py-7 sm:py-12" aria-label="Kennzahlen">
       <Container>
         <ul className="grid grid-cols-2 gap-6 sm:grid-cols-4 sm:gap-8" role="list">
           {items.map((item) => (

@@ -93,10 +93,20 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
           </div>
         ) : null}
 
-        <div className="rounded-xl border border-border bg-bg-secondary/40 p-3 text-sm">
+        <div className="rounded-xl border border-border bg-bg-secondary p-3 text-sm">
           <p className="font-medium text-text-primary">Status</p>
-          <p className="mt-1 text-text-muted">{probeResult?.statusLabel ?? "Wird geprüft…"}</p>
-          {causeMessage && !canInstall ? (
+          <p className="mt-1 text-text-muted">
+            {canInstall
+              ? (probeResult?.statusLabel ?? "Wird geprüft…")
+              : "Chrome stellt aktuell keinen Installationsdialog bereit."}
+          </p>
+          {!canInstall ? (
+            <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+              {causeMessage ??
+                "Manuelle Installation: Chrome-Menü ⋮ → „App installieren“ oder „Zum Startbildschirm hinzufügen“."}
+            </p>
+          ) : null}
+          {canInstall && causeMessage ? (
             <p className="mt-2 text-xs leading-relaxed text-text-secondary">{causeMessage}</p>
           ) : null}
           {statusChecked && probeResult ? <ProbeDetails probeResult={probeResult} /> : null}
@@ -130,12 +140,14 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
 
         <div className="flex flex-col gap-2">
           <AdminButton variant="primary" className="w-full" onClick={() => void handlePrimaryAction()}>
-            {canInstall ? "Admin-App installieren" : "Admin-App installieren / Hilfe"}
+            {canInstall ? "Admin-App installieren" : "Installationshilfe öffnen"}
           </AdminButton>
 
-          <AdminButton variant="secondary" className="w-full" onClick={openInstallHelp}>
-            Installationshilfe öffnen
-          </AdminButton>
+          {canInstall ? (
+            <AdminButton variant="secondary" className="w-full" onClick={openInstallHelp}>
+              Installationshilfe öffnen
+            </AdminButton>
+          ) : null}
 
           <AdminButton
             variant="ghost"

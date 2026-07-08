@@ -93,7 +93,13 @@ export function AdminPwaInstallHelpSheet({
         <div className="admin-pwa-help-sheet-body">
           {debugStatus?.causeMessage ? (
             <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
-              {debugStatus.causeMessage}
+              {canInstall
+                ? debugStatus.causeMessage
+                : "Chrome stellt aktuell keinen Installationsdialog bereit."}
+            </div>
+          ) : !canInstall ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+              Chrome stellt aktuell keinen Installationsdialog bereit.
             </div>
           ) : null}
 
@@ -124,14 +130,14 @@ export function AdminPwaInstallHelpSheet({
           )}
 
           {debugStatus ? (
-            <div className="mt-4 rounded-xl border border-border bg-bg-secondary/80 p-3 text-sm">
-              <p className="font-medium text-text-primary">Technische Diagnose</p>
+            <details className="mt-4 rounded-xl border border-border bg-bg-secondary p-3 text-sm">
+              <summary className="cursor-pointer font-medium text-text-primary">Technische Diagnose</summary>
               <PwaDebugDetails debug={debugStatus} className="mt-2" />
-            </div>
+            </details>
           ) : null}
 
           {blockers.length > 0 ? (
-            <div className="mt-4 rounded-xl border border-border bg-bg-secondary/50 p-3 text-sm">
+            <div className="mt-4 rounded-xl border border-border bg-bg-secondary p-3 text-sm">
               <p className="font-medium text-text-primary">Hinweise</p>
               <ul className="mt-2 list-disc space-y-1.5 pl-5 text-text-muted">
                 {blockers.map((item) => (

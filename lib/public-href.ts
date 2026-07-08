@@ -4,3 +4,26 @@ export function resolvePublicHref(href: string): string {
   if (href.startsWith("#")) return `/${href}`;
   return href;
 }
+
+export function isPublicHomePath(pathname: string): boolean {
+  const normalized = pathname.replace(/\/+$/, "") || "/";
+  return normalized === "/";
+}
+
+/** Scroll to a section on the current page, or return false if missing. */
+export function scrollToPublicSection(
+  sectionId: string,
+  options: { behavior?: ScrollBehavior } = {},
+): boolean {
+  if (typeof document === "undefined") return false;
+  const target = document.getElementById(sectionId);
+  if (!target) return false;
+  target.scrollIntoView({ behavior: options.behavior ?? "smooth", block: "start" });
+  return true;
+}
+
+/** Navigate to a public hash section (works from subpages). */
+export function navigateToPublicSection(sectionId: string): void {
+  if (typeof window === "undefined") return;
+  window.location.href = resolvePublicHref(`#${sectionId}`);
+}

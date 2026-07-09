@@ -51,9 +51,15 @@ if (inquiry.includes("notifyAdminsNewInquiry")) ok("Inquiry route triggers push"
 else fail("Inquiry push hook");
 
 const panel = read("components/admin/AdminPushNotificationsPanel.tsx");
-if (panel.includes("handleActivate") && panel.includes("Notification.requestPermission")) {
-  ok("Permission only requested on user click");
-} else fail("Permission flow");
+if (panel.includes("beginPermissionRequest") && panel.includes("runPushActivateFlow")) {
+  ok("Structured activate flow with sync permission request");
+} else fail("Activate flow");
+if (panel.includes("handleActivateClick") && panel.includes("beginPermissionRequest()")) {
+  ok("Permission started synchronously in click handler");
+} else fail("iOS user-gesture permission flow");
+if (panel.includes("collectPushLiveDebugState") && panel.includes("Debug-Status")) {
+  ok("Live push debug panel");
+} else fail("Debug panel");
 if (panel.includes("Benachrichtigungen aktivieren")) ok("Activate button");
 if (panel.includes("Test-Benachrichtigung senden")) ok("Test button");
 if (panel.includes("Push deaktivieren")) ok("Deactivate button");
@@ -63,6 +69,19 @@ const platform = read("lib/admin/push/platform.ts");
 if (platform.includes("ios_pwa_required") && platform.includes("Android unterstützt")) {
   ok("iOS PWA + Android platform labels");
 } else fail("Platform support");
+if (platform.includes("hasBasicNotificationSupport") && platform.includes("NOT on window")) {
+  ok("iOS: PushManager checked on SW registration, not window gate");
+} else fail("iOS PushManager detection");
+
+const activateFlow = read("lib/admin/push/activate-flow.ts");
+if (activateFlow.includes("registration.pushManager") && activateFlow.includes("console.error")) {
+  ok("Step-by-step activate flow with console.error");
+} else fail("activate-flow.ts");
+
+const debugState = read("lib/admin/push/debug-state.ts");
+if (debugState.includes("pushManagerOnRegistration") && debugState.includes("collectPushLiveDebugState")) {
+  ok("Live debug state collector");
+} else fail("debug-state.ts");
 
 const client = read("lib/admin/push/client.ts");
 if (client.includes("serviceWorker.ready") && client.includes("unsubscribeFromAdminPush")) {

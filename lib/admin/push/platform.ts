@@ -12,9 +12,12 @@ export interface PushPlatformInfo {
   canSubscribe: boolean;
 }
 
-function isIosDevice(): boolean {
+export function isIosDevice(): boolean {
   if (typeof navigator === "undefined") return false;
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  const classic = /iphone|ipad|ipod/i.test(ua);
+  const ipadOsDesktopUa = navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1;
+  return classic || ipadOsDesktopUa;
 }
 
 function isAndroidDevice(): boolean {
@@ -22,7 +25,7 @@ function isAndroidDevice(): boolean {
   return /android/i.test(navigator.userAgent);
 }
 
-function isStandaloneDisplay(): boolean {
+export function isStandaloneDisplay(): boolean {
   if (typeof window === "undefined") return false;
   const nav = window.navigator as Navigator & { standalone?: boolean };
   if (nav.standalone === true) return true;
@@ -31,23 +34,27 @@ function isStandaloneDisplay(): boolean {
   );
 }
 
-export function hasPushApis(): boolean {
+/** iOS: PushManager is on ServiceWorkerRegistration, NOT on window. */
+export function hasBasicNotificationSupport(): boolean {
   return (
     typeof window !== "undefined" &&
     "serviceWorker" in navigator &&
-    "PushManager" in window &&
     "Notification" in window
   );
 }
 
+export function hasPushManagerOnWindow(): boolean {
+  return typeof window !== "undefined" && "PushManager" in window;
+}
+
 /** Android/Edge/Samsung + iOS 16.4+ installed PWA. */
 export function detectPushPlatform(): PushPlatformInfo {
-  if (!hasPushApis()) {
+  if (!hasBasicNotificationSupport()) {
     return {
       kind: "unknown",
       support: "unsupported",
       label: "Browser nicht unterstützt",
-      detail: "Dieser Browser unterstützt Web Push nicht (Service Worker / PushManager / Notifications fehlen).",
+      detail: "Notification API oder Service Worker fehlen in diesem Browser.",
       canSubscribe: false,
     };
   }
@@ -58,7 +65,7 @@ export function detectPushPlatform(): PushPlatformInfo {
         kind: "ios",
         support: "supported",
         label: "iOS unterstützt",
-        detail: "Push funktioniert in der installierten Home-Bildschirm-PWA (iOS 16.4+).",
+        detail: "Push in installierter Home-Bildschirm-PWA (iOS 16.4+). pushManager liegt an der Service-Worker-Registration.",
         canSubscribe: true,
       };
     }

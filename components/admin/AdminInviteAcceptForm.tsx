@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
+import { Copy } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
 
 type Step = "loading" | "invalid" | "password" | "2fa" | "done";
@@ -23,7 +24,9 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
   const [totpCode, setTotpCode] = useState("");
   const [backupCodes, setBackupCodes] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     fetch(`/api/admin/invites/validate?token=${encodeURIComponent(token)}`)
@@ -44,6 +47,17 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
       .catch(() => setStep("invalid"));
   }, [token]);
 
+  const copySecret = async () => {
+    if (!pendingSecret) return;
+    try {
+      await navigator.clipboard.writeText(pendingSecret);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setError("Schlüssel konnte nicht kopiert werden. Bitte manuell markieren und kopieren.");
+    }
+  };
+
   const submitPassword = async (e: FormEvent) => {
     e.preventDefault();
     if (password !== confirm) {
@@ -52,6 +66,7 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
     }
     setLoading(true);
     setError("");
+    setSuccess("");
     const res = await fetch("/api/admin/invites/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -62,6 +77,7 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
       setQrDataUrl(data.qrDataUrl);
       setPendingSecret(data.secret);
       setStep("2fa");
+      setSuccess("QR-Code und manueller Schlüssel bereit. Bitte 2FA einrichten.");
     } else {
       setError(data.error ?? "Einrichtung fehlgeschlagen.");
     }
@@ -72,6 +88,7 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
     e.preventDefault();
     setLoading(true);
     setError("");
+    setSuccess("");
     const res = await fetch("/api/admin/invites/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -82,7 +99,7 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
       setBackupCodes(data.backupCodes ?? []);
       setStep("done");
     } else {
-      setError(data.error ?? "2FA-Aktivierung fehlgeschlagen.");
+      setError(data.error ?? "Ungültiger 2FA-Code. Bitte Authenticator-App prüfen und erneut eingeben.");
     }
     setLoading(false);
   };
@@ -180,28 +197,57 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
         ) : (
           <>
             <p className="text-sm text-text-muted">
-              Scannen Sie den QR-Code mit Ihrer Authenticator-App und geben Sie den 6-stelligen Code ein.
+              Scannen Sie den QR-Code mit Ihrer Authenticator-App oder nutzen Sie den manuellen Schlüssel unten.
             </p>
             {qrDataUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={qrDataUrl} alt="2FA QR-Code" className="mx-auto h-48 w-48 rounded-lg border border-border" />
             ) : null}
+
+            <div className="space-y-2 rounded-xl border border-border bg-bg-secondary p-4">
+              <label className="block text-sm font-medium text-text-primary">Manueller Einrichtungsschlüssel</label>
+              <input
+                type="text"
+                readOnly
+                value={pendingSecret}
+                onFocus={(e) => e.target.select()}
+                className="w-full rounded-lg border border-border bg-bg-card px-3 py-2 font-mono text-sm tracking-wide text-text-primary"
+                aria-label="Manueller 2FA-Schlüssel"
+              />
+              <button
+                type="button"
+                onClick={() => void copySecret()}
+                disabled={!pendingSecret}
+                className="inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-bg-card px-4 text-sm font-medium text-text-primary hover:bg-bg-secondary disabled:opacity-50"
+              >
+                <Copy className="h-4 w-4" aria-hidden />
+                {copied ? "Schlüssel kopiert" : "Schlüssel kopieren"}
+              </button>
+              <p className="text-xs text-text-muted">
+                Falls der QR-Code nicht funktioniert, füge diesen Schlüssel manuell in deiner Authenticator-App hinzu.
+              </p>
+            </div>
+
             <div>
-              <label className="mb-2 block text-sm font-medium">Sicherheitscode</label>
+              <label className="mb-2 block text-sm font-medium">6-stelliger Sicherheitscode</label>
               <input
                 inputMode="numeric"
                 autoComplete="one-time-code"
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value)}
                 className="w-full min-h-12 rounded-xl border border-border px-4 tracking-widest"
+                placeholder="000000"
                 required
+                minLength={6}
+                maxLength={8}
               />
             </div>
           </>
         )}
 
-        {error ? <p className="text-sm text-accent-heart">{error}</p> : null}
-        <button type="submit" disabled={loading} className="w-full min-h-12 rounded-full bg-primary font-medium text-white">
+        {error ? <p className="text-sm text-accent-heart" role="alert">{error}</p> : null}
+        {success ? <p className="text-sm text-[#2d5a3a]" role="status">{success}</p> : null}
+        <button type="submit" disabled={loading} className="w-full min-h-12 rounded-full bg-primary font-medium text-white disabled:opacity-60">
           {loading ? "Bitte warten…" : step === "password" ? "Weiter zu 2FA" : "Account aktivieren"}
         </button>
       </form>

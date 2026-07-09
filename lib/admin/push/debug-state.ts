@@ -26,6 +26,7 @@ export interface PushLiveDebugState {
   displayStandalone: boolean;
   navigatorStandalone: boolean;
   lastError: string | null;
+  lastServerResponse: string | null;
   checkedAt: string;
 }
 
@@ -52,6 +53,7 @@ async function fetchServerDiagnostics(): Promise<Partial<PushDiagnostics>> {
 export async function collectPushLiveDebugState(opts?: {
   serverSubscribed?: boolean;
   lastError?: string | null;
+  lastServerResponse?: string | null;
 }): Promise<PushLiveDebugState> {
   const platform = detectPushPlatform();
   const permission =
@@ -109,6 +111,7 @@ export async function collectPushLiveDebugState(opts?: {
             ? (navigator as Navigator & { standalone?: boolean }).standalone === true
             : false,
         lastError: error instanceof Error ? error.message : String(error),
+        lastServerResponse: opts?.lastServerResponse ?? null,
         checkedAt: new Date().toISOString(),
       };
     }
@@ -143,6 +146,7 @@ export async function collectPushLiveDebugState(opts?: {
         ? (navigator as Navigator & { standalone?: boolean }).standalone === true
         : false,
     lastError: opts?.lastError ?? null,
+    lastServerResponse: opts?.lastServerResponse ?? null,
     checkedAt: new Date().toISOString(),
   };
 }

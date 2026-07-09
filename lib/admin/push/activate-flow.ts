@@ -28,6 +28,7 @@ export interface PushActivateResult {
   error: string | null;
   permission: NotificationPermission | "unavailable";
   serverSubscribed: boolean;
+  serverResponse: string | null;
 }
 
 function logStep(steps: PushActivateStepLog[], step: PushActivateStep, ok: boolean, detail: string) {
@@ -78,29 +79,69 @@ async function verifyServerSubscription(): Promise<{ ok: boolean; detail: string
   }
 }
 
+/**
+ * Start subscribe chain synchronously inside click handler.
+ * Required on iOS when permission is already granted — async/await before subscribe loses user gesture.
+ */
+export function beginPushSubscriptionInClick(): Promise<PushSubscription> {
+  console.error("[push:step] subscribe: Subscription-Kette synchron gestartet");
+
+  const publicKey = getVapidPublicKeyClient();
+  if (!publicKey) {
+    return Promise.reject(new Error("VAPID Public Key fehlt im Client-Bundle."));
+  }
+  if (!("serviceWorker" in navigator)) {
+    return Promise.reject(new Error("Service Worker API nicht verfügbar."));
+  }
+
+  return navigator.serviceWorker
+    .getRegistration("/admin/")
+    .then((reg) => reg ?? navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" }))
+    .then((reg) => navigator.serviceWorker.ready.then(() => reg))
+    .then((reg) => {
+      if (!reg.pushManager) {
+        const platform = detectPushPlatform();
+        throw new Error(
+          platform.kind === "ios"
+            ? "pushManager fehlt. App muss vom Home-Bildschirm geöffnet sein (nicht Safari-Tab)."
+            : "pushManager fehlt auf der Service-Worker-Registration.",
+        );
+      }
+      return reg.pushManager.getSubscription().then((existing) => {
+        if (existing) return existing;
+        return reg.pushManager!.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+        });
+      });
+    });
+}
+
 export async function runPushActivateFlow(opts: {
   permissionResult: NotificationPermission | Promise<NotificationPermission>;
   configured: boolean;
+  subscriptionPromise?: Promise<PushSubscription>;
 }): Promise<PushActivateResult> {
   const steps: PushActivateStepLog[] = [];
   const platform = detectPushPlatform();
+  let serverResponse: string | null = null;
 
   if (!opts.configured) {
     const msg = "VAPID Public Key fehlt im Build (NEXT_PUBLIC_VAPID_PUBLIC_KEY).";
     logStep(steps, "precheck", false, msg);
-    return { ok: false, steps, error: msg, permission: "default", serverSubscribed: false };
+    return { ok: false, steps, error: msg, permission: "default", serverSubscribed: false, serverResponse };
   }
 
   if (!platform.canSubscribe) {
     const msg = platform.detail;
     logStep(steps, "precheck", false, msg);
-    return { ok: false, steps, error: msg, permission: "default", serverSubscribed: false };
+    return { ok: false, steps, error: msg, permission: "default", serverSubscribed: false, serverResponse };
   }
 
   if (typeof Notification === "undefined") {
     const msg = "Notification API nicht verfügbar.";
     logStep(steps, "precheck", false, msg);
-    return { ok: false, steps, error: msg, permission: "unavailable", serverSubscribed: false };
+    return { ok: false, steps, error: msg, permission: "unavailable", serverSubscribed: false, serverResponse };
   }
 
   logStep(steps, "precheck", true, `Plattform: ${platform.label}`);
@@ -119,6 +160,7 @@ export async function runPushActivateFlow(opts: {
       error: `Permission-Anfrage fehlgeschlagen: ${msg}`,
       permission: Notification.permission,
       serverSubscribed: false,
+      serverResponse,
     };
   }
 
@@ -129,6 +171,7 @@ export async function runPushActivateFlow(opts: {
       error: "Benachrichtigungen sind blockiert. Bitte in den Website-Einstellungen erlauben.",
       permission,
       serverSubscribed: false,
+      serverResponse,
     };
   }
 
@@ -139,72 +182,99 @@ export async function runPushActivateFlow(opts: {
       error: `Permission nicht erteilt (Status: ${permission}). Bitte erneut tippen.`,
       permission,
       serverSubscribed: false,
+      serverResponse,
     };
   }
 
-  const publicKey = getVapidPublicKeyClient();
-  if (!publicKey) {
-    const msg = "VAPID Public Key fehlt im Client-Bundle.";
-    logStep(steps, "subscribe", false, msg);
-    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
-  }
-
-  if (!("serviceWorker" in navigator)) {
-    const msg = "Service Worker API nicht verfügbar.";
-    logStep(steps, "service_worker_ready", false, msg);
-    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
-  }
-
-  let registration: ServiceWorkerRegistration;
-  try {
-    let reg = await navigator.serviceWorker.getRegistration("/admin/");
-    if (!reg) {
-      logStep(steps, "service_worker_ready", true, "Registriere /admin/sw.js …");
-      reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
-    }
-    await navigator.serviceWorker.ready;
-    registration = reg;
-    logStep(steps, "service_worker_ready", true, `SW bereit, scope: ${registration.scope}`);
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logStep(steps, "service_worker_ready", false, msg);
-    return { ok: false, steps, error: `Service Worker Fehler: ${msg}`, permission, serverSubscribed: false };
-  }
-
-  if (!registration.pushManager) {
-    const msg =
-      platform.kind === "ios"
-        ? "pushManager fehlt auf der Service-Worker-Registration. App muss vom Home-Bildschirm geöffnet sein (nicht Safari-Tab)."
-        : "pushManager fehlt auf der Service-Worker-Registration.";
-    logStep(steps, "push_manager", false, msg);
-    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
-  }
-
-  logStep(steps, "push_manager", true, "registration.pushManager vorhanden");
-
   let subscription: PushSubscription;
-  try {
-    const existing = await registration.pushManager.getSubscription();
-    if (existing) {
-      subscription = existing;
-      logStep(steps, "subscribe", true, "Bestehende Browser-Subscription gefunden");
-    } else {
-      subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
-      });
-      logStep(steps, "subscribe", true, `Neue Subscription erstellt: ${subscription.endpoint.slice(0, 48)}…`);
+
+  if (opts.subscriptionPromise) {
+    try {
+      subscription = await opts.subscriptionPromise;
+      logStep(steps, "service_worker_ready", true, "SW-Kette aus Klick-Handler abgeschlossen");
+      logStep(steps, "push_manager", true, "registration.pushManager vorhanden");
+      logStep(
+        steps,
+        "subscribe",
+        true,
+        `Subscription aus Klick-Handler: ${subscription.endpoint.slice(0, 48)}…`,
+      );
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logStep(steps, "subscribe", false, msg);
+      return {
+        ok: false,
+        steps,
+        error: `Gerät registrieren fehlgeschlagen: ${msg}`,
+        permission,
+        serverSubscribed: false,
+        serverResponse,
+      };
     }
-  } catch (error) {
-    const msg = error instanceof Error ? error.message : String(error);
-    logStep(steps, "subscribe", false, msg);
-    return { ok: false, steps, error: `pushManager.subscribe() fehlgeschlagen: ${msg}`, permission, serverSubscribed: false };
+  } else {
+    const publicKey = getVapidPublicKeyClient();
+    if (!publicKey) {
+      const msg = "VAPID Public Key fehlt im Client-Bundle.";
+      logStep(steps, "subscribe", false, msg);
+      return { ok: false, steps, error: msg, permission, serverSubscribed: false, serverResponse };
+    }
+
+    if (!("serviceWorker" in navigator)) {
+      const msg = "Service Worker API nicht verfügbar.";
+      logStep(steps, "service_worker_ready", false, msg);
+      return { ok: false, steps, error: msg, permission, serverSubscribed: false, serverResponse };
+    }
+
+    let registration: ServiceWorkerRegistration;
+    try {
+      let reg = await navigator.serviceWorker.getRegistration("/admin/");
+      if (!reg) {
+        logStep(steps, "service_worker_ready", true, "Registriere /admin/sw.js …");
+        reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
+      }
+      await navigator.serviceWorker.ready;
+      registration = reg;
+      logStep(steps, "service_worker_ready", true, `SW bereit, scope: ${registration.scope}`);
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logStep(steps, "service_worker_ready", false, msg);
+      return { ok: false, steps, error: `Service Worker Fehler: ${msg}`, permission, serverSubscribed: false, serverResponse };
+    }
+
+    if (!registration.pushManager) {
+      const msg =
+        platform.kind === "ios"
+          ? "pushManager fehlt auf der Service-Worker-Registration. App muss vom Home-Bildschirm geöffnet sein (nicht Safari-Tab)."
+          : "pushManager fehlt auf der Service-Worker-Registration.";
+      logStep(steps, "push_manager", false, msg);
+      return { ok: false, steps, error: msg, permission, serverSubscribed: false, serverResponse };
+    }
+
+    logStep(steps, "push_manager", true, "registration.pushManager vorhanden");
+
+    try {
+      const existing = await registration.pushManager.getSubscription();
+      if (existing) {
+        subscription = existing;
+        logStep(steps, "subscribe", true, "Bestehende Browser-Subscription gefunden");
+      } else {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
+        });
+        logStep(steps, "subscribe", true, `Neue Subscription erstellt: ${subscription.endpoint.slice(0, 48)}…`);
+      }
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      logStep(steps, "subscribe", false, msg);
+      return { ok: false, steps, error: `pushManager.subscribe() fehlgeschlagen: ${msg}`, permission, serverSubscribed: false, serverResponse };
+    }
   }
 
   const shapeError = validateSubscriptionShape(subscription);
   if (shapeError) {
     logStep(steps, "verify_subscription", false, shapeError);
-    return { ok: false, steps, error: shapeError, permission, serverSubscribed: false };
+    return { ok: false, steps, error: shapeError, permission, serverSubscribed: false, serverResponse };
   }
   logStep(steps, "verify_subscription", true, "endpoint, p256dh und auth vorhanden");
 
@@ -214,7 +284,7 @@ export async function runPushActivateFlow(opts: {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logStep(steps, "verify_subscription", false, msg);
-    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
+    return { ok: false, steps, error: msg, permission, serverSubscribed: false, serverResponse };
   }
 
   try {
@@ -223,22 +293,37 @@ export async function runPushActivateFlow(opts: {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = (await res.json()) as { error?: string; subscriptionId?: string };
+    const data = (await res.json()) as { error?: string; subscriptionId?: string; success?: boolean };
+    serverResponse = JSON.stringify({ status: res.status, ...data });
     if (!res.ok) {
       const msg = data.error ?? `HTTP ${res.status}`;
       logStep(steps, "save_server", false, msg);
-      return { ok: false, steps, error: `Server speichern fehlgeschlagen: ${msg}`, permission, serverSubscribed: false };
+      return {
+        ok: false,
+        steps,
+        error: `Server speichern fehlgeschlagen: ${msg}`,
+        permission,
+        serverSubscribed: false,
+        serverResponse,
+      };
     }
     logStep(
       steps,
       "save_server",
       true,
-      `Subscription gespeichert (id: ${data.subscriptionId ?? "unbekannt"})`,
+      `Subscription gespeichert (id: ${data.subscriptionId ?? "unbekannt"}, HTTP ${res.status})`,
     );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logStep(steps, "save_server", false, msg);
-    return { ok: false, steps, error: `Server-Request fehlgeschlagen: ${msg}`, permission, serverSubscribed: false };
+    return {
+      ok: false,
+      steps,
+      error: `Server-Request fehlgeschlagen: ${msg}`,
+      permission,
+      serverSubscribed: false,
+      serverResponse,
+    };
   }
 
   const verify = await verifyServerSubscription();
@@ -250,16 +335,17 @@ export async function runPushActivateFlow(opts: {
       error: `Gerät nicht in DB registriert: ${verify.detail}`,
       permission,
       serverSubscribed: false,
+      serverResponse,
     };
   }
 
-  return { ok: true, steps, error: null, permission, serverSubscribed: true };
+  return { ok: true, steps, error: null, permission, serverSubscribed: true, serverResponse };
 }
 
 /** Call synchronously inside click handler — iOS requires user gesture. */
 export function beginPermissionRequest(): Promise<NotificationPermission> {
   if (typeof Notification === "undefined") {
-    return Promise.resolve("denied" as NotificationPermission);
+    return Promise.reject(new Error("Notification API nicht verfügbar."));
   }
   console.error("[push:step] request_permission: Notification.requestPermission() sync gestartet");
   return Notification.requestPermission();

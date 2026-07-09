@@ -81,6 +81,11 @@ export const ACTION_RESULTS = {
     message: "Der Kunde wurde archiviert.",
     status: "warning",
   }),
+  customerRestored: (): ActionResultPayload => ({
+    title: "Kunde wiederhergestellt",
+    message: "Der Kunde erscheint wieder in der Standardliste.",
+    status: "success",
+  }),
   customerDeleted: (): ActionResultPayload => ({
     title: "Kunde gelöscht",
     message: "Der Kunde wurde dauerhaft entfernt.",

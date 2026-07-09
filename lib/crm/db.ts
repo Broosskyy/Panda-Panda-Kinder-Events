@@ -20,9 +20,15 @@ function applyDocumentView<T extends { deleted_at?: string | null; archived_at?:
   });
 }
 
-export async function listCustomers(search?: string) {
+export async function listCustomers(search?: string, view: "active" | "archived" | "all" = "active") {
   const supabase = getSupabaseAdmin();
   let query = supabase.from("crm_customers").select("*").order("updated_at", { ascending: false });
+
+  if (view === "active") {
+    query = query.neq("status", "inactive");
+  } else if (view === "archived") {
+    query = query.eq("status", "inactive");
+  }
 
   if (search?.trim()) {
     const term = search.trim().replace(/"/g, '""');
@@ -117,6 +123,56 @@ export async function createCustomerFromBooking(bookingId: string) {
   });
 
   return customer as CrmCustomer;
+}
+
+export async function archiveCustomerRecord(customerId: string): Promise<CrmCustomer> {
+  const supabase = getSupabaseAdmin();
+  const existing = await getCustomer(customerId);
+  if (!existing) throw new Error("Kunde nicht gefunden.");
+
+  const { data, error } = await supabase
+    .from("crm_customers")
+    .update({ status: "inactive", updated_at: new Date().toISOString() })
+    .eq("id", customerId)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+
+  await logCustomerEvent(customerId, "customer_archived", "Kunde archiviert", existing.name);
+  return data as CrmCustomer;
+}
+
+export async function restoreCustomerRecord(customerId: string): Promise<CrmCustomer> {
+  const supabase = getSupabaseAdmin();
+  const existing = await getCustomer(customerId);
+  if (!existing) throw new Error("Kunde nicht gefunden.");
+
+  const { data, error } = await supabase
+    .from("crm_customers")
+    .update({ status: "active", updated_at: new Date().toISOString() })
+    .eq("id", customerId)
+    .select()
+    .single();
+  if (error) throw new Error(error.message);
+
+  await logCustomerEvent(customerId, "customer_restored", "Kunde wiederhergestellt", existing.name);
+  return data as CrmCustomer;
+}
+
+export async function deleteCustomerRecord(customerId: string): Promise<void> {
+  const blockers = await getCustomerDeleteBlockers(customerId);
+  const blocked = blockers.quotes > 0 || blockers.invoices > 0 || blockers.bookings > 0;
+  if (blocked) {
+    const parts: string[] = [];
+    if (blockers.bookings > 0) parts.push(`${blockers.bookings} Anfrage(n)`);
+    if (blockers.quotes > 0) parts.push(`${blockers.quotes} Angebot(e)`);
+    if (blockers.invoices > 0) parts.push(`${blockers.invoices} Rechnung(en)`);
+    throw new Error(`Dieser Kunde kann nicht gelöscht werden, weil noch ${parts.join(", ")} verknüpft sind.`);
+  }
+
+  const supabase = getSupabaseAdmin();
+  const { error } = await supabase.from("crm_customers").delete().eq("id", customerId);
+  if (error) throw new Error(error.message);
 }
 
 async function insertLineItems(

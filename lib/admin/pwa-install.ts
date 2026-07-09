@@ -1,4 +1,10 @@
 import { BRAND } from "@/lib/brand";
+import {
+  ADMIN_HOME_PATH,
+  ADMIN_MANIFEST_PATH,
+  ADMIN_SW_SCOPE,
+  ADMIN_SW_SCRIPT_PATH,
+} from "@/lib/admin/routes";
 
 export const PWA_HIDE_STORAGE_KEY = "pb-admin-pwa-install-hidden";
 /** @deprecated Use PWA_HIDE_STORAGE_KEY — kept for migration */
@@ -264,8 +270,6 @@ export interface PwaDebugStatus {
   causeMessage: string | null;
   chromeInstallBlockers: string[];
 }
-
-const ADMIN_MANIFEST_PATH = "/admin/manifest.webmanifest";
 
 export function readPageManifestLinkHref(): string | null {
   if (typeof document === "undefined") return null;
@@ -1013,9 +1017,9 @@ export async function buildPwaDebugStatus(
     installedLocalFlag: readPwaInstalledFlag(),
     installDismissedLocal: readPwaDontShowAgain(),
     browserProfile: detectBrowserProfile(),
-    currentRoute: typeof window !== "undefined" ? window.location.pathname : "/admin",
-    startUrl: "/admin",
-    scope: "/admin",
+    currentRoute: typeof window !== "undefined" ? window.location.pathname : ADMIN_HOME_PATH,
+    startUrl: ADMIN_HOME_PATH,
+    scope: ADMIN_SW_SCOPE,
     installMode: probe.installMode,
     detectedCause: detected.cause,
     causeMessage: detected.message,
@@ -1160,8 +1164,8 @@ export async function probePwaInstallability(
       manifestValid = Boolean(
         manifest.name &&
           manifest.short_name &&
-          (startUrl.includes("/admin") || startUrl.endsWith("/admin")) &&
-          (scope.includes("/admin") || scope.endsWith("/admin")) &&
+          startUrl.endsWith("/admin/") &&
+          scope.endsWith("/admin/") &&
           (manifest.display === "standalone" || manifest.display === "fullscreen") &&
           has192 &&
           has512 &&
@@ -1199,7 +1203,7 @@ export async function probePwaInstallability(
 
   if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
     try {
-      const reg = await navigator.serviceWorker.getRegistration("/admin");
+      const reg = await navigator.serviceWorker.getRegistration(ADMIN_SW_SCOPE);
       serviceWorkerControlling = Boolean(navigator.serviceWorker.controller);
       serviceWorkerRegistered = Boolean(reg) || serviceWorkerControlling;
       serviceWorkerActive = Boolean(reg?.active) || serviceWorkerControlling;
@@ -1348,14 +1352,14 @@ export async function probePwaInstallability(
   };
 }
 
-const ADMIN_SW_PATH = "/admin/sw.js";
+const ADMIN_SW_PATH = ADMIN_SW_SCRIPT_PATH;
 
 export async function registerAdminServiceWorker(): Promise<ServiceWorkerRegistration | null> {
   if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return null;
 
   let reg: ServiceWorkerRegistration | null = null;
   try {
-    reg = await navigator.serviceWorker.register(ADMIN_SW_PATH, { scope: "/admin/" });
+    reg = await navigator.serviceWorker.register(ADMIN_SW_PATH, { scope: ADMIN_SW_SCOPE });
   } catch (err) {
     console.warn("[pwa] registration failed for", ADMIN_SW_PATH, err);
     return null;

@@ -1,6 +1,6 @@
-const CACHE = "pb-admin-shell-v7";
+const CACHE = "pb-admin-shell-v8";
 const SHELL = [
-  "/admin",
+  "/admin/",
   "/admin/manifest.webmanifest",
   "/offline",
   "/icons/panda-icon-192.png",
@@ -102,7 +102,7 @@ self.addEventListener("fetch", (event) => {
   if (event.request.mode === "navigate") {
     event.respondWith(
       fetch(event.request).catch(() =>
-        caches.match("/offline").then((r) => r ?? caches.match("/admin") ?? Response.error()),
+        caches.match("/offline").then((r) => r ?? caches.match("/admin/") ?? Response.error()),
       ),
     );
     return;

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Logo } from "@/components/ui/Logo";
+import { ADMIN_HOME_PATH } from "@/lib/admin/routes";
 
 type LoginStep = "credentials" | "password-change" | "2fa" | "2fa-setup";
 
@@ -432,7 +433,7 @@ export function AdminPasswordResetForm({ token }: { token: string }) {
       <div className="flex min-h-screen items-center justify-center bg-bg-secondary px-4">
         <div className="w-full max-w-sm rounded-2xl border border-border bg-bg-card p-8 text-center shadow-lg">
           <h1 className="font-heading text-xl font-bold">Passwort aktualisiert</h1>
-          <Link href="/admin" className="mt-4 inline-block text-primary underline">
+          <Link href={ADMIN_HOME_PATH} className="mt-4 inline-block text-primary underline">
             Zur Anmeldung
           </Link>
         </div>

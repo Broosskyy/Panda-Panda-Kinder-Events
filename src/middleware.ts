@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { SESSION_COOKIE } from "@/lib/auth/session";
-
-const PUBLIC_ADMIN_PAGE_PREFIXES = ["/admin/passwort-reset", "/admin/einladung"];
+import {
+  ADMIN_HOME_PATH,
+  ADMIN_MANIFEST_PATH,
+  ADMIN_PWA_CAPTURE_PATH,
+  ADMIN_PUBLIC_PAGE_PREFIXES,
+  ADMIN_SW_SCRIPT_PATH,
+} from "@/lib/admin/routes";
 
 /** PWA shell assets must be reachable without login (Chrome installability). */
-const PUBLIC_ADMIN_PWA_PATHS = ["/admin/manifest.webmanifest", "/admin/sw.js", "/admin-sw.js"];
+const PUBLIC_ADMIN_PWA_PATHS = [
+  ADMIN_MANIFEST_PATH,
+  ADMIN_SW_SCRIPT_PATH,
+  ADMIN_PWA_CAPTURE_PATH,
+  "/admin-sw.js",
+];
 
 const PUBLIC_ADMIN_API_PREFIXES = [
   "/api/admin/login",
@@ -15,7 +25,7 @@ const PUBLIC_ADMIN_API_PREFIXES = [
 ];
 
 function isPublicAdminPage(pathname: string) {
-  return PUBLIC_ADMIN_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+  return ADMIN_PUBLIC_PAGE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 }
 
 function isPublicAdminPwaAsset(pathname: string) {
@@ -65,6 +75,13 @@ export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const method = request.method;
 
+  /** Legacy bare /admin → canonical /admin/ (SW scope match). */
+  if (pathname === "/admin") {
+    const url = request.nextUrl.clone();
+    url.pathname = ADMIN_HOME_PATH;
+    return NextResponse.redirect(url, 308);
+  }
+
   if (isPublicAdminPwaAsset(pathname)) {
     const response = NextResponse.next();
     applySecurityHeaders(response, request);
@@ -91,9 +108,9 @@ export function middleware(request: NextRequest) {
 
   if (pathname.startsWith("/admin") && !isPublicAdminPage(pathname)) {
     const session = request.cookies.get(SESSION_COOKIE)?.value;
-    if (!session && pathname !== "/admin" && pathname !== "/admin/") {
+    if (!session && pathname !== ADMIN_HOME_PATH) {
       const loginUrl = request.nextUrl.clone();
-      loginUrl.pathname = "/admin";
+      loginUrl.pathname = ADMIN_HOME_PATH;
       loginUrl.search = "";
       loginUrl.searchParams.set("next", pathname);
       return NextResponse.redirect(loginUrl);
@@ -115,6 +132,6 @@ export function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|favicon.png|assets/|icons/|admin/sw.js|admin-sw.js|admin/manifest.webmanifest).*)",
+    "/((?!_next/static|_next/image|favicon.ico|favicon.png|assets/|icons/|admin/sw.js|admin-sw.js|admin/pwa-capture.js|admin/manifest.webmanifest).*)",
   ],
 };

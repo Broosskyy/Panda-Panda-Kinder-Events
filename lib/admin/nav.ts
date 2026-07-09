@@ -1,3 +1,5 @@
+import { ADMIN_HOME_PATH, isAdminHomePath } from "@/lib/admin/routes";
+
 export interface AdminNavItem {
   href: string;
   label: string;
@@ -16,7 +18,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
   {
     id: "main",
     items: [
-      { href: "/admin", label: "Dashboard", iconKey: "Home", mobileLabel: "Start" },
+      { href: ADMIN_HOME_PATH, label: "Dashboard", iconKey: "Home", mobileLabel: "Start" },
       { href: "/admin/anfragen", label: "Anfragen", iconKey: "Inbox", mobileLabel: "Anfragen" },
       { href: "/admin/kunden", label: "Kunden", iconKey: "Users", mobileLabel: "Kunden" },
       { href: "/admin/angebote", label: "Angebote", iconKey: "FileText", mobileLabel: "Angeb." },
@@ -59,7 +61,7 @@ export const ADMIN_NAV_GROUPS: AdminNavGroup[] = [
 export const ADMIN_NAV: AdminNavItem[] = ADMIN_NAV_GROUPS.flatMap((group) => group.items);
 
 export const MOBILE_BOTTOM_NAV_HREFS = [
-  "/admin",
+  ADMIN_HOME_PATH,
   "/admin/anfragen",
   "/admin/kunden",
   "/admin/angebote",
@@ -68,7 +70,7 @@ export const MOBILE_BOTTOM_NAV_HREFS = [
 
 export function isAdminNavActive(pathname: string, href: string): boolean {
   const baseHref = href.split("?")[0] ?? href;
-  if (baseHref === "/admin") return pathname === "/admin";
+  if (baseHref === ADMIN_HOME_PATH) return isAdminHomePath(pathname);
   return pathname === baseHref || pathname.startsWith(`${baseHref}/`);
 }
 

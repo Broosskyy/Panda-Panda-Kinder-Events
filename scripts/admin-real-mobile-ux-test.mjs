@@ -106,7 +106,7 @@ if (emailHelp.includes("type=\"search\"") && emailHelp.includes("Platzhalter suc
 }
 
 const fab = read("components/admin/AdminQuickActions.tsx");
-if (fab.includes('pathname === "/admin"') && fab.includes("hidden md:flex")) {
+if (fab.includes("isAdminHomePath") && fab.includes("hidden md:flex")) {
   ok("FAB hidden on mobile, dashboard-only on desktop");
 } else {
   fail("FAB rules incorrect");

@@ -50,7 +50,7 @@ if (css.includes("admin-bottom-nav-label")) ok("Bottom nav label truncation clas
 else fail("Bottom nav label class missing");
 
 const fab = read("components/admin/AdminQuickActions.tsx");
-if (fab.includes('pathname === "/admin"') && fab.includes("hidden md:flex")) {
+if (fab.includes("isAdminHomePath") && fab.includes("hidden md:flex")) {
   ok("FAB dashboard-only on desktop");
 } else {
   fail("FAB visibility rules incorrect");
@@ -87,8 +87,8 @@ if (provider.includes("beforeinstallprompt") && provider.includes("showInstallCa
 
 const manifest = read("src/app/admin/manifest.webmanifest/route.ts");
 if (
-  manifest.includes('scope: "/admin"') &&
-  manifest.includes('start_url: "/admin"') &&
+  manifest.includes("ADMIN_HOME_PATH") &&
+  manifest.includes("ADMIN_SW_SCOPE") &&
   manifest.includes("standalone") &&
   manifest.includes("Panda-Bande Admin")
 ) {

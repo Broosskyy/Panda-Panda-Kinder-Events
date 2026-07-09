@@ -3,6 +3,7 @@
 import { detectPushPlatform, hasBasicNotificationSupport } from "@/lib/admin/push/platform";
 import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
 import { PUSH_SW_READY_TIMEOUT_MS, withTimeout } from "@/lib/admin/push/timeout";
+import { ADMIN_SW_SCOPE } from "@/lib/admin/routes";
 import type { PushDiagnostics } from "@/lib/admin/push/types";
 
 export interface PushLiveDebugState {
@@ -75,7 +76,7 @@ async function readServiceWorkerState(): Promise<{
   }
 
   try {
-    const reg = await navigator.serviceWorker.getRegistration("/admin/");
+    const reg = await navigator.serviceWorker.getRegistration(ADMIN_SW_SCOPE);
     serviceWorkerRegistered = Boolean(reg);
     if (reg) {
       pushManagerOnRegistration = "pushManager" in reg && Boolean(reg.pushManager);

@@ -11,6 +11,7 @@ import {
   validatePasswordRules,
 } from "@/lib/auth/password-rules";
 import type { PasswordPolicy } from "@/lib/auth/types";
+import { ADMIN_HOME_PATH } from "@/lib/admin/routes";
 
 type Step = "loading" | "invalid" | "password" | "2fa" | "done";
 
@@ -167,7 +168,7 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
           <p className="mt-3 text-sm text-text-muted">
             Der Link ist abgelaufen, wurde bereits verwendet oder widerrufen.
           </p>
-          <Link href="/admin" className="mt-4 inline-block text-primary underline">
+          <Link href={ADMIN_HOME_PATH} className="mt-4 inline-block text-primary underline">
             Zur Anmeldung
           </Link>
         </div>
@@ -190,7 +191,7 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
               ))}
             </div>
           ) : null}
-          <Link href="/admin" className="block w-full min-h-12 rounded-full bg-primary text-center leading-[3rem] font-medium text-white">
+          <Link href={ADMIN_HOME_PATH} className="block w-full min-h-12 rounded-full bg-primary text-center leading-[3rem] font-medium text-white">
             Zur Anmeldung
           </Link>
         </div>

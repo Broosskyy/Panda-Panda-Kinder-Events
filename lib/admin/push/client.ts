@@ -2,6 +2,7 @@
 
 import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
 import { detectPushPlatform, hasBasicNotificationSupport } from "@/lib/admin/push/platform";
+import { getAdminServiceWorkerRegistration } from "@/lib/admin/push/service-worker";
 
 export { detectPushPlatform, hasBasicNotificationSupport };
 
@@ -20,19 +21,7 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export async function getAdminServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
-  if (!("serviceWorker" in navigator)) return null;
-  try {
-    let reg = await navigator.serviceWorker.getRegistration("/admin/");
-    if (!reg) {
-      reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
-    }
-    await navigator.serviceWorker.ready;
-    return reg;
-  } catch {
-    return null;
-  }
-}
+export { getAdminServiceWorkerRegistration };
 
 export async function subscribeToAdminPush(): Promise<PushSubscription | null> {
   const publicKey = getVapidPublicKeyClient();

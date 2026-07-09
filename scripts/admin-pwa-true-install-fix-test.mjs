@@ -25,24 +25,29 @@ function read(rel) {
 }
 
 const middleware = read("src/middleware.ts");
-if (middleware.includes("PUBLIC_ADMIN_PWA_PATHS") && middleware.includes("/admin/manifest.webmanifest")) {
-  ok("Middleware whitelists public PWA assets");
+if (middleware.includes("ADMIN_PWA_CAPTURE_PATH") && middleware.includes('pathname === "/admin"')) {
+  ok("Middleware redirects legacy /admin and whitelists pwa-capture");
 } else fail("PWA middleware whitelist");
 
+const routes = read("lib/admin/routes.ts");
+if (routes.includes('ADMIN_HOME_PATH = "/admin/"') && routes.includes('ADMIN_SW_SCOPE = "/admin/"')) {
+  ok("Canonical admin routes constants");
+} else fail("Admin routes constants");
+
 const manifest = read("src/app/admin/manifest.webmanifest/route.ts");
-if (manifest.includes('name: "Panda-Bande Admin"') && manifest.includes('start_url: "/admin"')) ok("Manifest name and start_url");
+if (manifest.includes('name: "Panda-Bande Admin"') && manifest.includes("ADMIN_HOME_PATH")) ok("Manifest name and canonical start_url");
 else fail("Manifest basics");
 if (manifest.includes("iconMaskable192") && manifest.includes('purpose: "maskable"')) ok("Manifest maskable 192 + 512");
 else fail("Manifest maskable icons");
 
 const sw = read("public/admin/sw.js");
-if (sw.includes("pb-admin-shell-v4") && sw.includes("maskable-192")) ok("Service worker v4 with maskable icons");
+if (sw.includes("pb-admin-shell-v8") && sw.includes("maskable-192")) ok("Service worker v8 with maskable icons");
 else fail("Service worker shell");
 
 const pwa = read("lib/admin/pwa-install.ts");
 if (pwa.includes("shortcut_only") && pwa.includes("true_installable")) ok("Install mode diagnosis");
 else fail("Install mode types");
-if (pwa.includes('ADMIN_SW_PATH = "/admin/sw.js"') && !pwa.includes("/admin-sw.js")) ok("SW registration only /admin/sw.js");
+if (pwa.includes("ADMIN_SW_SCRIPT_PATH") && !pwa.includes('register("/admin-sw.js"')) ok("SW registration only /admin/sw.js");
 else fail("SW registration path");
 if (pwa.includes("resetPwaInstallCaches")) ok("PWA cache reset helper");
 

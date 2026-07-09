@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AdminPwaEarlyCapture } from "@/components/admin/AdminPwaEarlyCapture";
+import { ADMIN_MANIFEST_PATH } from "@/lib/admin/routes";
 
-const ADMIN_MANIFEST = "/admin/manifest.webmanifest";
+const ADMIN_MANIFEST = ADMIN_MANIFEST_PATH;
 
 export async function generateMetadata(): Promise<Metadata> {
   return {

@@ -4,6 +4,7 @@ import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
 import { detectPushPlatform } from "@/lib/admin/push/platform";
 import { subscriptionToStored, urlBase64ToUint8Array } from "@/lib/admin/push/client";
 import { PUSH_SW_READY_TIMEOUT_MS, withTimeout } from "@/lib/admin/push/timeout";
+import { ADMIN_SW_SCOPE, ADMIN_SW_SCRIPT_PATH } from "@/lib/admin/routes";
 import type { PushStatusResponse } from "@/lib/admin/push/types";
 
 export type PushActivateStep =
@@ -96,8 +97,8 @@ export function beginPushSubscriptionInClick(): Promise<PushSubscription> {
   }
 
   return navigator.serviceWorker
-    .getRegistration("/admin/")
-    .then((reg) => reg ?? navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" }))
+    .getRegistration(ADMIN_SW_SCOPE)
+    .then((reg) => reg ?? navigator.serviceWorker.register(ADMIN_SW_SCRIPT_PATH, { scope: ADMIN_SW_SCOPE }))
     .then((reg) =>
       withTimeout(navigator.serviceWorker.ready, PUSH_SW_READY_TIMEOUT_MS, "serviceWorker.ready").then(
         () => reg,
@@ -232,10 +233,10 @@ export async function runPushActivateFlow(opts: {
 
     let registration: ServiceWorkerRegistration;
     try {
-      let reg = await navigator.serviceWorker.getRegistration("/admin/");
+      let reg = await navigator.serviceWorker.getRegistration(ADMIN_SW_SCOPE);
       if (!reg) {
-        logStep(steps, "service_worker_ready", true, "Registriere /admin/sw.js …");
-        reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
+        logStep(steps, "service_worker_ready", true, `Registriere ${ADMIN_SW_SCRIPT_PATH} …`);
+        reg = await navigator.serviceWorker.register(ADMIN_SW_SCRIPT_PATH, { scope: ADMIN_SW_SCOPE });
       }
       await withTimeout(navigator.serviceWorker.ready, PUSH_SW_READY_TIMEOUT_MS, "serviceWorker.ready");
       registration = reg;

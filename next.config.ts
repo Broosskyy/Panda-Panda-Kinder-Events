@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  /** Canonical URLs use trailing slashes — required for /admin/ SW scope match. */
+  trailingSlash: true,
   poweredByHeader: false,
   async headers() {
     return [

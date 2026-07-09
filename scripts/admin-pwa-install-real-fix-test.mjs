@@ -26,7 +26,7 @@ function read(rel) {
 }
 
 const manifest = read("src/app/admin/manifest.webmanifest/route.ts");
-const sw = read("public/admin-sw.js");
+const sw = read("public/admin/sw.js");
 const early = read("components/admin/AdminPwaEarlyCapture.tsx");
 const provider = read("components/admin/AdminPwaProvider.tsx");
 const panel = read("components/admin/AdminPwaInstallPanel.tsx");
@@ -40,7 +40,7 @@ const captureJs = read("public/admin/pwa-capture.js");
 if (manifest.includes('short_name: "Panda Admin"')) ok("Manifest short_name is Panda Admin");
 else fail("Manifest short_name incorrect");
 
-if (manifest.includes('id: "/admin"') && manifest.includes('start_url: "/admin"') && manifest.includes('scope: "/admin"')) {
+if (manifest.includes("ADMIN_HOME_PATH") && manifest.includes("ADMIN_SW_SCOPE")) {
   ok("Manifest id/start_url/scope configured");
 } else fail("Manifest scope/start_url missing");
 
@@ -62,7 +62,7 @@ if (pwaLib.includes("buildPwaDebugStatus") && pwaLib.includes("resetPwaInstallHi
   ok("PWA debug status + reset hints utility");
 } else fail("PWA debug/reset utilities missing");
 
-if (sw.includes('scope: "/admin"') || sw.includes("/admin/manifest.webmanifest")) {
+if (sw.includes('"/admin/"') && sw.includes("/admin/manifest.webmanifest")) {
   ok("Service worker precaches admin shell assets");
 } else if (sw.includes("/admin/manifest.webmanifest") && sw.includes("panda-icon-192")) {
   ok("Service worker precaches admin shell assets");

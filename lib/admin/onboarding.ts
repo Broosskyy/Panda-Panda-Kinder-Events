@@ -1,5 +1,6 @@
 import type { AdminRoleSlug } from "@/lib/auth/types";
 import { hasPermission } from "@/lib/auth/permissions";
+import { ADMIN_HOME_PATH } from "@/lib/admin/routes";
 
 export const ONBOARDING_SESSION_DISMISS_KEY = "pb-admin-onboarding-session-dismissed";
 
@@ -29,7 +30,7 @@ const ROLE_TRACKS: Record<ActiveOnboardingRole, OnboardingStep[]> = {
       title: "Dashboard",
       body: "Deine Tageszentrale mit offenen Aufgaben und Kennzahlen.",
       bullets: ["Neue Anfragen und Bewertungen auf einen Blick", "Schnellzugriffe zu wichtigen Bereichen"],
-      href: "/admin",
+      href: ADMIN_HOME_PATH,
       hrefLabel: "Zum Dashboard",
     },
     {
@@ -114,7 +115,7 @@ const ROLE_TRACKS: Record<ActiveOnboardingRole, OnboardingStep[]> = {
       title: "Dashboard",
       body: "Starte hier — offene Aufgaben und Kennzahlen.",
       bullets: ["Schnellzugriffe nutzen", "Status-Chips beachten"],
-      href: "/admin",
+      href: ADMIN_HOME_PATH,
       hrefLabel: "Zum Dashboard",
     },
     {
@@ -226,7 +227,7 @@ const ROLE_TRACKS: Record<ActiveOnboardingRole, OnboardingStep[]> = {
       body: "Das Dashboard zeigt Kennzahlen zur Information.",
       bullets: ["Offene Punkte einsehen", "Keine Aktionen nötig"],
       permission: "dashboard:read",
-      href: "/admin",
+      href: ADMIN_HOME_PATH,
       hrefLabel: "Zum Dashboard",
     },
     {

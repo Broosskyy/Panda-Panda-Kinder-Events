@@ -36,7 +36,7 @@ if (pwa.includes("sw_not_controlling") && pwa.includes("explainPwaBlockers")) {
   ok("PWA probe explains SW controlling + blockers");
 } else fail("PWA blocker diagnostics missing");
 
-if (pwa.includes("/admin/sw.js") && (manifest.includes('scope: "/admin/"') || manifest.includes("ADMIN_SCOPE"))) {
+if (pwa.includes("/admin/sw.js") && (manifest.includes("ADMIN_HOME_PATH") || manifest.includes('scope: "/admin/"'))) {
   ok("Admin SW scoped under /admin/sw.js");
 } else fail("Admin SW path/scope incorrect");
 

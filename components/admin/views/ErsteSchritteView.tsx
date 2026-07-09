@@ -18,6 +18,7 @@ import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { hasPermission } from "@/lib/auth/permissions";
+import { ADMIN_HOME_PATH } from "@/lib/admin/routes";
 
 const STEPS = [
   {
@@ -171,7 +172,7 @@ export function ErsteSchritteView() {
       </section>
 
       <Link
-        href="/admin"
+        href={ADMIN_HOME_PATH}
         className="admin-card inline-flex items-center gap-3 border-primary/20 bg-primary/5 transition-colors hover:border-primary/40"
       >
         <BookOpen className="h-5 w-5 text-primary" aria-hidden />

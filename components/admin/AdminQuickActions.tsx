@@ -9,12 +9,13 @@ import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { ADMIN_GLOBAL_QUICK_ACTIONS, filterQuickActions } from "@/lib/admin/quickActions";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 import { useScrollVisible } from "@/lib/admin/use-scroll-visible";
+import { isAdminHomePath } from "@/lib/admin/routes";
 
 export function AdminQuickActions() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const { permissions } = useAdminSession();
-  const scrollVisible = useScrollVisible(pathname === "/admin");
+  const scrollVisible = useScrollVisible(isAdminHomePath(pathname ?? ""));
 
   const actions = useMemo(
     () => filterQuickActions(ADMIN_GLOBAL_QUICK_ACTIONS, permissions),
@@ -22,7 +23,7 @@ export function AdminQuickActions() {
   );
 
   // FAB only on dashboard; hidden on mobile (quick actions + bottom nav cover needs).
-  const showFab = pathname === "/admin" && actions.length > 0;
+  const showFab = isAdminHomePath(pathname ?? "") && actions.length > 0;
   if (!showFab) return null;
 
   return (

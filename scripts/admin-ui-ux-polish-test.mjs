@@ -71,7 +71,7 @@ if (css.includes("admin-speed-dial")) ok("Speed dial FAB styles");
 else fail("Speed dial styles missing");
 
 const fab = read("components/admin/AdminQuickActions.tsx");
-if (fab.includes('pathname === "/admin"') && fab.includes("hidden md:flex")) {
+if (fab.includes("isAdminHomePath") && fab.includes("hidden md:flex")) {
   ok("FAB dashboard-only on desktop");
 } else {
   fail("FAB visibility rules incorrect");

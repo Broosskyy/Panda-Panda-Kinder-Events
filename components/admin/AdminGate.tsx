@@ -12,8 +12,9 @@ import { AdminLoginForm } from "./AdminLoginForm";
 import { AdminBootstrapWizard } from "./AdminBootstrapWizard";
 import { AdminPwaProvider } from "./AdminPwaProvider";
 import { AdminOnboardingProvider } from "./AdminOnboardingProvider";
+import { ADMIN_PUBLIC_PAGE_PREFIXES } from "@/lib/admin/routes";
 
-const PUBLIC_ADMIN_PATHS = ["/admin/passwort-reset", "/admin/einladung"];
+const PUBLIC_ADMIN_PATHS = [...ADMIN_PUBLIC_PAGE_PREFIXES];
 
 type GateState = "checking" | "bootstrap" | "login" | "authenticated";
 

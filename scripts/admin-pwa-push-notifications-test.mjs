@@ -111,7 +111,12 @@ if (debugState.includes("buildSyncPushDebugSnapshot") && debugState.includes("la
 } else fail("debug-state snapshot");
 
 const client = read("lib/admin/push/client.ts");
-if (client.includes("serviceWorker.ready") && client.includes("unsubscribeFromAdminPush")) {
+const swHelper = read("lib/admin/push/service-worker.ts");
+if (
+  swHelper.includes("serviceWorker.ready") &&
+  swHelper.includes("ADMIN_SW_SCOPE") &&
+  client.includes("unsubscribeFromAdminPush")
+) {
   ok("SW ready wait + unsubscribe client");
 } else fail("Client subscription flow");
 

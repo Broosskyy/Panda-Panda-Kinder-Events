@@ -13,6 +13,7 @@ import { resolveAdminIcon } from "@/lib/admin/icons";
 import { AdminIdentityPanel } from "@/components/admin/AdminIdentityPanel";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { lockAdminPwa } from "@/components/admin/AdminPwaRegister";
+import { ADMIN_HOME_PATH } from "@/lib/admin/routes";
 
 export { AdminPageHeader, AdminCard, AdminPage } from "@/components/admin/ui/AdminLayout";
 
@@ -129,7 +130,7 @@ export function AdminSidebar() {
   const logout = async () => {
     await fetch("/api/admin/login", { method: "DELETE" });
     await lockAdminPwa();
-    window.location.href = "/admin";
+    window.location.href = ADMIN_HOME_PATH;
   };
 
   const NavContent = ({ onNavigate }: { onNavigate?: () => void }) => (

@@ -86,7 +86,7 @@ if (adminManifest.includes('scope: "/admin"') && adminManifest.includes("standal
   fail("Admin manifest misconfigured");
 }
 
-const publicManifest = read("src/app/manifest.ts");
+const publicManifest = read("src/app/manifest.webmanifest/route.ts");
 if (publicManifest.includes('display: "browser"')) ok("Public manifest is not installable PWA");
 else fail("Public manifest should use display browser");
 

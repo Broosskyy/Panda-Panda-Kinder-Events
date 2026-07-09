@@ -262,6 +262,8 @@ function yesNo(value: boolean) {
 
 export function PwaDebugDetails({ debug, className = "" }: { debug: PwaDebugStatus; className?: string }) {
   const rows: { label: string; value: string }[] = [
+    { label: "Manifest-Link im HTML", value: debug.manifestLinkHref ?? "fehlt" },
+    { label: "Admin-Manifest korrekt", value: yesNo(debug.manifestLinkCorrect) },
     { label: "Manifest erreichbar", value: yesNo(debug.manifestReachable) },
     { label: "Service Worker registriert", value: yesNo(debug.serviceWorkerRegistered) },
     { label: "SW kontrolliert Seite", value: yesNo(debug.serviceWorkerControlling) },

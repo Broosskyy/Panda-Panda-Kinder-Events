@@ -1,9 +1,10 @@
-import type { MetadataRoute } from "next";
+import { NextResponse } from "next/server";
 import { BRAND, withIconVersion } from "@/lib/brand";
 import { siteConfig } from "@/config/site";
 
-export default function manifest(): MetadataRoute.Manifest {
-  return {
+/** Public site manifest — not installable (display: browser). Not auto-linked on /admin. */
+export async function GET() {
+  const manifest = {
     name: siteConfig.name,
     short_name: BRAND.shortName,
     description: siteConfig.description,
@@ -36,4 +37,11 @@ export default function manifest(): MetadataRoute.Manifest {
       },
     ],
   };
+
+  return NextResponse.json(manifest, {
+    headers: {
+      "Content-Type": "application/manifest+json",
+      "Cache-Control": "public, max-age=3600",
+    },
+  });
 }

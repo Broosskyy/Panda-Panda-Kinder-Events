@@ -1,4 +1,4 @@
-const CACHE = "pb-admin-shell-v4";
+const CACHE = "pb-admin-shell-v5";
 const SHELL = [
   "/admin",
   "/admin/manifest.webmanifest",

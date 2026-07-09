@@ -1,16 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Bell, BellOff, BellRing } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Bell, BellOff, BellRing, Bug } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
-import {
-  detectPushPlatform,
-  subscribeToAdminPush,
-  subscriptionToStored,
-  unsubscribeFromAdminPush,
-} from "@/lib/admin/push/client";
+import { beginPermissionRequest, runPushActivateFlow } from "@/lib/admin/push/activate-flow";
+import { detectPushPlatform } from "@/lib/admin/push/client";
+import { collectPushLiveDebugState, type PushLiveDebugState } from "@/lib/admin/push/debug-state";
+import { unsubscribeFromAdminPush } from "@/lib/admin/push/client";
 import type { PushPermissionState, PushStatusResponse, PushUiStatus } from "@/lib/admin/push/types";
 
 function resolveClientStatus(
@@ -46,6 +44,19 @@ function statusLabel(status: PushUiStatus): string {
   }
 }
 
+function debugBool(value: boolean): string {
+  return value ? "ja" : "nein";
+}
+
+function DebugRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-3 text-xs">
+      <span className="text-text-muted">{label}</span>
+      <span className="text-right font-mono text-text-primary break-all">{value}</span>
+    </div>
+  );
+}
+
 export function AdminPushNotificationsPanel({ compact = false }: { compact?: boolean }) {
   const { toast } = useAdminMessages();
   const { permissions, identity } = useAdminSession();
@@ -53,16 +64,34 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
   const [busy, setBusy] = useState(false);
   const [serverStatus, setServerStatus] = useState<PushStatusResponse | null>(null);
   const [permission, setPermission] = useState<PushPermissionState>("default");
-  const platform = useMemo(() => detectPushPlatform(), []);
+  const [platform, setPlatform] = useState(() => detectPushPlatform());
+  const [debugOpen, setDebugOpen] = useState(false);
+  const [debugState, setDebugState] = useState<PushLiveDebugState | null>(null);
+  const [lastError, setLastError] = useState<string | null>(null);
+  const [lastSteps, setLastSteps] = useState<string[]>([]);
 
-  const canActivate = useMemo(
-    () => permissions.includes("inquiries:write") || permissions.some((p) => p.startsWith("inquiries:")),
-    [permissions],
+  const canActivate = permissions.includes("inquiries:write") || permissions.some((p) => p.startsWith("inquiries:"));
+
+  const refreshDebugState = useCallback(
+    async (error?: string | null) => {
+      try {
+        const state = await collectPushLiveDebugState({
+          serverSubscribed: serverStatus?.subscribed,
+          lastError: error ?? lastError,
+        });
+        setDebugState(state);
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        console.error("[push:fail] debug_state:", msg);
+      }
+    },
+    [lastError, serverStatus?.subscribed],
   );
 
   const loadStatus = useCallback(async () => {
     setLoading(true);
     try {
+      setPlatform(detectPushPlatform());
       if (typeof Notification !== "undefined") {
         setPermission(Notification.permission as PushPermissionState);
       }
@@ -70,8 +99,9 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
       if (res.ok) {
         setServerStatus((await res.json()) as PushStatusResponse);
       }
-    } catch {
-      // Non-fatal — UI shows fallback state.
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("[push:fail] load_status:", msg);
     } finally {
       setLoading(false);
     }
@@ -80,6 +110,18 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
   useEffect(() => {
     void loadStatus();
   }, [loadStatus]);
+
+  useEffect(() => {
+    void refreshDebugState();
+  }, [refreshDebugState, serverStatus?.subscribed, permission]);
+
+  useEffect(() => {
+    if (!debugOpen) return;
+    const id = window.setInterval(() => {
+      void refreshDebugState();
+    }, 3000);
+    return () => window.clearInterval(id);
+  }, [debugOpen, refreshDebugState]);
 
   const configured = serverStatus?.configured ?? false;
   const subscribed = serverStatus?.subscribed ?? false;
@@ -91,59 +133,57 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
     status === "activated";
   const canDeactivate = Boolean(serverStatus?.canDeactivate) && status === "activated";
   const isSuperAdmin = roleSlug === "administrator";
+  const showActivateButton = status !== "activated";
 
-  const handleActivate = async () => {
+  const handleActivateClick = () => {
     if (!canActivate) {
-      toast("Du hast keine Berechtigung für Push-Benachrichtigungen.", "error");
+      const msg = "Du hast keine Berechtigung für Push-Benachrichtigungen.";
+      console.error("[push:fail] precheck:", msg);
+      toast(msg, "error");
       return;
     }
-    if (!platform.canSubscribe) {
-      toast(platform.detail, "error");
-      return;
-    }
-    if (!configured) {
-      toast("Push ist serverseitig nicht konfiguriert. VAPID Keys in Vercel setzen — siehe PUSH_SETUP.md.", "error");
-      return;
-    }
+
+    setPlatform(detectPushPlatform());
+
+    const permissionPromise = beginPermissionRequest();
 
     setBusy(true);
-    try {
-      const result = await Notification.requestPermission();
-      setPermission(result as PushPermissionState);
+    setLastError(null);
+    setLastSteps([]);
 
-      if (result === "denied") {
-        toast(
-          "Benachrichtigungen sind im Browser blockiert. Bitte in den Website-Einstellungen erlauben.",
-          "error",
-        );
-        return;
+    void (async () => {
+      try {
+        const result = await runPushActivateFlow({
+          permissionResult: permissionPromise,
+          configured,
+        });
+
+        setLastSteps(result.steps.map((s) => `${s.ok ? "OK" : "FAIL"} ${s.step}: ${s.detail}`));
+
+        if (result.permission !== "unavailable") {
+          setPermission(result.permission as PushPermissionState);
+        }
+
+        if (!result.ok) {
+          const err = result.error ?? "Push-Aktivierung fehlgeschlagen (unbekannter Fehler).";
+          setLastError(err);
+          console.error("[push:fail] activate:", err);
+          toast(err, "error");
+          return;
+        }
+
+        toast("Push-Benachrichtigungen aktiviert.");
+        await loadStatus();
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : String(error);
+        setLastError(msg);
+        console.error("[push:fail] activate_unhandled:", msg);
+        toast(`Push-Aktivierung fehlgeschlagen: ${msg}`, "error");
+      } finally {
+        setBusy(false);
+        void refreshDebugState();
       }
-      if (result !== "granted") return;
-
-      const subscription = await subscribeToAdminPush();
-      if (!subscription) {
-        toast("Push-Subscription konnte nicht erstellt werden. Service Worker prüfen.", "error");
-        return;
-      }
-
-      const res = await fetch("/api/admin/push/subscribe", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(subscriptionToStored(subscription)),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast(data.error ?? "Subscription konnte nicht gespeichert werden.", "error");
-        return;
-      }
-
-      toast("Push-Benachrichtigungen aktiviert.");
-      await loadStatus();
-    } catch {
-      toast("Push-Aktivierung fehlgeschlagen.", "error");
-    } finally {
-      setBusy(false);
-    }
+    })();
   };
 
   const handleDeactivate = async () => {
@@ -157,15 +197,20 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
       });
       const data = await res.json();
       if (!res.ok) {
-        toast(data.error ?? "Push konnte nicht deaktiviert werden.", "error");
+        const msg = data.error ?? "Push konnte nicht deaktiviert werden.";
+        console.error("[push:fail] deactivate:", msg);
+        toast(msg, "error");
         return;
       }
       toast("Push-Benachrichtigungen deaktiviert.");
       await loadStatus();
-    } catch {
-      toast("Push-Deaktivierung fehlgeschlagen.", "error");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("[push:fail] deactivate:", msg);
+      toast(`Push-Deaktivierung fehlgeschlagen: ${msg}`, "error");
     } finally {
       setBusy(false);
+      void refreshDebugState();
     }
   };
 
@@ -175,12 +220,16 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
       const res = await fetch("/api/admin/push/test", { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        toast(data.error ?? "Test fehlgeschlagen.", "error");
+        const msg = data.error ?? "Test fehlgeschlagen.";
+        console.error("[push:fail] test:", msg);
+        toast(msg, "error");
         return;
       }
       toast("Test-Benachrichtigung gesendet.");
-    } catch {
-      toast("Test-Benachrichtigung fehlgeschlagen.", "error");
+    } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("[push:fail] test:", msg);
+      toast(`Test-Benachrichtigung fehlgeschlagen: ${msg}`, "error");
     } finally {
       setBusy(false);
     }
@@ -247,11 +296,16 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
         {status === "activated" ? (
           <p className="text-[#2d5a3a]">Push-Benachrichtigungen sind auf diesem Gerät aktiv.</p>
         ) : null}
+        {lastError ? (
+          <p className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-800">
+            Letzter Fehler: {lastError}
+          </p>
+        ) : null}
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {status !== "activated" && status !== "unsupported" && status !== "not_configured" ? (
-          <AdminButton variant="primary" onClick={() => void handleActivate()} disabled={busy || loading}>
+        {showActivateButton ? (
+          <AdminButton variant="primary" onClick={handleActivateClick} disabled={busy || loading}>
             Benachrichtigungen aktivieren
           </AdminButton>
         ) : null}
@@ -265,7 +319,60 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
             Push deaktivieren
           </AdminButton>
         ) : null}
+        <AdminButton
+          variant="ghost"
+          onClick={() => {
+            setDebugOpen((open) => !open);
+            void refreshDebugState();
+          }}
+          disabled={busy}
+        >
+          <Bug className="mr-1.5 inline h-4 w-4" aria-hidden />
+          {debugOpen ? "Debug ausblenden" : "Debug-Status"}
+        </AdminButton>
       </div>
+
+      {debugOpen ? (
+        <div className="rounded-xl border border-dashed border-border bg-bg-secondary p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-sm font-medium text-text-primary">iOS/Push Debug (live)</p>
+            <AdminButton variant="ghost" onClick={() => void refreshDebugState()} disabled={busy}>
+              Aktualisieren
+            </AdminButton>
+          </div>
+          {debugState ? (
+            <div className="space-y-1">
+              <DebugRow label="Notification.permission" value={debugState.notificationPermission} />
+              <DebugRow label="Service Worker registriert" value={debugBool(debugState.serviceWorkerRegistered)} />
+              <DebugRow label="Service Worker ready" value={debugBool(debugState.serviceWorkerReady)} />
+              <DebugRow label="PushManager (Registration)" value={debugBool(debugState.pushManagerOnRegistration)} />
+              <DebugRow label="PushManager (window)" value={debugBool(debugState.pushManagerOnWindow)} />
+              <DebugRow label="Browser-Subscription" value={debugBool(debugState.browserSubscriptionPresent)} />
+              <DebugRow label="Server-Subscription" value={debugBool(debugState.serverSubscriptionSaved)} />
+              <DebugRow label="VAPID Public Key" value={debugBool(debugState.vapidPublicKeyPresent)} />
+              <DebugRow label="Plattform" value={debugState.platformLabel} />
+              <DebugRow label="canSubscribe" value={debugBool(debugState.platformCanSubscribe)} />
+              <DebugRow label="Standalone (display-mode)" value={debugBool(debugState.displayStandalone)} />
+              <DebugRow label="navigator.standalone" value={debugBool(debugState.navigatorStandalone)} />
+              <DebugRow label="Browser" value={debugState.browserUserAgent.slice(0, 80)} />
+              <DebugRow label="Geprüft um" value={debugState.checkedAt} />
+              {debugState.lastError ? <DebugRow label="Fehler" value={debugState.lastError} /> : null}
+            </div>
+          ) : (
+            <p className="text-xs text-text-muted">Debug-Status wird geladen …</p>
+          )}
+          {lastSteps.length > 0 ? (
+            <div className="mt-2 border-t border-border pt-2">
+              <p className="text-xs font-medium text-text-primary mb-1">Letzter Aktivierungsversuch</p>
+              <ul className="space-y-0.5 text-xs font-mono text-text-secondary">
+                {lastSteps.map((step) => (
+                  <li key={step}>{step}</li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

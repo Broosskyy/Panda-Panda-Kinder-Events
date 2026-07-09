@@ -1,9 +1,9 @@
 "use client";
 
 import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
-import { detectPushPlatform, hasPushApis } from "@/lib/admin/push/platform";
+import { detectPushPlatform, hasBasicNotificationSupport } from "@/lib/admin/push/platform";
 
-export { detectPushPlatform, hasPushApis };
+export { detectPushPlatform, hasBasicNotificationSupport };
 
 export function isPushApiSupported(): boolean {
   return detectPushPlatform().canSubscribe;

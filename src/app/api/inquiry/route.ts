@@ -92,6 +92,8 @@ export async function POST(request: Request) {
         );
       }
       savedToDb = true;
+
+      void import("@/lib/admin/push/send").then(({ notifyAdminsNewInquiry }) => notifyAdminsNewInquiry());
     }
 
     if (!isResendConfigured()) {

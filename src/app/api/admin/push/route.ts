@@ -33,9 +33,8 @@ export async function GET() {
   if (!configured) status = "not_configured";
   else if (subscribed) status = "activated";
 
-  const canTest =
-    adminHasPermission(ctx, PUSH_PERMISSION) &&
-    (ctx.roleSlug === "administrator" || ctx.roleSlug === "manager");
+  const isAdminRole = ctx.roleSlug === "administrator" || ctx.roleSlug === "manager";
+  const canTest = adminHasPermission(ctx, PUSH_PERMISSION) && isAdminRole;
 
   return NextResponse.json({
     configured,
@@ -44,6 +43,8 @@ export async function GET() {
     subscribed,
     canActivate: adminHasPermission(ctx, PUSH_PERMISSION),
     canTest,
+    canDeactivate: subscribed && adminHasPermission(ctx, PUSH_PERMISSION),
     permission: PUSH_PERMISSION,
+    setupGuide: "/PUSH_SETUP.md",
   });
 }

@@ -57,6 +57,7 @@ export async function sendPushToUser(
     .from("admin_push_subscriptions")
     .select("*")
     .eq("user_id", userId)
+    .eq("enabled", true)
     .is("revoked_at", null);
   if (error) {
     safeApiError("Push subscriptions load:", error, userId);

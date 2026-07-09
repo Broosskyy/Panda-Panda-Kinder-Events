@@ -65,8 +65,8 @@ export async function DELETE(request: Request) {
       const { revokePushSubscription } = await import("@/lib/admin/push/subscriptions");
       await revokePushSubscription(endpoint);
     } else {
-      const { revokePushSubscriptionsForUser } = await import("@/lib/admin/push/subscriptions");
-      await revokePushSubscriptionsForUser(ctx.userId);
+      const { disablePushSubscriptionsForUser } = await import("@/lib/admin/push/subscriptions");
+      await disablePushSubscriptionsForUser(ctx.userId);
     }
 
     return NextResponse.json({ success: true, subscribed: false });

@@ -34,6 +34,7 @@
     "export:cms": "node scripts/export-cms.mjs",
     "export:crm": "node scripts/export-crm.mjs",
     "generate:brand-assets": "node scripts/generate-brand-assets.mjs",
+    "generate:vapid-keys": "node scripts/generate-vapid-keys.mjs",
     "live:verify": "node scripts/live-verify.mjs",
     "sprint-report:pdf": "node scripts/generate-sprint-report-pdf.mjs"
   },

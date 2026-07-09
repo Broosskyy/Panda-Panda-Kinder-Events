@@ -135,7 +135,24 @@ export function AdminOnboardingWizard({
         </div>
 
         <footer className="admin-onboarding-v2-footer">
-          <div className="admin-onboarding-v2-footer-primary">
+          {isLast ? (
+            <button
+              type="button"
+              className="admin-onboarding-v2-btn admin-onboarding-v2-btn-next admin-onboarding-v2-btn-next-full"
+              onClick={onComplete}
+            >
+              Fertig
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="admin-onboarding-v2-btn admin-onboarding-v2-btn-next admin-onboarding-v2-btn-next-full"
+              onClick={() => onStepIndexChange(stepIndex + 1)}
+            >
+              Weiter
+            </button>
+          )}
+          <div className="admin-onboarding-v2-footer-nav">
             <button
               type="button"
               className="admin-onboarding-v2-btn admin-onboarding-v2-btn-back"
@@ -144,28 +161,13 @@ export function AdminOnboardingWizard({
             >
               Zurück
             </button>
-            {isLast ? (
-              <button type="button" className="admin-onboarding-v2-btn admin-onboarding-v2-btn-next" onClick={onComplete}>
-                Fertig
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="admin-onboarding-v2-btn admin-onboarding-v2-btn-next"
-                onClick={() => onStepIndexChange(stepIndex + 1)}
-              >
-                Weiter
-              </button>
-            )}
-          </div>
-          <div className="admin-onboarding-v2-footer-secondary">
             <button type="button" className="admin-onboarding-v2-text-btn" onClick={onSkip}>
               Überspringen
             </button>
-            <button type="button" className="admin-onboarding-v2-text-btn" onClick={onDismissPermanent}>
-              Nicht erneut anzeigen
-            </button>
           </div>
+          <button type="button" className="admin-onboarding-v2-text-btn admin-onboarding-v2-text-btn-full" onClick={onDismissPermanent}>
+            Nicht erneut anzeigen
+          </button>
         </footer>
       </div>
     </div>

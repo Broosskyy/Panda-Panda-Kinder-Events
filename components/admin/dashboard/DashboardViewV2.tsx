@@ -10,6 +10,7 @@ import { DashboardQuickActionsSection } from "@/components/admin/dashboard/Dashb
 import { DashboardStatsGrid } from "@/components/admin/dashboard/DashboardStatsGrid";
 import { DashboardActivitySection } from "@/components/admin/dashboard/DashboardActivitySection";
 import { DashboardPwaInstallCard } from "@/components/admin/dashboard/DashboardPwaInstallCard";
+import { DashboardPushNotificationsCard } from "@/components/admin/dashboard/DashboardPushNotificationsCard";
 import { DashboardPwaInstallHint } from "@/components/admin/dashboard/DashboardPwaInstallHint";
 import { DASHBOARD_V2_QUICK_ACTIONS } from "@/lib/admin/dashboard-v2/constants";
 import type {
@@ -182,6 +183,8 @@ export function DashboardViewV2() {
           <DashboardStatusChips chips={payload.statusChips} />
 
           <DashboardPwaInstallCard />
+
+          <DashboardPushNotificationsCard />
 
           <div className="dash-v2-toolbar">
             <button

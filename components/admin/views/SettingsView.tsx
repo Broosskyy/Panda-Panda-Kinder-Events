@@ -35,6 +35,7 @@ import { ModulesSettingsPanel } from "@/components/admin/settings/ModulesSetting
 import { useAdminOnboarding } from "@/components/admin/AdminOnboardingProvider";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { AdminAppSettingsCard } from "@/components/admin/AdminAppSettingsCard";
+import { AdminPushNotificationsCard } from "@/components/admin/AdminPushNotificationsCard";
 import type { DomainVerificationDisplay } from "@/lib/email/resend-domain-check";
 
 interface EmailStatusResponse {
@@ -288,6 +289,8 @@ export function SettingsView() {
       </AdminCard>
 
       <AdminAppSettingsCard />
+
+      <AdminPushNotificationsCard />
 
       <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">
         {CONTROL_CENTER_TABS.map((item) => (

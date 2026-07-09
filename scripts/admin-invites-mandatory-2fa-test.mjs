@@ -85,6 +85,12 @@ else fail("Invite page missing");
 const inviteForm = read("components/admin/AdminInviteAcceptForm.tsx");
 if (inviteForm.includes("2fa") && inviteForm.includes("password")) ok("Invite form: password + 2FA flow");
 else fail("Invite form incomplete");
+if (inviteForm.includes("Manueller Einrichtungsschlüssel") && inviteForm.includes("Schlüssel kopieren")) {
+  ok("Invite 2FA manual secret + copy button");
+} else fail("Invite 2FA manual secret missing");
+if (inviteForm.includes("Account aktivieren") && inviteForm.includes("Sicherheitscode")) {
+  ok("Invite 2FA code input + activate button");
+} else fail("Invite 2FA activation UI");
 
 const emailTpl = read("lib/email/templates-db.ts");
 if (emailTpl.includes("admin-invite") && emailTpl.includes("Einladung zum Panda-Bande Admin")) ok("Invite email template");

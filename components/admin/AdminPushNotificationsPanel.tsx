@@ -5,7 +5,7 @@ import { Bell, BellOff, BellRing, Bug } from "lucide-react";
 import { AdminButton } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
-import { beginPermissionRequest, runPushActivateFlow } from "@/lib/admin/push/activate-flow";
+import { beginPermissionRequest, beginPushSubscriptionInClick, runPushActivateFlow } from "@/lib/admin/push/activate-flow";
 import { detectPushPlatform } from "@/lib/admin/push/client";
 import { collectPushLiveDebugState, type PushLiveDebugState } from "@/lib/admin/push/debug-state";
 import { unsubscribeFromAdminPush } from "@/lib/admin/push/client";
@@ -75,6 +75,7 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
   const [debugOpen, setDebugOpen] = useState(false);
   const [debugState, setDebugState] = useState<PushLiveDebugState | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
+  const [lastServerResponse, setLastServerResponse] = useState<string | null>(null);
   const [lastSteps, setLastSteps] = useState<string[]>([]);
 
   const canActivate = permissions.includes("inquiries:write") || permissions.some((p) => p.startsWith("inquiries:"));
@@ -85,6 +86,7 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
         const state = await collectPushLiveDebugState({
           serverSubscribed: serverStatus?.subscribed,
           lastError: error ?? lastError,
+          lastServerResponse,
         });
         setDebugState(state);
       } catch (error) {
@@ -92,7 +94,7 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
         console.error("[push:fail] debug_state:", msg);
       }
     },
-    [lastError, serverStatus?.subscribed],
+    [lastError, lastServerResponse, serverStatus?.subscribed],
   );
 
   const loadStatus = useCallback(async () => {
@@ -143,6 +145,12 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
   const showPrimaryButton = status !== "activated" && status !== "blocked";
   const primaryLabel = primaryButtonLabel(status);
 
+  useEffect(() => {
+    if (status === "granted_not_registered") {
+      setDebugOpen(true);
+    }
+  }, [status]);
+
   const runActivation = () => {
     if (!canActivate) {
       const msg = "Du hast keine Berechtigung für Push-Benachrichtigungen.";
@@ -152,12 +160,15 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
     }
 
     setPlatform(detectPushPlatform());
+    setDebugOpen(true);
 
-    const permissionPromise =
-      permission === "granted" ? Promise.resolve("granted" as NotificationPermission) : beginPermissionRequest();
+    const isRegisterOnly = status === "granted_not_registered";
+    const permissionPromise = beginPermissionRequest();
+    const subscriptionPromise = isRegisterOnly ? beginPushSubscriptionInClick() : undefined;
 
     setBusy(true);
     setLastError(null);
+    setLastServerResponse(null);
     setLastSteps([]);
 
     void (async () => {
@@ -165,9 +176,11 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
         const result = await runPushActivateFlow({
           permissionResult: permissionPromise,
           configured,
+          subscriptionPromise,
         });
 
         setLastSteps(result.steps.map((s) => `${s.ok ? "OK" : "FAIL"} ${s.step}: ${s.detail}`));
+        setLastServerResponse(result.serverResponse);
 
         if (result.permission !== "unavailable") {
           setPermission(result.permission as PushPermissionState);
@@ -181,13 +194,13 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
           return;
         }
 
-        toast("Push-Benachrichtigungen aktiviert.");
+        toast(isRegisterOnly ? "Gerät erfolgreich registriert." : "Push-Benachrichtigungen aktiviert.");
         await loadStatus();
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
         setLastError(msg);
         console.error("[push:fail] activate_unhandled:", msg);
-        toast(`Push-Aktivierung fehlgeschlagen: ${msg}`, "error");
+        toast(`Gerät registrieren fehlgeschlagen: ${msg}`, "error");
       } finally {
         setBusy(false);
         void refreshDebugState();
@@ -333,8 +346,12 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
 
       <div className="flex flex-wrap gap-2">
         {showPrimaryButton ? (
-          <AdminButton variant="primary" onClick={runActivation} disabled={busy || loading}>
-            {primaryLabel}
+          <AdminButton variant="primary" onClick={runActivation} disabled={loading} loading={busy}>
+            {busy
+              ? status === "granted_not_registered"
+                ? "Registriere Gerät…"
+                : "Aktiviere…"
+              : primaryLabel}
           </AdminButton>
         ) : null}
         {canTest ? (
@@ -372,7 +389,9 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
             <div className="space-y-1">
               <DebugRow label="Permission" value={debugState.notificationPermission} />
               <DebugRow label="Subscription im Browser" value={debugBool(debugState.browserSubscriptionPresent)} />
-              <DebugRow label="Subscription in DB" value={debugBool(debugState.serverSubscriptionSaved)} />
+              <DebugRow label="Subscription gespeichert" value={debugBool(debugState.serverSubscriptionSaved)} />
+              <DebugRow label="Serverantwort" value={debugState.lastServerResponse ?? "—"} />
+              <DebugRow label="Letzter Fehler" value={debugState.lastError ?? "—"} />
               <DebugRow label="Aktive Subscriptions (User)" value={String(debugState.userActiveSubscriptionCount)} />
               <DebugRow
                 label="Aktive Admin-Subscriptions gesamt"
@@ -388,7 +407,6 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
               <DebugRow label="Standalone" value={debugBool(debugState.displayStandalone)} />
               <DebugRow label="Browser" value={debugState.browserUserAgent.slice(0, 80)} />
               <DebugRow label="Geprüft um" value={debugState.checkedAt} />
-              {debugState.lastError ? <DebugRow label="Fehler" value={debugState.lastError} /> : null}
             </div>
           ) : (
             <p className="text-xs text-text-muted">Diagnose wird geladen …</p>

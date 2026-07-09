@@ -58,6 +58,12 @@ if (panel.includes("beginPermissionRequest") && panel.includes("runPushActivateF
 if (panel.includes("runActivation") && panel.includes("beginPermissionRequest()")) {
   ok("Permission started synchronously in click handler");
 } else fail("iOS user-gesture permission flow");
+if (panel.includes("beginPushSubscriptionInClick") && panel.includes("granted_not_registered")) {
+  ok("Register device starts subscribe chain in click handler");
+} else fail("Gerät registrieren gesture flow");
+if (panel.includes("loading={busy}") && panel.includes("Registriere Gerät")) {
+  ok("Register button shows loading state");
+} else fail("Register loading UI");
 if (panel.includes("collectPushLiveDebugState") && panel.includes("Push Diagnose")) {
   ok("Live push debug panel");
 } else fail("Debug panel");
@@ -78,8 +84,8 @@ if (platform.includes("hasBasicNotificationSupport") && platform.includes("NOT o
 } else fail("iOS PushManager detection");
 
 const activateFlow = read("lib/admin/push/activate-flow.ts");
-if (activateFlow.includes("verify_server") && activateFlow.includes("verify_subscription")) {
-  ok("Post-save subscription + server verification");
+if (activateFlow.includes("verify_server") && activateFlow.includes("beginPushSubscriptionInClick")) {
+  ok("Post-save verification + sync subscribe for register");
 } else fail("activate-flow verification");
 
 const pushLog = read("lib/admin/push/log.ts");

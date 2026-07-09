@@ -82,12 +82,22 @@ const invitePage = read("src/app/admin/einladung/[token]/page.tsx");
 if (invitePage.includes("AdminInviteAcceptForm")) ok("Invite accept page exists");
 else fail("Invite page missing");
 
+const validateApi = read("src/app/api/admin/invites/validate/route.ts");
+if (validateApi.includes("passwordPolicy")) ok("Invite validate returns password policy");
+else fail("Invite validate password policy");
+
 const inviteForm = read("components/admin/AdminInviteAcceptForm.tsx");
 if (inviteForm.includes("2fa") && inviteForm.includes("password")) ok("Invite form: password + 2FA flow");
 else fail("Invite form incomplete");
 if (inviteForm.includes("Manueller Einrichtungsschlüssel") && inviteForm.includes("Schlüssel kopieren")) {
   ok("Invite 2FA manual secret + copy button");
 } else fail("Invite 2FA manual secret missing");
+if (inviteForm.includes("Zurück zum Passwort") && inviteForm.includes("passwordRules")) {
+  ok("Invite password live validation + back to password");
+} else fail("Invite password step validation");
+if (inviteForm.includes("isPasswordValid") && inviteForm.includes("Weiter zu 2FA")) {
+  ok("Weiter zu 2FA gated on valid password");
+} else fail("Invite password gate");
 if (inviteForm.includes("Account aktivieren") && inviteForm.includes("Sicherheitscode")) {
   ok("Invite 2FA code input + activate button");
 } else fail("Invite 2FA activation UI");

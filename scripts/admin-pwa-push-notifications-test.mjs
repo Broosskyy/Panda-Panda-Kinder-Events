@@ -102,9 +102,13 @@ if (send.includes("revokePushSubscription") && send.includes("pushLog")) ok("Pus
 else fail("Push send revoke");
 
 const debugState = read("lib/admin/push/debug-state.ts");
-if (debugState.includes("totalAdminSubscriptionCount") && debugState.includes("collectPushLiveDebugState")) {
-  ok("Live debug state with DB counts");
-} else fail("debug-state.ts");
+if (activateFlow.includes("withTimeout") && activateFlow.includes("PUSH_SW_READY_TIMEOUT_MS")) {
+  ok("Service worker ready timeout (no hang)");
+} else fail("SW ready timeout");
+
+if (debugState.includes("buildSyncPushDebugSnapshot") && debugState.includes("lastTestPush")) {
+  ok("Debug snapshot + last test push");
+} else fail("debug-state snapshot");
 
 const client = read("lib/admin/push/client.ts");
 if (client.includes("serviceWorker.ready") && client.includes("unsubscribeFromAdminPush")) {

@@ -6,6 +6,7 @@ export type PushUiStatus =
   | "not_asked"
   | "blocked"
   | "granted"
+  | "granted_not_registered"
   | "activated";
 
 export interface PushSubscriptionRow {
@@ -22,6 +23,38 @@ export interface PushSubscriptionRow {
   revoked_at: string | null;
 }
 
+export interface PushDiagnostics {
+  userActiveSubscriptionCount: number;
+  totalAdminSubscriptionCount: number;
+  receivesInquiryPush: boolean;
+  roleSlug: string;
+  dbSubscription: {
+    id: string;
+    endpoint: string;
+    enabled: boolean;
+    revokedAt: string | null;
+  } | null;
+}
+
+export interface PushSendErrorDetail {
+  subscriptionId: string;
+  endpoint: string;
+  statusCode?: number;
+  message: string;
+  expired: boolean;
+}
+
+export interface PushSendDetailedResult {
+  sent: number;
+  failed: number;
+  errors: PushSendErrorDetail[];
+}
+
+export interface InquiryPushResult extends PushSendDetailedResult {
+  recipientsCount: number;
+  skippedReason?: string;
+}
+
 export interface PushStatusResponse {
   configured: boolean;
   publicKey: string | null;
@@ -32,6 +65,16 @@ export interface PushStatusResponse {
   canDeactivate: boolean;
   permission: string;
   setupGuide: string;
+  diagnostics?: PushDiagnostics;
+}
+
+export interface PushTestResponse {
+  success?: boolean;
+  sent?: number;
+  failed?: number;
+  errors?: PushSendErrorDetail[];
+  error?: string;
+  warning?: string;
 }
 
 export interface PushNotificationPayload {

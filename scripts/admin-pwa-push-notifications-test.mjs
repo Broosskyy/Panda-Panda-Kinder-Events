@@ -47,19 +47,23 @@ else fail("SW click URL");
 if (sw.includes("badge:")) ok("Notification badge icon");
 
 const inquiry = read("src/app/api/inquiry/route.ts");
-if (inquiry.includes("notifyAdminsNewInquiry")) ok("Inquiry route triggers push");
-else fail("Inquiry push hook");
+if (inquiry.includes("notifyAdminsNewInquiry") && inquiry.includes("await notifyAdminsNewInquiry()")) {
+  ok("Inquiry route awaits push send (no fire-and-forget)");
+} else fail("Inquiry push hook");
 
 const panel = read("components/admin/AdminPushNotificationsPanel.tsx");
 if (panel.includes("beginPermissionRequest") && panel.includes("runPushActivateFlow")) {
   ok("Structured activate flow with sync permission request");
 } else fail("Activate flow");
-if (panel.includes("handleActivateClick") && panel.includes("beginPermissionRequest()")) {
+if (panel.includes("runActivation") && panel.includes("beginPermissionRequest()")) {
   ok("Permission started synchronously in click handler");
 } else fail("iOS user-gesture permission flow");
-if (panel.includes("collectPushLiveDebugState") && panel.includes("Debug-Status")) {
+if (panel.includes("collectPushLiveDebugState") && panel.includes("Push Diagnose")) {
   ok("Live push debug panel");
 } else fail("Debug panel");
+if (panel.includes("granted_not_registered") && panel.includes("Gerät registrieren")) {
+  ok("Granted-but-not-registered UI state");
+} else fail("Registration UI state");
 if (panel.includes("Benachrichtigungen aktivieren")) ok("Activate button");
 if (panel.includes("Test-Benachrichtigung senden")) ok("Test button");
 if (panel.includes("Push deaktivieren")) ok("Deactivate button");
@@ -74,13 +78,26 @@ if (platform.includes("hasBasicNotificationSupport") && platform.includes("NOT o
 } else fail("iOS PushManager detection");
 
 const activateFlow = read("lib/admin/push/activate-flow.ts");
-if (activateFlow.includes("registration.pushManager") && activateFlow.includes("console.error")) {
-  ok("Step-by-step activate flow with console.error");
-} else fail("activate-flow.ts");
+if (activateFlow.includes("verify_server") && activateFlow.includes("verify_subscription")) {
+  ok("Post-save subscription + server verification");
+} else fail("activate-flow verification");
+
+const pushLog = read("lib/admin/push/log.ts");
+if (
+  pushLog.includes("push_subscription_saved") &&
+  pushLog.includes("inquiry_push_send_started") &&
+  pushLog.includes("invalid_subscription_disabled")
+) {
+  ok("Structured push server logging");
+} else fail("push log events");
+
+const send = read("lib/admin/push/send.ts");
+if (send.includes("revokePushSubscription") && send.includes("pushLog")) ok("Push send with logging + revoke");
+else fail("Push send revoke");
 
 const debugState = read("lib/admin/push/debug-state.ts");
-if (debugState.includes("pushManagerOnRegistration") && debugState.includes("collectPushLiveDebugState")) {
-  ok("Live debug state collector");
+if (debugState.includes("totalAdminSubscriptionCount") && debugState.includes("collectPushLiveDebugState")) {
+  ok("Live debug state with DB counts");
 } else fail("debug-state.ts");
 
 const client = read("lib/admin/push/client.ts");
@@ -100,10 +117,6 @@ else fail("enabled subscription filter");
 
 if (subs.includes("administrator") && subs.includes("manager")) ok("Inquiry push targets Super Admin/Admin");
 else fail("Recipient filter");
-
-const send = read("lib/admin/push/send.ts");
-if (send.includes("revokePushSubscription")) ok("Revoke expired subscriptions");
-else fail("Push send revoke");
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

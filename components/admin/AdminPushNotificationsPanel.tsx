@@ -9,7 +9,7 @@ import { beginPermissionRequest, runPushActivateFlow } from "@/lib/admin/push/ac
 import { detectPushPlatform } from "@/lib/admin/push/client";
 import { collectPushLiveDebugState, type PushLiveDebugState } from "@/lib/admin/push/debug-state";
 import { unsubscribeFromAdminPush } from "@/lib/admin/push/client";
-import type { PushPermissionState, PushStatusResponse, PushUiStatus } from "@/lib/admin/push/types";
+import type { PushPermissionState, PushStatusResponse, PushTestResponse, PushUiStatus } from "@/lib/admin/push/types";
 
 function resolveClientStatus(
   platformSupported: boolean,
@@ -21,7 +21,7 @@ function resolveClientStatus(
   if (!configured) return "not_configured";
   if (permission === "denied") return "blocked";
   if (subscribed && permission === "granted") return "activated";
-  if (permission === "granted") return "granted";
+  if (permission === "granted" && !subscribed) return "granted_not_registered";
   return "not_asked";
 }
 
@@ -34,14 +34,21 @@ function statusLabel(status: PushUiStatus): string {
     case "not_asked":
       return "Noch nicht erlaubt";
     case "blocked":
-      return "Blockiert";
+      return "Im Browser blockiert";
     case "granted":
       return "Erlaubt";
+    case "granted_not_registered":
+      return "Berechtigung erlaubt, aber Gerät noch nicht registriert";
     case "activated":
       return "Aktiviert";
     default:
       return status;
   }
+}
+
+function primaryButtonLabel(status: PushUiStatus): string {
+  if (status === "granted_not_registered") return "Gerät registrieren";
+  return "Benachrichtigungen aktivieren";
 }
 
 function debugBool(value: boolean): string {
@@ -98,6 +105,9 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
       const res = await fetch("/api/admin/push");
       if (res.ok) {
         setServerStatus((await res.json()) as PushStatusResponse);
+      } else {
+        const data = (await res.json()) as { error?: string };
+        console.error("[push:fail] load_status:", data.error ?? res.status);
       }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
@@ -126,16 +136,14 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
   const configured = serverStatus?.configured ?? false;
   const subscribed = serverStatus?.subscribed ?? false;
   const status = resolveClientStatus(platform.canSubscribe, configured, permission, subscribed);
-  const roleSlug = identity?.roleSlug ?? "readonly";
-  const canTest =
-    Boolean(serverStatus?.canTest) &&
-    (roleSlug === "administrator" || roleSlug === "manager") &&
-    status === "activated";
+  const roleSlug = identity?.roleSlug ?? serverStatus?.diagnostics?.roleSlug ?? "readonly";
+  const canTest = Boolean(serverStatus?.canTest) && status === "activated";
   const canDeactivate = Boolean(serverStatus?.canDeactivate) && status === "activated";
   const isSuperAdmin = roleSlug === "administrator";
-  const showActivateButton = status !== "activated";
+  const showPrimaryButton = status !== "activated" && status !== "blocked";
+  const primaryLabel = primaryButtonLabel(status);
 
-  const handleActivateClick = () => {
+  const runActivation = () => {
     if (!canActivate) {
       const msg = "Du hast keine Berechtigung für Push-Benachrichtigungen.";
       console.error("[push:fail] precheck:", msg);
@@ -145,7 +153,8 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
 
     setPlatform(detectPushPlatform());
 
-    const permissionPromise = beginPermissionRequest();
+    const permissionPromise =
+      permission === "granted" ? Promise.resolve("granted" as NotificationPermission) : beginPermissionRequest();
 
     setBusy(true);
     setLastError(null);
@@ -218,14 +227,21 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
     setBusy(true);
     try {
       const res = await fetch("/api/admin/push/test", { method: "POST" });
-      const data = await res.json();
+      const data = (await res.json()) as PushTestResponse;
       if (!res.ok) {
-        const msg = data.error ?? "Test fehlgeschlagen.";
-        console.error("[push:fail] test:", msg);
+        const msg = data.error ?? `Test fehlgeschlagen (HTTP ${res.status}).`;
+        console.error("[push:fail] test:", msg, data.errors);
         toast(msg, "error");
+        if (data.errors?.length) {
+          setLastError(data.errors.map((e) => `${e.message}${e.statusCode ? ` [${e.statusCode}]` : ""}`).join(" | "));
+        }
         return;
       }
-      toast("Test-Benachrichtigung gesendet.");
+      if (data.warning) {
+        toast(data.warning, "error");
+      } else {
+        toast("Test-Benachrichtigung gesendet.");
+      }
     } catch (error) {
       const msg = error instanceof Error ? error.message : String(error);
       console.error("[push:fail] test:", msg);
@@ -290,11 +306,23 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
         ) : null}
         {status === "blocked" ? (
           <p className="text-amber-800">
-            Benachrichtigungen sind im Browser blockiert. Bitte in den Website-Einstellungen erlauben.
+            Benachrichtigungen sind im Browser blockiert. Bitte in den Website-Einstellungen für diese App erlauben.
+          </p>
+        ) : null}
+        {status === "granted_not_registered" ? (
+          <p className="text-amber-800">
+            Berechtigung ist erteilt, aber dieses Gerät ist noch nicht beim Server registriert. Bitte auf „Gerät
+            registrieren“ tippen.
           </p>
         ) : null}
         {status === "activated" ? (
           <p className="text-[#2d5a3a]">Push-Benachrichtigungen sind auf diesem Gerät aktiv.</p>
+        ) : null}
+        {!serverStatus?.diagnostics?.receivesInquiryPush && subscribed ? (
+          <p className="text-amber-800 text-xs">
+            Hinweis: Deine Rolle ({roleSlug}) erhält keine Anfrage-Pushes. Nur Super Admin und Admin werden
+            benachrichtigt.
+          </p>
         ) : null}
         {lastError ? (
           <p className="rounded-lg border border-red-200 bg-red-50 px-2 py-1.5 text-xs text-red-800">
@@ -304,9 +332,9 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
       </div>
 
       <div className="flex flex-wrap gap-2">
-        {showActivateButton ? (
-          <AdminButton variant="primary" onClick={handleActivateClick} disabled={busy || loading}>
-            Benachrichtigungen aktivieren
+        {showPrimaryButton ? (
+          <AdminButton variant="primary" onClick={runActivation} disabled={busy || loading}>
+            {primaryLabel}
           </AdminButton>
         ) : null}
         {canTest ? (
@@ -328,38 +356,42 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
           disabled={busy}
         >
           <Bug className="mr-1.5 inline h-4 w-4" aria-hidden />
-          {debugOpen ? "Debug ausblenden" : "Debug-Status"}
+          {debugOpen ? "Debug ausblenden" : "Push Diagnose"}
         </AdminButton>
       </div>
 
       {debugOpen ? (
         <div className="rounded-xl border border-dashed border-border bg-bg-secondary p-3 space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <p className="text-sm font-medium text-text-primary">iOS/Push Debug (live)</p>
+            <p className="text-sm font-medium text-text-primary">Push Diagnose (live)</p>
             <AdminButton variant="ghost" onClick={() => void refreshDebugState()} disabled={busy}>
               Aktualisieren
             </AdminButton>
           </div>
           {debugState ? (
             <div className="space-y-1">
-              <DebugRow label="Notification.permission" value={debugState.notificationPermission} />
+              <DebugRow label="Permission" value={debugState.notificationPermission} />
+              <DebugRow label="Subscription im Browser" value={debugBool(debugState.browserSubscriptionPresent)} />
+              <DebugRow label="Subscription in DB" value={debugBool(debugState.serverSubscriptionSaved)} />
+              <DebugRow label="Aktive Subscriptions (User)" value={String(debugState.userActiveSubscriptionCount)} />
+              <DebugRow
+                label="Aktive Admin-Subscriptions gesamt"
+                value={String(debugState.totalAdminSubscriptionCount)}
+              />
+              <DebugRow label="Erhält Anfrage-Push" value={debugBool(debugState.receivesInquiryPush)} />
+              <DebugRow label="Rolle" value={debugState.roleSlug} />
               <DebugRow label="Service Worker registriert" value={debugBool(debugState.serviceWorkerRegistered)} />
               <DebugRow label="Service Worker ready" value={debugBool(debugState.serviceWorkerReady)} />
               <DebugRow label="PushManager (Registration)" value={debugBool(debugState.pushManagerOnRegistration)} />
-              <DebugRow label="PushManager (window)" value={debugBool(debugState.pushManagerOnWindow)} />
-              <DebugRow label="Browser-Subscription" value={debugBool(debugState.browserSubscriptionPresent)} />
-              <DebugRow label="Server-Subscription" value={debugBool(debugState.serverSubscriptionSaved)} />
               <DebugRow label="VAPID Public Key" value={debugBool(debugState.vapidPublicKeyPresent)} />
               <DebugRow label="Plattform" value={debugState.platformLabel} />
-              <DebugRow label="canSubscribe" value={debugBool(debugState.platformCanSubscribe)} />
-              <DebugRow label="Standalone (display-mode)" value={debugBool(debugState.displayStandalone)} />
-              <DebugRow label="navigator.standalone" value={debugBool(debugState.navigatorStandalone)} />
+              <DebugRow label="Standalone" value={debugBool(debugState.displayStandalone)} />
               <DebugRow label="Browser" value={debugState.browserUserAgent.slice(0, 80)} />
               <DebugRow label="Geprüft um" value={debugState.checkedAt} />
               {debugState.lastError ? <DebugRow label="Fehler" value={debugState.lastError} /> : null}
             </div>
           ) : (
-            <p className="text-xs text-text-muted">Debug-Status wird geladen …</p>
+            <p className="text-xs text-text-muted">Diagnose wird geladen …</p>
           )}
           {lastSteps.length > 0 ? (
             <div className="mt-2 border-t border-border pt-2">

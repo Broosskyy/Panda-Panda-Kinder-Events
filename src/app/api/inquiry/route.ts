@@ -93,7 +93,12 @@ export async function POST(request: Request) {
       }
       savedToDb = true;
 
-      void import("@/lib/admin/push/send").then(({ notifyAdminsNewInquiry }) => notifyAdminsNewInquiry());
+      try {
+        const { notifyAdminsNewInquiry } = await import("@/lib/admin/push/send");
+        await notifyAdminsNewInquiry();
+      } catch (pushError) {
+        safeApiError("inquiry_push_send_failed:", pushError, "");
+      }
     }
 
     if (!isResendConfigured()) {

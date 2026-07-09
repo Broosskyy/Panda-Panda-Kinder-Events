@@ -2,6 +2,7 @@
 
 import { detectPushPlatform, hasBasicNotificationSupport } from "@/lib/admin/push/platform";
 import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
+import type { PushDiagnostics } from "@/lib/admin/push/types";
 
 export interface PushLiveDebugState {
   notificationPermission: string;
@@ -14,6 +15,10 @@ export interface PushLiveDebugState {
   pushManagerOnRegistration: boolean;
   browserSubscriptionPresent: boolean;
   serverSubscriptionSaved: boolean;
+  userActiveSubscriptionCount: number;
+  totalAdminSubscriptionCount: number;
+  receivesInquiryPush: boolean;
+  roleSlug: string;
   browserUserAgent: string;
   platformLabel: string;
   platformDetail: string;
@@ -31,6 +36,17 @@ function isStandaloneDisplay(): boolean {
   return ["standalone", "fullscreen", "minimal-ui"].some((mode) =>
     window.matchMedia(`(display-mode: ${mode})`).matches,
   );
+}
+
+async function fetchServerDiagnostics(): Promise<Partial<PushDiagnostics>> {
+  try {
+    const res = await fetch("/api/admin/push");
+    if (!res.ok) return {};
+    const data = await res.json();
+    return data.diagnostics ?? {};
+  } catch {
+    return {};
+  }
 }
 
 export async function collectPushLiveDebugState(opts?: {
@@ -67,6 +83,7 @@ export async function collectPushLiveDebugState(opts?: {
         }
       }
     } catch (error) {
+      const diagnostics = await fetchServerDiagnostics();
       return {
         notificationPermission: permission,
         hasNotificationApi: typeof Notification !== "undefined",
@@ -77,7 +94,11 @@ export async function collectPushLiveDebugState(opts?: {
         serviceWorkerReady,
         pushManagerOnRegistration,
         browserSubscriptionPresent,
-        serverSubscriptionSaved: Boolean(opts?.serverSubscribed),
+        serverSubscriptionSaved: Boolean(opts?.serverSubscribed ?? diagnostics.userActiveSubscriptionCount),
+        userActiveSubscriptionCount: diagnostics.userActiveSubscriptionCount ?? 0,
+        totalAdminSubscriptionCount: diagnostics.totalAdminSubscriptionCount ?? 0,
+        receivesInquiryPush: diagnostics.receivesInquiryPush ?? false,
+        roleSlug: diagnostics.roleSlug ?? "unknown",
         browserUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
         platformLabel: platform.label,
         platformDetail: platform.detail,
@@ -93,6 +114,8 @@ export async function collectPushLiveDebugState(opts?: {
     }
   }
 
+  const diagnostics = await fetchServerDiagnostics();
+
   return {
     notificationPermission: permission,
     hasNotificationApi: typeof Notification !== "undefined",
@@ -103,7 +126,13 @@ export async function collectPushLiveDebugState(opts?: {
     serviceWorkerReady,
     pushManagerOnRegistration,
     browserSubscriptionPresent,
-    serverSubscriptionSaved: Boolean(opts?.serverSubscribed),
+    serverSubscriptionSaved: Boolean(
+      opts?.serverSubscribed ?? (diagnostics.userActiveSubscriptionCount ?? 0) > 0,
+    ),
+    userActiveSubscriptionCount: diagnostics.userActiveSubscriptionCount ?? 0,
+    totalAdminSubscriptionCount: diagnostics.totalAdminSubscriptionCount ?? 0,
+    receivesInquiryPush: diagnostics.receivesInquiryPush ?? false,
+    roleSlug: diagnostics.roleSlug ?? "unknown",
     browserUserAgent: typeof navigator !== "undefined" ? navigator.userAgent : "",
     platformLabel: platform.label,
     platformDetail: platform.detail,

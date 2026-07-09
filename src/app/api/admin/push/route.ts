@@ -2,7 +2,12 @@ import { NextResponse } from "next/server";
 import { getAdminContext, requireAdmin } from "@/lib/admin-route";
 import { adminHasPermission } from "@/lib/auth/context";
 import { getVapidPublicKey, isPushConfigured } from "@/lib/admin/push/config";
-import { getActiveSubscriptionForUser } from "@/lib/admin/push/subscriptions";
+import {
+  countActiveSubscriptionsForUser,
+  countInquiryPushRecipients,
+  getActiveSubscriptionForUser,
+  isInquiryPushRole,
+} from "@/lib/admin/push/subscriptions";
 import type { PushUiStatus } from "@/lib/admin/push/types";
 
 const PUSH_PERMISSION = "inquiries:write";
@@ -19,11 +24,16 @@ export async function GET() {
   const configured = isPushConfigured();
   const publicKey = getVapidPublicKey();
   let subscribed = false;
+  let activeRow = null;
+  let userActiveSubscriptionCount = 0;
+  let totalAdminSubscriptionCount = 0;
 
   if (configured) {
     try {
-      const row = await getActiveSubscriptionForUser(ctx.userId);
-      subscribed = Boolean(row);
+      activeRow = await getActiveSubscriptionForUser(ctx.userId);
+      subscribed = Boolean(activeRow);
+      userActiveSubscriptionCount = await countActiveSubscriptionsForUser(ctx.userId);
+      totalAdminSubscriptionCount = await countInquiryPushRecipients();
     } catch {
       subscribed = false;
     }
@@ -33,8 +43,8 @@ export async function GET() {
   if (!configured) status = "not_configured";
   else if (subscribed) status = "activated";
 
-  const isAdminRole = ctx.roleSlug === "administrator" || ctx.roleSlug === "manager";
-  const canTest = adminHasPermission(ctx, PUSH_PERMISSION) && isAdminRole;
+  const isAdminRole = isInquiryPushRole(ctx.roleSlug);
+  const canTest = adminHasPermission(ctx, PUSH_PERMISSION) && isAdminRole && subscribed;
 
   return NextResponse.json({
     configured,
@@ -46,5 +56,19 @@ export async function GET() {
     canDeactivate: subscribed && adminHasPermission(ctx, PUSH_PERMISSION),
     permission: PUSH_PERMISSION,
     setupGuide: "/PUSH_SETUP.md",
+    diagnostics: {
+      userActiveSubscriptionCount,
+      totalAdminSubscriptionCount,
+      receivesInquiryPush: isAdminRole,
+      roleSlug: ctx.roleSlug,
+      dbSubscription: activeRow
+        ? {
+            id: activeRow.id,
+            endpoint: activeRow.endpoint,
+            enabled: activeRow.enabled,
+            revokedAt: activeRow.revoked_at,
+          }
+        : null,
+    },
   });
 }

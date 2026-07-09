@@ -5234,16 +5234,16 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
 .admin-onboarding-v2-panel {
   position: relative;
   z-index: 1;
-  display: flex;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   width: min(100%, 44rem);
   max-width: 44rem;
   max-height: min(600px, 88dvh);
-  flex-direction: column;
+  overflow: hidden;
   border-radius: 1rem;
   border: 1px solid var(--admin-border);
   background: var(--admin-panel-solid);
   box-shadow: 0 24px 48px rgba(26, 27, 23, 0.28);
-  overflow: hidden;
   isolation: isolate;
   animation: admin-onboarding-v2-scale-in 280ms ease-out;
 }
@@ -5315,7 +5315,6 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
 }
 
 .admin-onboarding-v2-body {
-  flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
@@ -5376,6 +5375,7 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
 }
 
 .admin-onboarding-v2-footer {
+  grid-row: 4;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
@@ -5383,41 +5383,80 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
   padding: 0.625rem 1rem max(0.625rem, env(safe-area-inset-bottom, 0px));
   background: var(--admin-panel-solid);
   border-top: 1px solid var(--admin-border);
-  position: sticky;
-  bottom: 0;
-  z-index: 2;
+  box-shadow: 0 -4px 12px rgba(26, 27, 23, 0.06);
 }
 
-.admin-onboarding-v2-actions-primary {
+.admin-onboarding-v2-footer-primary {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.5rem;
+  width: 100%;
 }
 
-.admin-onboarding-v2-actions-primary--single {
-  grid-template-columns: 1fr;
+.admin-onboarding-v2-footer-secondary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .admin-onboarding-v2-btn {
-  width: 100%;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  width: 100%;
   min-height: 2.75rem;
+  border-radius: 0.75rem;
+  padding: 0.625rem 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.admin-onboarding-v2-btn-back {
+  border: 1px solid var(--admin-border);
+  background: var(--admin-surface);
+  color: var(--admin-text);
+}
+
+.admin-onboarding-v2-btn-back:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.admin-onboarding-v2-btn-next {
+  border: 0;
+  background: var(--admin-accent);
+  color: #fff;
+}
+
+.admin-onboarding-v2-btn-next:active {
+  transform: scale(0.98);
+}
+
+/* legacy aliases kept for tests */
+.admin-onboarding-v2-actions-primary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem;
 }
 
 .admin-onboarding-v2-actions-secondary {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.5rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.375rem 0.75rem;
 }
 
 .admin-onboarding-v2-text-btn {
   font-size: 0.8125rem;
   font-weight: 600;
   color: var(--color-text-muted);
-  padding: 0.25rem 0;
+  padding: 0.375rem 0.25rem;
   min-height: 2.25rem;
+  text-align: center;
 }
 
 .admin-onboarding-v2-text-btn:hover {
@@ -5434,7 +5473,7 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
   .admin-onboarding-v2-panel {
     width: 100%;
     max-width: 100%;
-    max-height: min(600px, 92dvh);
+    max-height: min(640px, 94dvh);
     border-radius: 1rem 1rem 0 0;
     border-bottom: none;
     animation: admin-onboarding-v2-slide-up 280ms ease-out;
@@ -5464,8 +5503,6 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
   }
 
   .admin-onboarding-v2-footer {
-    position: sticky;
-    bottom: 0;
     padding: 0.5rem 0.875rem max(0.5rem, env(safe-area-inset-bottom, 0px));
   }
 }

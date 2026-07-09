@@ -14,7 +14,7 @@ export type PwaInstallabilityState =
   | "not_installable"
   | "browser_unsupported";
 
-export const PWA_SW_RELOAD_KEY = "pb-admin-pwa-sw-reload-done";
+export const PWA_SW_RELOAD_KEY = "pb-admin-pwa-sw-reload-v2";
 
 export interface PwaProbeResult {
   state: PwaInstallabilityState;
@@ -581,6 +581,54 @@ export interface PwaPanelStatus {
   isError: boolean;
 }
 
+export type PwaRealityStatus =
+  | "installed"
+  | "installable"
+  | "blocked_chrome"
+  | "technical_error";
+
+export function resolvePwaRealityStatus(opts: {
+  canInstall: boolean;
+  isInstalled: boolean;
+  probe: PwaProbeResult | null;
+}): PwaRealityStatus {
+  if (opts.isInstalled) return "installed";
+  if (opts.canInstall) return "installable";
+  if (!opts.probe) return "blocked_chrome";
+
+  if (
+    !opts.probe.https ||
+    !opts.probe.manifestLoaded ||
+    !opts.probe.manifestValid ||
+    !opts.probe.icons192Ok ||
+    !opts.probe.icons512Ok ||
+    !opts.probe.iconsMaskable192Ok ||
+    !opts.probe.iconsMaskable512Ok ||
+    !isAdminManifestLinkCorrect() ||
+    !opts.probe.serviceWorkerRegistered ||
+    !opts.probe.serviceWorkerControlling
+  ) {
+    return "technical_error";
+  }
+
+  return "blocked_chrome";
+}
+
+export function getPwaRealityHeadline(status: PwaRealityStatus): string {
+  switch (status) {
+    case "installed":
+      return "Bereits installiert (standalone)";
+    case "installable":
+      return "Echte PWA-Installation verfügbar";
+    case "blocked_chrome":
+      return "BLOCKED BY CHROME / MANUAL VERIFICATION NEEDED";
+    case "technical_error":
+      return "Technischer PWA-Fehler — Installation blockiert";
+    default:
+      return "PWA-Status unbekannt";
+  }
+}
+
 export function getPwaPanelStatus(opts: {
   canInstall: boolean;
   installMode: PwaInstallMode | undefined;
@@ -678,11 +726,11 @@ export function getPwaPanelStatus(opts: {
 
   if (expectsBeforeInstallPrompt(browser)) {
     return {
-      headline: `${browser.label}: Install-Dialog noch nicht verfügbar`,
+      headline: "BLOCKED BY CHROME / MANUAL VERIFICATION NEEDED",
       detail:
         causeMessage ??
-        "Seite neu laden, Status prüfen oder Installationshilfe öffnen. Das bedeutet nicht automatisch „PWA kaputt“.",
-      isError: false,
+        `${browser.label}: Technische Kriterien können erfüllt sein, aber kein Install-Prompt. Chrome DevTools prüfen oder PWA-Status zurücksetzen.`,
+      isError: true,
     };
   }
 
@@ -703,6 +751,7 @@ export function resetPwaInstallHints(): void {
   if (typeof sessionStorage !== "undefined") {
     sessionStorage.removeItem(PWA_SESSION_CLOSED_KEY);
     sessionStorage.removeItem(PWA_SW_RELOAD_KEY);
+    sessionStorage.removeItem("pb-admin-pwa-sw-reload-done");
   }
   clearDeferredPrompt();
   if (typeof window !== "undefined") {
@@ -714,11 +763,7 @@ export function resetPwaInstallHints(): void {
 export async function resetPwaInstallCaches(): Promise<void> {
   if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
     const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(
-      registrations
-        .filter((reg) => reg.scope.includes("/admin"))
-        .map((reg) => reg.unregister()),
-    );
+    await Promise.all(registrations.map((reg) => reg.unregister()));
   }
   if (typeof caches === "undefined") return;
   const keys = await caches.keys();

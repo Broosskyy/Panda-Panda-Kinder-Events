@@ -10,7 +10,7 @@
   var ADMIN_MANIFEST = "/admin/manifest.webmanifest";
   var ADMIN_SW = "/admin/sw.js";
   var ADMIN_SCOPE = "/admin/";
-  var SW_RELOAD_KEY = "pb-admin-pwa-sw-reload-done";
+  var SW_RELOAD_KEY = "pb-admin-pwa-sw-reload-v2";
 
   function ensureAdminManifestLink() {
     if (!document.head) return;
@@ -87,7 +87,22 @@
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker
-      .register(ADMIN_SW, { scope: ADMIN_SCOPE })
+      .getRegistrations()
+      .then(function (regs) {
+        return Promise.all(
+          regs
+            .filter(function (reg) {
+              var script = reg.active?.scriptURL || reg.installing?.scriptURL || reg.waiting?.scriptURL || "";
+              return script.includes("admin-sw.js") || (reg.scope.endsWith("/") && !reg.scope.includes("/admin"));
+            })
+            .map(function (reg) {
+              return reg.unregister();
+            }),
+        );
+      })
+      .then(function () {
+        return navigator.serviceWorker.register(ADMIN_SW, { scope: ADMIN_SCOPE });
+      })
       .then(function (reg) {
         if (reg.installing || reg.waiting) {
           var worker = reg.installing || reg.waiting;

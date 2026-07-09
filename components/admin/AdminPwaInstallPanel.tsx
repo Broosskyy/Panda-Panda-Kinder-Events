@@ -5,7 +5,7 @@ import { CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Smartphone } from "luc
 import { AdminButton } from "@/components/admin/ui";
 import { AdminPwaInstallHelpSheet, ProbeDetails, PwaDebugDetails } from "@/components/admin/AdminPwaInstallHelpSheet";
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
-import { getPwaPanelStatus, resolvePwaRealityStatus, getPwaRealityHeadline } from "@/lib/admin/pwa-install";
+import { getPwaPanelStatus, resolvePwaRealityStatus, getPwaRealityHeadline, isStandalonePwa } from "@/lib/admin/pwa-install";
 
 interface AdminPwaInstallPanelProps {
   compact?: boolean;
@@ -84,7 +84,11 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
           <CheckCircle2 className="h-4 w-4" aria-hidden />
           Bereits installiert
         </div>
-        <p className="text-sm text-text-muted">Die Admin-App läuft im Vollbildmodus auf diesem Gerät.</p>
+        <p className="text-sm text-text-muted">
+          {isStandalonePwa()
+            ? "Die Admin-App läuft im Vollbildmodus auf diesem Gerät."
+            : "Die Admin-App ist auf diesem Gerät installiert. Öffne sie über das App-Icon im Startbildschirm oder App-Drawer."}
+        </p>
       </div>
     );
   }
@@ -108,8 +112,12 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
 
         <div className="rounded-xl border border-border bg-bg-secondary p-3 text-sm">
           <p className="font-medium text-text-primary">Status · {browserInfo.label}</p>
-          {!canInstall && realityStatus !== "installable" ? (
-            <p className={`mt-1 text-sm font-semibold ${realityStatus === "technical_error" ? "text-amber-800" : "text-amber-900"}`}>
+          {!canInstall && realityStatus !== "installable" && realityStatus !== "installed" ? (
+            <p
+              className={`mt-1 text-sm font-semibold ${
+                realityStatus === "technical_error" ? "text-amber-800" : "text-text-secondary"
+              }`}
+            >
               {realityHeadline}
             </p>
           ) : null}

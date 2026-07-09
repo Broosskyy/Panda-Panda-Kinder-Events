@@ -41,9 +41,23 @@ export interface PwaProbeResult {
 
 export function isStandalonePwa(): boolean {
   if (typeof window === "undefined") return false;
+  const nav = window.navigator as Navigator & { standalone?: boolean };
+  if (nav.standalone === true) return true;
+  const modes = ["standalone", "fullscreen", "minimal-ui"] as const;
+  return modes.some((mode) => window.matchMedia(`(display-mode: ${mode})`).matches);
+}
+
+export function isAndroidAppReferrer(): boolean {
+  if (typeof document === "undefined") return false;
+  return document.referrer.includes("android-app://");
+}
+
+export function hasPwaInstalledSignals(): boolean {
   return (
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+    isStandalonePwa() ||
+    isAndroidAppReferrer() ||
+    readPwaInstalledFlag() ||
+    readAppInstalledFiredFlag()
   );
 }
 
@@ -159,10 +173,13 @@ export function clearPwaInstalledFlag(): void {
   localStorage.removeItem(PWA_INSTALLED_STORAGE_KEY);
 }
 
-/** Resolve install state: standalone wins; stale flags cleared when not standalone. */
+/** Resolve install state from standalone, appinstalled flag, and localStorage. */
 export function resolvePwaInstalled(): boolean {
-  if (isStandalonePwa()) {
+  if (isStandalonePwa() || isAndroidAppReferrer()) {
     markPwaInstalled();
+    return true;
+  }
+  if (readPwaInstalledFlag() || readAppInstalledFiredFlag()) {
     return true;
   }
   return false;
@@ -236,6 +253,7 @@ export interface PwaDebugStatus {
   beforeInstallPromptFired: boolean;
   deferredPromptStored: boolean;
   appInstalledFired: boolean;
+  installedLocalFlag: boolean;
   installDismissedLocal: boolean;
   browserProfile: string;
   currentRoute: string;
@@ -295,15 +313,15 @@ export function auditChromeInstallBlockers(
   }
 
   if (expectsBeforeInstallPrompt(browser)) {
-    if (!probe.serviceWorkerRegistered) {
+    if (!probe.serviceWorkerRegistered && !probe.serviceWorkerControlling) {
       blockers.push("Chrome DevTools → Application → Service Workers: Kein SW für /admin registriert.");
     }
-    if (probe.serviceWorkerRegistered && !probe.serviceWorkerActive) {
+    if (probe.serviceWorkerRegistered && !probe.serviceWorkerActive && !probe.serviceWorkerControlling) {
       blockers.push("Chrome DevTools: Service Worker registriert, aber nicht aktiv.");
     }
-    if (probe.serviceWorkerActive && !probe.serviceWorkerControlling) {
+    if (probe.serviceWorkerRegistered && !probe.serviceWorkerControlling) {
       blockers.push(
-        "Chrome DevTools: navigator.serviceWorker.controller ist null — Seite einmal neu laden nach SW-Aktivierung.",
+        "Chrome DevTools: navigator.serviceWorker.controller ist null — im Browser-Tab normal nach Installation oder vor Reload.",
       );
     }
   }
@@ -584,8 +602,28 @@ export interface PwaPanelStatus {
 export type PwaRealityStatus =
   | "installed"
   | "installable"
-  | "blocked_chrome"
+  | "unclear"
   | "technical_error";
+
+function hasTrueTechnicalPwaBlockers(
+  probe: PwaProbeResult,
+  browser: PwaBrowserInfo = detectPwaBrowser(),
+): boolean {
+  if (!probe.https) return true;
+  if (!isAdminManifestLinkCorrect()) return true;
+  if (!probe.manifestLoaded || !probe.manifestValid) return true;
+  if (!probe.icons192Ok || !probe.icons512Ok || !probe.iconsMaskable192Ok || !probe.iconsMaskable512Ok) {
+    return true;
+  }
+  if (
+    expectsBeforeInstallPrompt(browser) &&
+    !probe.serviceWorkerRegistered &&
+    !probe.serviceWorkerControlling
+  ) {
+    return true;
+  }
+  return false;
+}
 
 export function resolvePwaRealityStatus(opts: {
   canInstall: boolean;
@@ -594,34 +632,21 @@ export function resolvePwaRealityStatus(opts: {
 }): PwaRealityStatus {
   if (opts.isInstalled) return "installed";
   if (opts.canInstall) return "installable";
-  if (!opts.probe) return "blocked_chrome";
-
-  if (
-    !opts.probe.https ||
-    !opts.probe.manifestLoaded ||
-    !opts.probe.manifestValid ||
-    !opts.probe.icons192Ok ||
-    !opts.probe.icons512Ok ||
-    !opts.probe.iconsMaskable192Ok ||
-    !opts.probe.iconsMaskable512Ok ||
-    !isAdminManifestLinkCorrect() ||
-    !opts.probe.serviceWorkerRegistered ||
-    !opts.probe.serviceWorkerControlling
-  ) {
-    return "technical_error";
-  }
-
-  return "blocked_chrome";
+  if (!opts.probe) return "unclear";
+  if (hasTrueTechnicalPwaBlockers(opts.probe)) return "technical_error";
+  return "unclear";
 }
 
 export function getPwaRealityHeadline(status: PwaRealityStatus): string {
   switch (status) {
     case "installed":
-      return "Bereits installiert (standalone)";
+      return isStandalonePwa()
+        ? "Bereits installiert (standalone)"
+        : "Bereits installiert";
     case "installable":
       return "Echte PWA-Installation verfügbar";
-    case "blocked_chrome":
-      return "BLOCKED BY CHROME / MANUAL VERIFICATION NEEDED";
+    case "unclear":
+      return "Admin-App möglicherweise bereits installiert oder Chrome stellt aktuell keinen Installationsdialog bereit.";
     case "technical_error":
       return "Technischer PWA-Fehler — Installation blockiert";
     default:
@@ -698,21 +723,52 @@ export function getPwaPanelStatus(opts: {
     }
   }
 
-  if (installMode === "manifest_or_icons_error" || installMode === "sw_not_controlling") {
+  if (installMode === "manifest_or_icons_error") {
     return {
-      headline: installMode === "sw_not_controlling" ? "Service Worker übernimmt noch" : "Technischer PWA-Fehler",
+      headline: "Technischer PWA-Fehler",
       detail: causeMessage,
       isError: true,
     };
   }
 
-  if (installMode === "shortcut_only" && expectsBeforeInstallPrompt(browser)) {
+  if (installMode === "sw_not_controlling") {
     return {
-      headline: "Nur Startbildschirm-Verknüpfung — keine echte PWA",
+      headline: "Service Worker übernimmt noch",
       detail:
         causeMessage ??
-        `${browser.label} erkennt die Admin-App aktuell nur als Verknüpfung, nicht als installierbare PWA.`,
-      isError: true,
+        "Der Service Worker kontrolliert diese Seite noch nicht — Seite einmal neu laden. Das ist kein Installationsfehler.",
+      isError: false,
+    };
+  }
+
+  if (installMode === "installed") {
+    return {
+      headline: "Bereits installiert",
+      detail:
+        causeMessage ??
+        (isStandalonePwa()
+          ? "Die Admin-App läuft im Vollbildmodus auf diesem Gerät."
+          : "Die Admin-App ist auf diesem Gerät installiert. Öffne sie über das App-Icon."),
+      isError: false,
+    };
+  }
+
+  if (installMode === "shortcut_only" && expectsBeforeInstallPrompt(browser)) {
+    if (hasPwaInstalledSignals()) {
+      return {
+        headline: "Bereits installiert",
+        detail:
+          "Die Admin-App ist installiert. Chrome zeigt im Browser-Tab keinen erneuten Install-Dialog — das ist normal.",
+        isError: false,
+      };
+    }
+    return {
+      headline:
+        "Admin-App möglicherweise bereits installiert oder Chrome stellt aktuell keinen Installationsdialog bereit.",
+      detail:
+        causeMessage ??
+        `${browser.label}: Wenn die App bereits installiert ist, öffne sie über das App-Icon. Andernfalls PWA-Status prüfen oder Installationshilfe nutzen.`,
+      isError: false,
     };
   }
 
@@ -726,11 +782,12 @@ export function getPwaPanelStatus(opts: {
 
   if (expectsBeforeInstallPrompt(browser)) {
     return {
-      headline: "BLOCKED BY CHROME / MANUAL VERIFICATION NEEDED",
+      headline:
+        "Admin-App möglicherweise bereits installiert oder Chrome stellt aktuell keinen Installationsdialog bereit.",
       detail:
         causeMessage ??
-        `${browser.label}: Technische Kriterien können erfüllt sein, aber kein Install-Prompt. Chrome DevTools prüfen oder PWA-Status zurücksetzen.`,
-      isError: true,
+        `${browser.label}: Kein Install-Prompt im Browser-Tab — oft normal nach Installation oder bei temporärer Chrome-Blockade.`,
+      isError: false,
     };
   }
 
@@ -776,7 +833,7 @@ export function resolvePwaInstallMode(
 ): PwaInstallMode {
   const browser = detectPwaBrowser();
 
-  if (probe.state === "installed" || isStandalonePwa()) return "installed";
+  if (probe.state === "installed" || isStandalonePwa() || hasPwaInstalledSignals()) return "installed";
   if (opts.canInstall || probe.installPromptAvailable) return "true_installable";
 
   if (browser.id === "in_app_browser") return "unsupported";
@@ -953,6 +1010,7 @@ export async function buildPwaDebugStatus(
     beforeInstallPromptFired: readPromptFiredFlag(),
     deferredPromptStored: Boolean(takeEarlyCapturedPrompt()),
     appInstalledFired: readAppInstalledFiredFlag(),
+    installedLocalFlag: readPwaInstalledFlag(),
     installDismissedLocal: readPwaDontShowAgain(),
     browserProfile: detectBrowserProfile(),
     currentRoute: typeof window !== "undefined" ? window.location.pathname : "/admin",
@@ -1004,15 +1062,20 @@ export function explainPwaBlockers(result: PwaProbeResult, browser: PwaBrowserIn
 
   const needsServiceWorker = expectsBeforeInstallPrompt(browser) || browser.id === "firefox";
 
-  if (needsServiceWorker && !result.serviceWorkerRegistered) {
+  if (needsServiceWorker && !result.serviceWorkerRegistered && !result.serviceWorkerControlling) {
     messages.push("Kein Service Worker für /admin registriert.");
   }
-  if (needsServiceWorker && result.serviceWorkerRegistered && !result.serviceWorkerActive) {
+  if (
+    needsServiceWorker &&
+    result.serviceWorkerRegistered &&
+    !result.serviceWorkerActive &&
+    !result.serviceWorkerControlling
+  ) {
     messages.push("Der Service Worker ist registriert, aber noch nicht aktiv.");
   }
-  if (needsServiceWorker && result.serviceWorkerActive && !result.serviceWorkerControlling) {
+  if (needsServiceWorker && result.serviceWorkerRegistered && !result.serviceWorkerControlling) {
     messages.push(
-      `Der Service Worker kontrolliert diese Seite noch nicht — ${browser.label} feuert beforeinstallprompt oft erst nach einem Seiten-Reload.`,
+      `Der Service Worker kontrolliert diese Browser-Tab-Seite noch nicht — nach Installation oder ohne Reload normal. PWA über App-Icon öffnen.`,
     );
   }
 
@@ -1137,16 +1200,16 @@ export async function probePwaInstallability(
   if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
     try {
       const reg = await navigator.serviceWorker.getRegistration("/admin");
-      serviceWorkerRegistered = Boolean(reg);
-      serviceWorkerActive = Boolean(reg?.active);
       serviceWorkerControlling = Boolean(navigator.serviceWorker.controller);
+      serviceWorkerRegistered = Boolean(reg) || serviceWorkerControlling;
+      serviceWorkerActive = Boolean(reg?.active) || serviceWorkerControlling;
       offlineCapable = serviceWorkerActive;
       if (needsServiceWorker && !serviceWorkerRegistered) issues.push("service_worker_missing");
       else if (needsServiceWorker && !serviceWorkerActive) issues.push("service_worker_inactive");
-      if (needsServiceWorker && serviceWorkerActive && !serviceWorkerControlling) {
+      if (needsServiceWorker && serviceWorkerRegistered && !serviceWorkerControlling) {
         issues.push("sw_not_controlling");
       }
-      if (needsServiceWorker && !offlineCapable) issues.push("offline_missing");
+      if (needsServiceWorker && !offlineCapable && !serviceWorkerControlling) issues.push("offline_missing");
     } catch {
       if (needsServiceWorker) issues.push("service_worker_missing");
     }
@@ -1154,12 +1217,12 @@ export async function probePwaInstallability(
     issues.push("browser_unsupported");
   }
 
-  const standalone = resolvePwaInstalled();
+  const installed = resolvePwaInstalled();
   const installPromptAvailable = Boolean(deferred);
 
   if (
     expectsBeforeInstallPrompt(browser) &&
-    !standalone &&
+    !installed &&
     manifestValid &&
     serviceWorkerActive &&
     serviceWorkerControlling &&
@@ -1175,7 +1238,7 @@ export async function probePwaInstallability(
   }
 
   let state: PwaInstallabilityState;
-  if (standalone) {
+  if (installed) {
     state = "installed";
   } else if (browser.id === "in_app_browser") {
     state = "browser_unsupported";

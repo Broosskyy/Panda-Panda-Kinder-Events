@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { Copy } from "lucide-react";
 import { Logo } from "@/components/ui/Logo";
+import {
+  DEFAULT_INVITE_PASSWORD_POLICY,
+  getPasswordRuleStatusesWithConfirm,
+  isPasswordValid,
+  validatePasswordRules,
+} from "@/lib/auth/password-rules";
+import type { PasswordPolicy } from "@/lib/auth/types";
 
 type Step = "loading" | "invalid" | "password" | "2fa" | "done";
 
@@ -17,6 +24,7 @@ interface InvitePreview {
 export function AdminInviteAcceptForm({ token }: { token: string }) {
   const [step, setStep] = useState<Step>("loading");
   const [preview, setPreview] = useState<InvitePreview | null>(null);
+  const [passwordPolicy, setPasswordPolicy] = useState<PasswordPolicy>(DEFAULT_INVITE_PASSWORD_POLICY);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [qrDataUrl, setQrDataUrl] = useState("");
@@ -27,6 +35,16 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
+
+  const passwordRules = useMemo(
+    () => getPasswordRuleStatusesWithConfirm(password, confirm, passwordPolicy),
+    [password, confirm, passwordPolicy],
+  );
+
+  const passwordValid = useMemo(
+    () => isPasswordValid(password, confirm, passwordPolicy),
+    [password, confirm, passwordPolicy],
+  );
 
   useEffect(() => {
     fetch(`/api/admin/invites/validate?token=${encodeURIComponent(token)}`)
@@ -39,6 +57,9 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
             roleLabel: data.roleLabel,
             expiresAt: data.expiresAt,
           });
+          if (data.passwordPolicy) {
+            setPasswordPolicy(data.passwordPolicy as PasswordPolicy);
+          }
           setStep("password");
         } else {
           setStep("invalid");
@@ -58,15 +79,29 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
     }
   };
 
+  const goBackToPassword = () => {
+    setStep("password");
+    setError("");
+    setSuccess("");
+    setTotpCode("");
+  };
+
   const submitPassword = async (e: FormEvent) => {
     e.preventDefault();
+    setError("");
+    setSuccess("");
+
+    const validationError = validatePasswordRules(password, passwordPolicy);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
     if (password !== confirm) {
       setError("Passwörter stimmen nicht überein.");
       return;
     }
+
     setLoading(true);
-    setError("");
-    setSuccess("");
     const res = await fetch("/api/admin/invites/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -89,15 +124,27 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
     setLoading(true);
     setError("");
     setSuccess("");
+
+    const validationError = validatePasswordRules(password, passwordPolicy);
+    if (validationError) {
+      setError(validationError);
+      setStep("password");
+      setLoading(false);
+      return;
+    }
+
     const res = await fetch("/api/admin/invites/accept", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ token, password, totpCode, pendingSecret }),
     });
-    const data = await res.json();
+    const data = (await res.json()) as { error?: string; field?: string; backupCodes?: string[] };
     if (res.ok) {
       setBackupCodes(data.backupCodes ?? []);
       setStep("done");
+    } else if (data.field === "password") {
+      setError(data.error ?? "Passwort entspricht nicht den Anforderungen.");
+      setStep("password");
     } else {
       setError(data.error ?? "Ungültiger 2FA-Code. Bitte Authenticator-App prüfen und erneut eingeben.");
     }
@@ -160,6 +207,9 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
         <div className="text-center">
           <Logo context="login" linked={false} className="mx-auto justify-center" />
           <h1 className="font-heading mt-5 text-2xl font-bold">Zugang einrichten</h1>
+          <p className="mt-2 text-xs font-medium uppercase tracking-wide text-text-muted">
+            Schritt {step === "password" ? "1" : "2"} von 2 — {step === "password" ? "Passwort" : "2FA"}
+          </p>
           {preview ? (
             <div className="mt-3 text-sm text-text-muted">
               <p>{preview.displayName}</p>
@@ -179,7 +229,7 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full min-h-12 rounded-xl border border-border px-4"
                 required
-                minLength={8}
+                autoComplete="new-password"
               />
             </div>
             <div>
@@ -190,12 +240,29 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
                 onChange={(e) => setConfirm(e.target.value)}
                 className="w-full min-h-12 rounded-xl border border-border px-4"
                 required
-                minLength={8}
+                autoComplete="new-password"
               />
             </div>
+            <ul className="space-y-1 rounded-xl border border-border bg-bg-secondary p-3 text-sm">
+              {passwordRules.map((rule) => (
+                <li
+                  key={rule.id}
+                  className={rule.ok ? "text-[#2d5a3a]" : "text-text-muted"}
+                >
+                  {rule.ok ? "✓" : "○"} {rule.label}
+                </li>
+              ))}
+            </ul>
           </>
         ) : (
           <>
+            <button
+              type="button"
+              onClick={goBackToPassword}
+              className="text-sm text-primary underline"
+            >
+              ← Zurück zum Passwort ändern
+            </button>
             <p className="text-sm text-text-muted">
               Scannen Sie den QR-Code mit Ihrer Authenticator-App oder nutzen Sie den manuellen Schlüssel unten.
             </p>
@@ -247,9 +314,23 @@ export function AdminInviteAcceptForm({ token }: { token: string }) {
 
         {error ? <p className="text-sm text-accent-heart" role="alert">{error}</p> : null}
         {success ? <p className="text-sm text-[#2d5a3a]" role="status">{success}</p> : null}
-        <button type="submit" disabled={loading} className="w-full min-h-12 rounded-full bg-primary font-medium text-white disabled:opacity-60">
-          {loading ? "Bitte warten…" : step === "password" ? "Weiter zu 2FA" : "Account aktivieren"}
-        </button>
+        {step === "password" ? (
+          <button
+            type="submit"
+            disabled={loading || !passwordValid}
+            className="w-full min-h-12 rounded-full bg-primary font-medium text-white disabled:opacity-60"
+          >
+            {loading ? "Bitte warten…" : "Weiter zu 2FA"}
+          </button>
+        ) : (
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full min-h-12 rounded-full bg-primary font-medium text-white disabled:opacity-60"
+          >
+            {loading ? "Bitte warten…" : "Account aktivieren"}
+          </button>
+        )}
       </form>
     </div>
   );

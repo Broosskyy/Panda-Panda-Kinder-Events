@@ -75,7 +75,7 @@ export async function POST(request: Request) {
   const policy = await getPasswordPolicy();
   const validationError = validatePassword(parsed.data.password, policy);
   if (validationError) {
-    return NextResponse.json({ error: validationError }, { status: 400 });
+    return NextResponse.json({ error: validationError, field: "password" }, { status: 400 });
   }
 
   try {

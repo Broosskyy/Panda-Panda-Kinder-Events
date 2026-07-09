@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getInvitationByToken } from "@/lib/auth/invitations";
+import { getPasswordPolicy } from "@/lib/auth/security-settings";
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -13,6 +14,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Einladung ungültig oder abgelaufen." }, { status: 404 });
   }
 
+  const passwordPolicy = await getPasswordPolicy();
+
   return NextResponse.json({
     valid: true,
     email: invite.preview.email,
@@ -20,5 +23,6 @@ export async function GET(request: Request) {
     roleSlug: invite.preview.roleSlug,
     roleLabel: invite.preview.roleLabel,
     expiresAt: invite.preview.expiresAt,
+    passwordPolicy,
   });
 }

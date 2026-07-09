@@ -3,6 +3,7 @@
 import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
 import { detectPushPlatform } from "@/lib/admin/push/platform";
 import { subscriptionToStored, urlBase64ToUint8Array } from "@/lib/admin/push/client";
+import { PUSH_SW_READY_TIMEOUT_MS, withTimeout } from "@/lib/admin/push/timeout";
 import type { PushStatusResponse } from "@/lib/admin/push/types";
 
 export type PushActivateStep =
@@ -97,7 +98,11 @@ export function beginPushSubscriptionInClick(): Promise<PushSubscription> {
   return navigator.serviceWorker
     .getRegistration("/admin/")
     .then((reg) => reg ?? navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" }))
-    .then((reg) => navigator.serviceWorker.ready.then(() => reg))
+    .then((reg) =>
+      withTimeout(navigator.serviceWorker.ready, PUSH_SW_READY_TIMEOUT_MS, "serviceWorker.ready").then(
+        () => reg,
+      ),
+    )
     .then((reg) => {
       if (!reg.pushManager) {
         const platform = detectPushPlatform();
@@ -232,7 +237,7 @@ export async function runPushActivateFlow(opts: {
         logStep(steps, "service_worker_ready", true, "Registriere /admin/sw.js …");
         reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
       }
-      await navigator.serviceWorker.ready;
+      await withTimeout(navigator.serviceWorker.ready, PUSH_SW_READY_TIMEOUT_MS, "serviceWorker.ready");
       registration = reg;
       logStep(steps, "service_worker_ready", true, `SW bereit, scope: ${registration.scope}`);
     } catch (error) {
@@ -346,6 +351,14 @@ export async function runPushActivateFlow(opts: {
 export function beginPermissionRequest(): Promise<NotificationPermission> {
   if (typeof Notification === "undefined") {
     return Promise.reject(new Error("Notification API nicht verfügbar."));
+  }
+  if (Notification.permission === "granted") {
+    console.error("[push:step] request_permission: bereits granted (sync)");
+    return Promise.resolve("granted");
+  }
+  if (Notification.permission === "denied") {
+    console.error("[push:step] request_permission: bereits denied (sync)");
+    return Promise.resolve("denied");
   }
   console.error("[push:step] request_permission: Notification.requestPermission() sync gestartet");
   return Notification.requestPermission();

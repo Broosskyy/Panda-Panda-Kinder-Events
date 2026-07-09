@@ -5383,12 +5383,19 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
   padding: 0.625rem 1rem max(0.625rem, env(safe-area-inset-bottom, 0px));
   background: var(--admin-panel-solid);
   border-top: 1px solid var(--admin-border);
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
 }
 
 .admin-onboarding-v2-actions-primary {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
+}
+
+.admin-onboarding-v2-actions-primary--single {
+  grid-template-columns: 1fr;
 }
 
 .admin-onboarding-v2-btn {

@@ -65,14 +65,15 @@ export function Header({
       }
       const hash = href.split("#")[1];
       if (!hash) return;
-      if (!isPublicHomePath(window.location.pathname)) {
-        closeMenu();
-        return;
-      }
+
       event.preventDefault();
       closeMenu();
       window.setTimeout(() => {
-        scrollToPublicSection(hash);
+        if (isPublicHomePath(window.location.pathname)) {
+          scrollToPublicSection(hash);
+        } else {
+          navigateToPublicSection(hash);
+        }
       }, 320);
     },
     [closeMenu],

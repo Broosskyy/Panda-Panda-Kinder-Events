@@ -11,12 +11,19 @@ export function isPublicHomePath(pathname: string): boolean {
 }
 
 /** Scroll to a section on the current page, or return false if missing. */
+export function normalizePublicSectionId(sectionId: string): string {
+  const id = sectionId.replace(/^#/, "").trim();
+  if (id === "anfrage") return "kontakt";
+  return id;
+}
+
+/** Scroll to a section on the current page, or return false if missing. */
 export function scrollToPublicSection(
   sectionId: string,
   options: { behavior?: ScrollBehavior } = {},
 ): boolean {
   if (typeof document === "undefined") return false;
-  const target = document.getElementById(sectionId);
+  const target = document.getElementById(normalizePublicSectionId(sectionId));
   if (!target) return false;
   target.scrollIntoView({ behavior: options.behavior ?? "smooth", block: "start" });
   return true;
@@ -25,5 +32,5 @@ export function scrollToPublicSection(
 /** Navigate to a public hash section (works from subpages). */
 export function navigateToPublicSection(sectionId: string): void {
   if (typeof window === "undefined") return;
-  window.location.href = resolvePublicHref(`#${sectionId}`);
+  window.location.href = resolvePublicHref(`#${normalizePublicSectionId(sectionId)}`);
 }

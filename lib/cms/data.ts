@@ -3,7 +3,7 @@ import { cache } from "react";
 import { faqs as staticFaqs } from "@/lib/faqs";
 import { galleryImages as staticGallery } from "@/lib/gallery";
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
-import { isPlaceholderContent, isValidCmsFaq, isValidCmsService, isValidPublishedPost } from "./content-quality";
+import { isPlaceholderContent, hasMinimumServiceContent, isValidCmsFaq, isValidPublishedPost } from "./content-quality";
 import { DEFAULT_SITE_SETTINGS } from "./defaults";
 import { normalizeSiteSettings } from "./normalize-settings";
 import { resolveImageUrl } from "./resolve-image";
@@ -290,7 +290,7 @@ async function queryCmsServices(): Promise<Service[]> {
   if (!data?.length) return [];
 
   return (data as CmsService[])
-    .filter((s) => isValidCmsService(s.title ?? "", s.description ?? ""))
+    .filter((s) => hasMinimumServiceContent(s.title ?? "", s.description ?? ""))
     .map((s) => ({
       id: s.id,
       iconKey: s.icon_key?.trim() || "Star",

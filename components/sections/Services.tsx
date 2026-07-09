@@ -44,10 +44,12 @@ export function Services({
     };
   }, [active]);
 
-  if (!items?.length) return null;
+  if (!items?.length) {
+    return <section id="leistungen" className="section-padding bg-bg-primary scroll-mt-24" aria-label="Leistungen" />;
+  }
 
   return (
-    <section id="leistungen" className="section-padding bg-bg-primary">
+    <section id="leistungen" className="section-padding scroll-mt-24 bg-bg-primary">
       <Container>
         <ScrollReveal>
           <SectionHeading title={safeHeading.title} subtitle={safeHeading.subtitle} />

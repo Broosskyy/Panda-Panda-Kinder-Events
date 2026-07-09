@@ -24,6 +24,7 @@ export async function upsertPushSubscription(input: {
       p256dh: input.subscription.keys.p256dh,
       auth: input.subscription.keys.auth,
       user_agent: input.userAgent ?? null,
+      enabled: true,
       updated_at: now,
       revoked_at: null,
     },
@@ -34,22 +35,26 @@ export async function upsertPushSubscription(input: {
 
 export async function revokePushSubscription(endpoint: string): Promise<void> {
   const supabase = getSupabaseAdmin();
+  const now = new Date().toISOString();
   const { error } = await supabase
     .from("admin_push_subscriptions")
-    .update({ revoked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+    .update({ enabled: false, revoked_at: now, updated_at: now })
     .eq("endpoint", endpoint);
   if (error) throw error;
 }
 
-export async function revokePushSubscriptionsForUser(userId: string): Promise<void> {
+export async function disablePushSubscriptionsForUser(userId: string): Promise<number> {
   const supabase = getSupabaseAdmin();
   const now = new Date().toISOString();
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("admin_push_subscriptions")
-    .update({ revoked_at: now, updated_at: now })
+    .update({ enabled: false, revoked_at: now, updated_at: now })
     .eq("user_id", userId)
-    .is("revoked_at", null);
+    .eq("enabled", true)
+    .is("revoked_at", null)
+    .select("id");
   if (error) throw error;
+  return data?.length ?? 0;
 }
 
 export async function getActiveSubscriptionForUser(userId: string): Promise<PushSubscriptionRow | null> {
@@ -58,6 +63,7 @@ export async function getActiveSubscriptionForUser(userId: string): Promise<Push
     .from("admin_push_subscriptions")
     .select("*")
     .eq("user_id", userId)
+    .eq("enabled", true)
     .is("revoked_at", null)
     .order("updated_at", { ascending: false })
     .limit(1)
@@ -89,6 +95,7 @@ export async function listInquiryPushRecipients(): Promise<PushSubscriptionRow[]
     .from("admin_push_subscriptions")
     .select("*")
     .in("user_id", userIds)
+    .eq("enabled", true)
     .is("revoked_at", null);
   if (error) throw error;
   return (data as PushSubscriptionRow[]) ?? [];

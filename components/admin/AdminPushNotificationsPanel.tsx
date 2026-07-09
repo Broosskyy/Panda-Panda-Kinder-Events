@@ -6,28 +6,20 @@ import { AdminButton } from "@/components/admin/ui";
 import { useAdminMessages } from "@/lib/admin/use-admin-messages";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import {
-  isPushApiSupported,
+  detectPushPlatform,
   subscribeToAdminPush,
   subscriptionToStored,
+  unsubscribeFromAdminPush,
 } from "@/lib/admin/push/client";
-import type { PushPermissionState, PushUiStatus } from "@/lib/admin/push/types";
-
-interface PushStatusResponse {
-  configured: boolean;
-  publicKey: string | null;
-  status: PushUiStatus;
-  subscribed: boolean;
-  canActivate: boolean;
-  canTest: boolean;
-}
+import type { PushPermissionState, PushStatusResponse, PushUiStatus } from "@/lib/admin/push/types";
 
 function resolveClientStatus(
-  supported: boolean,
+  platformSupported: boolean,
   configured: boolean,
   permission: PushPermissionState,
   subscribed: boolean,
 ): PushUiStatus {
-  if (!supported) return "unsupported";
+  if (!platformSupported) return "unsupported";
   if (!configured) return "not_configured";
   if (permission === "denied") return "blocked";
   if (subscribed && permission === "granted") return "activated";
@@ -42,7 +34,7 @@ function statusLabel(status: PushUiStatus): string {
     case "not_configured":
       return "Nicht konfiguriert";
     case "not_asked":
-      return "Noch nicht gefragt";
+      return "Noch nicht erlaubt";
     case "blocked":
       return "Blockiert";
     case "granted":
@@ -61,6 +53,7 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
   const [busy, setBusy] = useState(false);
   const [serverStatus, setServerStatus] = useState<PushStatusResponse | null>(null);
   const [permission, setPermission] = useState<PushPermissionState>("default");
+  const platform = useMemo(() => detectPushPlatform(), []);
 
   const canActivate = useMemo(
     () => permissions.includes("inquiries:write") || permissions.some((p) => p.startsWith("inquiries:")),
@@ -88,27 +81,28 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
     void loadStatus();
   }, [loadStatus]);
 
-  const supported = isPushApiSupported();
   const configured = serverStatus?.configured ?? false;
   const subscribed = serverStatus?.subscribed ?? false;
-  const status = resolveClientStatus(supported, configured, permission, subscribed);
+  const status = resolveClientStatus(platform.canSubscribe, configured, permission, subscribed);
   const roleSlug = identity?.roleSlug ?? "readonly";
   const canTest =
     Boolean(serverStatus?.canTest) &&
     (roleSlug === "administrator" || roleSlug === "manager") &&
     status === "activated";
+  const canDeactivate = Boolean(serverStatus?.canDeactivate) && status === "activated";
+  const isSuperAdmin = roleSlug === "administrator";
 
   const handleActivate = async () => {
     if (!canActivate) {
       toast("Du hast keine Berechtigung für Push-Benachrichtigungen.", "error");
       return;
     }
-    if (!supported) {
-      toast("Dieser Browser unterstützt Push-Benachrichtigungen nicht.", "error");
+    if (!platform.canSubscribe) {
+      toast(platform.detail, "error");
       return;
     }
     if (!configured) {
-      toast("Push ist serverseitig nicht konfiguriert.", "error");
+      toast("Push ist serverseitig nicht konfiguriert. VAPID Keys in Vercel setzen — siehe PUSH_SETUP.md.", "error");
       return;
     }
 
@@ -128,7 +122,7 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
 
       const subscription = await subscribeToAdminPush();
       if (!subscription) {
-        toast("Push-Subscription konnte nicht erstellt werden.", "error");
+        toast("Push-Subscription konnte nicht erstellt werden. Service Worker prüfen.", "error");
         return;
       }
 
@@ -147,6 +141,29 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
       await loadStatus();
     } catch {
       toast("Push-Aktivierung fehlgeschlagen.", "error");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDeactivate = async () => {
+    setBusy(true);
+    try {
+      const endpoint = await unsubscribeFromAdminPush();
+      const res = await fetch("/api/admin/push/subscribe", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(endpoint ? { endpoint } : {}),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        toast(data.error ?? "Push konnte nicht deaktiviert werden.", "error");
+        return;
+      }
+      toast("Push-Benachrichtigungen deaktiviert.");
+      await loadStatus();
+    } catch {
+      toast("Push-Deaktivierung fehlgeschlagen.", "error");
     } finally {
       setBusy(false);
     }
@@ -192,26 +209,43 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
         <div className="min-w-0 flex-1">
           <h3 className="font-heading text-base font-semibold text-text-primary">Push-Benachrichtigungen</h3>
           <p className="mt-1 text-sm text-text-muted">
-            Erhalte eine Benachrichtigung, wenn eine neue Anfrage eingeht.
+            Benachrichtigung bei neuer Anfrage — für Super Admin und Admin.
           </p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-border bg-bg-secondary p-3 text-sm">
+      <div className="rounded-xl border border-border bg-bg-secondary p-3 text-sm space-y-2">
         <p className="font-medium text-text-primary">Status: {loading ? "…" : statusLabel(status)}</p>
-        {status === "unsupported" ? (
-          <p className="mt-1 text-text-muted">Dieser Browser unterstützt Push-Benachrichtigungen nicht.</p>
+        <p className="text-text-muted">
+          Plattform: <span className="font-medium text-text-primary">{platform.label}</span>
+        </p>
+        <p className="text-xs text-text-secondary">{platform.detail}</p>
+
+        {status === "unsupported" || platform.support === "ios_pwa_required" ? (
+          <p className="text-amber-800">{platform.detail}</p>
         ) : null}
         {status === "not_configured" ? (
-          <p className="mt-1 text-text-muted">Push ist serverseitig nicht konfiguriert (VAPID Keys fehlen).</p>
+          <div className="space-y-1">
+            <p className="text-amber-800">
+              Push ist serverseitig nicht konfiguriert (VAPID Keys fehlen).
+            </p>
+            {isSuperAdmin ? (
+              <p className="text-xs text-text-secondary">
+                Keys generieren: <code className="text-text-primary">node scripts/generate-vapid-keys.mjs</code> —
+                Anleitung in PUSH_SETUP.md, dann in Vercel ENV setzen und redeployen.
+              </p>
+            ) : (
+              <p className="text-xs text-text-secondary">Bitte Super Admin kontaktieren (VAPID Setup).</p>
+            )}
+          </div>
         ) : null}
         {status === "blocked" ? (
-          <p className="mt-1 text-amber-800">
+          <p className="text-amber-800">
             Benachrichtigungen sind im Browser blockiert. Bitte in den Website-Einstellungen erlauben.
           </p>
         ) : null}
         {status === "activated" ? (
-          <p className="mt-1 text-[#2d5a3a]">Push-Benachrichtigungen sind auf diesem Gerät aktiv.</p>
+          <p className="text-[#2d5a3a]">Push-Benachrichtigungen sind auf diesem Gerät aktiv.</p>
         ) : null}
       </div>
 
@@ -224,6 +258,11 @@ export function AdminPushNotificationsPanel({ compact = false }: { compact?: boo
         {canTest ? (
           <AdminButton variant="secondary" onClick={() => void handleTest()} disabled={busy || loading}>
             Test-Benachrichtigung senden
+          </AdminButton>
+        ) : null}
+        {canDeactivate ? (
+          <AdminButton variant="ghost" onClick={() => void handleDeactivate()} disabled={busy || loading}>
+            Push deaktivieren
           </AdminButton>
         ) : null}
       </div>

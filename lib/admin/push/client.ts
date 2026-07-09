@@ -1,14 +1,12 @@
 "use client";
 
 import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
+import { detectPushPlatform, hasPushApis } from "@/lib/admin/push/platform";
+
+export { detectPushPlatform, hasPushApis };
 
 export function isPushApiSupported(): boolean {
-  return (
-    typeof window !== "undefined" &&
-    "serviceWorker" in navigator &&
-    "PushManager" in window &&
-    "Notification" in window
-  );
+  return detectPushPlatform().canSubscribe;
 }
 
 export function urlBase64ToUint8Array(base64String: string): Uint8Array {
@@ -25,9 +23,12 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
 export async function getAdminServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
   if (!("serviceWorker" in navigator)) return null;
   try {
-    const existing = await navigator.serviceWorker.getRegistration("/admin/");
-    if (existing) return existing;
-    return navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
+    let reg = await navigator.serviceWorker.getRegistration("/admin/");
+    if (!reg) {
+      reg = await navigator.serviceWorker.register("/admin/sw.js", { scope: "/admin/" });
+    }
+    await navigator.serviceWorker.ready;
+    return reg;
   } catch {
     return null;
   }
@@ -47,6 +48,15 @@ export async function subscribeToAdminPush(): Promise<PushSubscription | null> {
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
   });
+}
+
+export async function unsubscribeFromAdminPush(): Promise<string | null> {
+  const registration = await getAdminServiceWorkerRegistration();
+  const subscription = await registration?.pushManager?.getSubscription();
+  if (!subscription) return null;
+  const endpoint = subscription.endpoint;
+  await subscription.unsubscribe();
+  return endpoint;
 }
 
 export function subscriptionToStored(subscription: PushSubscription) {

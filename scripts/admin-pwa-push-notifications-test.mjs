@@ -28,27 +28,46 @@ if (existsSync(join(root, "supabase/migrations/20260736_admin_push_subscriptions
   ok("Migration admin_push_subscriptions");
 } else fail("Migration missing");
 
+if (existsSync(join(root, "supabase/migrations/20260737_admin_push_enabled.sql"))) {
+  ok("Migration admin_push_enabled");
+} else fail("enabled migration missing");
+
+if (existsSync(join(root, "PUSH_SETUP.md"))) ok("PUSH_SETUP.md");
+else fail("PUSH_SETUP.md missing");
+
+if (existsSync(join(root, "scripts/generate-vapid-keys.mjs"))) ok("generate-vapid-keys script");
+else fail("VAPID generator script");
+
 const sw = read("public/admin/sw.js");
 if (sw.includes('addEventListener("push"') && sw.includes('addEventListener("notificationclick"')) {
   ok("Service worker push + notificationclick handlers");
 } else fail("SW push handlers");
 if (sw.includes("/admin/anfragen")) ok("Notification click opens /admin/anfragen");
 else fail("SW click URL");
+if (sw.includes("badge:")) ok("Notification badge icon");
 
 const inquiry = read("src/app/api/inquiry/route.ts");
 if (inquiry.includes("notifyAdminsNewInquiry")) ok("Inquiry route triggers push");
 else fail("Inquiry push hook");
 
 const panel = read("components/admin/AdminPushNotificationsPanel.tsx");
-if (panel.includes("Notification.requestPermission") && !panel.includes("requestPermission()")) {
-  // ensure it's on click handler not mount - check handleActivate
-}
 if (panel.includes("handleActivate") && panel.includes("Notification.requestPermission")) {
   ok("Permission only requested on user click");
 } else fail("Permission flow");
-
-if (panel.includes("Benachrichtigungen aktivieren")) ok("Activate button label");
+if (panel.includes("Benachrichtigungen aktivieren")) ok("Activate button");
 if (panel.includes("Test-Benachrichtigung senden")) ok("Test button");
+if (panel.includes("Push deaktivieren")) ok("Deactivate button");
+if (panel.includes("detectPushPlatform")) ok("Platform detection in UI");
+
+const platform = read("lib/admin/push/platform.ts");
+if (platform.includes("ios_pwa_required") && platform.includes("Android unterstützt")) {
+  ok("iOS PWA + Android platform labels");
+} else fail("Platform support");
+
+const client = read("lib/admin/push/client.ts");
+if (client.includes("serviceWorker.ready") && client.includes("unsubscribeFromAdminPush")) {
+  ok("SW ready wait + unsubscribe client");
+} else fail("Client subscription flow");
 
 const pkg = read("package.json");
 if (pkg.includes('"web-push"')) ok("web-push dependency");
@@ -56,14 +75,16 @@ if (pkg.includes('"web-push"')) ok("web-push dependency");
 const env = read(".env.example");
 if (env.includes("NEXT_PUBLIC_VAPID_PUBLIC_KEY") && env.includes("VAPID_PRIVATE_KEY")) ok("ENV documented");
 
-const send = read("lib/admin/push/send.ts");
-if (send.includes("notifyAdminsNewInquiry") && send.includes("revokePushSubscription")) {
-  ok("Send + revoke expired subscriptions");
-} else fail("Push send logic");
-
 const subs = read("lib/admin/push/subscriptions.ts");
+if (subs.includes("enabled: true") && subs.includes('eq("enabled", true)')) ok("enabled column + filter");
+else fail("enabled subscription filter");
+
 if (subs.includes("administrator") && subs.includes("manager")) ok("Inquiry push targets Super Admin/Admin");
 else fail("Recipient filter");
+
+const send = read("lib/admin/push/send.ts");
+if (send.includes("revokePushSubscription")) ok("Revoke expired subscriptions");
+else fail("Push send revoke");
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed > 0 ? 1 : 0);

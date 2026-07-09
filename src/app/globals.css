@@ -5193,6 +5193,15 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
 }
 
 .admin-onboarding-v2-root {
+  /* Portal renders on document.body — outside .admin-shell; define tokens here */
+  --admin-bg: var(--color-bg-secondary);
+  --admin-surface: var(--color-bg-card);
+  --admin-surface-muted: color-mix(in srgb, var(--color-bg-card) 92%, var(--color-bg-secondary));
+  --admin-border: var(--color-border);
+  --admin-text: var(--color-text-primary);
+  --admin-text-muted: var(--color-text-muted);
+  --admin-accent: var(--color-primary);
+  --admin-accent-soft: color-mix(in srgb, var(--color-primary) 10%, transparent);
   position: fixed;
   inset: 0;
   z-index: 220;
@@ -5386,17 +5395,19 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
   box-shadow: 0 -4px 12px rgba(26, 27, 23, 0.06);
 }
 
-.admin-onboarding-v2-footer-primary {
+.admin-onboarding-v2-btn-next-full {
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.admin-onboarding-v2-footer-nav {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: 0.5rem;
   width: 100%;
 }
 
-.admin-onboarding-v2-footer-secondary {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0.5rem;
+.admin-onboarding-v2-text-btn-full {
   width: 100%;
 }
 
@@ -5428,8 +5439,9 @@ html[data-admin-overlay-modal="open"] .admin-overlay-modal-root {
 
 .admin-onboarding-v2-btn-next {
   border: 0;
-  background: var(--admin-accent);
+  background: var(--color-primary);
   color: #fff;
+  box-shadow: 0 1px 2px rgba(45, 49, 38, 0.12);
 }
 
 .admin-onboarding-v2-btn-next:active {

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getAdminContext, requireAdmin } from "@/lib/admin-route";
 import { isPushConfigured } from "@/lib/admin/push/config";
+import { pushLog } from "@/lib/admin/push/log";
 import { upsertPushSubscription } from "@/lib/admin/push/subscriptions";
 import { safeApiError } from "@/lib/api-error";
 
@@ -32,19 +33,42 @@ export async function POST(request: Request) {
     const body = await request.json();
     const parsed = subscribeSchema.safeParse(body);
     if (!parsed.success) {
+      pushLog("push_subscription_save_failed", {
+        userId: ctx.userId,
+        reason: "Ungültige Subscription-Daten",
+        issues: parsed.error.issues.map((i) => i.message),
+      });
       return NextResponse.json({ error: "Ungültige Subscription-Daten." }, { status: 400 });
     }
 
-    await upsertPushSubscription({
+    const row = await upsertPushSubscription({
       userId: ctx.userId,
       subscription: parsed.data,
       userAgent: request.headers.get("user-agent"),
     });
 
-    return NextResponse.json({ success: true, subscribed: true });
+    pushLog("push_subscription_saved", {
+      userId: ctx.userId,
+      subscriptionId: row.id,
+      endpoint: row.endpoint.slice(0, 64),
+      enabled: row.enabled,
+      revokedAt: row.revoked_at,
+    });
+
+    return NextResponse.json({
+      success: true,
+      subscribed: true,
+      subscriptionId: row.id,
+      endpoint: row.endpoint,
+    });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    pushLog("push_subscription_save_failed", { userId: ctx.userId, reason: message });
     safeApiError("Push subscribe:", error, "");
-    return NextResponse.json({ error: "Subscription konnte nicht gespeichert werden." }, { status: 500 });
+    return NextResponse.json(
+      { error: `Subscription konnte nicht gespeichert werden: ${message}` },
+      { status: 500 },
+    );
   }
 }
 

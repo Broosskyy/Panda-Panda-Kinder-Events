@@ -3,6 +3,7 @@
 import { getVapidPublicKeyClient } from "@/lib/admin/push/public-config";
 import { detectPushPlatform } from "@/lib/admin/push/platform";
 import { subscriptionToStored, urlBase64ToUint8Array } from "@/lib/admin/push/client";
+import type { PushStatusResponse } from "@/lib/admin/push/types";
 
 export type PushActivateStep =
   | "precheck"
@@ -11,7 +12,9 @@ export type PushActivateStep =
   | "service_worker_ready"
   | "push_manager"
   | "subscribe"
-  | "save_server";
+  | "verify_subscription"
+  | "save_server"
+  | "verify_server";
 
 export interface PushActivateStepLog {
   step: PushActivateStep;
@@ -24,6 +27,7 @@ export interface PushActivateResult {
   steps: PushActivateStepLog[];
   error: string | null;
   permission: NotificationPermission | "unavailable";
+  serverSubscribed: boolean;
 }
 
 function logStep(steps: PushActivateStepLog[], step: PushActivateStep, ok: boolean, detail: string) {
@@ -31,6 +35,47 @@ function logStep(steps: PushActivateStepLog[], step: PushActivateStep, ok: boole
   steps.push(entry);
   const prefix = ok ? "[push:ok]" : "[push:fail]";
   console.error(`${prefix} ${step}: ${detail}`);
+}
+
+function validateSubscriptionShape(subscription: PushSubscription): string | null {
+  const json = subscription.toJSON();
+  if (!json.endpoint) return "Subscription ohne endpoint";
+  if (!json.keys?.p256dh) return "Subscription ohne p256dh";
+  if (!json.keys?.auth) return "Subscription ohne auth";
+  return null;
+}
+
+async function verifyServerSubscription(): Promise<{ ok: boolean; detail: string; subscribed: boolean }> {
+  try {
+    const res = await fetch("/api/admin/push");
+    if (!res.ok) {
+      return { ok: false, detail: `Status-API HTTP ${res.status}`, subscribed: false };
+    }
+    const data = (await res.json()) as PushStatusResponse;
+    if (!data.subscribed) {
+      return {
+        ok: false,
+        detail: "Server meldet subscribed=false nach Speichern — DB-Eintrag fehlt oder enabled=false",
+        subscribed: false,
+      };
+    }
+    const count = data.diagnostics?.userActiveSubscriptionCount ?? 0;
+    if (count < 1) {
+      return {
+        ok: false,
+        detail: "Keine aktive Subscription in DB für aktuellen User",
+        subscribed: false,
+      };
+    }
+    return {
+      ok: true,
+      detail: `DB bestätigt ${count} aktive Subscription(s)`,
+      subscribed: true,
+    };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    return { ok: false, detail: msg, subscribed: false };
+  }
 }
 
 export async function runPushActivateFlow(opts: {
@@ -43,19 +88,19 @@ export async function runPushActivateFlow(opts: {
   if (!opts.configured) {
     const msg = "VAPID Public Key fehlt im Build (NEXT_PUBLIC_VAPID_PUBLIC_KEY).";
     logStep(steps, "precheck", false, msg);
-    return { ok: false, steps, error: msg, permission: "default" };
+    return { ok: false, steps, error: msg, permission: "default", serverSubscribed: false };
   }
 
   if (!platform.canSubscribe) {
     const msg = platform.detail;
     logStep(steps, "precheck", false, msg);
-    return { ok: false, steps, error: msg, permission: "default" };
+    return { ok: false, steps, error: msg, permission: "default", serverSubscribed: false };
   }
 
   if (typeof Notification === "undefined") {
     const msg = "Notification API nicht verfügbar.";
     logStep(steps, "precheck", false, msg);
-    return { ok: false, steps, error: msg, permission: "unavailable" };
+    return { ok: false, steps, error: msg, permission: "unavailable", serverSubscribed: false };
   }
 
   logStep(steps, "precheck", true, `Plattform: ${platform.label}`);
@@ -68,15 +113,22 @@ export async function runPushActivateFlow(opts: {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logStep(steps, "permission_result", false, msg);
-    return { ok: false, steps, error: `Permission-Anfrage fehlgeschlagen: ${msg}`, permission: Notification.permission };
+    return {
+      ok: false,
+      steps,
+      error: `Permission-Anfrage fehlgeschlagen: ${msg}`,
+      permission: Notification.permission,
+      serverSubscribed: false,
+    };
   }
 
   if (permission === "denied") {
     return {
       ok: false,
       steps,
-      error: "Benachrichtigungen sind blockiert. Bitte in den iOS-Einstellungen für diese App erlauben.",
+      error: "Benachrichtigungen sind blockiert. Bitte in den Website-Einstellungen erlauben.",
       permission,
+      serverSubscribed: false,
     };
   }
 
@@ -84,8 +136,9 @@ export async function runPushActivateFlow(opts: {
     return {
       ok: false,
       steps,
-      error: `Permission nicht erteilt (Status: ${permission}). Bitte erneut auf „Benachrichtigungen aktivieren“ tippen.`,
+      error: `Permission nicht erteilt (Status: ${permission}). Bitte erneut tippen.`,
       permission,
+      serverSubscribed: false,
     };
   }
 
@@ -93,13 +146,13 @@ export async function runPushActivateFlow(opts: {
   if (!publicKey) {
     const msg = "VAPID Public Key fehlt im Client-Bundle.";
     logStep(steps, "subscribe", false, msg);
-    return { ok: false, steps, error: msg, permission };
+    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
   }
 
   if (!("serviceWorker" in navigator)) {
     const msg = "Service Worker API nicht verfügbar.";
     logStep(steps, "service_worker_ready", false, msg);
-    return { ok: false, steps, error: msg, permission };
+    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
   }
 
   let registration: ServiceWorkerRegistration;
@@ -115,7 +168,7 @@ export async function runPushActivateFlow(opts: {
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logStep(steps, "service_worker_ready", false, msg);
-    return { ok: false, steps, error: `Service Worker Fehler: ${msg}`, permission };
+    return { ok: false, steps, error: `Service Worker Fehler: ${msg}`, permission, serverSubscribed: false };
   }
 
   if (!registration.pushManager) {
@@ -124,7 +177,7 @@ export async function runPushActivateFlow(opts: {
         ? "pushManager fehlt auf der Service-Worker-Registration. App muss vom Home-Bildschirm geöffnet sein (nicht Safari-Tab)."
         : "pushManager fehlt auf der Service-Worker-Registration.";
     logStep(steps, "push_manager", false, msg);
-    return { ok: false, steps, error: msg, permission };
+    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
   }
 
   logStep(steps, "push_manager", true, "registration.pushManager vorhanden");
@@ -134,41 +187,73 @@ export async function runPushActivateFlow(opts: {
     const existing = await registration.pushManager.getSubscription();
     if (existing) {
       subscription = existing;
-      logStep(steps, "subscribe", true, "Bestehende Browser-Subscription wiederverwendet");
+      logStep(steps, "subscribe", true, "Bestehende Browser-Subscription gefunden");
     } else {
       subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource,
       });
-      logStep(steps, "subscribe", true, `Neue Subscription: ${subscription.endpoint.slice(0, 48)}…`);
+      logStep(steps, "subscribe", true, `Neue Subscription erstellt: ${subscription.endpoint.slice(0, 48)}…`);
     }
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logStep(steps, "subscribe", false, msg);
-    return { ok: false, steps, error: `pushManager.subscribe() fehlgeschlagen: ${msg}`, permission };
+    return { ok: false, steps, error: `pushManager.subscribe() fehlgeschlagen: ${msg}`, permission, serverSubscribed: false };
+  }
+
+  const shapeError = validateSubscriptionShape(subscription);
+  if (shapeError) {
+    logStep(steps, "verify_subscription", false, shapeError);
+    return { ok: false, steps, error: shapeError, permission, serverSubscribed: false };
+  }
+  logStep(steps, "verify_subscription", true, "endpoint, p256dh und auth vorhanden");
+
+  let payload;
+  try {
+    payload = subscriptionToStored(subscription);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : String(error);
+    logStep(steps, "verify_subscription", false, msg);
+    return { ok: false, steps, error: msg, permission, serverSubscribed: false };
   }
 
   try {
-    const payload = subscriptionToStored(subscription);
     const res = await fetch("/api/admin/push/subscribe", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    const data = (await res.json()) as { error?: string };
+    const data = (await res.json()) as { error?: string; subscriptionId?: string };
     if (!res.ok) {
       const msg = data.error ?? `HTTP ${res.status}`;
       logStep(steps, "save_server", false, msg);
-      return { ok: false, steps, error: `Server speichern fehlgeschlagen: ${msg}`, permission };
+      return { ok: false, steps, error: `Server speichern fehlgeschlagen: ${msg}`, permission, serverSubscribed: false };
     }
-    logStep(steps, "save_server", true, "Subscription in Datenbank gespeichert");
+    logStep(
+      steps,
+      "save_server",
+      true,
+      `Subscription gespeichert (id: ${data.subscriptionId ?? "unbekannt"})`,
+    );
   } catch (error) {
     const msg = error instanceof Error ? error.message : String(error);
     logStep(steps, "save_server", false, msg);
-    return { ok: false, steps, error: `Server-Request fehlgeschlagen: ${msg}`, permission };
+    return { ok: false, steps, error: `Server-Request fehlgeschlagen: ${msg}`, permission, serverSubscribed: false };
   }
 
-  return { ok: true, steps, error: null, permission };
+  const verify = await verifyServerSubscription();
+  logStep(steps, "verify_server", verify.ok, verify.detail);
+  if (!verify.ok) {
+    return {
+      ok: false,
+      steps,
+      error: `Gerät nicht in DB registriert: ${verify.detail}`,
+      permission,
+      serverSubscribed: false,
+    };
+  }
+
+  return { ok: true, steps, error: null, permission, serverSubscribed: true };
 }
 
 /** Call synchronously inside click handler — iOS requires user gesture. */

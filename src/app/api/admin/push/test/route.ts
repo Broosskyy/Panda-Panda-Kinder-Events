@@ -28,17 +28,46 @@ export async function POST() {
 
   try {
     const result = await sendTestPushToUser(ctx.userId);
+
     if (result.sent === 0) {
+      const firstError = result.errors[0];
+      const detail = firstError
+        ? `${firstError.message}${firstError.statusCode ? ` (HTTP ${firstError.statusCode})` : ""}`
+        : "Keine aktive Subscription gefunden.";
       return NextResponse.json(
         {
-          error: "Keine aktive Subscription gefunden. Bitte zuerst Benachrichtigungen aktivieren.",
+          error: `Test-Push fehlgeschlagen: ${detail}`,
+          sent: result.sent,
+          failed: result.failed,
+          errors: result.errors,
         },
         { status: 400 },
       );
     }
+
+    if (result.failed > 0) {
+      const firstError = result.errors[0];
+      return NextResponse.json(
+        {
+          success: true,
+          sent: result.sent,
+          failed: result.failed,
+          errors: result.errors,
+          warning: firstError
+            ? `Teilweise fehlgeschlagen: ${firstError.message}${firstError.statusCode ? ` (HTTP ${firstError.statusCode})` : ""}`
+            : undefined,
+        },
+        { status: 207 },
+      );
+    }
+
     return NextResponse.json({ success: true, ...result });
   } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
     safeApiError("Push test:", error, "");
-    return NextResponse.json({ error: "Test-Benachrichtigung konnte nicht gesendet werden." }, { status: 500 });
+    return NextResponse.json(
+      { error: `Test-Benachrichtigung konnte nicht gesendet werden: ${message}` },
+      { status: 500 },
+    );
   }
 }

@@ -196,6 +196,11 @@ export function ProbeDetails({
       : "Fehlt"
     : "N/A — manuell";
 
+  const swActive =
+    probeResult.serviceWorkerActive ||
+    probeResult.serviceWorkerControlling ||
+    browserInfo?.installMethod === "manual_ios";
+
   const rows: { label: string; value: string; ok?: boolean }[] = [
     {
       label: "Manifest",
@@ -204,8 +209,8 @@ export function ProbeDetails({
     },
     {
       label: "Service Worker aktiv",
-      value: probeResult.serviceWorkerActive ? "OK" : browserInfo?.installMethod === "manual_ios" ? "Optional" : "Fehlt",
-      ok: probeResult.serviceWorkerActive || browserInfo?.installMethod === "manual_ios",
+      value: swActive ? "OK" : "Fehlt",
+      ok: swActive,
     },
     {
       label: "SW kontrolliert /admin",
@@ -273,6 +278,7 @@ export function PwaDebugDetails({ debug, className = "" }: { debug: PwaDebugStat
     { label: "beforeinstallprompt gefeuert", value: yesNo(debug.beforeInstallPromptFired) },
     { label: "deferredPrompt gespeichert", value: yesNo(debug.deferredPromptStored) },
     { label: "appinstalled gefeuert", value: yesNo(debug.appInstalledFired) },
+    { label: "Install-Flag (localStorage)", value: yesNo(debug.installedLocalFlag) },
     { label: "Install-Hinweis ausgeblendet", value: yesNo(debug.installDismissedLocal) },
     { label: "Browser", value: debug.browserProfile },
     { label: "Route", value: debug.currentRoute },

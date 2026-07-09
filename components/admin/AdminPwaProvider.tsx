@@ -28,6 +28,7 @@ import {
   resetPwaInstallHints,
   resetPwaInstallCaches,
   resolvePwaInstalled,
+  clearPwaInstalledFlag,
   storeDeferredPrompt,
   supportsNativePwaInstall,
   takeEarlyCapturedPrompt,
@@ -128,6 +129,8 @@ export function AdminPwaProvider({ children }: { children: ReactNode }) {
     const onBeforeInstall = (e: Event) => {
       e.preventDefault();
       const promptEvent = e as BeforeInstallPromptEvent;
+      clearPwaInstalledFlag();
+      setInstalled(false);
       storeDeferredPrompt(promptEvent);
       applyDeferred(promptEvent);
       void refreshProbe(promptEvent);

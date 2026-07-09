@@ -44,6 +44,12 @@
         e.preventDefault();
         window.__pbPwaDeferredPrompt = e;
         window.__pbPwaPromptFired = true;
+        window.__pbPwaInstalledFired = false;
+        try {
+          localStorage.removeItem("pb-admin-pwa-installed");
+        } catch {
+          /* ignore */
+        }
         try {
           window.dispatchEvent(new CustomEvent("pb-pwa-prompt-available"));
         } catch {

@@ -5,7 +5,7 @@ import { CheckCircle2, ChevronDown, ChevronUp, RefreshCw, Smartphone } from "luc
 import { AdminButton } from "@/components/admin/ui";
 import { AdminPwaInstallHelpSheet, ProbeDetails, PwaDebugDetails } from "@/components/admin/AdminPwaInstallHelpSheet";
 import { useAdminPwa } from "@/components/admin/AdminPwaProvider";
-import { getPwaPanelStatus } from "@/lib/admin/pwa-install";
+import { getPwaPanelStatus, resolvePwaRealityStatus, getPwaRealityHeadline } from "@/lib/admin/pwa-install";
 
 interface AdminPwaInstallPanelProps {
   compact?: boolean;
@@ -70,6 +70,12 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
     browser: browserInfo,
     causeMessage: debugStatus?.causeMessage ?? null,
   });
+  const realityStatus = resolvePwaRealityStatus({
+    canInstall,
+    isInstalled,
+    probe: probeResult,
+  });
+  const realityHeadline = getPwaRealityHeadline(realityStatus);
 
   if (isInstalled) {
     return (
@@ -102,8 +108,13 @@ export function AdminPwaInstallPanel({ compact = false, showTitle = true }: Admi
 
         <div className="rounded-xl border border-border bg-bg-secondary p-3 text-sm">
           <p className="font-medium text-text-primary">Status · {browserInfo.label}</p>
+          {!canInstall && realityStatus !== "installable" ? (
+            <p className={`mt-1 text-sm font-semibold ${realityStatus === "technical_error" ? "text-amber-800" : "text-amber-900"}`}>
+              {realityHeadline}
+            </p>
+          ) : null}
           <p className={`mt-1 ${panelStatus.isError ? "text-amber-800" : "text-text-muted"}`}>
-            {panelStatus.headline}
+            {canInstall ? panelStatus.headline : panelStatus.detail ?? panelStatus.headline}
           </p>
           {panelStatus.detail ? (
             <p className="mt-2 text-xs leading-relaxed text-text-secondary">{panelStatus.detail}</p>

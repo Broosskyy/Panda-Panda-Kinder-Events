@@ -3,8 +3,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
-import { ChevronLeft, X } from "lucide-react";
-import { AdminButton } from "@/components/admin/ui";
+import { X } from "lucide-react";
 import { resolveAdminIcon } from "@/lib/admin/icons";
 import type { OnboardingStep } from "@/lib/admin/onboarding";
 
@@ -136,38 +135,30 @@ export function AdminOnboardingWizard({
         </div>
 
         <footer className="admin-onboarding-v2-footer">
-          <div
-            className={
-              isFirst
-                ? "admin-onboarding-v2-actions-primary admin-onboarding-v2-actions-primary--single"
-                : "admin-onboarding-v2-actions-primary"
-            }
-          >
-            {!isFirst ? (
-              <AdminButton
-                variant="secondary"
-                className="admin-onboarding-v2-btn"
-                icon={<ChevronLeft className="h-4 w-4" />}
-                onClick={() => onStepIndexChange(stepIndex - 1)}
-              >
-                Zurück
-              </AdminButton>
-            ) : null}
+          <div className="admin-onboarding-v2-footer-primary">
+            <button
+              type="button"
+              className="admin-onboarding-v2-btn admin-onboarding-v2-btn-back"
+              disabled={isFirst}
+              onClick={() => onStepIndexChange(stepIndex - 1)}
+            >
+              Zurück
+            </button>
             {isLast ? (
-              <AdminButton variant="primary" className="admin-onboarding-v2-btn" onClick={onComplete}>
+              <button type="button" className="admin-onboarding-v2-btn admin-onboarding-v2-btn-next" onClick={onComplete}>
                 Fertig
-              </AdminButton>
+              </button>
             ) : (
-              <AdminButton
-                variant="primary"
-                className="admin-onboarding-v2-btn"
+              <button
+                type="button"
+                className="admin-onboarding-v2-btn admin-onboarding-v2-btn-next"
                 onClick={() => onStepIndexChange(stepIndex + 1)}
               >
                 Weiter
-              </AdminButton>
+              </button>
             )}
           </div>
-          <div className="admin-onboarding-v2-actions-secondary">
+          <div className="admin-onboarding-v2-footer-secondary">
             <button type="button" className="admin-onboarding-v2-text-btn" onClick={onSkip}>
               Überspringen
             </button>

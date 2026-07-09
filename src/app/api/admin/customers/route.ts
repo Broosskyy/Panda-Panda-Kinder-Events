@@ -1,9 +1,17 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
-import { listCustomers, getCustomer, getCustomerDeleteBlockers } from "@/lib/crm/db";
+import { requireAdmin, requireSuperAdmin } from "@/lib/admin-route";
+import {
+  listCustomers,
+  getCustomer,
+  deleteCustomerRecord,
+  archiveCustomerRecord,
+  restoreCustomerRecord,
+} from "@/lib/crm/db";
+import { fetchCustomerLinks } from "@/lib/crm/customer-links";
 import { crmCustomerSchema } from "@/lib/crm/schemas";
 import { logCustomerEvent } from "@/lib/crm/events";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 
 function normalizeCustomerFields(data: Record<string, unknown>): Record<string, unknown> {
   const out = { ...data };
@@ -21,9 +29,12 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("q") ?? undefined;
+  const viewParam = searchParams.get("view");
+  const view =
+    viewParam === "archived" || viewParam === "all" ? viewParam : ("active" as const);
 
   try {
-    const customers = await listCustomers(search);
+    const customers = await listCustomers(search, view);
     return NextResponse.json({ customers });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Laden fehlgeschlagen.";
@@ -68,8 +79,33 @@ export async function PATCH(request: Request) {
   if (authError) return authError;
 
   const body = await request.json();
-  const { id, ...rest } = body as { id?: string };
+  const { id, archive, restore, ...rest } = body as {
+    id?: string;
+    archive?: boolean;
+    restore?: boolean;
+  };
+
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
+
+  if (archive) {
+    try {
+      const customer = await archiveCustomerRecord(id);
+      return NextResponse.json({ customer, message: "Kunde wurde archiviert." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Archivieren fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
+
+  if (restore) {
+    try {
+      const customer = await restoreCustomerRecord(id);
+      return NextResponse.json({ customer, message: "Kunde wurde wiederhergestellt." });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Wiederherstellen fehlgeschlagen.";
+      return NextResponse.json({ error: message }, { status: 500 });
+    }
+  }
 
   const parsed = crmCustomerSchema.partial().safeParse(rest);
   if (!parsed.success) {
@@ -98,36 +134,61 @@ export async function DELETE(request: Request) {
   const authError = await requireAdmin("customers:write");
   if (authError) return authError;
 
-  const { id } = await request.json();
+  const body = await request.json();
+  const { id, confirmText, permanent } = body as {
+    id?: string;
+    confirmText?: string;
+    permanent?: boolean;
+  };
+
   if (!id) return NextResponse.json({ error: "ID erforderlich." }, { status: 400 });
 
   const existing = await getCustomer(id);
   if (!existing) return NextResponse.json({ error: "Kunde nicht gefunden." }, { status: 404 });
 
   try {
-    const blockers = await getCustomerDeleteBlockers(id);
-    const blocked = blockers.quotes > 0 || blockers.invoices > 0 || blockers.bookings > 0;
+    const links = await fetchCustomerLinks(id);
+    const blocked = !links.canDelete;
 
     if (blocked) {
-      const parts: string[] = [];
-      if (blockers.bookings > 0) parts.push(`${blockers.bookings} Anfrage(n)`);
-      if (blockers.quotes > 0) parts.push(`${blockers.quotes} Angebot(e)`);
-      if (blockers.invoices > 0) parts.push(`${blockers.invoices} Rechnung(en)`);
-
       return NextResponse.json(
         {
-          error: `Dieser Kunde kann nicht gelöscht werden, weil noch ${parts.join(", ")} verknüpft sind.`,
-          blockers,
+          error: "Dieser Kunde ist noch mit Daten verknüpft und kann nicht gelöscht werden.",
+          blockers: links.summary,
+          links,
           canArchive: true,
         },
         { status: 409 },
       );
     }
 
-    const supabase = getSupabaseAdmin();
-    const { error } = await supabase.from("crm_customers").delete().eq("id", id);
-    if (error) throw new Error(error.message);
+    if (permanent) {
+      const superCheck = await requireSuperAdmin();
+      if (superCheck.error) return superCheck.error;
 
+      if (confirmText?.trim() !== "LÖSCHEN") {
+        return NextResponse.json(
+          {
+            error: 'Bitte geben Sie „LÖSCHEN“ zur Bestätigung ein.',
+            needsConfirmText: true,
+          },
+          { status: 400 },
+        );
+      }
+
+      await deleteCustomerRecord(id);
+      await writeAuditLogFromRequest(superCheck.ctx!, request, {
+        action: "customer_deleted",
+        area: "crm",
+        entityId: id,
+        before: { name: existing.name, email: existing.email },
+        after: { permanent: true },
+      });
+
+      return NextResponse.json({ success: true, message: "Kunde wurde endgültig gelöscht." });
+    }
+
+    await deleteCustomerRecord(id);
     return NextResponse.json({ success: true, message: "Kunde wurde gelöscht." });
   } catch (err) {
     const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";

@@ -1,9 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ArrowLeft, Plus, Trash2, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, UserPlus, Users, RotateCcw } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import {
   AdminButton,
@@ -20,16 +19,13 @@ import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_CONFIRM } from "@/lib/admin/messages";
 import { CustomerCommunicationTimeline } from "@/components/admin/email/CustomerCommunicationTimeline";
 import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
+import { useAdminSession } from "@/components/admin/AdminSessionProvider";
 import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
 import { CRM_CUSTOMER_STATUS_LABELS, type CrmCustomer, type CrmCustomerStatus } from "@/lib/crm/types";
-
-interface CustomerHistory {
-  events: { id: string; title: string; details: string | null; created_at: string }[];
-  bookings: { id: string; event_type: string; event_date: string; status: string }[];
-  quotes: { id: string; quote_number: string; status: string; total_cents: number }[];
-  invoices: { id: string; invoice_number: string; status: string; total_cents: number }[];
-  reviews: { id: string; name: string; event_type: string; rating: number; text: string; created_at: string }[];
-}
+import type { CustomerLinksSummary } from "@/lib/crm/customer-links";
+import { CustomerDeleteBlockedModal } from "@/components/admin/crm/CustomerDeleteBlockedModal";
+import { CustomerPermanentDeleteModal } from "@/components/admin/crm/CustomerPermanentDeleteModal";
+import { CustomerLinkedDataPanel } from "@/components/admin/crm/CustomerLinkedDataPanel";
 
 interface CustomerFormState {
   name: string;
@@ -62,12 +58,18 @@ function customerToForm(customer: CrmCustomer): CustomerFormState {
 
 export function CustomersView() {
   const searchParams = useSearchParams();
+  const { isSuperAdmin } = useAdminSession();
   const [customers, setCustomers] = useState<CrmCustomer[]>([]);
+  const [listView, setListView] = useState<"active" | "archived" | "all">("active");
   const [search, setSearch] = useState("");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [history, setHistory] = useState<CustomerHistory | null>(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState<string | null>(null);
+  const [scrollToLinks, setScrollToLinks] = useState(false);
+  const [blockedModal, setBlockedModal] = useState<{ open: boolean; blockers: CustomerLinksSummary }>({
+    open: false,
+    blockers: { bookings: 0, quotes: 0, invoices: 0, events: 0, reviews: 0 },
+  });
+  const [permanentDeleteOpen, setPermanentDeleteOpen] = useState(false);
+  const [permanentDeleteReasons, setPermanentDeleteReasons] = useState<string[]>([]);
   const [form, setForm] = useState(emptyForm);
   const [editForm, setEditForm] = useState(emptyForm);
   const [showForm, setShowForm] = useState(false);
@@ -83,7 +85,10 @@ export function CustomersView() {
     setLoading(true);
     setLoadError(null);
     try {
-      const q = search ? `?q=${encodeURIComponent(search)}` : "";
+      const params = new URLSearchParams();
+      if (search) params.set("q", search);
+      if (listView !== "active") params.set("view", listView);
+      const q = params.toString() ? `?${params.toString()}` : "";
       const res = await fetch(`/api/admin/customers${q}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Kunden konnten nicht geladen werden.");
@@ -94,7 +99,7 @@ export function CustomersView() {
     } finally {
       setLoading(false);
     }
-  }, [search]);
+  }, [search, listView]);
 
   useEffect(() => {
     void load();
@@ -116,37 +121,9 @@ export function CustomersView() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- only reset form when a different customer is selected
   }, [selected?.id]);
 
-  useEffect(() => {
-    if (!selectedId) {
-      setHistory(null);
-      setHistoryError(null);
-      return;
-    }
-
-    let cancelled = false;
-    setHistory(null);
-    setHistoryLoading(true);
-    setHistoryError(null);
-
-    fetch(`/api/admin/customers/${selectedId}/history`)
-      .then(async (r) => {
-        const data = await r.json();
-        if (!r.ok) throw new Error(data.error ?? "Historie konnte nicht geladen werden.");
-        if (!cancelled) setHistory(data as CustomerHistory);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setHistoryError(err instanceof Error ? err.message : "Historie konnte nicht geladen werden.");
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setHistoryLoading(false);
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedId]);
+  const reloadLinksHint = useCallback(() => {
+    setScrollToLinks(false);
+  }, []);
 
   const saveNew = async () => {
     if (!form.name.trim()) {
@@ -216,16 +193,30 @@ export function CustomersView() {
     try {
       await runAction({
         action: async () => {
-          const res = await fetch("/api/admin/customers", {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: selected.id, status: "inactive" }),
-          });
+          const res = await fetch(`/api/admin/customers/${selected.id}/archive`, { method: "POST" });
           const data = await res.json();
           if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
           await load();
         },
         success: ACTION_RESULTS.customerArchived(),
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const restoreCustomer = async () => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      await runAction({
+        action: async () => {
+          const res = await fetch(`/api/admin/customers/${selected.id}/restore`, { method: "POST" });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Wiederherstellen fehlgeschlagen.");
+          await load();
+        },
+        success: ACTION_RESULTS.customerRestored(),
       });
     } finally {
       setSaving(false);
@@ -250,18 +241,40 @@ export function CustomersView() {
         body: JSON.stringify({ id: selected.id }),
       });
       const data = await res.json();
-      if (res.status === 409 && data.canArchive) {
-        showResult(
-          ACTION_RESULTS.genericError(
-            "Nutzen Sie „Archivieren“, um den Kunden zu deaktivieren, ohne verknüpfte Daten zu verlieren.",
-          ),
-        );
+      if (res.status === 409 && data.blockers) {
+        setBlockedModal({ open: true, blockers: data.blockers as CustomerLinksSummary });
+        if (data.links?.permanentDeleteReasons) {
+          setPermanentDeleteReasons(data.links.permanentDeleteReasons as string[]);
+        }
         return;
       }
       if (!res.ok) {
         showResult(ACTION_RESULTS.genericError(data.error ?? "Kunde konnte nicht gelöscht werden."));
         return;
       }
+      setSelectedId(null);
+      await load();
+      showResult(ACTION_RESULTS.customerDeleted());
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const permanentDeleteCustomer = async (confirmText: string) => {
+    if (!selected) return;
+    setSaving(true);
+    try {
+      const res = await fetch("/api/admin/customers", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selected.id, permanent: true, confirmText }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        showResult(ACTION_RESULTS.genericError(data.error ?? "Löschen fehlgeschlagen."));
+        return;
+      }
+      setPermanentDeleteOpen(false);
       setSelectedId(null);
       await load();
       showResult(ACTION_RESULTS.customerDeleted());
@@ -334,98 +347,34 @@ export function CustomersView() {
         <AdminButton variant="primary" className="admin-customer-detail-btn" onClick={() => void saveEdit()} disabled={saving}>
           {ADMIN_BTN.save}
         </AdminButton>
-        <AdminButton variant="secondary" className="admin-customer-detail-btn" onClick={() => void archiveCustomer()} disabled={saving}>
-          Archivieren
-        </AdminButton>
+        {selected.status === "inactive" ? (
+          <AdminButton
+            variant="secondary"
+            className="admin-customer-detail-btn"
+            icon={<RotateCcw className="h-4 w-4" />}
+            onClick={() => void restoreCustomer()}
+            disabled={saving}
+          >
+            Wiederherstellen
+          </AdminButton>
+        ) : (
+          <AdminButton variant="secondary" className="admin-customer-detail-btn" onClick={() => void archiveCustomer()} disabled={saving}>
+            Archivieren
+          </AdminButton>
+        )}
         <AdminButton variant="danger" className="admin-customer-detail-btn admin-customer-detail-btn-danger" icon={<Trash2 className="h-4 w-4" />} onClick={() => void deleteCustomer()} disabled={saving}>
           Löschen
         </AdminButton>
       </div>
 
-      <div className="mt-6 space-y-4 border-t border-border pt-4">
-        <h3 className="text-sm font-semibold text-text-primary">Historie</h3>
-        {historyLoading ? <p className="text-sm text-text-muted">Historie wird geladen…</p> : null}
-        {historyError ? <p className="text-sm text-accent-heart">{historyError}</p> : null}
-        {history ? (
-          <>
-            {history.bookings.length > 0 ? (
-              <div>
-                <p className="text-xs font-medium uppercase text-text-muted">Anfragen</p>
-                <ul className="mt-1 space-y-1 text-sm">
-                  {history.bookings.map((b) => (
-                    <li key={b.id}>
-                      <Link href="/admin/anfragen" className="text-primary hover:underline">
-                        {b.event_type} · {b.event_date} · {b.status}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {history.quotes.length > 0 ? (
-              <div>
-                <p className="text-xs font-medium uppercase text-text-muted">Angebote</p>
-                <ul className="mt-1 space-y-1 text-sm">
-                  {history.quotes.map((q) => (
-                    <li key={q.id}>
-                      <Link href="/admin/angebote" className="text-primary hover:underline">
-                        {q.quote_number} · {q.status}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {history.invoices.length > 0 ? (
-              <div>
-                <p className="text-xs font-medium uppercase text-text-muted">Rechnungen</p>
-                <ul className="mt-1 space-y-1 text-sm">
-                  {history.invoices.map((i) => (
-                    <li key={i.id}>
-                      <Link href="/admin/rechnungen" className="text-primary hover:underline">
-                        {i.invoice_number} · {i.status}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {history.reviews.length > 0 ? (
-              <div>
-                <p className="text-xs font-medium uppercase text-text-muted">Bewertungen</p>
-                <ul className="mt-1 space-y-2 text-sm">
-                  {history.reviews.map((r) => (
-                    <li key={r.id} className="rounded-lg border border-border/60 bg-bg-secondary/50 p-3">
-                      <p className="font-medium text-text-primary">
-                        {r.rating} / 5 · {r.event_type}
-                      </p>
-                      <p className="mt-1 text-text-secondary">&ldquo;{r.text}&rdquo;</p>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {history.events.length > 0 ? (
-              <div>
-                <p className="text-xs font-medium uppercase text-text-muted">Aktivitäten</p>
-                <ul className="mt-1 space-y-1 text-sm text-text-muted">
-                  {history.events.slice(0, 8).map((e) => (
-                    <li key={e.id}>{e.title}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {!historyLoading &&
-            history.bookings.length === 0 &&
-            history.quotes.length === 0 &&
-            history.invoices.length === 0 &&
-            history.reviews.length === 0 &&
-            history.events.length === 0 ? (
-              <p className="text-sm text-text-muted">Noch keine Historie für diesen Kunden.</p>
-            ) : null}
-            <CustomerCommunicationTimeline customerId={selected.id} />
-          </>
-        ) : null}
+      <CustomerLinkedDataPanel
+        customerId={selected.id}
+        scrollIntoView={scrollToLinks}
+        onLinksChanged={reloadLinksHint}
+      />
+
+      <div className="mt-6 border-t border-border pt-4">
+        <CustomerCommunicationTimeline customerId={selected.id} />
       </div>
     </AdminCard>
   ) : (
@@ -447,6 +396,15 @@ export function CustomersView() {
 
       <AdminFilterBar>
         <AdminSearchInput value={search} onChange={setSearch} placeholder="Kunden suchen…" />
+        <AdminFilterSelect
+          value={listView}
+          onChange={(v) => setListView(v as "active" | "archived" | "all")}
+          options={[
+            { value: "active", label: "Aktive Kunden" },
+            { value: "archived", label: "Archiv" },
+            { value: "all", label: "Alle" },
+          ]}
+        />
       </AdminFilterBar>
 
       {showForm ? (
@@ -541,6 +499,52 @@ export function CustomersView() {
           {detailPanel}
         </div>
       )}
+
+      {selected ? (
+        <>
+          <CustomerDeleteBlockedModal
+            open={blockedModal.open}
+            customerName={selected.name}
+            blockers={blockedModal.blockers}
+            isSuperAdmin={isSuperAdmin}
+            onClose={() => setBlockedModal((s) => ({ ...s, open: false }))}
+            onShowLinks={() => {
+              setBlockedModal((s) => ({ ...s, open: false }));
+              setScrollToLinks(true);
+            }}
+            onArchive={async () => {
+              setBlockedModal((s) => ({ ...s, open: false }));
+              if (!selected) return;
+              setSaving(true);
+              try {
+                await runAction({
+                  action: async () => {
+                    const res = await fetch(`/api/admin/customers/${selected.id}/archive`, { method: "POST" });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error ?? "Archivieren fehlgeschlagen.");
+                    await load();
+                  },
+                  success: ACTION_RESULTS.customerArchived(),
+                });
+              } finally {
+                setSaving(false);
+              }
+            }}
+            onPreparePermanentDelete={() => {
+              setBlockedModal((s) => ({ ...s, open: false }));
+              setPermanentDeleteOpen(true);
+            }}
+          />
+          <CustomerPermanentDeleteModal
+            open={permanentDeleteOpen}
+            customerName={selected.name}
+            reasons={permanentDeleteReasons}
+            loading={saving}
+            onClose={() => setPermanentDeleteOpen(false)}
+            onConfirm={(text) => void permanentDeleteCustomer(text)}
+          />
+        </>
+      ) : null}
     </div>
   );
 }

@@ -25,6 +25,7 @@
     "test:admin-onboarding-v2": "node scripts/admin-onboarding-v2-test.mjs",
     "test:admin-pwa-push": "node scripts/admin-pwa-push-notifications-test.mjs",
     "test:admin-pwa-scope": "node scripts/admin-pwa-scope-fix-test.mjs",
+    "test:admin-customer-workflow": "node scripts/customer-delete-archive-unlink-test.mjs",
     "test:admin-pwa-installed": "node scripts/admin-pwa-installed-status-test.mjs",
     "test:admin-invites-2fa": "node scripts/admin-invites-mandatory-2fa-test.mjs",
     "test:admin-user-management": "node scripts/admin-user-management-complete-test.mjs",

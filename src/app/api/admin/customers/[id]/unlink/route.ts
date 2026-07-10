@@ -4,7 +4,10 @@ import {
   fetchCustomerLinks,
   unlinkBookingFromCustomer,
   unlinkQuoteFromCustomer,
+  detachSoftDeletedQuoteFromCustomer,
+  reassignQuoteToCustomer,
 } from "@/lib/crm/customer-links";
+import { sanitizeCrmDbError } from "@/lib/crm/customer-dependencies";
 import { archiveQuote, deleteQuote, archiveInvoice } from "@/lib/crm/db";
 import { logCustomerEvent } from "@/lib/crm/events";
 import { writeAuditLogFromRequest } from "@/lib/auth/audit";
@@ -12,7 +15,8 @@ import { writeAuditLogFromRequest } from "@/lib/auth/audit";
 type UnlinkBody = {
   type: "booking" | "quote" | "invoice";
   targetId: string;
-  action?: "unlink" | "archive" | "delete";
+  action?: "unlink" | "archive" | "delete" | "reassign";
+  newCustomerId?: string;
 };
 
 export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -71,8 +75,35 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
         if (!item.actions.canDelete) {
           return NextResponse.json({ error: item.actions.deleteReason ?? "Löschen nicht erlaubt." }, { status: 409 });
         }
+        if (item.isDeleted) {
+          await detachSoftDeletedQuoteFromCustomer(customerId, body.targetId);
+          return NextResponse.json({
+            message: "Ausgeblendetes Angebot wurde vom Kunden getrennt.",
+          });
+        }
         await deleteQuote(body.targetId, ctx);
         return NextResponse.json({ message: "Angebot wurde gelöscht." });
+      }
+
+      if (action === "reassign") {
+        if (!item.actions.canReassignCustomer) {
+          return NextResponse.json(
+            { error: item.actions.reassignReason ?? "Kunde kann nicht geändert werden." },
+            { status: 409 },
+          );
+        }
+        if (!body.newCustomerId?.trim()) {
+          return NextResponse.json({ error: "Bitte einen Ziel-Kunden auswählen." }, { status: 400 });
+        }
+        await reassignQuoteToCustomer(customerId, body.targetId, body.newCustomerId.trim());
+        await logCustomerEvent(
+          customerId,
+          "quote_reassigned",
+          `Angebot ${item.label} anderem Kunden zugeordnet`,
+          body.newCustomerId,
+          { id: body.targetId, type: "quote" },
+        );
+        return NextResponse.json({ message: "Angebot wurde einem anderen Kunden zugeordnet." });
       }
     }
 
@@ -96,7 +127,9 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     return NextResponse.json({ error: "Unbekannter Verknüpfungstyp." }, { status: 400 });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Aktion fehlgeschlagen.";
+    const raw = err instanceof Error ? err.message : "Aktion fehlgeschlagen.";
+    if (err instanceof Error) console.error("[api/customers/unlink] failed:", err.message);
+    const message = sanitizeCrmDbError(raw);
     const status = message.includes("nicht gefunden") ? 404 : message.includes("nicht") ? 409 : 500;
     if (ctx && status < 500) {
       await writeAuditLogFromRequest(ctx, request, {

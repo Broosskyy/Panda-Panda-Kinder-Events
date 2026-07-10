@@ -48,33 +48,12 @@ export interface CustomerDeleteBlockers {
 }
 
 export async function getCustomerDeleteBlockers(customerId: string): Promise<CustomerDeleteBlockers> {
-  const supabase = getSupabaseAdmin();
-
-  const [quotes, invoices, bookings] = await Promise.all([
-    supabase
-      .from("crm_quotes")
-      .select("id", { count: "exact", head: true })
-      .eq("customer_id", customerId)
-      .is("deleted_at", null),
-    supabase
-      .from("crm_invoices")
-      .select("id", { count: "exact", head: true })
-      .eq("customer_id", customerId)
-      .is("deleted_at", null),
-    supabase
-      .from("booking_requests")
-      .select("id", { count: "exact", head: true })
-      .eq("customer_id", customerId),
-  ]);
-
-  if (quotes.error) throw new Error(quotes.error.message);
-  if (invoices.error) throw new Error(invoices.error.message);
-  if (bookings.error) throw new Error(bookings.error.message);
-
+  const { getCustomerDependencies } = await import("./customer-dependencies");
+  const deps = await getCustomerDependencies(customerId);
   return {
-    quotes: quotes.count ?? 0,
-    invoices: invoices.count ?? 0,
-    bookings: bookings.count ?? 0,
+    quotes: deps.quotes,
+    invoices: deps.invoices,
+    bookings: deps.inquiries,
   };
 }
 
@@ -160,19 +139,24 @@ export async function restoreCustomerRecord(customerId: string): Promise<CrmCust
 }
 
 export async function deleteCustomerRecord(customerId: string): Promise<void> {
-  const blockers = await getCustomerDeleteBlockers(customerId);
-  const blocked = blockers.quotes > 0 || blockers.invoices > 0 || blockers.bookings > 0;
-  if (blocked) {
+  const { getCustomerDependencies, hasBlockingDependencies, sanitizeCrmDbError } = await import(
+    "./customer-dependencies"
+  );
+  const dependencies = await getCustomerDependencies(customerId);
+  if (hasBlockingDependencies(dependencies)) {
     const parts: string[] = [];
-    if (blockers.bookings > 0) parts.push(`${blockers.bookings} Anfrage(n)`);
-    if (blockers.quotes > 0) parts.push(`${blockers.quotes} Angebot(e)`);
-    if (blockers.invoices > 0) parts.push(`${blockers.invoices} Rechnung(en)`);
+    if (dependencies.inquiries > 0) parts.push(`${dependencies.inquiries} Anfrage(n)`);
+    if (dependencies.quotes > 0) parts.push(`${dependencies.quotes} Angebot(e)`);
+    if (dependencies.invoices > 0) parts.push(`${dependencies.invoices} Rechnung(en)`);
     throw new Error(`Dieser Kunde kann nicht gelöscht werden, weil noch ${parts.join(", ")} verknüpft sind.`);
   }
 
   const supabase = getSupabaseAdmin();
   const { error } = await supabase.from("crm_customers").delete().eq("id", customerId);
-  if (error) throw new Error(error.message);
+  if (error) {
+    console.error("[crm] deleteCustomerRecord failed:", error.message);
+    throw new Error(sanitizeCrmDbError(error.message, "delete_customer"));
+  }
 }
 
 async function insertLineItems(

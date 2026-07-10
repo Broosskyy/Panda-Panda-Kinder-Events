@@ -8,6 +8,7 @@ import {
   restoreCustomerRecord,
 } from "@/lib/crm/db";
 import { fetchCustomerLinks } from "@/lib/crm/customer-links";
+import { getCustomerDependenciesResponse, sanitizeCrmDbError } from "@/lib/crm/customer-dependencies";
 import { crmCustomerSchema } from "@/lib/crm/schemas";
 import { logCustomerEvent } from "@/lib/crm/events";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
@@ -147,13 +148,14 @@ export async function DELETE(request: Request) {
   if (!existing) return NextResponse.json({ error: "Kunde nicht gefunden." }, { status: 404 });
 
   try {
-    const links = await fetchCustomerLinks(id);
-    const blocked = !links.canDelete;
+    const [links, dependencyCheck] = await Promise.all([fetchCustomerLinks(id), getCustomerDependenciesResponse(id)]);
 
-    if (blocked) {
+    if (!dependencyCheck.canDelete) {
       return NextResponse.json(
         {
           error: "Dieser Kunde ist noch mit Daten verknüpft und kann nicht gelöscht werden.",
+          canDelete: false,
+          dependencies: dependencyCheck.dependencies,
           blockers: links.summary,
           links,
           canArchive: true,
@@ -191,7 +193,10 @@ export async function DELETE(request: Request) {
     await deleteCustomerRecord(id);
     return NextResponse.json({ success: true, message: "Kunde wurde gelöscht." });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const raw = err instanceof Error ? err.message : "Löschen fehlgeschlagen.";
+    if (err instanceof Error) console.error("[api/customers] DELETE failed:", err.message);
+    const message = sanitizeCrmDbError(raw, "delete_customer");
+    const status = message.includes("nicht gelöscht") || message.includes("verknüpft") ? 409 : 500;
+    return NextResponse.json({ error: message, canDelete: false }, { status });
   }
 }

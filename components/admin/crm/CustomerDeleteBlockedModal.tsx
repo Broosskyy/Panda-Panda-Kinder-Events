@@ -16,13 +16,15 @@ interface CustomerDeleteBlockedModalProps {
   onPreparePermanentDelete: () => void;
 }
 
+function countLabel(count: number, singular: string, plural: string): string {
+  return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
+}
+
 function blockerLines(blockers: CustomerLinksSummary): string[] {
   const lines: string[] = [];
-  if (blockers.bookings > 0) lines.push(`${blockers.bookings} Anfrage(n)`);
-  if (blockers.quotes > 0) lines.push(`${blockers.quotes} Angebot(e)`);
-  if (blockers.invoices > 0) lines.push(`${blockers.invoices} Rechnung(en)`);
-  if (blockers.events > 0) lines.push(`${blockers.events} Aktivität(en)`);
-  if (blockers.reviews > 0) lines.push(`${blockers.reviews} Bewertung(en)`);
+  lines.push(countLabel(blockers.quotes, "Angebot", "Angebote"));
+  lines.push(countLabel(blockers.bookings, "Anfrage", "Anfragen"));
+  lines.push(countLabel(blockers.invoices, "Rechnung", "Rechnungen"));
   return lines;
 }
 
@@ -37,21 +39,22 @@ export function CustomerDeleteBlockedModal({
   onPreparePermanentDelete,
 }: CustomerDeleteBlockedModalProps) {
   const lines = blockerLines(blockers);
+  const hasBlockers = blockers.quotes > 0 || blockers.bookings > 0 || blockers.invoices > 0;
 
   return (
     <AdminOverlayModal
       open={open}
       onClose={onClose}
-      title="Löschen nicht möglich"
+      title="Kunde kann nicht gelöscht werden"
       footer={
         <div className="flex flex-col gap-2">
           <AdminButton variant="primary" className="w-full min-h-11" onClick={onShowLinks}>
-            Verknüpfungen anzeigen
+            Verknüpfte Daten anzeigen
           </AdminButton>
           <AdminButton variant="secondary" className="w-full min-h-11" onClick={onArchive}>
             Kunde archivieren
           </AdminButton>
-          {isSuperAdmin && blockers.invoices === 0 ? (
+          {isSuperAdmin && hasBlockers && blockers.invoices === 0 ? (
             <AdminButton variant="ghost" className="w-full min-h-11" onClick={onPreparePermanentDelete}>
               Endgültiges Löschen vorbereiten
             </AdminButton>
@@ -77,8 +80,8 @@ export function CustomerDeleteBlockedModal({
             ))}
           </ul>
           <p className="text-xs text-text-muted">
-            Tipp: Verknüpfungen lösen oder den Kunden archivieren. Archivierte Kunden verschwinden aus der
-            Standardliste, bleiben aber bei Angeboten und Rechnungen sichtbar.
+            Tipp: Verknüpfungen auflösen, Angebote einem anderen Kunden zuordnen oder den Kunden archivieren.
+            Archivierte Kunden verschwinden aus der Standardliste, bleiben aber bei Angeboten und Rechnungen sichtbar.
           </p>
         </div>
       </div>

@@ -241,15 +241,27 @@ export function CustomersView() {
         body: JSON.stringify({ id: selected.id }),
       });
       const data = await res.json();
-      if (res.status === 409 && data.blockers) {
-        setBlockedModal({ open: true, blockers: data.blockers as CustomerLinksSummary });
+      if (res.status === 409 && (data.blockers || data.dependencies)) {
+        const blockers = (data.blockers ?? {
+          quotes: data.dependencies?.quotes ?? 0,
+          bookings: data.dependencies?.inquiries ?? 0,
+          invoices: data.dependencies?.invoices ?? 0,
+          events: 0,
+          reviews: 0,
+        }) as CustomerLinksSummary;
+        setBlockedModal({ open: true, blockers });
         if (data.links?.permanentDeleteReasons) {
           setPermanentDeleteReasons(data.links.permanentDeleteReasons as string[]);
         }
         return;
       }
       if (!res.ok) {
-        showResult(ACTION_RESULTS.genericError(data.error ?? "Kunde konnte nicht gelöscht werden."));
+        const errMsg = typeof data.error === "string" ? data.error : "Kunde konnte nicht gelöscht werden.";
+        const friendly =
+          errMsg.includes("foreign key") || errMsg.includes("violates")
+            ? "Dieser Kunde kann nicht gelöscht werden, weil noch Daten verknüpft sind. Bitte „Verknüpfte Daten“ prüfen."
+            : errMsg;
+        showResult(ACTION_RESULTS.genericError(friendly));
         return;
       }
       setSelectedId(null);

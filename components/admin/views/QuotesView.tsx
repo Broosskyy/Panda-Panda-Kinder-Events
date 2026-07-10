@@ -1,15 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Copy, Download, FileText, Pencil, Plus, Send, Trash2 } from "lucide-react";
 import { CrmDocumentListControls } from "@/components/admin/crm/CrmDocumentListControls";
 import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
-import {
-  QuoteLineItemsEditor,
-  createEmptyLineItem,
-  lineItemToApiPayload,
-  type QuoteLineItemDraft,
-} from "@/components/admin/crm/QuoteLineItemsEditor";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import {
   AdminButton,
@@ -22,7 +17,6 @@ import {
   AdminActionMenu,
   crmDocumentStatusVariant,
 } from "@/components/admin/ui";
-import { AdminFormField } from "@/components/admin/ui/AdminFormField";
 import { paginateRows, sortCrmRows, type CrmSortDir, type CrmSortField } from "@/lib/admin/crm-list";
 import { useAdminActionFeedback } from "@/components/admin/AdminActionFeedbackProvider";
 import { ACTION_RESULTS } from "@/lib/admin/action-feedback";
@@ -33,7 +27,7 @@ import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_CONFIRM, ADMIN_MSG } from "@/lib/admin/messages";
 import { formatCents } from "@/lib/crm/money";
-import { CRM_STATUS_LABELS, type CrmCustomer, type CrmDocumentStatus, type CrmLineItem } from "@/lib/crm/types";
+import { CRM_STATUS_LABELS, type CrmDocumentStatus } from "@/lib/crm/types";
 
 interface QuoteRow {
   id: string;
@@ -59,35 +53,6 @@ const STATUS_FILTER_OPTIONS = [
 ];
 
 const PAGE_SIZE = 10;
-
-const emptyForm = (taxRate = 19) => ({
-  customer_id: "",
-  title: "Angebot Kinderbetreuung",
-  remarks: "",
-  discount_percent: 0,
-  tax_rate: taxRate,
-  items: [createEmptyLineItem()] as QuoteLineItemDraft[],
-});
-
-function lineItemFromApi(item: CrmLineItem): QuoteLineItemDraft {
-  const parts = item.description.split("\n");
-  return {
-    key: item.id ?? crypto.randomUUID(),
-    title: parts[0] ?? "",
-    details: parts.slice(1).join("\n"),
-    quantity: Number(item.quantity),
-    unit_price_cents: item.unit_price_cents,
-  };
-}
-
-function FormSection({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="admin-form-section">
-      <h3 className="admin-form-section-title">{title}</h3>
-      {children}
-    </div>
-  );
-}
 
 function exportQuotesCsv(rows: QuoteRow[]) {
   const headers = ["Nummer", "Titel", "Kunde", "Status", "Betrag", "Erstellt"];
@@ -116,11 +81,10 @@ function exportQuotesCsv(rows: QuoteRow[]) {
 }
 
 export function QuotesView() {
+  const router = useRouter();
   const [quotes, setQuotes] = useState<QuoteRow[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listLoadError, setListLoadError] = useState<string | null>(null);
-  const [savingQuote, setSavingQuote] = useState(false);
-  const [customers, setCustomers] = useState<CrmCustomer[]>([]);
   const [search, setSearch] = useState("");
   const [view, setView] = useState<QuoteView>("active");
   const [sortField, setSortField] = useState<CrmSortField>("date");
@@ -128,19 +92,12 @@ export function QuotesView() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
-  const [defaultTaxRate, setDefaultTaxRate] = useState(19);
-  const [discountInput, setDiscountInput] = useState("0");
-  const [taxInput, setTaxInput] = useState("19");
   const [sendTarget, setSendTarget] = useState<QuoteRow | null>(null);
   const [sendToCustomer, setSendToCustomer] = useState(true);
   const [copyToBusiness, setCopyToBusiness] = useState(true);
   const [sending, setSending] = useState(false);
   const [sendError, setSendError] = useState<{ message: string; detail?: string; code?: string } | null>(null);
   const {
-    withLoading,
     success,
     error: showError,
   } = useAdminMessages();
@@ -178,28 +135,7 @@ export function QuotesView() {
 
   useEffect(() => {
     load();
-    fetch("/api/admin/customers")
-      .then((r) => r.json())
-      .then((d) => setCustomers(d.customers ?? []));
   }, [load]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [search, view, statusFilter, sortField, sortDir]);
-
-  useEffect(() => {
-    fetch("/api/admin/settings")
-      .then((r) => r.json())
-      .then((d) => {
-        const rate = d.settings?.invoice?.defaultTaxRate;
-        if (typeof rate === "number" && rate >= 0) {
-          setDefaultTaxRate(rate);
-          setTaxInput(String(rate));
-          setForm(emptyForm(rate));
-        }
-      })
-      .catch(() => undefined);
-  }, []);
 
   const filteredQuotes = useMemo(() => {
     let rows = quotes;
@@ -214,93 +150,9 @@ export function QuotesView() {
     [filteredQuotes, page],
   );
 
-  const resetForm = () => {
-    setForm(emptyForm(defaultTaxRate));
-    setDiscountInput("0");
-    setTaxInput(String(defaultTaxRate));
-    setEditingId(null);
-  };
-
-  const parsePercent = (value: string, fallback: number) => {
-    const trimmed = value.trim();
-    if (trimmed === "") return fallback;
-    const num = Number(trimmed.replace(",", "."));
-    if (Number.isNaN(num)) return fallback;
-    return Math.min(100, Math.max(0, num));
-  };
-
-  const saveQuote = async () => {
-    if (savingQuote) return;
-    if (!form.customer_id) return showError("Angebot konnte nicht gespeichert werden.", "Bitte einen Kunden auswählen.");
-    if (!form.items.some((i) => i.title.trim())) {
-      return showError("Angebot konnte nicht gespeichert werden.", "Mindestens eine Position mit Bezeichnung erforderlich.");
-    }
-    if (form.items.some((i) => !i.quantity || i.quantity < 1)) {
-      return showError("Angebot konnte nicht gespeichert werden.", "Jede Position benötigt eine Menge von mindestens 1.");
-    }
-
-    const discount_percent = parsePercent(discountInput, 0);
-    const tax_rate = parsePercent(taxInput, defaultTaxRate);
-    const payload = {
-      customer_id: form.customer_id,
-      title: form.title,
-      remarks: form.remarks,
-      discount_percent,
-      tax_rate,
-      status: "draft" as const,
-      items: form.items.map(lineItemToApiPayload),
-    };
-
-    setSavingQuote(true);
-    try {
-    if (editingId) {
-      const res = await fetch("/api/admin/quotes", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: editingId, ...payload }),
-      });
-      const data = await res.json();
-      if (!res.ok) return showResult(ACTION_RESULTS.genericError(data.error ?? "Angebot konnte nicht aktualisiert werden."));
-      showResult(ACTION_RESULTS.quoteCreated());
-    } else {
-      const res = await fetch("/api/admin/quotes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (!res.ok) return showResult(ACTION_RESULTS.genericError(data.error ?? "Angebot konnte nicht erstellt werden."));
-      showResult(ACTION_RESULTS.quoteCreated());
-    }
-
-    setShowForm(false);
-    resetForm();
-    load();
-    } finally {
-      setSavingQuote(false);
-    }
-  };
-
-  const startEdit = async (quoteId: string) => {
-    const res = await fetch(`/api/admin/quotes/${quoteId}`);
-    const data = await res.json();
-    if (!res.ok || !data.quote) {
-      return showError("Angebot konnte nicht geladen werden.", data.error);
-    }
-    const quote = data.quote;
-    setEditingId(quoteId);
-    setForm({
-      customer_id: quote.customer_id,
-      title: quote.title,
-      remarks: quote.remarks ?? "",
-      discount_percent: quote.discount_percent,
-      tax_rate: quote.tax_rate,
-      items: (quote.items ?? []).map(lineItemFromApi),
-    });
-    setDiscountInput(String(quote.discount_percent));
-    setTaxInput(String(quote.tax_rate));
-    setShowForm(true);
-  };
+  useEffect(() => {
+    setPage(1);
+  }, [search, view, statusFilter, sortField, sortDir]);
 
   const confirmSend = async () => {
     if (!sendTarget || (!sendToCustomer && !copyToBusiness)) return;
@@ -489,18 +341,10 @@ export function QuotesView() {
     }
   };
 
-  const customerOptions = useMemo(
-    () => [{ value: "", label: "Kunde wählen…" }, ...customers.map((c) => ({ value: c.id, label: c.name }))],
-    [customers],
-  );
-
-  const discountPercent = parsePercent(discountInput, 0);
-  const taxRate = parsePercent(taxInput, 19);
-
   return (
     <div className="space-y-6">
       <AdminPageHeader {...pageMeta}>
-        <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={() => { resetForm(); setShowForm(true); }}>
+        <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} href="/admin/angebote/neu">
           Neues Angebot
         </AdminButton>
       </AdminPageHeader>
@@ -529,89 +373,6 @@ export function QuotesView() {
         />
       ) : null}
 
-      {showForm ? (
-        <AdminCard title={editingId ? "Angebot bearbeiten" : "Neues Angebot"}>
-          <FormSection title="Kunde">
-            <AdminFormField label="Kunde" required>
-              <AdminFilterSelect
-                value={form.customer_id}
-                onChange={(v) => setForm({ ...form, customer_id: v })}
-                options={customerOptions}
-              />
-            </AdminFormField>
-          </FormSection>
-
-          <FormSection title="Angebotsdaten">
-            <AdminFormField label="Titel" required hint="z. B. Angebot Kinderbetreuung">
-              <input
-                className="admin-input"
-                placeholder="Angebot Kinderbetreuung"
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-              />
-            </AdminFormField>
-          </FormSection>
-
-          <FormSection title="Positionen">
-            <QuoteLineItemsEditor
-              items={form.items}
-              discountPercent={discountPercent}
-              taxRate={taxRate}
-              onChange={(items) => setForm({ ...form, items })}
-            />
-          </FormSection>
-
-          <FormSection title="Rabatt & Steuern">
-            <div className="grid gap-4 md:grid-cols-2">
-              <AdminFormField label="Rabatt (%)" hint="Standard: 0">
-                <input
-                  className="admin-input"
-                  type="text"
-                  inputMode="decimal"
-                  value={discountInput}
-                  onChange={(e) => setDiscountInput(e.target.value)}
-                  onBlur={() => setDiscountInput(String(parsePercent(discountInput, 0)))}
-                />
-              </AdminFormField>
-              <AdminFormField label="MwSt. (%)" hint="Standard: 19">
-                <input
-                  className="admin-input"
-                  type="text"
-                  inputMode="decimal"
-                  value={taxInput}
-                  onChange={(e) => setTaxInput(e.target.value)}
-                  onBlur={() => setTaxInput(String(parsePercent(taxInput, 19)))}
-                />
-              </AdminFormField>
-            </div>
-          </FormSection>
-
-          <FormSection title="Hinweise">
-            <AdminFormField label="Bemerkung">
-              <textarea
-                className="admin-input min-h-20"
-                placeholder="Zusätzliche Hinweise für den Kunden…"
-                value={form.remarks}
-                onChange={(e) => setForm({ ...form, remarks: e.target.value })}
-              />
-            </AdminFormField>
-          </FormSection>
-
-          <div className="mt-6 flex flex-wrap gap-2">
-            <AdminButton
-              variant="primary"
-              disabled={savingQuote}
-              onClick={() => void withLoading(() => saveQuote())}
-            >
-              {savingQuote ? "Speichern…" : ADMIN_BTN.save}
-            </AdminButton>
-            <AdminButton variant="secondary" onClick={() => { setShowForm(false); resetForm(); }}>
-              {ADMIN_BTN.cancel}
-            </AdminButton>
-          </div>
-        </AdminCard>
-      ) : null}
-
       {listLoading ? (
         <AdminLoadingCard message="Angebote werden geladen…" />
       ) : listLoadError ? (
@@ -627,7 +388,7 @@ export function QuotesView() {
           title={view === "archived" ? "Keine archivierten Angebote" : empty.title}
           description={view === "archived" ? "Archivierte Angebote erscheinen hier." : empty.description}
           actionLabel={view === "active" ? empty.actionLabel : undefined}
-          onAction={view === "active" ? () => setShowForm(true) : undefined}
+          actionHref={view === "active" ? "/admin/angebote/neu" : undefined}
         />
       ) : (
         <div className="space-y-3">
@@ -687,7 +448,7 @@ export function QuotesView() {
                           id: "edit",
                           label: ADMIN_BTN.edit,
                           icon: <Pencil className="h-4 w-4" />,
-                          onClick: () => void startEdit(q.id),
+                          onClick: () => router.push(`/admin/angebote/${q.id}`),
                         },
                         {
                           id: "duplicate",

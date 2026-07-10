@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Ban, Download, Receipt, Send, Trash2 } from "lucide-react";
 import { CrmDocumentListControls } from "@/components/admin/crm/CrmDocumentListControls";
 import { CrmSendModal } from "@/components/admin/crm/CrmSendModal";
@@ -82,6 +83,7 @@ function exportInvoicesCsv(rows: InvoiceRow[]) {
 }
 
 export function InvoicesView() {
+  const router = useRouter();
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
   const [listLoading, setListLoading] = useState(true);
   const [listLoadError, setListLoadError] = useState<string | null>(null);
@@ -473,6 +475,11 @@ export function InvoicesView() {
                         },
                       }}
                       items={[
+                        {
+                          id: "open",
+                          label: "Öffnen",
+                          onClick: () => router.push(`/admin/rechnungen/${inv.id}`),
+                        },
                         {
                           id: "pdf-open",
                           label: isPdfLoading(openKey) ? "PDF wird erstellt…" : ADMIN_BTN.pdfOpen,

@@ -1,110 +1,56 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import {
   BookOpen,
-  FileText,
-  Image,
-  Inbox,
-  Mail,
-  Receipt,
-  Settings,
-  Star,
-  Type,
-  Users,
+  CheckCircle2,
+  Circle,
 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminHelpBlock } from "@/components/admin/ui/AdminHelpBlock";
+import { AdminButton } from "@/components/admin/ui";
 import { useAdminSession } from "@/components/admin/AdminSessionProvider";
-import { hasPermission } from "@/lib/auth/permissions";
 import { ADMIN_HOME_PATH } from "@/lib/admin/routes";
-
-const STEPS = [
-  {
-    title: "Texte auf der Website ändern",
-    body: "Gehe zu Website → Inhalte. Dort bearbeitest du Startseite, Über uns und Kontakt. Nach dem Speichern ist die Änderung live.",
-    href: "/admin/inhalte",
-    icon: Type,
-    permission: "website:write",
-  },
-  {
-    title: "Bilder hochladen",
-    body: "Gehe zu Website → Galerie. Lade Eventfotos hoch — sie erscheinen öffentlich auf der Website.",
-    href: "/admin/galerie",
-    icon: Image,
-    permission: "gallery:write",
-  },
-  {
-    title: "Anfragen bearbeiten",
-    body: "Neue Kontaktanfragen findest du unter Kommunikation → Anfragen. Setze den Status und lege bei Bedarf einen Kunden an.",
-    href: "/admin/anfragen",
-    icon: Inbox,
-    permission: "inquiries:write",
-  },
-  {
-    title: "Angebot erstellen",
-    body: "Unter CRM → Angebote wählst du einen Kunden, trägst Positionen ein und sendest das PDF per E-Mail.",
-    href: "/admin/angebote",
-    icon: FileText,
-    permission: "quotes:write",
-  },
-  {
-    title: "Rechnung senden",
-    body: "Unter CRM → Rechnungen erstellst du eine Rechnung aus einem Angebot oder bearbeitest sie direkt. PDF öffnen und per E-Mail versenden.",
-    href: "/admin/rechnungen",
-    icon: Receipt,
-    permission: "invoices:write",
-  },
-  {
-    title: "Bewertungen veröffentlichen",
-    body: "Neue Bewertungen warten unter Kommunikation → Bewertungen auf deine Freigabe. Erst nach Freigabe sind sie öffentlich sichtbar.",
-    href: "/admin/bewertungen",
-    icon: Star,
-    permission: "reviews:write",
-  },
-  {
-    title: "Team ändern",
-    body: "Unter Website → Team legst du Mitglieder an. Nur aktive Mitglieder erscheinen unter „Über uns“ auf der Website.",
-    href: "/admin/team",
-    icon: Users,
-    permission: "team:write",
-  },
-  {
-    title: "Öffnungszeiten ändern",
-    body: "Gehe zu Einstellungen → Unternehmensdaten oder Website → Inhalte (Kontakt). Öffnungszeiten erscheinen im Kontaktbereich.",
-    href: "/admin/einstellungen",
-    icon: Settings,
-    permission: "settings:write",
-  },
-  {
-    title: "Test-E-Mail senden",
-    body: "Unter Einstellungen → E-Mail kannst du eine Testmail senden. Bei grüner Meldung funktioniert der Versand.",
-    href: "/admin/einstellungen?tab=email",
-    icon: Mail,
-    permission: "settings:system",
-  },
-] as const;
-
-const DONT_DELETE = [
-  "Firmendaten und Bankverbindung in den Einstellungen",
-  "E-Mail-Vorlagen ohne vorherige Vorschau",
-  "Kunden mit verknüpften Angeboten oder Rechnungen",
-  "Veröffentlichte Bewertungen ohne Rücksprache",
-  "Admin-Benutzer (nur über Benutzer & Rollen verwalten)",
-];
+import { FIRST_STEPS_DONT_DELETE, type FirstStepsResponse } from "@/lib/admin/first-steps";
 
 export function ErsteSchritteView() {
-  const { status, identity, permissions } = useAdminSession();
-
-  const visibleSteps = useMemo(
-    () => STEPS.filter((step) => hasPermission(permissions, step.permission)),
-    [permissions],
-  );
+  const { status, identity } = useAdminSession();
+  const [progress, setProgress] = useState<FirstStepsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const identityReady = status === "ready" && Boolean(identity?.displayName);
-
   const welcomeName = identity?.displayName ?? "";
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      setLoading(true);
+      setLoadError(null);
+      try {
+        const res = await fetch("/api/admin/first-steps");
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? "Fortschritt konnte nicht geladen werden.");
+        if (!cancelled) setProgress(data as FirstStepsResponse);
+      } catch (err) {
+        if (!cancelled) {
+          setLoadError(err instanceof Error ? err.message : "Fortschritt konnte nicht geladen werden.");
+          setProgress(null);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const progressLabel = useMemo(() => {
+    if (!progress) return "";
+    return `${progress.completedCount} von ${progress.totalCount} erledigt`;
+  }, [progress]);
 
   return (
     <div className="space-y-8">
@@ -116,10 +62,30 @@ export function ErsteSchritteView() {
       ) : (
         <AdminPageHeader
           title="Erste Schritte"
-          description={`Willkommen, ${welcomeName}! Hier findest du die wichtigsten Aufgaben — Schritt für Schritt, ohne technisches Vorwissen.`}
-          whereVisible="Nur hier im Admin — Besucher sehen diese Seite nicht."
+          description={`Willkommen, ${welcomeName}! Deine dauerhafte Checkliste — Schritt für Schritt, ohne technisches Vorwissen.`}
+          whereVisible="Nur hier im Admin — Besucher sehen diese Seite nicht. Startet nie automatisch."
         />
       )}
+
+      {loading ? (
+        <p className="text-sm text-text-muted">Fortschritt wird geladen…</p>
+      ) : loadError ? (
+        <AdminCard>
+          <p className="text-sm text-accent-heart">{loadError}</p>
+        </AdminCard>
+      ) : progress ? (
+        <AdminCard title="Dein Fortschritt">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between gap-3 text-sm">
+              <span className="font-medium text-text-primary">{progressLabel}</span>
+              <span className="text-text-muted">{progress.percent}%</span>
+            </div>
+            <div className="h-2 overflow-hidden rounded-full bg-border" role="progressbar" aria-valuenow={progress.percent} aria-valuemin={0} aria-valuemax={100}>
+              <div className="h-full rounded-full bg-primary transition-all" style={{ width: `${progress.percent}%` }} />
+            </div>
+          </div>
+        </AdminCard>
+      ) : null}
 
       <details className="admin-help-collapsible">
         <summary className="admin-page-help-toggle cursor-pointer list-none">
@@ -128,32 +94,50 @@ export function ErsteSchritteView() {
         </summary>
         <AdminHelpBlock title="Kurz erklärt" variant="tip" className="mt-2">
           <p className="text-sm leading-relaxed">
-            Gespeicherte Inhalte erscheinen auf der Website oder bleiben intern (Kunden, Angebote). Grüne Meldungen =
-            erfolgreich gespeichert.
+            Diese Checkliste bleibt dauerhaft verfügbar. Das interaktive Tutorial beim ersten Login findest du unter
+            Einstellungen → Hilfe → Tutorial erneut starten.
           </p>
         </AdminHelpBlock>
       </details>
 
       <section>
         <h2 className="admin-dashboard-section-title mb-4">Deine wichtigsten Aufgaben</h2>
-        {visibleSteps.length === 0 ? (
-          <p className="text-sm text-text-muted">Für deine Rolle sind hier keine Bearbeitungsaufgaben hinterlegt — nutze die Navigation für die Ansicht.</p>
+        {!loading && progress && progress.steps.length === 0 ? (
+          <p className="text-sm text-text-muted">
+            Für deine Rolle sind hier keine Bearbeitungsaufgaben hinterlegt — nutze die Navigation für die Ansicht.
+          </p>
         ) : (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {visibleSteps.map((step) => {
+          <div className="space-y-3">
+            {(progress?.steps ?? []).map((step) => {
               const Icon = step.icon;
+              const DoneIcon = step.completed ? CheckCircle2 : Circle;
               return (
-                <Link key={step.href} href={step.href} className="admin-card block transition-colors hover:border-primary/30">
-                  <div className="flex gap-4">
+                <div
+                  key={step.id}
+                  className={`admin-card flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between ${step.completed ? "border-primary/20 bg-primary/5" : ""}`}
+                >
+                  <div className="flex min-w-0 gap-4">
                     <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/10">
                       <Icon className="h-5 w-5 text-primary" aria-hidden />
                     </div>
                     <div className="min-w-0">
-                      <h3 className="font-semibold text-text-primary">{step.title}</h3>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="font-semibold text-text-primary">{step.title}</h3>
+                        <DoneIcon
+                          className={`h-4 w-4 shrink-0 ${step.completed ? "text-primary" : "text-text-muted"}`}
+                          aria-hidden
+                        />
+                        {step.completed ? (
+                          <span className="text-xs font-medium text-primary">Erledigt</span>
+                        ) : null}
+                      </div>
                       <p className="mt-1 text-sm leading-relaxed text-text-secondary">{step.body}</p>
                     </div>
                   </div>
-                </Link>
+                  <AdminButton variant={step.completed ? "secondary" : "primary"} href={step.href} className="min-h-11 shrink-0">
+                    {step.completed ? "Öffnen" : "Jetzt starten"}
+                  </AdminButton>
+                </div>
               );
             })}
           </div>
@@ -164,7 +148,7 @@ export function ErsteSchritteView() {
         <h2 className="admin-dashboard-section-title mb-4">Bitte nicht löschen</h2>
         <AdminCard>
           <ul className="list-disc space-y-2 pl-5 text-sm text-text-secondary">
-            {DONT_DELETE.map((item) => (
+            {FIRST_STEPS_DONT_DELETE.map((item) => (
               <li key={item}>{item}</li>
             ))}
           </ul>

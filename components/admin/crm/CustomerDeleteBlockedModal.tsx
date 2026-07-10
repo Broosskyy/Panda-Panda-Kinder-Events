@@ -1,8 +1,9 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
-import { AdminButton } from "@/components/admin/ui/AdminButton";
 import { AdminOverlayModal } from "@/components/admin/ui/AdminOverlayModal";
+import { AdminDialogFooter } from "@/components/admin/ui/AdminDialogFooter";
+import { ADMIN_BTN } from "@/lib/admin/buttons";
 import type { CustomerLinksSummary } from "@/lib/crm/customer-links";
 
 interface CustomerDeleteBlockedModalProps {
@@ -17,14 +18,18 @@ interface CustomerDeleteBlockedModalProps {
 }
 
 function countLabel(count: number, singular: string, plural: string): string {
+  if (count === 0) return "";
   return count === 1 ? `1 ${singular}` : `${count} ${plural}`;
 }
 
 function blockerLines(blockers: CustomerLinksSummary): string[] {
   const lines: string[] = [];
-  lines.push(countLabel(blockers.quotes, "Angebot", "Angebote"));
-  lines.push(countLabel(blockers.bookings, "Anfrage", "Anfragen"));
-  lines.push(countLabel(blockers.invoices, "Rechnung", "Rechnungen"));
+  const quoteLine = countLabel(blockers.quotes, "Angebot", "Angebote");
+  const bookingLine = countLabel(blockers.bookings, "Anfrage", "Anfragen");
+  const invoiceLine = countLabel(blockers.invoices, "Rechnung", "Rechnungen");
+  if (quoteLine) lines.push(quoteLine);
+  if (bookingLine) lines.push(bookingLine);
+  if (invoiceLine) lines.push(invoiceLine);
   return lines;
 }
 
@@ -47,22 +52,16 @@ export function CustomerDeleteBlockedModal({
       onClose={onClose}
       title="Kunde kann nicht gelöscht werden"
       footer={
-        <div className="flex flex-col gap-2">
-          <AdminButton variant="primary" className="w-full min-h-11" onClick={onShowLinks}>
-            Verknüpfte Daten anzeigen
-          </AdminButton>
-          <AdminButton variant="secondary" className="w-full min-h-11" onClick={onArchive}>
-            Kunde archivieren
-          </AdminButton>
-          {isSuperAdmin && hasBlockers && blockers.invoices === 0 ? (
-            <AdminButton variant="ghost" className="w-full min-h-11" onClick={onPreparePermanentDelete}>
-              Endgültiges Löschen vorbereiten
-            </AdminButton>
-          ) : null}
-          <AdminButton variant="ghost" className="w-full min-h-11" onClick={onClose}>
-            Abbrechen
-          </AdminButton>
-        </div>
+        <AdminDialogFooter
+          primary={{ label: "Verknüpfungen anzeigen", onClick: onShowLinks, variant: "primary" }}
+          secondary={{ label: "Archivieren", onClick: onArchive, variant: "secondary" }}
+          danger={
+            isSuperAdmin && hasBlockers && blockers.invoices === 0
+              ? { label: "Endgültiges Löschen vorbereiten", onClick: onPreparePermanentDelete, variant: "ghost" }
+              : undefined
+          }
+          cancel={{ label: ADMIN_BTN.cancel, onClick: onClose }}
+        />
       }
     >
       <div className="flex items-start gap-3">
@@ -71,17 +70,19 @@ export function CustomerDeleteBlockedModal({
           <p className="text-sm text-text-secondary">
             <strong className="text-text-primary">{customerName}</strong> ist noch mit Daten verknüpft.
           </p>
-          <ul className="space-y-1 text-sm text-text-secondary">
-            {lines.map((line) => (
-              <li key={line} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
-                {line}
-              </li>
-            ))}
-          </ul>
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-text-muted">Grund</p>
+            <ul className="mt-1 space-y-1 text-sm text-text-secondary">
+              {lines.map((line) => (
+                <li key={line} className="flex items-center gap-2">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary" aria-hidden />
+                  {line}
+                </li>
+              ))}
+            </ul>
+          </div>
           <p className="text-xs text-text-muted">
             Tipp: Verknüpfungen auflösen, Angebote einem anderen Kunden zuordnen oder den Kunden archivieren.
-            Archivierte Kunden verschwinden aus der Standardliste, bleiben aber bei Angeboten und Rechnungen sichtbar.
           </p>
         </div>
       </div>

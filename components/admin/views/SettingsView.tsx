@@ -727,10 +727,10 @@ export function SettingsView() {
             </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Primäre Domain" hint="z. B. pb-kinderevents.de">
+            <AdminFormField label="Primäre Domain" hint="z. B. ihre-domain.de">
               <input className="admin-input" value={seo.primaryDomain} onChange={(e) => setSeoField("primaryDomain", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="WWW-Domain" hint="Optional, z. B. www.pb-kinderevents.de">
+            <AdminFormField label="WWW-Domain" hint="Optional, z. B. www.ihre-domain.de">
               <input className="admin-input" value={seo.wwwDomain} onChange={(e) => setSeoField("wwwDomain", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Canonical Base URL" tooltip="canonical" hint="Vollständige URL mit https://" className="md:col-span-2">
@@ -751,11 +751,20 @@ export function SettingsView() {
             <AdminFormField label="Google Site Verification">
               <input className="admin-input" value={seo.googleSiteVerification} onChange={(e) => setSeoField("googleSiteVerification", e.target.value)} />
             </AdminFormField>
-            <AdminFormField label="Google Analytics ID" tooltip="analytics" hint="z. B. G-XXXXXXXXXX" optional>
-              <input className="admin-input" value={seo.googleAnalyticsId} onChange={(e) => setSeoField("googleAnalyticsId", e.target.value)} />
+            <AdminFormField label="Google Analytics ID" tooltip="analytics" hint="z. B. G-XXXXXXXXXX — leer lassen bis Aktivierung" optional>
+              <input className="admin-input" value={seo.googleAnalyticsId} onChange={(e) => setSeoField("googleAnalyticsId", e.target.value)} placeholder="G-…" />
             </AdminFormField>
-            <AdminFormField label="Microsoft Clarity ID">
+            <AdminFormField label="Google Tag Manager ID" hint="z. B. GTM-XXXXXXX — optional, leer bis Aktivierung">
+              <input className="admin-input" value={seo.googleTagManagerId} onChange={(e) => setSeoField("googleTagManagerId", e.target.value)} placeholder="GTM-…" />
+            </AdminFormField>
+            <AdminFormField label="Microsoft Clarity ID" hint="Optional — leer bis Aktivierung">
               <input className="admin-input" value={seo.microsoftClarityId} onChange={(e) => setSeoField("microsoftClarityId", e.target.value)} />
+            </AdminFormField>
+            <AdminFormField label="Google Maps API Key" hint="Optional — für spätere Karten-Integration vorbereitet">
+              <input className="admin-input" value={seo.googleMapsApiKey} onChange={(e) => setSeoField("googleMapsApiKey", e.target.value)} placeholder="AIza…" />
+            </AdminFormField>
+            <AdminFormField label="reCAPTCHA Site Key" hint="Optional — öffentlicher Schlüssel, Secret nur per ENV">
+              <input className="admin-input" value={seo.googleRecaptchaSiteKey} onChange={(e) => setSeoField("googleRecaptchaSiteKey", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Suchmaschinen-Indexierung" tooltip="robots">
               <label className="admin-checkbox-row">

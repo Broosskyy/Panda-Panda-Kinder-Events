@@ -1,6 +1,7 @@
 import type { SiteSettingsBundle } from "./types";
 import { BRAND } from "@/lib/brand";
 import { getSiteUrl } from "@/lib/site-url";
+import { resolveGoogleIntegrations } from "@/lib/system-config";
 
 /** Resolves public site URL: SEO canonical → business website → env fallback. */
 export function resolvePublicSiteUrl(settings: Pick<SiteSettingsBundle, "seo" | "business">): string {
@@ -26,6 +27,7 @@ export function resolveSeoMeta(settings: SiteSettingsBundle) {
   const base = resolvePublicSiteUrl(settings);
   const ogImage = settings.seo.ogImageUrl?.trim();
   const ogUrl = ogImage?.startsWith("http") ? ogImage : `${base}${ogImage || BRAND.assets.ogImage}`;
+  const google = resolveGoogleIntegrations(settings.seo);
 
   return {
     baseUrl: base,
@@ -33,9 +35,12 @@ export function resolveSeoMeta(settings: SiteSettingsBundle) {
     description: settings.seo.metaDescription?.trim() || settings.business.description,
     ogImage: ogUrl,
     robotsIndex: settings.seo.robotsIndex !== false,
-    googleSiteVerification: settings.seo.googleSiteVerification?.trim() || undefined,
-    googleAnalyticsId: settings.seo.googleAnalyticsId?.trim() || undefined,
-    microsoftClarityId: settings.seo.microsoftClarityId?.trim() || undefined,
+    googleSiteVerification: google.siteVerification,
+    googleAnalyticsId: google.analyticsId,
+    googleTagManagerId: google.tagManagerId,
+    microsoftClarityId: google.clarityId,
+    googleMapsApiKey: google.mapsApiKey,
+    googleRecaptchaSiteKey: google.recaptchaSiteKey,
   };
 }
 

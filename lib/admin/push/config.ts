@@ -1,6 +1,5 @@
 import webpush from "web-push";
-
-const VAPID_SUBJECT = process.env.VAPID_SUBJECT ?? "mailto:info@pb-kinderevents.de";
+import { resolveVapidSubject, SYSTEM_DEFAULTS } from "@/lib/system-config";
 
 export function getVapidPublicKey(): string | null {
   const key = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY?.trim();
@@ -18,13 +17,13 @@ export function ensureVapidConfigured(): boolean {
   const publicKey = getVapidPublicKey();
   const privateKey = process.env.VAPID_PRIVATE_KEY?.trim();
   if (!publicKey || !privateKey) return false;
-  webpush.setVapidDetails(VAPID_SUBJECT, publicKey, privateKey);
+  webpush.setVapidDetails(resolveVapidSubject(), publicKey, privateKey);
   vapidConfigured = true;
   return true;
 }
 
-export const PUSH_ICON_PATH = "/icons/panda-icon-192.png";
-export const PUSH_INQUIRY_URL = "/admin/anfragen";
+export const PUSH_ICON_PATH = SYSTEM_DEFAULTS.push.iconPath;
+export const PUSH_INQUIRY_URL = SYSTEM_DEFAULTS.push.inquiryUrl;
 
 export const PUSH_INQUIRY_NOTIFICATION = {
   title: "Neue Anfrage",

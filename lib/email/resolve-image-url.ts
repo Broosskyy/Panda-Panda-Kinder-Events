@@ -6,13 +6,14 @@ import {
   isUnsafeEmailAssetUrl,
 } from "@/lib/email/asset-url";
 
+import { SYSTEM_DEFAULTS } from "@/lib/system-config";
+
 /** Alt-Text für E-Mail-Logos (Barrierefreiheit in Mail-Clients) */
-export const EMAIL_LOGO_ALT = "Panda-Bande Kinderevents";
+export const EMAIL_LOGO_ALT = SYSTEM_DEFAULTS.company.name;
 
 /**
- * E-Mail-Bilder nutzen ausschließlich https://www.pb-kinderevents.de —
+ * E-Mail-Bilder nutzen resolveEmailAssetBaseUrl() aus lib/system-config —
  * nicht NEXT_PUBLIC_SITE_URL (Vercel-Preview-Schutz).
- * Logo-Fallback: https://www.pb-kinderevents.de/assets/Logo.png
  */
 
 export {

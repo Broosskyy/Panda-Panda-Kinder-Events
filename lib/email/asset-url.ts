@@ -1,45 +1,28 @@
 /**
- * Fixed production base for all email image assets.
- * Never use NEXT_PUBLIC_SITE_URL or Vercel preview domains for email HTML.
+ * E-Mail-Asset-URLs — abgeleitet aus lib/system-config.ts
  */
-export const EMAIL_ASSET_BASE_DEFAULT = "https://www.pb-kinderevents.de";
+import {
+  canonicalizeProductionUrl,
+  getDefaultLogoUrl,
+  isUnsafeAssetUrl,
+  resolveEmailAssetBaseUrl,
+} from "@/lib/system-config";
 
-export const EMAIL_LOGO_DEFAULT_URL = `${EMAIL_ASSET_BASE_DEFAULT}/assets/Logo.png`;
+export const EMAIL_ASSET_BASE_DEFAULT = resolveEmailAssetBaseUrl();
 
-const UNSAFE_HOST_PATTERN = /localhost|127\.0\.0\.1|vercel\.app/i;
-const PRODUCTION_HOSTS = new Set(["pb-kinderevents.de", "www.pb-kinderevents.de"]);
+export const EMAIL_LOGO_DEFAULT_URL = getDefaultLogoUrl();
 
-/** Normalize pb-kinderevents.de → https://www.pb-kinderevents.de (keeps path/query) */
-export function canonicalizeEmailAssetUrl(url: string): string {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.toLowerCase();
-    if (PRODUCTION_HOSTS.has(host)) {
-      parsed.protocol = "https:";
-      parsed.hostname = "www.pb-kinderevents.de";
-      return parsed.href;
-    }
-  } catch {
-    // not a full URL
-  }
-  return url;
-}
+export {
+  canonicalizeProductionUrl as canonicalizeEmailAssetUrl,
+  isUnsafeAssetUrl as isUnsafeEmailAssetUrl,
+};
 
 /** CMS/ENV base URL for resolving relative email asset paths */
 export function getEmailAssetBaseUrl(): string {
-  const fromEnv = process.env.EMAIL_ASSET_BASE_URL?.trim();
-  if (fromEnv && /^https?:\/\//i.test(fromEnv)) {
-    const normalized = canonicalizeEmailAssetUrl(fromEnv.replace(/\/$/, ""));
-    if (!UNSAFE_HOST_PATTERN.test(normalized)) return normalized;
-  }
-  return EMAIL_ASSET_BASE_DEFAULT;
-}
-
-export function isUnsafeEmailAssetUrl(url: string): boolean {
-  return UNSAFE_HOST_PATTERN.test(url);
+  return resolveEmailAssetBaseUrl();
 }
 
 /** Canonical logo URL for all outbound emails */
 export function getDefaultEmailLogoUrl(): string {
-  return EMAIL_LOGO_DEFAULT_URL;
+  return getDefaultLogoUrl();
 }

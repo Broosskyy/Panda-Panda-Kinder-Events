@@ -433,7 +433,10 @@ export interface SiteSeoSettings {
   socialPreviewText: string;
   googleSiteVerification: string;
   googleAnalyticsId: string;
+  googleTagManagerId: string;
   microsoftClarityId: string;
+  googleMapsApiKey: string;
+  googleRecaptchaSiteKey: string;
   robotsIndex: boolean;
   sitemapEnabled: boolean;
 }

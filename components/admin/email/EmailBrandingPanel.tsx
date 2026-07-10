@@ -80,10 +80,10 @@ export function EmailBrandingPanel({ email, domainVerification, hasSuccessfulTes
               <input className="admin-input" type="email" value={brand.adminEmail} onChange={(e) => setBrand("adminEmail", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Website">
-              <input className="admin-input" value={brand.website} onChange={(e) => setBrand("website", e.target.value)} placeholder="https://www.pb-kinderevents.de" />
+              <input className="admin-input" value={brand.website} onChange={(e) => setBrand("website", e.target.value)} placeholder="https://www.ihre-domain.de" />
             </AdminFormField>
             <AdminFormField label="Standard-CTA-URL" className="md:col-span-2">
-              <input className="admin-input" value={brand.defaultCtaUrl} onChange={(e) => setBrand("defaultCtaUrl", e.target.value)} placeholder="https://www.pb-kinderevents.de" />
+              <input className="admin-input" value={brand.defaultCtaUrl} onChange={(e) => setBrand("defaultCtaUrl", e.target.value)} placeholder="https://www.ihre-domain.de" />
             </AdminFormField>
             <AdminFormField label="Abschlusssatz" className="md:col-span-2">
               <input className="admin-input" value={brand.closingLine} onChange={(e) => setBrand("closingLine", e.target.value)} placeholder="Mit freundlichen Grüßen" />
@@ -93,7 +93,7 @@ export function EmailBrandingPanel({ email, domainVerification, hasSuccessfulTes
 
         <AdminCard title="Logo & Header">
           <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Logo-URL" className="md:col-span-2" hint="Absolute HTTPS-URL — z. B. https://www.pb-kinderevents.de/assets/Logo.png">
+            <AdminFormField label="Logo-URL" className="md:col-span-2" hint="Absolute HTTPS-URL — z. B. https://www.ihre-domain.de/assets/Logo.png">
               <input className="admin-input" value={brand.logoUrl} onChange={(e) => setBrand("logoUrl", e.target.value)} />
             </AdminFormField>
             <AdminFormField label="Logo-Breite (px)">

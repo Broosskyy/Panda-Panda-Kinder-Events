@@ -4,6 +4,7 @@ import { checkResendDomainLive } from "@/lib/email/resend-domain-check";
 import { listEmailLogs } from "@/lib/email/log";
 import { isEmailTestModeActive } from "@/lib/email/test-mode";
 import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
+import { getDefaultCompanyDomain } from "@/lib/system-config";
 import type { SystemStatusItem, SystemStatusLevel } from "@/lib/admin/system-status";
 import {
   API_CHECK_UNAVAILABLE_MESSAGE,
@@ -67,7 +68,7 @@ export async function getEmailSystemStatus(): Promise<{
         ? undefined
         : liveDomain.state === "unknown"
           ? "Optional: Domain-Status im Resend-Dashboard prüfen."
-          : `Resend-Dashboard öffnen und Domain „${liveDomain.domain ?? senderDomain ?? "pb-kinderevents.de"}" verifizieren.`,
+          : `Resend-Dashboard öffnen und Domain „${liveDomain.domain ?? senderDomain ?? getDefaultCompanyDomain()}" verifizieren.`,
   });
 
   items.push({

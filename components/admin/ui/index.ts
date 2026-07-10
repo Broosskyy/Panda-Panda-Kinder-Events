@@ -17,4 +17,5 @@ export {
 export { ReviewAdminImages } from "./ReviewAdminImages";
 export { AdminActionMenu, type AdminActionMenuItem } from "./AdminActionMenu";
 export { AdminStickySave } from "./AdminStickySave";
+export { AdminDialogFooter, saveCancelFooter } from "./AdminDialogFooter";
 export { AdminTooltip } from "./AdminTooltip";

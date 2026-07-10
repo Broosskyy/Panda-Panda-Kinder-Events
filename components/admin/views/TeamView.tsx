@@ -13,28 +13,13 @@ import { adminPageHeaderProps } from "@/lib/admin/page-header-props";
 import { ADMIN_EMPTY_STATES } from "@/lib/admin/page-meta";
 import { ADMIN_BTN } from "@/lib/admin/buttons";
 import { ADMIN_CONFIRM, ADMIN_MSG } from "@/lib/admin/messages";
-import type { TeamMember, TeamSocialLinks } from "@/lib/cms/types";
-
-const emptyForm = () => ({
-  name: "",
-  position: "",
-  description: "",
-  profileImageUrl: "",
-  phone: "",
-  email: "",
-  socialLinks: { linkedin: "", instagram: "", facebook: "", website: "" } as TeamSocialLinks,
-  sortOrder: 0,
-  active: true,
-});
+import type { TeamMember } from "@/lib/cms/types";
 
 export function TeamView() {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [section, setSection] = useState({ title: "Unser Team", subtitle: "" });
   const [configured, setConfigured] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState(emptyForm);
   const { toast } = useAdminMessages();
   const { showResult, confirm, runAction } = useAdminActionFeedback();
   const page = adminPageHeaderProps("team");
@@ -70,54 +55,6 @@ export function TeamView() {
         if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
       },
       success: ACTION_RESULTS.settingsSaved(),
-    });
-  };
-
-  const openCreate = () => {
-    setEditingId(null);
-    setForm(emptyForm());
-    setShowForm(true);
-  };
-
-  const openEdit = (member: TeamMember) => {
-    setEditingId(member.id);
-    setForm({
-      name: member.name,
-      position: member.position ?? "",
-      description: member.description ?? "",
-      profileImageUrl: member.profile_image_url ?? "",
-      phone: member.phone ?? "",
-      email: member.email ?? "",
-      socialLinks: {
-        linkedin: member.social_links?.linkedin ?? "",
-        instagram: member.social_links?.instagram ?? "",
-        facebook: member.social_links?.facebook ?? "",
-        website: member.social_links?.website ?? "",
-      },
-      sortOrder: member.sort_order ?? 0,
-      active: member.active,
-    });
-    setShowForm(true);
-  };
-
-  const save = async () => {
-    if (!form.name.trim()) return showResult(ACTION_RESULTS.genericError("Name ist ein Pflichtfeld."));
-    if (!form.position.trim()) return showResult(ACTION_RESULTS.genericError("Position ist ein Pflichtfeld."));
-    await runAction({
-      action: async () => {
-        const res = await fetch("/api/admin/team", {
-          method: editingId ? "PATCH" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(editingId ? { id: editingId, ...form } : form),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Speichern fehlgeschlagen");
-        setShowForm(false);
-        setEditingId(null);
-        setForm(emptyForm());
-        await load();
-      },
-      success: ACTION_RESULTS.teamSaved(),
     });
   };
 
@@ -206,7 +143,7 @@ export function TeamView() {
   return (
     <div className="space-y-6">
       <AdminPageHeader {...page}>
-        <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} onClick={openCreate}>
+        <AdminButton variant="primary" icon={<Plus className="h-4 w-4" />} href="/admin/team/neu">
           Teammitglied anlegen
         </AdminButton>
       </AdminPageHeader>
@@ -241,51 +178,13 @@ export function TeamView() {
         </div>
       </AdminCard>
 
-      {showForm ? (
-        <AdminCard title={editingId ? "Teammitglied bearbeiten" : "Neues Teammitglied"}>
-          <div className="grid gap-4 md:grid-cols-2">
-            <AdminFormField label="Name" required hint="Vollständiger Name auf der Website.">
-              <input className="admin-input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Position" required hint="z. B. Gründerin, Event-Betreuung">
-              <input className="admin-input" value={form.position} onChange={(e) => setForm({ ...form, position: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Foto-URL" hint="Profilbild für die Teamkarte." className="md:col-span-2">
-              <input className="admin-input" value={form.profileImageUrl} onChange={(e) => setForm({ ...form, profileImageUrl: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Beschreibung" className="md:col-span-2">
-              <textarea className="admin-input min-h-24" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Telefon" hint="Optional, nicht öffentlich auf der Karte.">
-              <input className="admin-input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="E-Mail" hint="Optional, nicht öffentlich auf der Karte.">
-              <input className="admin-input" type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-            </AdminFormField>
-            <AdminFormField label="Reihenfolge" hint="Kleinere Zahl = weiter oben.">
-              <input className="admin-input" type="number" value={form.sortOrder} onChange={(e) => setForm({ ...form, sortOrder: Number(e.target.value) })} />
-            </AdminFormField>
-            <AdminFormField label="Sichtbar auf Website" required>
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} />
-                Auf der Website anzeigen
-              </label>
-            </AdminFormField>
-          </div>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <AdminButton variant="primary" onClick={() => void save()}>{ADMIN_BTN.save}</AdminButton>
-            <AdminButton variant="secondary" onClick={() => { setShowForm(false); setEditingId(null); }}>{ADMIN_BTN.cancel}</AdminButton>
-          </div>
-        </AdminCard>
-      ) : null}
-
-      {activeMembers.length === 0 && !showForm ? (
+      {activeMembers.length === 0 ? (
         <AdminEmptyState
           icon={Users}
           title={empty.title}
           description={empty.description}
           actionLabel={empty.actionLabel}
-          onAction={openCreate}
+          actionHref="/admin/team/neu"
         />
       ) : (
         <div className="space-y-3">
@@ -309,7 +208,9 @@ export function TeamView() {
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} onClick={() => openEdit(m)}>Bearbeiten</AdminButton>
+                  <AdminButton variant="secondary" icon={<Pencil className="h-4 w-4" />} href={`/admin/team/${m.id}`}>
+                    Bearbeiten
+                  </AdminButton>
                   <AdminButton variant="secondary" onClick={() => void toggleVisible(m)}>
                     {m.active ? "Ausblenden" : "Sichtbar machen"}
                   </AdminButton>

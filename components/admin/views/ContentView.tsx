@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { Plus, Save, Trash2 } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
@@ -594,7 +595,7 @@ export function ContentView() {
       <AdminCard title="Öffentliches Team">
         <p className="text-sm text-text-secondary">
           Teammitglieder für die Website werden unter{" "}
-          <a href="/admin/team" className="font-medium text-primary underline">Website → Team</a>{" "}
+          <Link href="/admin/team" className="font-medium text-primary underline">Website → Team</Link>{" "}
           verwaltet. Dort legst du Name, Position, Foto und Sichtbarkeit fest.
         </p>
         <p className="mt-2 text-sm text-text-muted">

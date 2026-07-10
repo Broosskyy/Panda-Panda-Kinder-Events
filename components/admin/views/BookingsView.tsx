@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Archive, Inbox, Trash2, UserPlus } from "lucide-react";
 import type { BookingStatus } from "@/lib/supabase/admin";
 import { AdminPageHeader } from "@/components/admin/AdminSidebar";
@@ -57,6 +58,7 @@ interface Booking {
 type BookingView = "active" | "archived";
 
 export function BookingsView() {
+  const router = useRouter();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -302,7 +304,7 @@ export function BookingsView() {
                                 ? {
                                     label: "Zum Kunden",
                                     onClick: () => {
-                                      window.location.href = `/admin/kunden?id=${b.customer_id}`;
+                                      router.push(`/admin/kunden/${b.customer_id}`);
                                     },
                                   }
                                 : {
@@ -312,6 +314,11 @@ export function BookingsView() {
                                   }
                             }
                             items={[
+                              {
+                                id: "open",
+                                label: "Anfrage öffnen",
+                                onClick: () => router.push(`/admin/anfragen/${b.id}`),
+                              },
                               ...(!b.archived_at
                                 ? [
                                     {
@@ -437,7 +444,7 @@ export function BookingsView() {
                           ? {
                               label: "Zum Kunden",
                               onClick: () => {
-                                window.location.href = `/admin/kunden?id=${b.customer_id}`;
+                                router.push(`/admin/kunden/${b.customer_id}`);
                               },
                             }
                           : {

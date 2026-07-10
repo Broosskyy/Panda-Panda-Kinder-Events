@@ -277,35 +277,53 @@ export function SettingsView() {
         helpItems={settingsPage.helpItems}
       />
 
-      <AdminCard title="Profil & Hilfe" compact>
-        <p className="mb-3 text-sm text-text-muted">
-          Tutorial und Hilfe findest du hier jederzeit wieder.
-        </p>
-        <div className="flex flex-wrap gap-2">
-          <AdminButton variant="secondary" icon={<Sparkles className="h-4 w-4" />} onClick={() => void openWizard()}>
-            Tutorial erneut starten
-          </AdminButton>
-        </div>
-      </AdminCard>
-
       <AdminAppSettingsCard />
 
       <AdminPushNotificationsCard />
 
-      <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">
-        {CONTROL_CENTER_TABS.map((item) => (
+      {tab !== "help" ? (
+        <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">
+          {CONTROL_CENTER_TABS.filter((item) => item.id !== "help").map((item) => (
+            <Link
+              key={item.id}
+              href={tabHref(item.id)}
+              className={`rounded-full px-4 py-2 text-sm font-medium ${
+                tab === item.id ? "bg-primary text-white" : "border border-border bg-bg-card text-text-secondary"
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
           <Link
-            key={item.id}
-            href={tabHref(item.id)}
+            href="/admin/einstellungen?tab=help"
             className={`rounded-full px-4 py-2 text-sm font-medium ${
-              tab === item.id ? "bg-primary text-white" : "border border-border bg-bg-card text-text-secondary"
+              rawTab === "help" ? "bg-primary text-white" : "border border-border bg-bg-card text-text-secondary"
             }`}
           >
-            {item.label}
+            Hilfe
           </Link>
-        ))}
-      </nav>
+        </nav>
+      ) : null}
 
+      {tab === "help" ? (
+        <AdminCard title="Hilfe & Tutorial">
+          <p className="mb-3 text-sm text-text-muted">
+            Das interaktive Tutorial erscheint nur beim ersten Login. Du kannst es hier jederzeit erneut starten.
+            Die dauerhafte Checkliste findest du unter Erste Schritte in der Navigation.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <AdminButton variant="primary" icon={<Sparkles className="h-4 w-4" />} onClick={() => void openWizard()}>
+              Tutorial erneut starten
+            </AdminButton>
+            <AdminButton variant="secondary" href="/admin/erste-schritte">
+              Erste Schritte öffnen
+            </AdminButton>
+          </div>
+        </AdminCard>
+      ) : null}
+
+      {tab !== "help" ? (
+        <>
       {settingsLoading ? <AdminLoadingCard message="Einstellungen werden geladen…" /> : null}
       {settingsError ? (
         <AdminCard>
@@ -828,6 +846,8 @@ export function SettingsView() {
             systemError={systemError}
           />
         </AdminCard>
+      ) : null}
+        </>
       ) : null}
     </div>
   );

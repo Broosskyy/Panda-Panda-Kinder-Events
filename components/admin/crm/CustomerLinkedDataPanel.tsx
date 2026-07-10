@@ -253,14 +253,25 @@ export function CustomerLinkedDataPanel({
                         </div>
                         <div className="flex flex-wrap gap-2">
                           {item.actions.canOpen && item.href ? (
-                            <AdminButton
-                              variant="secondary"
-                              className="min-h-10 flex-1 sm:flex-none"
-                              href={item.href}
-                              icon={<ExternalLink className="h-4 w-4" />}
-                            >
-                              Öffnen
-                            </AdminButton>
+                            <>
+                              <AdminButton
+                                variant="secondary"
+                                className="min-h-10 flex-1 sm:flex-none"
+                                href={item.href}
+                                icon={<ExternalLink className="h-4 w-4" />}
+                              >
+                                Öffnen
+                              </AdminButton>
+                              {item.type === "quote" || item.type === "invoice" || item.type === "booking" ? (
+                                <AdminButton
+                                  variant="secondary"
+                                  className="min-h-10 flex-1 sm:flex-none"
+                                  href={item.href}
+                                >
+                                  Bearbeiten
+                                </AdminButton>
+                              ) : null}
+                            </>
                           ) : null}
                           <AdminButton
                             variant="ghost"

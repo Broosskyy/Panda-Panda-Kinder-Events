@@ -45,7 +45,10 @@ export async function generateMetadata(): Promise<Metadata> {
       robotsIndex: true,
       googleSiteVerification: undefined,
       googleAnalyticsId: undefined,
+      googleTagManagerId: undefined,
       microsoftClarityId: undefined,
+      googleMapsApiKey: undefined,
+      googleRecaptchaSiteKey: undefined,
     };
   }
 

@@ -1,5 +1,6 @@
 import { getSupabaseAdmin, isSupabaseConfigured } from "@/lib/supabase/admin";
 import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
+import { extractDomainFromEmail } from "@/lib/system-config";
 import { getEmailSettings } from "@/lib/email/sender";
 import type { SiteEmailAliasRecord } from "@/lib/cms/types";
 
@@ -16,8 +17,7 @@ function mapRow(row: Record<string, unknown>): SiteEmailAliasRecord {
 }
 
 function extractDomain(email: string): string {
-  const match = email.trim().match(/@([^@\s]+)$/);
-  return match?.[1] ?? "pb-kinderevents.de";
+  return extractDomainFromEmail(email);
 }
 
 function buildDefaultAliases(domain: string, companyEmail: string): SiteEmailAliasRecord[] {

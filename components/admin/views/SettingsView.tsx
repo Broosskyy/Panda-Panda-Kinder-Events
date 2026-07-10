@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { AdminCard, AdminPageHeader } from "@/components/admin/AdminSidebar";
 import { AdminButton, AdminLoadingCard } from "@/components/admin/ui";
@@ -76,6 +76,7 @@ function tabHref(id: ControlCenterTab): string {
 
 export function SettingsView() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const rawTab = searchParams.get("tab") ?? "business";
   const tab: ControlCenterTab = VALID_TABS.has(rawTab) ? (rawTab as ControlCenterTab) : "business";
   const emailTab = parseEmailSubTab(searchParams.get("emailTab"));
@@ -174,8 +175,14 @@ export function SettingsView() {
   }, [loadSettings, loadEmailStatus]);
 
   useEffect(() => {
-    if (tab === "system") void loadSystemStatus();
-  }, [tab, loadSystemStatus]);
+    if (tab === "system" && !isSuperAdmin) {
+      router.replace("/admin/einstellungen");
+    }
+  }, [tab, isSuperAdmin, router]);
+
+  useEffect(() => {
+    if (tab === "system" && isSuperAdmin) void loadSystemStatus();
+  }, [tab, isSuperAdmin, loadSystemStatus]);
 
   const saveSection = async <S extends keyof SiteSettingsBundle>(
     section: S,
@@ -283,7 +290,9 @@ export function SettingsView() {
 
       {tab !== "help" ? (
         <nav className="flex flex-wrap gap-2 border-b border-border pb-4" aria-label="Einstellungen">
-          {CONTROL_CENTER_TABS.filter((item) => item.id !== "help").map((item) => (
+          {CONTROL_CENTER_TABS.filter(
+            (item) => item.id !== "help" && (item.id !== "system" || isSuperAdmin),
+          ).map((item) => (
             <Link
               key={item.id}
               href={tabHref(item.id)}
@@ -838,7 +847,7 @@ export function SettingsView() {
         <ModulesSettingsPanel initial={modules} isSuperAdmin={isSuperAdmin} />
       ) : null}
 
-      {!settingsLoading && tab === "system" ? (
+      {!settingsLoading && tab === "system" && isSuperAdmin ? (
         <AdminCard title="Systemstatus">
           <div className="mb-4 flex items-center justify-between gap-3">
             <p className="text-sm text-text-muted">Übersicht über Konfiguration, Systemzustand und Datensicherung.</p>

@@ -55,7 +55,7 @@ function finalizeAbsoluteUrl(url: string): string | null {
 
 /**
  * Wandelt CMS-/Branding-Bildpfade in öffentliche absolute HTTPS-URLs um.
- * Relative Logo-Pfade → https://www.pb-kinderevents.de/assets/Logo.png
+ * Relative Logo-Pfade → absolute HTTPS-URL über resolveEmailAssetBaseUrl()
  * Vercel-Preview- und localhost-URLs werden verworfen und neu aufgelöst.
  */
 export function resolveEmailImageUrl(

@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { requireAdmin } from "@/lib/admin-route";
+import { requireSuperAdmin } from "@/lib/admin-route";
 import { getSystemStatus } from "@/lib/admin/system-status";
 
 export async function GET() {
-  const authError = await requireAdmin("website:read");
+  const { error: authError } = await requireSuperAdmin();
   if (authError) return authError;
 
   try {

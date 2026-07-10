@@ -1,3 +1,5 @@
+import { getAppVersion, getBuildLabel, getDeployEnvironment } from "@/lib/admin/build-info";
+import { isPushConfigured } from "@/lib/admin/push/config";
 import { getEmailSettings } from "@/lib/email/sender";
 import { getResendSendingSetup } from "@/lib/email/resend-status";
 import { fetchSiteSettings } from "@/lib/cms/data";
@@ -6,6 +8,7 @@ import { getSiteUrl } from "@/lib/site-url";
 import { isSupabaseConfigured } from "@/lib/supabase/admin";
 import { listEmailLogs } from "@/lib/email/log";
 import { DEFAULT_COMPANY_EMAIL } from "@/lib/email/constants";
+import { resolveGoogleIntegrations } from "@/lib/system-config";
 import {
   API_CHECK_UNAVAILABLE_MESSAGE,
   DOMAIN_MANUAL_CONFIRM_MESSAGE,
@@ -147,7 +150,7 @@ export async function getSystemStatus(): Promise<{
   );
   items.push({
     id: "domain",
-    label: "Website-Domain",
+    label: "Domain",
     level: displayUrl ? "ok" : "warn",
     message: displayUrl
       ? hasExplicitConfig
@@ -155,6 +158,40 @@ export async function getSystemStatus(): Promise<{
         : `Website erreichbar unter: ${displayUrl}`
       : "Keine Domain konfiguriert.",
     action: displayUrl ? undefined : "NEXT_PUBLIC_SITE_URL oder SEO-Einstellungen setzen.",
+  });
+
+  const sslActive = Boolean(displayUrl?.startsWith("https://"));
+  items.push({
+    id: "ssl",
+    label: "SSL / HTTPS",
+    level: sslActive ? "ok" : displayUrl ? "warn" : "warn",
+    message: sslActive
+      ? "Website-URL nutzt HTTPS."
+      : displayUrl
+        ? "Website-URL ohne HTTPS — für Produktion HTTPS aktivieren."
+        : "SSL-Status erst nach Domain-Konfiguration prüfbar.",
+    action: sslActive ? undefined : "Custom Domain mit HTTPS (z. B. Vercel) verbinden.",
+  });
+
+  items.push({
+    id: "smtp",
+    label: "SMTP / Versand",
+    level: resendOk ? "ok" : "warn",
+    message: resendOk
+      ? "Resend (SMTP-API) ist verbunden — Versand über zentrale Mail-Konfiguration."
+      : "Vorbereitet — RESEND_API_KEY fehlt noch, Versand ist deaktiviert.",
+    action: resendOk ? undefined : "RESEND_API_KEY in den Server-Einstellungen setzen.",
+  });
+
+  const pushReady = isPushConfigured();
+  items.push({
+    id: "push",
+    label: "Push",
+    level: pushReady ? "ok" : "warn",
+    message: pushReady
+      ? "Web-Push (VAPID) ist konfiguriert."
+      : "Vorbereitet — VAPID-Keys fehlen noch (NEXT_PUBLIC_VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY).",
+    action: pushReady ? undefined : "VAPID-Keys in Vercel setzen.",
   });
 
   const senderSet = Boolean(settings.email.senderEmail?.trim());
@@ -230,14 +267,45 @@ export async function getSystemStatus(): Promise<{
     action: legalReady ? undefined : "Rechtliches und Unternehmensdaten ausfüllen.",
   });
 
-  const analyticsActive = Boolean(settings.seo.googleAnalyticsId?.trim());
+  const google = resolveGoogleIntegrations(settings.seo);
+  const googleServices: { key: string; id?: string }[] = [
+    { key: "GA4", id: google.analyticsId },
+    { key: "GTM", id: google.tagManagerId },
+    { key: "GSC", id: google.siteVerification },
+    { key: "Clarity", id: google.clarityId },
+    { key: "Maps", id: google.mapsApiKey },
+    { key: "reCAPTCHA", id: google.recaptchaSiteKey },
+  ];
+  const googleActive = googleServices.filter((s) => s.id);
+  const googlePrepared = googleServices.filter((s) => !s.id).map((s) => s.key);
   items.push({
-    id: "analytics",
-    label: "Analytics",
-    level: analyticsActive ? "ok" : "warn",
-    message: analyticsActive
-      ? "Besucherstatistik ist eingerichtet."
-      : "Optional — Besucherstatistik ist noch nicht eingerichtet.",
+    id: "google",
+    label: "Google & Tracking",
+    level: googleActive.length > 0 ? "ok" : "warn",
+    message:
+      googleActive.length > 0
+        ? `Eingerichtet: ${googleActive.map((s) => s.key).join(", ")}.${
+            googlePrepared.length > 0 ? ` Vorbereitet: ${googlePrepared.join(", ")}.` : ""
+          }`
+        : "Vorbereitet — noch keine IDs hinterlegt (fehlende IDs verursachen keine Fehler).",
+    action:
+      googleActive.length === 0
+        ? "Einstellungen → Domain & SEO oder ENV-Variablen (optional)."
+        : undefined,
+  });
+
+  items.push({
+    id: "version",
+    label: "Version",
+    level: "ok",
+    message: `App-Version ${getAppVersion()}`,
+  });
+
+  items.push({
+    id: "build",
+    label: "Build",
+    level: "ok",
+    message: `Build ${getBuildLabel()} (${getDeployEnvironment()})`,
   });
 
   items.push({
